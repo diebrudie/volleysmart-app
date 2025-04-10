@@ -45,8 +45,8 @@ const Home = () => {
           <div className="lg:w-1/2 mt-12 lg:mt-0">
             <div className="relative">
               <img 
-                src="https://images.unsplash.com/photo-1574271143515-5cddf8da19be?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" 
-                alt="Volleyball team" 
+                src="https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80" 
+                alt="Happy people playing volleyball" 
                 className="rounded-lg shadow-xl max-w-full mx-auto" 
               />
             </div>
