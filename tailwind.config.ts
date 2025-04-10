@@ -64,9 +64,9 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				volleyball: {
-					primary: '#8B5CF6', // Vibrant purple
-					secondary: '#D8B4FE', // Light purple
-					accent: '#38BDF8', // Bright blue
+					primary: '#1E3A8A', // Mikasa blue
+					secondary: '#FBBF24', // Mikasa yellow
+					accent: '#FFFFFF', // Mikasa white
 					success: '#4ADE80', // Green
 					warning: '#FBBF24', // Yellow
 					danger: '#F87171', // Red

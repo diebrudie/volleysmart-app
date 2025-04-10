@@ -14,7 +14,7 @@ const Home = () => {
       <Navbar isAuthenticated={isAuthenticated} />
       
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-volleyball-primary to-volleyball-secondary text-white">
+      <div className="bg-gradient-to-br from-volleyball-primary to-volleyball-primary/80 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32 flex flex-col lg:flex-row items-center">
           <div className="lg:w-1/2 lg:pr-12">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
@@ -26,17 +26,17 @@ const Home = () => {
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               {isAuthenticated ? (
                 <Link to="/dashboard">
-                  <Button size="lg" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90">
                     Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
               ) : (
                 <>
                   <Link to="/signup">
-                    <Button size="lg" className="w-full sm:w-auto">Sign up for free</Button>
+                    <Button size="lg" className="w-full sm:w-auto bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90">Sign up for free</Button>
                   </Link>
                   <Link to="/login">
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white/10">Log in</Button>
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white/10 text-white border-white hover:bg-white/20">Log in</Button>
                   </Link>
                 </>
               )}
@@ -168,20 +168,20 @@ const Home = () => {
               <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
                 Ready to transform your volleyball matches?
               </h2>
-              <p className="mt-3 max-w-3xl text-lg text-indigo-100">
+              <p className="mt-3 max-w-3xl text-lg text-blue-100">
                 Join other volleyball enthusiasts who are already using our platform to organize fair and fun matches.
               </p>
               <div className="mt-8">
                 <div className="inline-flex rounded-md shadow">
                   {isAuthenticated ? (
                     <Link to="/dashboard">
-                      <Button size="lg" className="bg-white text-volleyball-primary hover:bg-gray-100">
+                      <Button size="lg" className="bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90">
                         Go to Dashboard
                       </Button>
                     </Link>
                   ) : (
                     <Link to="/signup">
-                      <Button size="lg" className="bg-white text-volleyball-primary hover:bg-gray-100">
+                      <Button size="lg" className="bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90">
                         Get Started for Free
                       </Button>
                     </Link>
@@ -198,7 +198,7 @@ const Home = () => {
                   </p>
                   <div className="mt-3 flex items-center">
                     <div className="flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-volleyball-secondary flex items-center justify-center text-white font-bold">
+                      <div className="h-10 w-10 rounded-full bg-volleyball-secondary flex items-center justify-center text-volleyball-primary font-bold">
                         JD
                       </div>
                     </div>
