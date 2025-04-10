@@ -20,7 +20,7 @@ const Navbar = ({ isAuthenticated = false, userRole = 'user', onLogout }: Navbar
               <span className="ml-2 text-xl font-bold text-gray-900">VolleyTeam</span>
             </Link>
             <div className="ml-10 space-x-8 hidden md:block">
-              {isAuthenticated ? (
+              {isAuthenticated && (
                 <>
                   <Link to="/dashboard" className="text-base font-medium text-gray-700 hover:text-volleyball-primary">
                     Dashboard
@@ -36,18 +36,6 @@ const Navbar = ({ isAuthenticated = false, userRole = 'user', onLogout }: Navbar
                       Team Generator
                     </Link>
                   )}
-                </>
-              ) : (
-                <>
-                  <Link to="/#features" className="text-base font-medium text-gray-700 hover:text-volleyball-primary">
-                    Features
-                  </Link>
-                  <Link to="/#about" className="text-base font-medium text-gray-700 hover:text-volleyball-primary">
-                    About
-                  </Link>
-                  <Link to="/#contact" className="text-base font-medium text-gray-700 hover:text-volleyball-primary">
-                    Contact
-                  </Link>
                 </>
               )}
             </div>

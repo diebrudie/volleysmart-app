@@ -7,9 +7,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
+import { ArrowLeft } from "lucide-react";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -57,7 +58,14 @@ const Signup = () => {
 
   return (
     <AuthLayout>
-      <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <div className="mb-6">
+        <Link to="/" className="inline-flex items-center text-volleyball-primary hover:text-volleyball-primary/80">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to home
+        </Link>
+      </div>
+
+      <h2 className="text-center text-3xl font-extrabold text-gray-900">
         Create your account
       </h2>
       <p className="mt-2 text-center text-sm text-gray-600">
