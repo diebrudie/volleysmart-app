@@ -1,6 +1,5 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 type UserRole = 'admin' | 'editor' | 'user';
 
@@ -35,7 +34,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Check for existing session on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('volleyteam-user');
     if (storedUser) {
@@ -49,14 +47,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  // This is a mock implementation - in real app, would use Supabase
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Mock login - in real app, this would call Supabase auth.signIn
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // For demo purposes, assign roles based on email
       let role: UserRole = 'user';
       if (email.includes('admin')) {
         role = 'admin';
@@ -93,7 +88,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
-      // Mock signup - in real app, this would call Supabase auth.signUp
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const user = {
@@ -123,7 +117,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    // Mock logout - in real app, this would call Supabase auth.signOut
     setUser(null);
     localStorage.removeItem('volleyteam-user');
     toast({
