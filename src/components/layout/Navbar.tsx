@@ -1,15 +1,18 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Volleyball } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface NavbarProps {
-  isAuthenticated?: boolean;
-  userRole?: 'admin' | 'editor' | 'user';
-  onLogout?: () => void;
-}
+const Navbar = () => {
+  const { isAuthenticated, userProfile, logout } = useAuth();
+  const navigate = useNavigate();
 
-const Navbar = ({ isAuthenticated = false, userRole = 'user', onLogout }: NavbarProps) => {
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
   return (
     <header className="bg-white shadow-sm">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
@@ -31,7 +34,7 @@ const Navbar = ({ isAuthenticated = false, userRole = 'user', onLogout }: Navbar
                   <Link to="/players" className="text-base font-medium text-gray-700 hover:text-volleyball-primary">
                     Players
                   </Link>
-                  {(userRole === 'admin' || userRole === 'editor') && (
+                  {userProfile && (userProfile.role === 'admin' || userProfile.role === 'editor') && (
                     <Link to="/generate-teams" className="text-base font-medium text-gray-700 hover:text-volleyball-primary">
                       Team Generator
                     </Link>
@@ -42,7 +45,7 @@ const Navbar = ({ isAuthenticated = false, userRole = 'user', onLogout }: Navbar
           </div>
           <div className="space-x-4 flex">
             {isAuthenticated ? (
-              <Button variant="outline" onClick={onLogout}>Log out</Button>
+              <Button variant="outline" onClick={handleLogout}>Log out</Button>
             ) : (
               <>
                 <Link to="/login">
