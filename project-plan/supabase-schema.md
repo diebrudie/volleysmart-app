@@ -56,6 +56,8 @@ Tech Stack:
 - image_url TEXT
 - bio TEXT
 - skill_rating INTEGER CHECK (skill_rating BETWEEN 1 AND 10)
+- is_active BOOL
+- member_association BOOL
 
 **positions**
 - id UUID PRIMARY KEY
