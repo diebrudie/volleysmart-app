@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -26,12 +25,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-// Mock match data with more details
 const matchDetails = {
   id: 1,
   date: "2025-04-10T18:00:00.000Z",
@@ -94,7 +92,6 @@ const MatchDetail = () => {
   };
 
   const handleSaveChanges = () => {
-    // In a real app, this would send updates to the server
     toast({
       title: "Changes saved",
       description: "The match details have been updated.",
@@ -103,7 +100,6 @@ const MatchDetail = () => {
   };
 
   const handleDeleteMatch = () => {
-    // In a real app, this would delete the match from the server
     toast({
       title: "Match deleted",
       description: "The match has been deleted.",
@@ -123,20 +119,18 @@ const MatchDetail = () => {
     }
   };
 
-  // Calculate total score
   const totalScore = {
     teamA: matchDetails.games.reduce((sum, game) => sum + game.teamA, 0),
     teamB: matchDetails.games.reduce((sum, game) => sum + game.teamB, 0),
   };
 
-  // Determine match winner
   const matchWinner = matchDetails.games.filter(g => g.teamA > g.teamB).length > 
                      matchDetails.games.filter(g => g.teamB > g.teamA).length 
                      ? "Team A" : "Team B";
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isAuthenticated={true} userRole={user?.role} onLogout={logout} />
+      <Navbar />
       
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -207,7 +201,6 @@ const MatchDetail = () => {
             )}
           </div>
           
-          {/* Match Details Card */}
           <Card className="mb-8">
             <CardHeader className="bg-volleyball-primary text-white">
               <CardTitle className="flex items-center justify-between">
@@ -251,7 +244,6 @@ const MatchDetail = () => {
                 </div>
               </div>
               
-              {/* Notes */}
               <div className="bg-gray-50 p-4 rounded-md mb-6">
                 <h3 className="font-medium mb-2">Match Notes</h3>
                 {editing ? (
@@ -266,17 +258,14 @@ const MatchDetail = () => {
                 )}
               </div>
 
-              {/* Tab Navigation for Team/Game details */}
               <Tabs defaultValue="teams">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="teams">Teams</TabsTrigger>
                   <TabsTrigger value="games">Game Scores</TabsTrigger>
                 </TabsList>
                 
-                {/* Teams Tab */}
                 <TabsContent value="teams">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    {/* Team A */}
                     <div>
                       <h3 className="text-lg font-semibold mb-3 flex items-center">
                         <div className="h-6 w-6 rounded-full bg-volleyball-primary flex items-center justify-center text-white text-xs mr-2">
@@ -299,7 +288,6 @@ const MatchDetail = () => {
                       </ul>
                     </div>
                     
-                    {/* Team B */}
                     <div>
                       <h3 className="text-lg font-semibold mb-3 flex items-center">
                         <div className="h-6 w-6 rounded-full bg-volleyball-accent flex items-center justify-center text-white text-xs mr-2">
@@ -324,7 +312,6 @@ const MatchDetail = () => {
                   </div>
                 </TabsContent>
                 
-                {/* Games Tab */}
                 <TabsContent value="games">
                   <div className="mt-6">
                     <div className="rounded-md border overflow-hidden">

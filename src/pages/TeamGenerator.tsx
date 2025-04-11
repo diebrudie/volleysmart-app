@@ -1,42 +1,12 @@
-
-import { useState } from "react";
-import { 
-  Users, 
-  Shuffle, 
-  CheckSquare, 
-  Copy, 
-  Save, 
-  AlertCircle, 
-  ArrowRight, 
-  Check
-} from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { useEffect, useState } from 'react';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Shuffle, Save, Trash, Download, Share, UserPlus } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Mock players data
 const allPlayers = Array.from({ length: 24 }, (_, i) => {
@@ -69,7 +39,6 @@ const allPlayers = Array.from({ length: 24 }, (_, i) => {
 
 const TeamGenerator = () => {
   const { user, logout } = useAuth();
-  const { toast } = useToast();
   const [selectedPlayers, setSelectedPlayers] = useState<number[]>([]);
   const [generatedTeams, setGeneratedTeams] = useState<{ teamA: any[]; teamB: any[] } | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -165,8 +134,7 @@ const TeamGenerator = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isAuthenticated={true} userRole={user?.role} onLogout={logout} />
-      
+      <Navbar />
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Team Generator</h1>

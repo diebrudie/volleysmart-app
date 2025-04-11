@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, userProfile } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -25,8 +25,8 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   }
 
   // If roles are specified, check if the user has one of the allowed roles
-  if (allowedRoles && userProfile) {
-    const hasRequiredRole = allowedRoles.includes(userProfile.role as UserRole);
+  if (allowedRoles && user) {
+    const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
     
     if (!hasRequiredRole) {
       // Redirect to dashboard if user doesn't have required role

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, ChevronDown, ChevronUp, Search, Filter } from "lucide-react";
@@ -40,7 +39,7 @@ const matchesData = Array.from({ length: 20 }, (_, i) => {
 });
 
 const Matches = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' } | null>(
     { key: 'date', direction: 'descending' }
@@ -116,7 +115,7 @@ const Matches = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isAuthenticated={true} userRole={user?.role} onLogout={logout} />
+      <Navbar />
       
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

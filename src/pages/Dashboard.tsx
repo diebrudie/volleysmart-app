@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { 
   Calendar, 
@@ -50,7 +49,7 @@ const recentMatches = [
 ];
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const isAdminOrEditor = user?.role === 'admin' || user?.role === 'editor';
 
   const formatDate = (dateString: string) => {
@@ -65,7 +64,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isAuthenticated={true} userRole={user?.role} onLogout={logout} />
+      <Navbar />
       
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
