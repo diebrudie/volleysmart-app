@@ -1,25 +1,23 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { UserRole } from "@/types/supabase";
 
-type UserRole = 'admin' | 'editor' | 'user';
-
-interface UserProfile {
+interface User {
   id: string;
   email: string;
+  name: string;
   role: UserRole;
 }
 
 interface AuthContextType {
   user: User | null;
-  userProfile: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,105 +32,52 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const setupAuthListener = async () => {
-      // Set up auth state listener FIRST
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, currentSession) => {
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-          
-          if (currentSession?.user) {
-            try {
-              // Fetch user profile data including role
-              const { data, error } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('id', currentSession.user.id)
-                .single();
-              
-              if (error) {
-                console.error('Error fetching user profile:', error);
-              } else if (data) {
-                setUserProfile({
-                  id: data.id,
-                  email: currentSession.user.email || '',
-                  role: data.role as UserRole,
-                });
-              }
-            } catch (error) {
-              console.error('Error in auth state change handler:', error);
-            }
-          } else {
-            setUserProfile(null);
-          }
-        }
-      );
-
-      // THEN check for existing session
-      const { data: { session: initialSession } } = await supabase.auth.getSession();
-      setSession(initialSession);
-      setUser(initialSession?.user ?? null);
-      
-      if (initialSession?.user) {
-        try {
-          // Fetch user profile data including role
-          const { data, error } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', initialSession.user.id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching initial user profile:', error);
-          } else if (data) {
-            setUserProfile({
-              id: data.id,
-              email: initialSession.user.email || '',
-              role: data.role as UserRole,
-            });
-          }
-        } catch (error) {
-          console.error('Error in initial session check:', error);
-        }
+    const storedUser = localStorage.getItem('volleyteam-user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Failed to parse stored user', error);
+        localStorage.removeItem('volleyteam-user');
       }
-      
-      setIsLoading(false);
-      
-      return () => {
-        subscription.unsubscribe();
-      };
-    };
-
-    setupAuthListener();
+    }
+    setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (error) {
-        throw error;
+      let role: UserRole = 'user';
+      if (email.includes('admin')) {
+        role = 'admin';
+      } else if (email.includes('editor')) {
+        role = 'editor';
       }
       
+      const user = {
+        id: 'user-' + Math.random().toString(36).substr(2, 9),
+        email,
+        name: email.split('@')[0],
+        role
+      };
+      
+      setUser(user);
+      localStorage.setItem('volleyteam-user', JSON.stringify(user));
       toast({
         title: "Success",
         description: "You have successfully logged in",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to log in. Please check your credentials.",
+        description: "Failed to log in. Please check your credentials.",
         variant: "destructive"
       });
       throw error;
@@ -141,32 +86,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signup = async (email: string, password: string) => {
+  const signup = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const user = {
+        id: 'user-' + Math.random().toString(36).substr(2, 9),
         email,
-        password,
-        options: {
-          data: {
-            role: 'user', // Default role for new users
-          },
-        },
-      });
+        name,
+        role: 'user' as UserRole
+      };
       
-      if (error) {
-        throw error;
-      }
-      
+      setUser(user);
+      localStorage.setItem('volleyteam-user', JSON.stringify(user));
       toast({
         title: "Success",
-        description: "Account created successfully. Please check your email for verification.",
+        description: "Account created successfully",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Signup error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create account. Please try again.",
+        description: "Failed to create account. Please try again.",
         variant: "destructive"
       });
       throw error;
@@ -175,41 +117,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
-      }
-      setUser(null);
-      setUserProfile(null);
-      setSession(null);
-      toast({
-        title: "Logged out",
-        description: "You have been logged out successfully",
-      });
-    } catch (error: any) {
-      console.error('Logout error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to log out. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('volleyteam-user');
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+    });
   };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        userProfile, 
-        isAuthenticated: !!user, 
-        isLoading, 
-        login, 
-        signup, 
-        logout 
-      }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
