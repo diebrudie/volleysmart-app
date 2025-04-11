@@ -38,19 +38,22 @@ export type Database = {
       }
       match_teams: {
         Row: {
+          created_at: string | null
           id: string
-          match_day_id: string | null
-          team_name: string | null
+          match_day_id: string
+          team_name: string
         }
         Insert: {
+          created_at?: string | null
           id?: string
-          match_day_id?: string | null
-          team_name?: string | null
+          match_day_id: string
+          team_name: string
         }
         Update: {
+          created_at?: string | null
           id?: string
-          match_day_id?: string | null
-          team_name?: string | null
+          match_day_id?: string
+          team_name?: string
         }
         Relationships: [
           {
@@ -133,28 +136,31 @@ export type Database = {
       players: {
         Row: {
           bio: string | null
-          first_name: string | null
+          first_name: string
           id: string
           image_url: string | null
-          last_name: string | null
+          is_active: boolean | null
+          last_name: string
           skill_rating: number | null
           user_id: string | null
         }
         Insert: {
           bio?: string | null
-          first_name?: string | null
+          first_name: string
           id?: string
           image_url?: string | null
-          last_name?: string | null
+          is_active?: boolean | null
+          last_name: string
           skill_rating?: number | null
           user_id?: string | null
         }
         Update: {
           bio?: string | null
-          first_name?: string | null
+          first_name?: string
           id?: string
           image_url?: string | null
-          last_name?: string | null
+          is_active?: boolean | null
+          last_name?: string
           skill_rating?: number | null
           user_id?: string | null
         }

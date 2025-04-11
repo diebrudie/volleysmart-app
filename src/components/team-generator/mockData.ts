@@ -1,0 +1,29 @@
+
+// Mock players data
+export const allPlayers = Array.from({ length: 24 }, (_, i) => {
+  const positions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite Hitter", "Libero"];
+  const randomPositions = [];
+  const numPositions = Math.floor(Math.random() * 2) + 1; // 1-2 positions per player
+  
+  for (let j = 0; j < numPositions; j++) {
+    const pos = positions[Math.floor(Math.random() * positions.length)];
+    if (!randomPositions.includes(pos)) {
+      randomPositions.push(pos);
+    }
+  }
+  
+  return {
+    id: i + 1,
+    name: [
+      "Alex Johnson", "Maya Rivera", "Jordan Smith", "Taylor Lee", "Casey Jones", 
+      "Sam Washington", "Jamie Chen", "Riley Kim", "Morgan Patel", "Drew Garcia", 
+      "Quinn Brown", "Avery Williams", "Cameron Nguyen", "Dakota Wilson", "Emerson Davis",
+      "Finley Moore", "Gray Thompson", "Harper Martin", "Indigo Clark", "Jordan Allen",
+      "Kendall Baker", "Logan Hall", "Mason Wright", "Noah Turner"
+    ][i],
+    positions: randomPositions,
+    preferredPosition: randomPositions[0],
+    skillRating: Math.floor(Math.random() * 3) + 3, // Rating 3-5
+    availability: Math.random() > 0.2, // 80% available
+  };
+});
