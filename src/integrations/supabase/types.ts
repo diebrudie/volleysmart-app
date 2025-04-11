@@ -139,8 +139,9 @@ export type Database = {
           first_name: string
           id: string
           image_url: string | null
-          is_active: boolean | null
+          is_active: boolean
           last_name: string
+          member_association: boolean
           skill_rating: number | null
           user_id: string | null
         }
@@ -149,8 +150,9 @@ export type Database = {
           first_name: string
           id?: string
           image_url?: string | null
-          is_active?: boolean | null
+          is_active?: boolean
           last_name: string
+          member_association: boolean
           skill_rating?: number | null
           user_id?: string | null
         }
@@ -159,8 +161,9 @@ export type Database = {
           first_name?: string
           id?: string
           image_url?: string | null
-          is_active?: boolean | null
+          is_active?: boolean
           last_name?: string
+          member_association?: boolean
           skill_rating?: number | null
           user_id?: string | null
         }

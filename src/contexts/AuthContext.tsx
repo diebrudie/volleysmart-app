@@ -2,23 +2,24 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { User, Session } from '@supabase/supabase-js';
 import { UserRole } from "@/types/supabase";
 
-interface User {
+interface AuthUser {
   id: string;
-  email: string;
+  email: string | undefined;
   name: string;
   role: UserRole;
 }
 
 interface AuthContextType {
-  user: User | null;
-  userProfile: User | null; // Added for compatibility
+  user: AuthUser | null;
+  userProfile: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,53 +33,99 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Initialize auth state
   useEffect(() => {
-    const storedUser = localStorage.getItem('volleyteam-user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user', error);
-        localStorage.removeItem('volleyteam-user');
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        if (session?.user) {
+          // Get user profile on auth change
+          setTimeout(() => {
+            getUserProfile(session.user);
+          }, 0);
+        } else {
+          setUser(null);
+        }
       }
-    }
-    setIsLoading(false);
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        getUserProfile(session.user);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  // Function to get user profile data
+  const getUserProfile = async (authUser: User) => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch user profile from the user_profiles table
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        throw error;
+      }
+
+      const userWithProfile: AuthUser = {
+        id: authUser.id,
+        email: authUser.email,
+        name: authUser.email?.split('@')[0] || 'User',
+        role: profile?.role as UserRole || 'user',
+      };
+
+      setUser(userWithProfile);
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      // Even if we can't get the profile, we still have a user
+      setUser({
+        id: authUser.id,
+        email: authUser.email,
+        name: authUser.email?.split('@')[0] || 'User',
+        role: 'user'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      let role: UserRole = 'user';
-      if (email.includes('admin')) {
-        role = 'admin';
-      } else if (email.includes('editor')) {
-        role = 'editor';
-      }
-      
-      const user = {
-        id: 'user-' + Math.random().toString(36).substr(2, 9),
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        name: email.split('@')[0],
-        role
-      };
-      
-      setUser(user);
-      localStorage.setItem('volleyteam-user', JSON.stringify(user));
+        password
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "You have successfully logged in",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       toast({
         title: "Error",
-        description: "Failed to log in. Please check your credentials.",
+        description: error.message || "Failed to log in. Please check your credentials.",
         variant: "destructive"
       });
       throw error;
@@ -90,26 +137,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const user = {
-        id: 'user-' + Math.random().toString(36).substr(2, 9),
+      const { data, error } = await supabase.auth.signUp({
         email,
-        name,
-        role: 'user' as UserRole
-      };
-      
-      setUser(user);
-      localStorage.setItem('volleyteam-user', JSON.stringify(user));
+        password,
+        options: {
+          data: {
+            name: name,
+          }
+        }
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Success",
-        description: "Account created successfully",
+        description: "Account created successfully. Please check your email for confirmation.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error);
       toast({
         title: "Error",
-        description: "Failed to create account. Please try again.",
+        description: error.message || "Failed to create account. Please try again.",
         variant: "destructive"
       });
       throw error;
@@ -118,19 +166,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('volleyteam-user');
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully",
-    });
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
-      userProfile: user, // Set userProfile equal to user for compatibility
+      userProfile: user, 
       isAuthenticated: !!user, 
       isLoading, 
       login, 

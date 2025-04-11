@@ -19,6 +19,7 @@ import MatchDetail from "./pages/MatchDetail";
 import Players from "./pages/Players";
 import PlayerDetail from "./pages/PlayerDetail";
 import TeamGenerator from "./pages/TeamGenerator";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -95,6 +96,16 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['admin', 'editor']}>
                     <TeamGenerator />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Admin Only Routes */}
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <Admin />
                   </ProtectedRoute>
                 } 
               />

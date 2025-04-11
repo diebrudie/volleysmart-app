@@ -1,7 +1,7 @@
 
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Volleyball } from "lucide-react";
+import { Volleyball, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
@@ -37,6 +37,12 @@ const Navbar = () => {
                   {user && (user.role === 'admin' || user.role === 'editor') && (
                     <Link to="/generate-teams" className="text-base font-medium text-gray-700 hover:text-volleyball-primary">
                       Team Generator
+                    </Link>
+                  )}
+                  {user && user.role === 'admin' && (
+                    <Link to="/admin" className="text-base font-medium text-gray-700 hover:text-volleyball-primary flex items-center">
+                      <Settings className="h-4 w-4 mr-1" />
+                      Admin
                     </Link>
                   )}
                 </>
