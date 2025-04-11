@@ -7,11 +7,11 @@ import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Home = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isAuthenticated={isAuthenticated} onLogout={logout} />
+      <Navbar />
       
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-volleyball-primary to-volleyball-primary/80 text-white">

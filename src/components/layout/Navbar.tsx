@@ -5,7 +5,7 @@ import { Volleyball } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
-  const { isAuthenticated, userProfile, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -34,7 +34,7 @@ const Navbar = () => {
                   <Link to="/players" className="text-base font-medium text-gray-700 hover:text-volleyball-primary">
                     Players
                   </Link>
-                  {userProfile && (userProfile.role === 'admin' || userProfile.role === 'editor') && (
+                  {user && (user.role === 'admin' || user.role === 'editor') && (
                     <Link to="/generate-teams" className="text-base font-medium text-gray-700 hover:text-volleyball-primary">
                       Team Generator
                     </Link>
