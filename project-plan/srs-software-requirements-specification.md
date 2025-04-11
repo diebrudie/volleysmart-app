@@ -1,81 +1,58 @@
 # Software Requirements Specification (SRS)
 
 ## 1. Introduction
-This specification defines the software functionality for the Volleyball Team Generator app. The system is designed to allow weekly volleyball games to be scheduled, generate fair teams, track match scores, and manage player profiles with role-based permissions.
+Defines the software logic and roles for the Volleyball Team Generator app, enabling onboarding, match creation, team generation, and role-based data interaction.
 
 ## 2. Functional Requirements
 
 ### 2.1 Core Features
 
-- FR-001 – Player Management
-  - Description: Create, edit, and delete player profiles
-  - Rationale: Keep player information current
-  - Dependencies: PRD-US-001, US-006
-  - Acceptance Criteria: Admin can add/edit/delete players, users can edit their own
-
-- FR-002 – Position Assignment
-  - Description: Allow players to choose multiple roles
-  - Rationale: Reflect flexibility in playing positions
-  - Dependencies: PRD-US-006
-  - Acceptance Criteria: User can select one or more positions in their profile
-
-- FR-003 – Team Generator
-  - Description: Select today's players and generate two fair teams
-  - Rationale: Minimize bias and manual work
-  - Dependencies: PRD-US-003, PRD-US-005
-  - Acceptance Criteria: Admin/Editor can assign players and get balanced output
-
-- FR-004 – Match Tracking
-  - Description: Track individual match scores (5 games/day)
-  - Rationale: Archive performance for review
-  - Dependencies: PRD-US-004, US-007
-  - Acceptance Criteria: Score can be entered once, edited only by Admin/Editor
-
-- FR-005 – Public Match View
-  - Description: View today’s teams without login
-  - Rationale: Shareable match link for convenience
-  - Dependencies: PRD-US-008
-  - Acceptance Criteria: Anyone can access match data for today
+- FR-001 – Authentication via Supabase Auth
+- FR-002 – Player onboarding flow after signup
+- FR-003 – Match day creation with flexible team sizes
+- FR-004 – Team generator logic with role balancing
+- FR-005 – Match submission with multi-game tracking
+- FR-006 – Reactivation/Deactivation of players
+- FR-007 – Authorization and field-level permissions
+- FR-008 – View and edit personal player profile
 
 ### 2.2 Authentication and Authorization
 
-- FR-006 – Supabase Auth with Email/Password
-  - Role-based: Admin, Editor, User
-  - Rationale: Secure data access and permissions
-  - Dependencies: PRD-US-002, PRD-US-009
-  - Acceptance Criteria: Only authorized users can perform sensitive actions
+- Admin: Full access
+- Editor: Can generate teams, manage players, update scores
+- User: Limited to self-created data
+
+Access control defined by Supabase RLS using `user_profiles.role`.
 
 ## 3. Data Requirements
 
-See `Schema.md` for full table structure. Key tables include:
-- users
-- players
-- positions
-- match_days
-- match_teams
-- matches
-- team_players
+- Table: users (Supabase managed)
+- Table: user_profiles (extends users with roles)
+- Table: players (includes is_active, skill_rating)
+- Table: match_days, matches, match_teams
+- Table: team_players, positions
 
 ## 4. System Interface Requirements
 
-- Frontend: NextJS using REST calls or Supabase client SDK
-- Backend: Supabase Postgres via Supabase JS SDK or direct API endpoints
-- All routes protected by RLS policies defined in Supabase
+- NextJS frontend
+- Supabase backend (direct queries and auth)
+- REST API routes match definitions from API.md
 
 ## 5. Use Cases
 
-- UC-001 – Generate Fair Teams
-- UC-002 – Create a New Match Day
-- UC-003 – Add/Edit Player Profile
-- UC-004 – Submit Match Results
-- UC-005 – Login and Role Redirect
+- UC-001 – Player onboarding and profile creation
+- UC-002 – Fair team generation based on player roles
+- UC-003 – Creating and managing match days
+- UC-004 – Score entry and revision control
+- UC-005 – Admin/Editor control panel for inactive players
+- UC-006 – Role-based route access and field editability
 
 ## 6. Requirements Traceability
 
-Each SRS item maps back to PRD user stories and referenced features. All requirements ensure complete system functionality and security.
+Mapped directly to PRD user stories (e.g., PRD-US-001 → SRS-FR-001).
 
 ## 7. Technical Constraints
 
-- Frontend: NextJS
-- UI: shadcn/ui with TailwindCSS
-- DB: Supabase PostgreSQL
+- Frontend: NextJS + shadcn/ui + Tailwind
+- Backend: Supabase (PostgreSQL + Auth + RLS)
+- Hosting: GitHub + Lovable
