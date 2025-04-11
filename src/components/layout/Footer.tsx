@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Volleyball } from "lucide-react";
+import Logo from "@/components/common/Logo";
 
 const Footer = () => {
   return (
@@ -8,10 +8,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
           <div className="space-y-8 xl:col-span-1">
-            <Link to="/" className="flex items-center">
-              <Volleyball className="h-8 w-8 text-volleyball-primary" />
-              <span className="ml-2 text-xl font-bold text-gray-900">VolleyTeam</span>
-            </Link>
+            <Logo size="md" linkTo="/" />
             <p className="text-gray-500 text-base">
               Making volleyball team management fair, fun, and easy.
             </p>
@@ -76,7 +73,7 @@ const Footer = () => {
         </div>
         <div className="mt-12 border-t border-gray-200 pt-8">
           <p className="text-base text-gray-400 xl:text-center">
-            &copy; {new Date().getFullYear()} VolleyTeam. All rights reserved.
+            &copy; {new Date().getFullYear()} VolleyMatch. All rights reserved.
           </p>
         </div>
       </div>
