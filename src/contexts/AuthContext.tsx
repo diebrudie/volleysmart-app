@@ -1,7 +1,8 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-
-type UserRole = 'admin' | 'editor' | 'user';
+import { supabase } from "@/integrations/supabase/client";
+import { UserRole } from "@/types/supabase";
 
 interface User {
   id: string;
