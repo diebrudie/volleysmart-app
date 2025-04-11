@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { updateUserRole, getUserProfile } from "@/integrations/supabase/profiles";
 import { supabase } from "@/integrations/supabase/client";
 import { UserRole } from "@/types/supabase";
@@ -19,6 +19,7 @@ interface UserWithProfile {
 const UserRoleManager = () => {
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
@@ -41,7 +42,7 @@ const UserRoleManager = () => {
             return {
               id: user.id,
               email: user.email || 'No email',
-              role: profile?.role || 'user',
+              role: profile?.role as UserRole || 'user' as UserRole,
               created_at: user.created_at
             };
           } catch (error) {

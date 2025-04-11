@@ -8,6 +8,7 @@ export interface PlayerData {
   image_url?: string;
   skill_rating?: number;
   positions?: string[];
+  member_association?: boolean;
 }
 
 export async function createPlayer(userId: string, playerData: PlayerData) {
@@ -20,7 +21,8 @@ export async function createPlayer(userId: string, playerData: PlayerData) {
       last_name: playerData.last_name,
       bio: playerData.bio,
       image_url: playerData.image_url,
-      skill_rating: playerData.skill_rating || 5
+      skill_rating: playerData.skill_rating || 5,
+      member_association: playerData.member_association || false
     })
     .select()
     .single();
