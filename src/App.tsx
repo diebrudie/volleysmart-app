@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
@@ -11,6 +11,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import PlayerOnboarding from "./pages/PlayerOnboarding";
 import Dashboard from "./pages/Dashboard";
 import Matches from "./pages/Matches";
 import MatchDetail from "./pages/MatchDetail";
@@ -33,6 +34,16 @@ const App = () => (
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            
+            {/* Player Onboarding */}
+            <Route 
+              path="/players/onboarding" 
+              element={
+                <ProtectedRoute>
+                  <PlayerOnboarding />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Protected Routes - need authentication */}
             <Route 
