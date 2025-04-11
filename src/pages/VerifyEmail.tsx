@@ -1,13 +1,16 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
+import AuthLayout from "@/components/auth/AuthLayout";
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [countdown, setCountdown] = useState(15);
+  const email = location.state?.email || "your email";
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -25,43 +28,41 @@ const VerifyEmail = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="p-4">
-        <Link to="/" className="flex items-center text-gray-700 hover:text-volleyball-primary transition-colors">
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          <span>Back to Home</span>
-        </Link>
-      </div>
-
-      <div className="flex items-center justify-center flex-grow px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Check Your Email</CardTitle>
-            <CardDescription className="text-center">
-              Thank you for signing up! Just one last step, please check your inbox to verify your email address.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-xs text-gray-500 text-center">
-              If you didn't receive an email, please check your spam folder or contact us for assistance.
+    <AuthLayout>
+      <Card className="border-0 shadow-none">
+        <CardHeader className="space-y-1 px-0 pt-0">
+          <div className="flex justify-center mb-4">
+            <CheckCircle className="h-16 w-16 text-green-500"/>
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">Check Your Email</CardTitle>
+          <CardDescription className="text-center">
+            We sent a verification link to <span className="font-medium">{email}</span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 px-0">
+          <p className="text-sm text-gray-500 text-center">
+            Please click the link in your email to verify your account. If you don't see it, check your spam folder.
+          </p>
+          
+          <div className="text-center mt-6">
+            <p className="text-sm text-gray-600">
+              Redirecting to login in {countdown} seconds...
             </p>
-            
-            <div className="text-center mt-6">
-              <p className="text-sm text-gray-600">
-                Redirecting to login in {countdown} seconds...
-              </p>
+            <div className="flex justify-center gap-3 mt-4">
+              <Button onClick={() => navigate('/login')} variant="outline">
+                Go to Login
+              </Button>
               <Button 
-                onClick={() => navigate('/login')} 
-                variant="outline" 
-                className="mt-2"
+                onClick={() => navigate('/')} 
+                variant="default"
               >
-                Go to Login Now
+                Back to Home
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </div>
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 };
 
