@@ -1,31 +1,40 @@
 
-import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+
+type UserRole = 'admin' | 'editor' | 'user';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: Array<'admin' | 'editor' | 'user'>;
+  allowedRoles?: UserRole[];
 }
 
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, userProfile } = useAuth();
   const location = useLocation();
 
-  // Show loading state if auth is still initializing
   if (isLoading) {
+    // You could render a loading spinner here
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
+    // Redirect them to the login page, but save the current location they were
+    // trying to go to so you can send them back there after login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check role access if roles are specified
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
+  // If roles are specified, check if the user has one of the allowed roles
+  if (allowedRoles && userProfile) {
+    const hasRequiredRole = allowedRoles.includes(userProfile.role as UserRole);
+    
+    if (!hasRequiredRole) {
+      // Redirect to dashboard if user doesn't have required role
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
+  // If they're authenticated and have the required role (if specified), render the children
   return <>{children}</>;
 };
 
