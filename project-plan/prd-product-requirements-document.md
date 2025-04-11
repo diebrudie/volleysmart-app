@@ -3,56 +3,52 @@
 ## 1. Title and Overview
 
 ### 1.1 Document Title & Version
-
-Volleyball Team Generator – PRD v1.0
+Volleyball Team Generator – PRD v1.1
 
 ### 1.2 Product Summary
-
-This product provides an easy-to-use interface to manage weekly volleyball matches, allowing an admin or editor to generate fair teams based on player positions and hidden skill levels. Users can view match history, track individual games, check other players profiles and manage their profiles.
+This product provides an intuitive web-based system for organizing weekly volleyball matches. Users can sign up, create and manage their player profiles, view match history, and track individual and team stats. Admins and editors can generate fair teams based on player roles and update match data. The app supports temporary players and has role-based permissions for secure, streamlined access.
 
 ## 2. User Personas
 
 ### 2.1 Key User Types
-
 - Admin
 - Editor
-- User (Registered Player)
+- Registered User (Player)
 
 ### 2.2 Basic Persona Details
 
 **Admin**
-
-- Oversees team generation and data management
-- Wants complete control and ability to correct mistakes
-- Needs secure access and confidence in data reliability
+- Oversees match creation, data integrity, and user roles
+- Needs full control of player data, match days, and score updates
 
 **Editor**
+- Supports Admins by managing match day setup, team generation, and score tracking
+- Does not control user accounts
 
-- Helps set up matches and input scores
-- Needs a fast, intuitive interface to set up weekly games
-
-**User**
-
-- A player who joins weekly matches
-- Wants to view match results and their own profile
-- Should not be overwhelmed with features
+**User (Player)**
+- Can sign up and create their own profile
+- Can edit personal info and rate their own skill during onboarding
+- Can create match days and submit scores
+- Cannot access score editing after submission
 
 ### 2.3 Role-based Access
 
-| Role   | Permissions                                     |
-| ------ | ----------------------------------------------- |
-| Admin  | Full access: manage players, match days, scores |
-| Editor | Can generate teams, enter scores                |
-| User   | View match history, edit own profile            |
+| Role   | Permissions |
+|--------|-------------|
+| Admin  | Full access to all operations, including player deletion/reactivation |
+| Editor | Manage match setup, team generation, scores, and onboarding |
+| User   | Edit own profile, submit scores, create match days |
 
 ## 3. User Stories
 
-- US-001 – As an Admin, I want to add/edit/remove players so that the match day list is always up to date.
-- US-002 – As a User, I want to log in securely using my email and password.
-- US-003 – As an Editor, I want to select today's players and generate teams fairly based on roles.
-- US-004 – As a User, I want to view the results of previous matches and see who played in which team.
-- US-005 – As an Admin/Editor, I want to assign fixed roles to specific players on match days.
-- US-006 – As a User, I want to edit my own profile and select which positions I can play.
-- US-007 – As an Admin, I want to set and later update match scores.
-- US-008 – As a User, I want to view today's teams and match scores.
-- US-009 – As an Admin, I want to restrict access based on roles.
+- US-001: As a User, I want to sign up using email/password
+- US-002: As a User, I want to complete onboarding after signup
+- US-003: As a User, I want to create my own player profile with positions and skill rating
+- US-004: As an Admin, I want to see and manage all players, including deactivated ones
+- US-005: As an Editor, I want to create match days and assign players to teams
+- US-006: As a User, I want to submit match results
+- US-007: As a MatchCreator, I want to update or delete my own match
+- US-008: As an Admin, I want to deactivate/reactivate players without deleting their data
+- US-009: As a User, I want to view my own and other public player profiles
+- US-010: As an Admin or Editor, I want to generate balanced teams based on player positions
+- US-011: As a User, I want to view today’s match day without logging in
