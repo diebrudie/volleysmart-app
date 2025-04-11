@@ -1,5 +1,5 @@
-
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg";
@@ -7,6 +7,12 @@ interface LogoProps {
 }
 
 const Logo = ({ size = "md", linkTo = "/" }: LogoProps) => {
+  const { isAuthenticated } = useAuth();
+  
+  const destination = isAuthenticated ? "/dashboard" : "/";
+  
+  const finalLinkTo = (linkTo !== "/" || !isAuthenticated) ? linkTo : destination;
+
   const sizeClasses = {
     sm: "h-6",
     md: "h-8",
@@ -21,9 +27,9 @@ const Logo = ({ size = "md", linkTo = "/" }: LogoProps) => {
     />
   );
 
-  if (linkTo) {
+  if (finalLinkTo) {
     return (
-      <Link to={linkTo} className="flex items-center">
+      <Link to={finalLinkTo} className="flex items-center">
         {logoElement}
       </Link>
     );
