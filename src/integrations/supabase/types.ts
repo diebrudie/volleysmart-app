@@ -67,28 +67,28 @@ export type Database = {
       }
       matches: {
         Row: {
-          added_by_user_id: string | null
-          game_number: number | null
+          added_by_user_id: string
+          game_number: number
           id: string
-          match_day_id: string | null
-          team_a_score: number | null
-          team_b_score: number | null
+          match_day_id: string
+          team_a_score: number
+          team_b_score: number
         }
         Insert: {
-          added_by_user_id?: string | null
-          game_number?: number | null
+          added_by_user_id: string
+          game_number: number
           id?: string
-          match_day_id?: string | null
-          team_a_score?: number | null
-          team_b_score?: number | null
+          match_day_id: string
+          team_a_score: number
+          team_b_score: number
         }
         Update: {
-          added_by_user_id?: string | null
-          game_number?: number | null
+          added_by_user_id?: string
+          game_number?: number
           id?: string
-          match_day_id?: string | null
-          team_a_score?: number | null
-          team_b_score?: number | null
+          match_day_id?: string
+          team_a_score?: number
+          team_b_score?: number
         }
         Relationships: [
           {
@@ -103,18 +103,18 @@ export type Database = {
       player_positions: {
         Row: {
           id: string
-          player_id: string | null
-          position_id: string | null
+          player_id: string
+          position_id: string
         }
         Insert: {
           id?: string
-          player_id?: string | null
-          position_id?: string | null
+          player_id: string
+          position_id: string
         }
         Update: {
           id?: string
-          player_id?: string | null
-          position_id?: string | null
+          player_id?: string
+          position_id?: string
         }
         Relationships: [
           {
@@ -184,21 +184,21 @@ export type Database = {
       team_players: {
         Row: {
           id: string
-          match_team_id: string | null
-          player_id: string | null
-          position_id: string | null
+          match_team_id: string
+          player_id: string
+          position_id: string
         }
         Insert: {
           id?: string
-          match_team_id?: string | null
-          player_id?: string | null
-          position_id?: string | null
+          match_team_id: string
+          player_id: string
+          position_id: string
         }
         Update: {
           id?: string
-          match_team_id?: string | null
-          player_id?: string | null
-          position_id?: string | null
+          match_team_id?: string
+          player_id?: string
+          position_id?: string
         }
         Relationships: [
           {
@@ -226,17 +226,17 @@ export type Database = {
       }
       user_profiles: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
           role: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id: string
           role?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           role?: string
         }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -6,9 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Check, ChevronsUpDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Import the Supabase utility functions
 import { getAllPositions } from "@/integrations/supabase/positions";
@@ -23,6 +38,7 @@ const PlayerOnboarding = () => {
   const [skillLevel, setSkillLevel] = useState(3);
   const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   
   const { user } = useAuth();
@@ -83,6 +99,25 @@ const PlayerOnboarding = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handleSelectPosition = (positionId: string) => {
+    setSelectedPositions((current) => {
+      if (current.includes(positionId)) {
+        return current.filter(id => id !== positionId);
+      } else {
+        return [...current, positionId];
+      }
+    });
+  };
+
+  const getPositionNameById = (positionId: string): string => {
+    const position = positions.find(p => p.id === positionId);
+    return position ? position.name : '';
+  };
+
+  const removePosition = (positionId: string) => {
+    setSelectedPositions(selectedPositions.filter(id => id !== positionId));
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -142,18 +177,65 @@ const PlayerOnboarding = () => {
                 </div>
                 <div>
                   <Label>Positions</Label>
-                  <Select onValueChange={(value) => setSelectedPositions([...value])} multiple>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select your positions" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {positions.map((position) => (
-                        <SelectItem key={position.id} value={position.id}>
-                          {position.name}
-                        </SelectItem>
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between"
+                      >
+                        {selectedPositions.length > 0
+                          ? `${selectedPositions.length} position${selectedPositions.length > 1 ? 's' : ''} selected`
+                          : "Select your positions"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search positions..." />
+                        <CommandEmpty>No position found.</CommandEmpty>
+                        <CommandGroup>
+                          {positions.map((position) => (
+                            <CommandItem
+                              key={position.id}
+                              value={position.name}
+                              onSelect={() => handleSelectPosition(position.id)}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedPositions.includes(position.id) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {position.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {selectedPositions.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedPositions.map(positionId => (
+                        <Badge 
+                          key={positionId}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {getPositionNameById(positionId)}
+                          <button 
+                            type="button" 
+                            onClick={() => removePosition(positionId)}
+                            className="ml-1 rounded-full hover:bg-muted p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  )}
                 </div>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? 'Submitting...' : 'Create Profile'}
