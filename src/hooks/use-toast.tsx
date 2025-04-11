@@ -1,9 +1,6 @@
 
 import { Toast, ToastActionElement, ToastProps } from "@/components/ui/toast";
-import {
-  useToast as useToastPrimitive,
-} from "@radix-ui/react-toast";
-import { useState, useEffect, createContext, ReactNode, useContext } from "react";
+import { useState, createContext, ReactNode, useContext } from "react";
 
 type ToastContextType = {
   toasts: ToastType[];
