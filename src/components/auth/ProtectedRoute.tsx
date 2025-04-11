@@ -1,6 +1,7 @@
 
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Spinner } from '@/components/ui/spinner';
 
 type UserRole = 'admin' | 'editor' | 'user';
 
@@ -14,8 +15,13 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const location = useLocation();
 
   if (isLoading) {
-    // You could render a loading spinner here
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    // Show a spinner while checking authentication status
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner className="h-8 w-8 text-volleyball-primary" />
+        <span className="ml-2 text-gray-600">Loading...</span>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {

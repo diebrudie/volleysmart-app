@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session);
         setSession(session);
         if (session?.user) {
           // Get user profile on auth change
@@ -57,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session);
       setSession(session);
       if (session?.user) {
         getUserProfile(session.user);
@@ -88,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userWithProfile: AuthUser = {
         id: authUser.id,
         email: authUser.email,
-        name: authUser.email?.split('@')[0] || 'User',
+        name: profile?.email?.split('@')[0] || authUser.email?.split('@')[0] || 'User',
         role: profile?.role as UserRole || 'user',
       };
 
@@ -121,6 +123,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: "Success",
         description: "You have successfully logged in",
       });
+      
+      return Promise.resolve();
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
