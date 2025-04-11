@@ -9,6 +9,215 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      match_days: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          date: string
+          id: string
+          notes: string | null
+          team_generated: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          id?: string
+          notes?: string | null
+          team_generated?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          team_generated?: boolean | null
+        }
+        Relationships: []
+      }
+      match_teams: {
+        Row: {
+          id: string
+          match_day_id: string | null
+          team_name: string | null
+        }
+        Insert: {
+          id?: string
+          match_day_id?: string | null
+          team_name?: string | null
+        }
+        Update: {
+          id?: string
+          match_day_id?: string | null
+          team_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_teams_match_day_id_fkey"
+            columns: ["match_day_id"]
+            isOneToOne: false
+            referencedRelation: "match_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          added_by_user_id: string | null
+          game_number: number | null
+          id: string
+          match_day_id: string | null
+          team_a_score: number | null
+          team_b_score: number | null
+        }
+        Insert: {
+          added_by_user_id?: string | null
+          game_number?: number | null
+          id?: string
+          match_day_id?: string | null
+          team_a_score?: number | null
+          team_b_score?: number | null
+        }
+        Update: {
+          added_by_user_id?: string | null
+          game_number?: number | null
+          id?: string
+          match_day_id?: string | null
+          team_a_score?: number | null
+          team_b_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_match_day_id_fkey"
+            columns: ["match_day_id"]
+            isOneToOne: false
+            referencedRelation: "match_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_positions: {
+        Row: {
+          id: string
+          player_id: string | null
+          position_id: string | null
+        }
+        Insert: {
+          id?: string
+          player_id?: string | null
+          position_id?: string | null
+        }
+        Update: {
+          id?: string
+          player_id?: string | null
+          position_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_positions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_positions_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          bio: string | null
+          first_name: string | null
+          id: string
+          image_url: string | null
+          last_name: string | null
+          skill_rating: number | null
+          user_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          first_name?: string | null
+          id?: string
+          image_url?: string | null
+          last_name?: string | null
+          skill_rating?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          first_name?: string | null
+          id?: string
+          image_url?: string | null
+          last_name?: string | null
+          skill_rating?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      positions: {
+        Row: {
+          id: string
+          name: string
+        }
+        Insert: {
+          id?: string
+          name: string
+        }
+        Update: {
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      team_players: {
+        Row: {
+          id: string
+          match_team_id: string | null
+          player_id: string | null
+          position_id: string | null
+        }
+        Insert: {
+          id?: string
+          match_team_id?: string | null
+          player_id?: string | null
+          position_id?: string | null
+        }
+        Update: {
+          id?: string
+          match_team_id?: string | null
+          player_id?: string | null
+          position_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_players_match_team_id_fkey"
+            columns: ["match_team_id"]
+            isOneToOne: false
+            referencedRelation: "match_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_players_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           created_at: string | null

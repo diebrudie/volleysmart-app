@@ -13,7 +13,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  userProfile: User | null; // Added this property
+  userProfile: User | null; // Added for compatibility
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -130,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={{ 
       user, 
-      userProfile: user, // Set userProfile equal to user
+      userProfile: user, // Set userProfile equal to user for compatibility
       isAuthenticated: !!user, 
       isLoading, 
       login, 

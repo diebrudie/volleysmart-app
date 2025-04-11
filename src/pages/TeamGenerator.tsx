@@ -1,12 +1,37 @@
+
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shuffle, Save, Trash, Download, Share, UserPlus } from 'lucide-react';
+import { 
+  Shuffle, Save, Trash, Download, Share, UserPlus, 
+  Users, AlertCircle, Copy
+} from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 // Mock players data
 const allPlayers = Array.from({ length: 24 }, (_, i) => {
@@ -39,6 +64,7 @@ const allPlayers = Array.from({ length: 24 }, (_, i) => {
 
 const TeamGenerator = () => {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const [selectedPlayers, setSelectedPlayers] = useState<number[]>([]);
   const [generatedTeams, setGeneratedTeams] = useState<{ teamA: any[]; teamB: any[] } | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -84,7 +110,7 @@ const TeamGenerator = () => {
     
     toast({
       title: "Teams generated",
-      description: `Created 2 teams with ${halfIndex} players each.`,
+      description: `Created 2 teams with ${Math.ceil(selectedPlayers.length / 2)} players each.`,
     });
   };
 
