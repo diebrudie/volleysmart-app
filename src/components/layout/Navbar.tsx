@@ -1,7 +1,7 @@
 
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Volleyball, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
@@ -19,8 +19,11 @@ const Navbar = () => {
         <div className="w-full py-4 flex items-center justify-between border-b border-gray-200 lg:border-none">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <Volleyball className="h-8 w-8 text-volleyball-primary" />
-              <span className="ml-2 text-xl font-bold text-gray-900">VolleyTeam</span>
+              <img 
+                src="/lovable-uploads/e54f46fd-5eab-4f09-94df-48c27897b119.png" 
+                alt="VolleyMatch Logo" 
+                className="h-8" 
+              />
             </Link>
             <div className="ml-10 space-x-8 hidden md:block">
               {isAuthenticated && (

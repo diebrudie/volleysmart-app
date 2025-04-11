@@ -1,6 +1,5 @@
 
 import { PropsWithChildren } from "react";
-import { Volleyball } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AuthLayout = ({ children }: PropsWithChildren) => {
@@ -9,8 +8,11 @@ const AuthLayout = ({ children }: PropsWithChildren) => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <Link to="/" className="flex items-center">
-            <Volleyball className="h-10 w-10 text-volleyball-primary" />
-            <span className="ml-2 text-2xl font-bold text-gray-900">VolleyTeam</span>
+            <img 
+              src="/lovable-uploads/e54f46fd-5eab-4f09-94df-48c27897b119.png" 
+              alt="VolleyMatch Logo" 
+              className="h-12" 
+            />
           </Link>
         </div>
       </div>
