@@ -20,6 +20,7 @@ const SetBox: React.FC<SetBoxProps> = ({
 }) => {
   const [localTeamAScore, setLocalTeamAScore] = useState<number>(teamAScore || 0);
   const [localTeamBScore, setLocalTeamBScore] = useState<number>(teamBScore || 0);
+  const [isOpen, setIsOpen] = useState(false);
   
   // Determine if the set has been played (both scores are provided)
   const hasBeenPlayed = teamAScore !== null && teamBScore !== null && 
@@ -49,23 +50,24 @@ const SetBox: React.FC<SetBoxProps> = ({
   const handleSubmit = () => {
     if (onScoreUpdate) {
       onScoreUpdate(setNumber, localTeamAScore, localTeamBScore);
+      setIsOpen(false);
     }
   };
 
   return (
     <div 
-      className="rounded-md p-6 flex flex-col items-center relative" 
+      className="rounded-lg p-6 flex flex-col items-center relative" 
       style={{ backgroundColor: getBackgroundColor() }}
     >
-      <h3 className="text-xl font-serif mb-4">SET {setNumber}</h3>
+      <h3 className="text-xl font-serif mb-4 text-center">SET {setNumber}</h3>
       
-      <div className="text-5xl font-bold mb-3">
+      <div className="text-5xl font-bold mb-3 text-center">
         {hasBeenPlayed ? teamAScore : "0"} - {hasBeenPlayed ? teamBScore : "0"}
       </div>
       
-      <p className="text-sm">Team A vs. Team B</p>
+      <p className="text-sm text-center">Team A vs. Team B</p>
       
-      <Dialog>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <button className="absolute top-2 right-2 p-1 hover:bg-black/10 rounded-md transition-colors">
             <Pencil className="h-5 w-5" />
