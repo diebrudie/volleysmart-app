@@ -73,6 +73,8 @@ export default {
 					light: '#F3F4F6', // Light gray
 					dark: '#1F2937', // Dark gray
 					navBlue: '#243F8D', // New color for navbar hover
+					setGrey: '#D8D6D3', // Grey for unplayed sets
+					setYellow: '#FBBE24', // Yellow for played sets
 				}
 			},
 			borderRadius: {

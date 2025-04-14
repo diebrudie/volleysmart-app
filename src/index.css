@@ -108,4 +108,17 @@
   .navbar-link {
     @apply border-b border-transparent hover:border-[#243F8D] transition-colors;
   }
+  
+  /* Set box styles */
+  .set-box {
+    @apply rounded-md p-6 flex flex-col items-center relative;
+  }
+  
+  .set-box--grey {
+    @apply bg-[#D8D6D3];
+  }
+  
+  .set-box--yellow {
+    @apply bg-[#FBBE24];
+  }
 }

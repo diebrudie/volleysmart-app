@@ -1,8 +1,8 @@
+
 import { Link } from "react-router-dom";
 import { 
   Calendar, 
   Users, 
-  Clipboard, 
   CircleUser, 
   BarChart2, 
   FileText, 
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import SetBox from "@/components/match/SetBox";
 
 // Mock data for today's match
 const todaysMatch = {
@@ -34,10 +35,11 @@ const todaysMatch = {
     { id: 12, name: "Avery Williams", position: "Outside Hitter" },
   ],
   scores: [
-    { gameNumber: 1, teamA: 25, teamB: 22 },
-    { gameNumber: 2, teamA: 18, teamB: 25 },
-    { gameNumber: 3, teamA: 25, teamB: 19 },
-    { gameNumber: 4, teamA: 25, teamB: 21 },
+    { gameNumber: 1, teamA: 25, teamB: 19 },
+    { gameNumber: 2, teamA: 27, teamB: 25 },
+    { gameNumber: 3, teamA: 22, teamB: 25 },
+    { gameNumber: 4, teamA: 25, teamB: 20 },
+    { gameNumber: 5, teamA: 0, teamB: 0 }, // Not played yet
   ]
 };
 
@@ -62,198 +64,178 @@ const Dashboard = () => {
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
+  // Calculate the match result
+  const teamAWins = todaysMatch.scores.filter(game => game.teamA > game.teamB).length;
+  const teamBWins = todaysMatch.scores.filter(game => game.teamB > game.teamA).length;
+  
+  // Determine the winner or if it's still TBD
+  const getWinnerText = () => {
+    if (teamAWins > teamBWins) return "Team A";
+    if (teamBWins > teamAWins) return "Team B";
+    return "TBD";
+  };
+
+  const handleSetScoreUpdate = (setNumber: number, teamAScore: number, teamBScore: number) => {
+    console.log(`Set ${setNumber} updated: Team A ${teamAScore} - Team B ${teamBScore}`);
+    // In a real app, this would update the backend
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Welcome Header */}
+          {/* Today's Game Overview */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.name}</h1>
-            <p className="text-gray-600">Here's what's happening with your volleyball matches.</p>
+            <h1 className="text-4xl font-serif mb-2">Today's Game Overview</h1>
+            <p className="text-gray-600">{formatDate(todaysMatch.date)}</p>
           </div>
 
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Today's Match Section */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader className="bg-volleyball-primary text-white">
-                  <CardTitle className="flex items-center">
-                    <Calendar className="mr-2 h-5 w-5" />
-                    Today's Match Day
-                  </CardTitle>
-                  <CardDescription className="text-white/80">
-                    {formatDate(todaysMatch.date)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Team A */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3 text-volleyball-primary">Team A</h3>
-                      <ul className="space-y-2">
-                        {todaysMatch.teamA.map(player => (
-                          <li key={player.id} className="flex items-center p-2 bg-gray-50 rounded-md">
-                            <div className="w-8 h-8 bg-volleyball-secondary rounded-full flex items-center justify-center text-white text-sm font-medium">
-                              {player.name.charAt(0)}
-                            </div>
-                            <div className="ml-3">
-                              <p className="text-sm font-medium">{player.name}</p>
-                              <p className="text-xs text-gray-500">{player.position}</p>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Team B */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3 text-volleyball-accent">Team B</h3>
-                      <ul className="space-y-2">
-                        {todaysMatch.teamB.map(player => (
-                          <li key={player.id} className="flex items-center p-2 bg-gray-50 rounded-md">
-                            <div className="w-8 h-8 bg-volleyball-accent rounded-full flex items-center justify-center text-white text-sm font-medium">
-                              {player.name.charAt(0)}
-                            </div>
-                            <div className="ml-3">
-                              <p className="text-sm font-medium">{player.name}</p>
-                              <p className="text-xs text-gray-500">{player.position}</p>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+          {/* Main Content */}
+          <div className="grid grid-cols-1 gap-8">
+            {/* Winner Card */}
+            <div className="mb-8">
+              <div className="rounded-lg overflow-hidden border border-gray-200 max-w-2xl">
+                <div className="bg-volleyball-primary text-white p-4 text-center">
+                  <h2 className="text-2xl font-bold">WINNER</h2>
+                </div>
+                <div className="bg-white p-6 text-center">
+                  <h3 className="text-3xl font-bold mb-4">{getWinnerText()}</h3>
+                  <div className="text-5xl font-bold">
+                    <span className="text-green-500">{teamAWins}</span> - <span className="text-purple-500">{teamBWins}</span>
                   </div>
+                </div>
+              </div>
+            </div>
 
-                  {/* Game Results */}
-                  <div className="mt-6">
-                    <h3 className="text-lg font-semibold mb-3">Game Results</h3>
-                    <div className="grid grid-cols-4 gap-2">
-                      {todaysMatch.scores.map(score => (
-                        <div key={score.gameNumber} className="bg-gray-50 p-3 rounded-md text-center">
-                          <p className="text-xs font-medium text-gray-500">Game {score.gameNumber}</p>
-                          <p className="text-lg font-bold">
-                            <span className={score.teamA > score.teamB ? "text-volleyball-primary" : "text-gray-600"}>
-                              {score.teamA}
-                            </span>
-                            {" - "}
-                            <span className={score.teamB > score.teamA ? "text-volleyball-accent" : "text-gray-600"}>
-                              {score.teamB}
-                            </span>
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+            {/* Teams */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-8">
+              {/* Team A */}
+              <div>
+                <h3 className="text-2xl font-bold text-green-500 mb-4">TEAM A</h3>
+                <ul className="space-y-2">
+                  {todaysMatch.teamA.map((player, index) => (
+                    <li key={player.id} className="flex items-center">
+                      <span className="font-medium mr-2">{index + 1}.</span>
+                      <span>{player.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-                  {/* Actions */}
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <Link to={`/matches/${1}`}>
-                      <Button variant="outline">
-                        <FileText className="mr-2 h-4 w-4" />
-                        View Details
-                      </Button>
-                    </Link>
-                    {isAdminOrEditor && (
-                      <Link to="/generate-teams">
-                        <Button>
-                          <Shuffle className="mr-2 h-4 w-4" />
-                          Generate New Teams
-                        </Button>
-                      </Link>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Team B */}
+              <div>
+                <h3 className="text-2xl font-bold text-purple-500 mb-4">TEAM B</h3>
+                <ul className="space-y-2">
+                  {todaysMatch.teamB.map((player, index) => (
+                    <li key={player.id} className="flex items-center">
+                      <span className="font-medium mr-2">{index + 1}.</span>
+                      <span>{player.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Set Boxes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {[1, 2, 3, 4, 5].map((setNum) => {
+                const setData = todaysMatch.scores.find(s => s.gameNumber === setNum);
+                return (
+                  <SetBox 
+                    key={setNum}
+                    setNumber={setNum}
+                    teamAScore={setData?.teamA}
+                    teamBScore={setData?.teamB}
+                    onScoreUpdate={handleSetScoreUpdate}
+                  />
+                );
+              })}
             </div>
 
             {/* Quick Links Section */}
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Link to="/matches" className="flex items-center p-3 hover:bg-gray-50 rounded-md transition-colors">
-                    <div className="h-10 w-10 bg-volleyball-primary/10 rounded-md flex items-center justify-center mr-4">
-                      <Calendar className="h-5 w-5 text-volleyball-primary" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Matches</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {recentMatches.map(match => (
+                        <li key={match.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                          <Link to={`/matches/${match.id}`} className="flex justify-between items-center hover:bg-gray-50 p-2 rounded-md transition-colors">
+                            <div>
+                              <p className="font-medium">{new Date(match.date).toLocaleDateString()}</p>
+                              <p className="text-sm text-gray-500">Team A vs Team B</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold">{match.teamAScore} - {match.teamBScore}</p>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-4">
+                      <Link to="/matches">
+                        <Button variant="outline" className="w-full">View All Matches</Button>
+                      </Link>
                     </div>
-                    <div>
-                      <p className="font-medium">Match History</p>
-                      <p className="text-sm text-gray-500">View all past matches</p>
-                    </div>
-                  </Link>
-                  
-                  <Link to="/players" className="flex items-center p-3 hover:bg-gray-50 rounded-md transition-colors">
-                    <div className="h-10 w-10 bg-volleyball-primary/10 rounded-md flex items-center justify-center mr-4">
-                      <Users className="h-5 w-5 text-volleyball-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Player Directory</p>
-                      <p className="text-sm text-gray-500">Manage all players</p>
-                    </div>
-                  </Link>
-                  
-                  <Link to={`/players/${user?.id}`} className="flex items-center p-3 hover:bg-gray-50 rounded-md transition-colors">
-                    <div className="h-10 w-10 bg-volleyball-primary/10 rounded-md flex items-center justify-center mr-4">
-                      <CircleUser className="h-5 w-5 text-volleyball-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">My Profile</p>
-                      <p className="text-sm text-gray-500">Edit your details</p>
-                    </div>
-                  </Link>
+                  </CardContent>
+                </Card>
+              </div>
 
-                  {isAdminOrEditor && (
-                    <Link to="/generate-teams" className="flex items-center p-3 hover:bg-gray-50 rounded-md transition-colors">
+              <div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Link to="/matches" className="flex items-center p-3 hover:bg-gray-50 rounded-md transition-colors">
                       <div className="h-10 w-10 bg-volleyball-primary/10 rounded-md flex items-center justify-center mr-4">
-                        <Shuffle className="h-5 w-5 text-volleyball-primary" />
+                        <Calendar className="h-5 w-5 text-volleyball-primary" />
                       </div>
                       <div>
-                        <p className="font-medium">Team Generator</p>
-                        <p className="text-sm text-gray-500">Create balanced teams</p>
+                        <p className="font-medium">Match History</p>
+                        <p className="text-sm text-gray-500">View all past matches</p>
                       </div>
                     </Link>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Recent Matches Summary */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Recent Matches</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {recentMatches.map(match => (
-                      <li key={match.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                        <Link to={`/matches/${match.id}`} className="flex justify-between items-center hover:bg-gray-50 p-2 rounded-md transition-colors">
-                          <div>
-                            <p className="font-medium">{new Date(match.date).toLocaleDateString()}</p>
-                            <p className="text-sm text-gray-500">
-                              Team A vs Team B
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold">
-                              {match.teamAScore} - {match.teamBScore}
-                            </p>
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-4">
-                    <Link to="/matches">
-                      <Button variant="outline" className="w-full">
-                        View All Matches
-                      </Button>
+                    
+                    <Link to="/players" className="flex items-center p-3 hover:bg-gray-50 rounded-md transition-colors">
+                      <div className="h-10 w-10 bg-volleyball-primary/10 rounded-md flex items-center justify-center mr-4">
+                        <Users className="h-5 w-5 text-volleyball-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Player Directory</p>
+                        <p className="text-sm text-gray-500">Manage all players</p>
+                      </div>
                     </Link>
-                  </div>
-                </CardContent>
-              </Card>
+                    
+                    <Link to={`/players/${user?.id}`} className="flex items-center p-3 hover:bg-gray-50 rounded-md transition-colors">
+                      <div className="h-10 w-10 bg-volleyball-primary/10 rounded-md flex items-center justify-center mr-4">
+                        <CircleUser className="h-5 w-5 text-volleyball-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">My Profile</p>
+                        <p className="text-sm text-gray-500">Edit your details</p>
+                      </div>
+                    </Link>
+
+                    {isAdminOrEditor && (
+                      <Link to="/generate-teams" className="flex items-center p-3 hover:bg-gray-50 rounded-md transition-colors">
+                        <div className="h-10 w-10 bg-volleyball-primary/10 rounded-md flex items-center justify-center mr-4">
+                          <Shuffle className="h-5 w-5 text-volleyball-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Team Generator</p>
+                          <p className="text-sm text-gray-500">Create balanced teams</p>
+                        </div>
+                      </Link>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
