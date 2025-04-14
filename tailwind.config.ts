@@ -72,6 +72,7 @@ export default {
 					danger: '#F87171', // Red
 					light: '#F3F4F6', // Light gray
 					dark: '#1F2937', // Dark gray
+					navBlue: '#243F8D', // New color for navbar hover
 				}
 			},
 			borderRadius: {

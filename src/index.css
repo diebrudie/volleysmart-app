@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -101,5 +102,10 @@
   
   .section-container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12;
+  }
+  
+  /* Add hover effect for navbar links with the specified color */
+  .navbar-link {
+    @apply border-b border-transparent hover:border-[#243F8D] transition-colors;
   }
 }
