@@ -104,7 +104,9 @@ const Dashboard = () => {
                   <h2 className="text-2xl font-bold">WINNER</h2>
                 </div>
                 <div className="bg-white p-6 text-center flex-grow flex flex-col justify-center">
-                  <h3 className="text-3xl font-bold mb-4">{winner}</h3>
+                  <h3 className="text-3xl font-bold mb-4">
+                    {hasPlayedAnySet ? winner : "TBD"}
+                  </h3>
                   <div className="text-5xl font-bold">
                     <span className="text-green-500">{teamAWins}</span> - <span className="text-purple-500">{teamBWins}</span>
                   </div>
@@ -116,26 +118,24 @@ const Dashboard = () => {
             <div className="h-full">
               <div className="flex h-full rounded-lg overflow-hidden border border-gray-200">
                 {/* Team A Card */}
-                <div className="w-1/2 bg-green-100 p-4">
-                  <h3 className="text-lg font-bold mb-3 bg-green-500 text-white py-1 px-2 rounded text-center">Team A</h3>
-                  <ul className="space-y-1">
+                <div className="w-1/2 bg-green-100 p-0">
+                  <h3 className="bg-green-500 text-white py-1 px-2 text-center">Team A</h3>
+                  <ul className="space-y-1 p-4">
                     {matchData.teamA.map((player) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium">{player.name.split(' ')[0]}</span>
-                        <span className="text-xs text-gray-600 block">{player.position}</span>
+                        <span className="font-medium">{player.name.split(' ')[0]}</span> - <span className="text-gray-600">{player.position}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 
                 {/* Team B Card */}
-                <div className="w-1/2 bg-purple-100 p-4">
-                  <h3 className="text-lg font-bold mb-3 bg-purple-500 text-white py-1 px-2 rounded text-center">Team B</h3>
-                  <ul className="space-y-1">
+                <div className="w-1/2 bg-purple-100 p-0">
+                  <h3 className="bg-purple-500 text-white py-1 px-2 text-center">Team B</h3>
+                  <ul className="space-y-1 p-4">
                     {matchData.teamB.map((player) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium">{player.name.split(' ')[0]}</span>
-                        <span className="text-xs text-gray-600 block">{player.position}</span>
+                        <span className="font-medium">{player.name.split(' ')[0]}</span> - <span className="text-gray-600">{player.position}</span>
                       </li>
                     ))}
                   </ul>
@@ -144,29 +144,31 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Sets Layout - Special layout with Set 5 on top and full width */}
-          <div className="grid grid-cols-3 gap-6">
-            {/* Set 5 takes full width (spans 3 columns) */}
-            <SetBox
-              key={5}
-              setNumber={5}
-              teamAScore={matchData.scores.find(score => score.gameNumber === 5)?.teamA}
-              teamBScore={matchData.scores.find(score => score.gameNumber === 5)?.teamB}
-              onScoreUpdate={handleSetScoreUpdate}
-              fullWidth={true}
-            />
+          {/* Sets Layout - Grid with first box (Set 5) spanning 1 column and 2 rows */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Set 5 taking full height of 2 rows */}
+            <div className="md:row-span-2">
+              <SetBox
+                key={5}
+                setNumber={5}
+                teamAScore={matchData.scores.find(score => score.gameNumber === 5)?.teamA}
+                teamBScore={matchData.scores.find(score => score.gameNumber === 5)?.teamB}
+                onScoreUpdate={handleSetScoreUpdate}
+              />
+            </div>
             
-            {/* Sets 1-4 in order */}
+            {/* Sets 1-4 */}
             {[1, 2, 3, 4].map((setNumber) => {
               const setData = matchData.scores.find(score => score.gameNumber === setNumber);
               return (
-                <SetBox
-                  key={setNumber}
-                  setNumber={setNumber}
-                  teamAScore={setData?.teamA}
-                  teamBScore={setData?.teamB}
-                  onScoreUpdate={handleSetScoreUpdate}
-                />
+                <div key={setNumber}>
+                  <SetBox
+                    setNumber={setNumber}
+                    teamAScore={setData?.teamA}
+                    teamBScore={setData?.teamB}
+                    onScoreUpdate={handleSetScoreUpdate}
+                  />
+                </div>
               );
             })}
           </div>

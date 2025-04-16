@@ -79,7 +79,7 @@ const SetBox: React.FC<SetBoxProps> = ({
 
   return (
     <div 
-      className={`rounded-lg p-6 flex flex-col items-center relative ${fullWidth ? 'col-span-3' : ''}`}
+      className="rounded-lg p-6 flex flex-col items-center justify-center relative h-full"
       style={{ backgroundColor: getBackgroundColor() }}
     >
       <h3 className="text-xl font-serif mb-4 text-center">SET {setNumber}</h3>
@@ -116,7 +116,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                 />
               </div>
               
-              <div className="text-2xl font-medium text-center px-4">vs.</div>
+              <div className="text-2xl font-medium text-center">vs.</div>
               
               <div className="text-center">
                 <p className="text-sm font-medium mb-2 text-purple-500">Team B</p>
