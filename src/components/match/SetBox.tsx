@@ -1,4 +1,3 @@
-
 import React, { useState, KeyboardEvent, useRef } from 'react';
 import { Pencil } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -26,11 +25,9 @@ const SetBox: React.FC<SetBoxProps> = ({
   const isMobile = useIsMobile();
   const teamAInputRef = useRef<HTMLInputElement>(null);
   
-  // Determine if the set has been played (both scores are provided)
   const hasBeenPlayed = teamAScore !== null && teamBScore !== null && 
                         (teamAScore > 0 || teamBScore > 0);
   
-  // Set opacity based on set number
   const getOpacity = () => {
     switch(setNumber) {
       case 1: return '0.3';
@@ -42,7 +39,6 @@ const SetBox: React.FC<SetBoxProps> = ({
     }
   };
 
-  // Get background color based on whether set has been played
   const getBackgroundColor = () => {
     if (hasBeenPlayed) {
       return `rgba(251, 190, 36, ${getOpacity()})`; // Yellow with opacity
@@ -67,7 +63,6 @@ const SetBox: React.FC<SetBoxProps> = ({
 
   const handleDialogOpen = (open: boolean) => {
     setIsOpen(open);
-    // Focus the first input when dialog opens
     if (open) {
       setTimeout(() => {
         if (teamAInputRef.current) {
@@ -102,7 +97,7 @@ const SetBox: React.FC<SetBoxProps> = ({
           </DialogHeader>
           
           <div className="py-6">
-            <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex items-center justify-center gap-4 mb-6">
               <div className="text-center">
                 <p className="text-sm font-medium mb-2 text-green-500">Team A</p>
                 <input
@@ -116,7 +111,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                 />
               </div>
               
-              <div className="text-2xl font-medium text-center">vs.</div>
+              <div className="text-2xl font-medium self-end">vs.</div>
               
               <div className="text-center">
                 <p className="text-sm font-medium mb-2 text-purple-500">Team B</p>
