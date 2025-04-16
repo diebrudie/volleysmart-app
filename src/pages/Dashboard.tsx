@@ -101,7 +101,7 @@ const Dashboard = () => {
             <div className="h-full">
               <div className="rounded-lg overflow-hidden border border-gray-200 h-full flex flex-col">
                 <div className="bg-volleyball-primary text-white p-4 text-center">
-                  <h2 className="text-2xl font-bold">WINNER</h2>
+                  <h2 className="text-2xl font-bold">SCORE</h2>
                 </div>
                 <div className="bg-white p-6 text-center flex-grow flex flex-col justify-center">
                   <h3 className="text-3xl font-bold mb-4">
