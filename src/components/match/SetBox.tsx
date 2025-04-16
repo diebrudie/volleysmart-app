@@ -1,22 +1,23 @@
 
-import React from 'react';
+import React, { useState, KeyboardEvent } from 'react';
 import { Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 
 interface SetBoxProps {
   setNumber: number;
   teamAScore?: number | null;
   teamBScore?: number | null;
   onScoreUpdate?: (setNumber: number, teamAScore: number, teamBScore: number) => void;
+  fullWidth?: boolean;
 }
 
 const SetBox: React.FC<SetBoxProps> = ({ 
   setNumber, 
   teamAScore = null, 
   teamBScore = null,
-  onScoreUpdate
+  onScoreUpdate,
+  fullWidth = false
 }) => {
   const [localTeamAScore, setLocalTeamAScore] = useState<number>(teamAScore || 0);
   const [localTeamBScore, setLocalTeamBScore] = useState<number>(teamBScore || 0);
@@ -54,9 +55,15 @@ const SetBox: React.FC<SetBoxProps> = ({
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    }
+  };
+
   return (
     <div 
-      className="rounded-lg p-6 flex flex-col items-center relative" 
+      className={`rounded-lg p-6 flex flex-col items-center relative ${fullWidth ? 'col-span-3' : ''}`}
       style={{ backgroundColor: getBackgroundColor() }}
     >
       <h3 className="text-xl font-serif mb-4 text-center">SET {setNumber}</h3>
@@ -81,26 +88,28 @@ const SetBox: React.FC<SetBoxProps> = ({
           <div className="py-6">
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="text-center">
-                <p className="text-sm font-medium mb-2">Team A</p>
+                <p className="text-sm font-medium mb-2 text-green-500">Team A</p>
                 <input
                   type="number"
                   min="0"
                   value={localTeamAScore}
                   onChange={(e) => setLocalTeamAScore(parseInt(e.target.value) || 0)}
-                  className="w-20 h-14 text-center text-2xl border rounded-md"
+                  onKeyDown={handleKeyDown}
+                  className="w-20 h-14 text-center text-2xl border rounded-md border-green-500"
                 />
               </div>
               
-              <div className="text-2xl font-medium">vs.</div>
+              <div className="text-2xl font-medium flex-grow text-center">vs.</div>
               
               <div className="text-center">
-                <p className="text-sm font-medium mb-2">Team B</p>
+                <p className="text-sm font-medium mb-2 text-purple-500">Team B</p>
                 <input
                   type="number"
                   min="0"
                   value={localTeamBScore}
                   onChange={(e) => setLocalTeamBScore(parseInt(e.target.value) || 0)}
-                  className="w-20 h-14 text-center text-2xl border rounded-md"
+                  onKeyDown={handleKeyDown}
+                  className="w-20 h-14 text-center text-2xl border rounded-md border-purple-500"
                 />
               </div>
             </div>

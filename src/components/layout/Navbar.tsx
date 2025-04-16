@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -54,7 +53,11 @@ const Navbar = () => {
         <div className="w-full py-4 flex items-center justify-between border-b border-gray-200 lg:border-none">
           <div className="flex items-center">
             <Logo size="md" linkTo={isAuthenticated ? "/dashboard" : "/"} />
-            <div className="ml-10 space-x-8 hidden md:flex">
+          </div>
+          
+          {/* Centered Navigation Links */}
+          <div className="flex-grow hidden md:flex justify-center">
+            <div className="space-x-8">
               {navItems.filter(item => item.visible).map((item) => (
                 <Link
                   key={item.path}
@@ -66,6 +69,7 @@ const Navbar = () => {
               ))}
             </div>
           </div>
+          
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
@@ -143,7 +147,7 @@ const Navbar = () => {
                   <SheetClose asChild key={item.path}>
                     <Link 
                       to={item.path} 
-                      className="px-4 py-3 text-base font-medium hover:bg-gray-50"
+                      className="px-4 py-3 text-base font-medium hover:bg-gray-50 text-center"
                       onClick={() => setIsOpen(false)}
                     >
                       {item.label}
