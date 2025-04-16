@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import Navbar from "@/components/layout/Navbar";
 import SetBox from "@/components/match/SetBox";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -36,6 +37,7 @@ const initialMatch = {
 const Dashboard = () => {
   const { user } = useAuth();
   const [matchData, setMatchData] = useState(initialMatch);
+  const isMobile = useIsMobile();
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -94,14 +96,14 @@ const Dashboard = () => {
           </div>
 
           {/* Main Content */}
-          <div className="flex flex-col md:flex-row gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Left Column - Winner Card */}
-            <div className="md:w-1/2">
-              <div className="rounded-lg overflow-hidden border border-gray-200">
+            <div className="h-full">
+              <div className="rounded-lg overflow-hidden border border-gray-200 h-full flex flex-col">
                 <div className="bg-volleyball-primary text-white p-4 text-center">
                   <h2 className="text-2xl font-bold">WINNER</h2>
                 </div>
-                <div className="bg-white p-6 text-center">
+                <div className="bg-white p-6 text-center flex-grow flex flex-col justify-center">
                   <h3 className="text-3xl font-bold mb-4">{winner}</h3>
                   <div className="text-5xl font-bold">
                     <span className="text-green-500">{teamAWins}</span> - <span className="text-purple-500">{teamBWins}</span>
@@ -111,31 +113,29 @@ const Dashboard = () => {
             </div>
 
             {/* Right Column - Team Cards */}
-            <div className="md:w-1/2">
-              <div className="flex h-full">
+            <div className="h-full">
+              <div className="flex h-full rounded-lg overflow-hidden border border-gray-200">
                 {/* Team A Card */}
-                <div className="w-1/2 bg-green-100 rounded-l-lg p-4">
+                <div className="w-1/2 bg-green-100 p-4">
                   <h3 className="text-lg font-bold mb-3 bg-green-500 text-white py-1 px-2 rounded text-center">Team A</h3>
-                  <ul className="space-y-2">
-                    {matchData.teamA.map((player, index) => (
+                  <ul className="space-y-1">
+                    {matchData.teamA.map((player) => (
                       <li key={player.id} className="text-sm">
-                        <span className="mr-2">{index + 1}.</span>
-                        <span>{player.name} - </span>
-                        <span className="font-medium">{player.position}</span>
+                        <span className="font-medium">{player.name.split(' ')[0]}</span>
+                        <span className="text-xs text-gray-600 block">{player.position}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 
                 {/* Team B Card */}
-                <div className="w-1/2 bg-purple-100 rounded-r-lg p-4">
+                <div className="w-1/2 bg-purple-100 p-4">
                   <h3 className="text-lg font-bold mb-3 bg-purple-500 text-white py-1 px-2 rounded text-center">Team B</h3>
-                  <ul className="space-y-2">
-                    {matchData.teamB.map((player, index) => (
+                  <ul className="space-y-1">
+                    {matchData.teamB.map((player) => (
                       <li key={player.id} className="text-sm">
-                        <span className="mr-2">{index + 1}.</span>
-                        <span>{player.name} - </span>
-                        <span className="font-medium">{player.position}</span>
+                        <span className="font-medium">{player.name.split(' ')[0]}</span>
+                        <span className="text-xs text-gray-600 block">{player.position}</span>
                       </li>
                     ))}
                   </ul>
@@ -144,8 +144,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Set Boxes - Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Sets Layout - Special layout with Set 5 on top and full width */}
+          <div className="grid grid-cols-3 gap-6">
             {/* Set 5 takes full width (spans 3 columns) */}
             <SetBox
               key={5}
@@ -156,8 +156,8 @@ const Dashboard = () => {
               fullWidth={true}
             />
             
-            {/* Sets 4, 2, 3, 1 each take one column */}
-            {[4, 2, 3, 1].map((setNumber) => {
+            {/* Sets 1-4 in order */}
+            {[1, 2, 3, 4].map((setNumber) => {
               const setData = matchData.scores.find(score => score.gameNumber === setNumber);
               return (
                 <SetBox
