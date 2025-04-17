@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -57,7 +56,16 @@ export const GeneratedTeams = ({
   };
 
   return (
-    <Card>
+    <Card className="relative">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="absolute top-2 right-2 z-10"
+        onClick={() => setEditDialogOpen(true)}
+      >
+        <Edit className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+      </Button>
+
       <CardHeader className="border-b">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -93,14 +101,12 @@ export const GeneratedTeams = ({
       </CardHeader>
       <CardContent className="p-0">
         <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Team A */}
           <TeamTable 
             team={teams.teamA} 
             teamLetter="A" 
             colorClass="volleyball-primary" 
           />
           
-          {/* Team B */}
           <TeamTable 
             team={teams.teamB} 
             teamLetter="B" 
