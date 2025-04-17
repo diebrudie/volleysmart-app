@@ -79,6 +79,10 @@ export const GeneratedTeams = ({
               <Copy className="mr-2 h-4 w-4" />
               Copy
             </Button>
+            <Button variant="default" onClick={() => setSaveDialogOpen(true)}>
+              <Save className="mr-2 h-4 w-4" />
+              Save
+            </Button>
             <SaveMatchDialog 
               open={saveDialogOpen} 
               onOpenChange={setSaveDialogOpen} 
