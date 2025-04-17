@@ -63,6 +63,14 @@ const TeamGenerator = () => {
     });
   };
 
+  const updateTeams = (newTeams: { teamA: any[]; teamB: any[] }) => {
+    setGeneratedTeams(newTeams);
+    toast({
+      title: "Teams updated",
+      description: "Team composition has been manually updated.",
+    });
+  };
+
   const handleSaveMatch = (matchDetails: { date: string; location: string; notes: string }) => {
     // In a real app, this would save the teams and match details to the database
     toast({
@@ -102,6 +110,7 @@ const TeamGenerator = () => {
                 <GeneratedTeams
                   teams={generatedTeams}
                   onRegenerateTeams={regenerateTeams}
+                  onUpdateTeams={updateTeams}
                   onSaveMatch={handleSaveMatch}
                 />
               ) : (

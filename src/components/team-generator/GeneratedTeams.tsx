@@ -7,9 +7,10 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Save, Shuffle } from "lucide-react";
+import { Copy, Edit, Save, Shuffle } from "lucide-react";
 import { TeamTable } from "./TeamTable";
 import { SaveMatchDialog } from "./SaveMatchDialog";
+import { TeamEditDialog } from "./TeamEditDialog";
 import { useState } from "react";
 
 interface Player {
@@ -26,15 +27,18 @@ interface GeneratedTeamsProps {
     teamB: Player[];
   };
   onRegenerateTeams: () => void;
+  onUpdateTeams: (teams: { teamA: Player[]; teamB: Player[] }) => void;
   onSaveMatch: (matchDetails: { date: string; location: string; notes: string }) => void;
 }
 
 export const GeneratedTeams = ({ 
   teams, 
   onRegenerateTeams, 
+  onUpdateTeams,
   onSaveMatch 
 }: GeneratedTeamsProps) => {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const copyTeams = () => {
     let text = "Volleyball Teams\n\n";
@@ -67,6 +71,10 @@ export const GeneratedTeams = ({
               <Shuffle className="mr-2 h-4 w-4" />
               Regenerate
             </Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
             <Button variant="outline" onClick={copyTeams}>
               <Copy className="mr-2 h-4 w-4" />
               Copy
@@ -89,15 +97,21 @@ export const GeneratedTeams = ({
           />
           
           {/* Team B */}
-          <div className="p-6">
-            <TeamTable 
-              team={teams.teamB} 
-              teamLetter="B" 
-              colorClass="volleyball-accent" 
-            />
-          </div>
+          <TeamTable 
+            team={teams.teamB} 
+            teamLetter="B" 
+            colorClass="volleyball-accent" 
+          />
         </div>
       </CardContent>
+      
+      <TeamEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        teams={teams}
+        onUpdateTeams={onUpdateTeams}
+        onRandomizeTeams={onRegenerateTeams}
+      />
     </Card>
   );
 };
