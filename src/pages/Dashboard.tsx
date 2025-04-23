@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -144,10 +143,26 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Sets Layout - Grid with first box (Set 5) spanning 1 column and 2 rows */}
+          {/* Sets Layout - New grid structure */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Set 5 taking full height of 2 rows */}
-            <div className="md:row-span-2">
+            {/* Sets 1-2 in first column */}
+            <div className="space-y-6">
+              {[1, 2].map((setNumber) => {
+                const setData = matchData.scores.find(score => score.gameNumber === setNumber);
+                return (
+                  <SetBox
+                    key={setNumber}
+                    setNumber={setNumber}
+                    teamAScore={setData?.teamA}
+                    teamBScore={setData?.teamB}
+                    onScoreUpdate={handleSetScoreUpdate}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Set 5 in second column, spanning full height */}
+            <div className="md:col-span-1 md:row-span-2">
               <SetBox
                 key={5}
                 setNumber={5}
@@ -156,21 +171,22 @@ const Dashboard = () => {
                 onScoreUpdate={handleSetScoreUpdate}
               />
             </div>
-            
-            {/* Sets 1-4 */}
-            {[1, 2, 3, 4].map((setNumber) => {
-              const setData = matchData.scores.find(score => score.gameNumber === setNumber);
-              return (
-                <div key={setNumber}>
+
+            {/* Sets 3-4 in third column */}
+            <div className="space-y-6">
+              {[3, 4].map((setNumber) => {
+                const setData = matchData.scores.find(score => score.gameNumber === setNumber);
+                return (
                   <SetBox
+                    key={setNumber}
                     setNumber={setNumber}
                     teamAScore={setData?.teamA}
                     teamBScore={setData?.teamB}
                     onScoreUpdate={handleSetScoreUpdate}
                   />
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </main>
