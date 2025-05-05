@@ -10,6 +10,7 @@ interface PlayerItemProps {
     preferredPosition: string;
     skillRating: number;
     availability: boolean;
+    gender: 'male' | 'female' | 'other';
   };
   isSelected: boolean;
   onSelect: (playerId: number) => void;
@@ -33,7 +34,7 @@ export const PlayerItem = ({ player, isSelected, onSelect }: PlayerItemProps) =>
           htmlFor={`player-${player.id}`}
           className="font-medium text-gray-900 cursor-pointer"
         >
-          {player.name}
+          {player.name} <span className="text-xs ml-1 text-gray-500">({player.gender})</span>
         </label>
         <div className="flex flex-wrap gap-1 mt-1">
           {player.positions.map(position => (

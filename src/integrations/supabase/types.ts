@@ -137,6 +137,7 @@ export type Database = {
         Row: {
           bio: string | null
           first_name: string
+          gender: string
           id: string
           image_url: string | null
           is_active: boolean
@@ -148,6 +149,7 @@ export type Database = {
         Insert: {
           bio?: string | null
           first_name: string
+          gender?: string
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -159,6 +161,7 @@ export type Database = {
         Update: {
           bio?: string | null
           first_name?: string
+          gender?: string
           id?: string
           image_url?: string | null
           is_active?: boolean

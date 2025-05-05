@@ -1,5 +1,5 @@
 
-// Mock players data
+// Mock players data with gender added
 export const allPlayers = Array.from({ length: 24 }, (_, i) => {
   const positions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite Hitter", "Libero"];
   const randomPositions = [];
@@ -24,6 +24,7 @@ export const allPlayers = Array.from({ length: 24 }, (_, i) => {
     positions: randomPositions,
     preferredPosition: randomPositions[0],
     skillRating: Math.floor(Math.random() * 3) + 3, // Rating 3-5
-    availability: Math.random() > 0.2, // 80% available
+    availability: Math.random() > 0.2, // 80% available,
+    gender: Math.random() > 0.5 ? 'male' : 'female' // Add gender information
   };
 });
