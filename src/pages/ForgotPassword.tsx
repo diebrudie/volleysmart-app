@@ -74,16 +74,19 @@ const ForgotPassword = () => {
         </CardHeader>
         <CardContent className="px-0">
           {isSubmitted ? (
-            <div className="text-center py-8">
-              <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
-                <Mail className="h-6 w-6 text-green-600" />
+            <div className="text-center py-6">
+              <div className="mx-auto w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                <Mail className="h-7 w-7 text-green-600" />
               </div>
-              <h3 className="text-lg font-medium mb-2">Check your email</h3>
-              <p className="text-gray-600 mb-6">
-                We've sent a password reset link to your email address.
+              <h3 className="text-xl font-medium mb-3">Check your email</h3>
+              <p className="text-gray-600 mb-4 px-4">
+                We've sent a password reset link to your email address. 
+                <span className="block mt-2">
+                  It may take a few minutes to arrive. Please check your spam or junk folder if you don't see it.
+                </span>
               </p>
-              <Button variant="outline" asChild>
-                <Link to="/login">Back to login</Link>
+              <Button asChild className="mt-3">
+                <Link to="/login">Return to login</Link>
               </Button>
             </div>
           ) : (
