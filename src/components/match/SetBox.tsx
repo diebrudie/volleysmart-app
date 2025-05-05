@@ -88,8 +88,8 @@ const SetBox: React.FC<SetBoxProps> = ({
       )}>SET {setNumber}</h3>
       
       <div className={cn(
-        "font-bold mb-3 text-center",
-        isLarge ? "text-7xl" : "text-5xl"
+        "font-bold mb-3 text-center whitespace-nowrap min-w-0 overflow-hidden",
+        isLarge ? "text-[min(7vw,5rem)]" : "text-[min(6vw,3rem)]"
       )}>
         {hasBeenPlayed ? teamAScore : "0"} - {hasBeenPlayed ? teamBScore : "0"}
       </div>
