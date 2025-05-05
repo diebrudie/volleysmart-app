@@ -1,14 +1,6 @@
 
 import React from 'react';
-
-interface Player {
-  id: number;
-  name: string;
-  positions: string[];
-  preferredPosition: string;
-  skillRating: number;
-  gender: 'male' | 'female' | 'other';
-}
+import { Player } from "@/types/supabase";
 
 interface TeamTableProps {
   team: Player[];

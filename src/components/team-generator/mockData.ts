@@ -21,10 +21,13 @@ export const allPlayers = Array.from({ length: 24 }, (_, i) => {
       "Finley Moore", "Gray Thompson", "Harper Martin", "Indigo Clark", "Jordan Allen",
       "Kendall Baker", "Logan Hall", "Mason Wright", "Noah Turner"
     ][i],
+    email: `player${i+1}@example.com`,
     positions: randomPositions,
     preferredPosition: randomPositions[0],
     skillRating: Math.floor(Math.random() * 3) + 3, // Rating 3-5
     availability: Math.random() > 0.2, // 80% available,
-    gender: Math.random() > 0.5 ? 'male' : 'female' // Add gender information
+    gender: Math.random() > 0.5 ? 'male' : 'female', // Add gender information
+    matchesPlayed: Math.floor(Math.random() * 10),
+    isPublic: true
   };
 });

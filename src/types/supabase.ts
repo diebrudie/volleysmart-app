@@ -12,7 +12,7 @@ export interface Player {
   name: string;
   email: string;
   positions: string[];
-  preferredPosition?: string;
+  preferredPosition: string;
   availability: boolean;
   matchesPlayed: number;
   skillRating: number;

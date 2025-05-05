@@ -1,17 +1,10 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Star } from "./Star";
+import { Player } from "@/types/supabase";
 
 interface PlayerItemProps {
-  player: {
-    id: number;
-    name: string;
-    positions: string[];
-    preferredPosition: string;
-    skillRating: number;
-    availability: boolean;
-    gender: 'male' | 'female' | 'other';
-  };
+  player: Player;
   isSelected: boolean;
   onSelect: (playerId: number) => void;
 }
