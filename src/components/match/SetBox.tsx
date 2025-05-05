@@ -1,15 +1,17 @@
+
 import React, { useState, KeyboardEvent, useRef } from 'react';
 import { Pencil } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface SetBoxProps {
   setNumber: number;
   teamAScore?: number | null;
   teamBScore?: number | null;
   onScoreUpdate?: (setNumber: number, teamAScore: number, teamBScore: number) => void;
-  fullWidth?: boolean;
+  isLarge?: boolean;
 }
 
 const SetBox: React.FC<SetBoxProps> = ({ 
@@ -17,7 +19,7 @@ const SetBox: React.FC<SetBoxProps> = ({
   teamAScore = null, 
   teamBScore = null,
   onScoreUpdate,
-  fullWidth = false
+  isLarge = false
 }) => {
   const [localTeamAScore, setLocalTeamAScore] = useState<number>(teamAScore || 0);
   const [localTeamBScore, setLocalTeamBScore] = useState<number>(teamBScore || 0);
@@ -74,12 +76,21 @@ const SetBox: React.FC<SetBoxProps> = ({
 
   return (
     <div 
-      className="rounded-lg p-6 flex flex-col items-center justify-center relative h-full"
+      className={cn(
+        "rounded-lg p-6 flex flex-col items-center justify-center relative h-full",
+        isLarge && "p-10 md:p-12"
+      )}
       style={{ backgroundColor: getBackgroundColor() }}
     >
-      <h3 className="text-xl font-serif mb-4 text-center">SET {setNumber}</h3>
+      <h3 className={cn(
+        "font-serif mb-4 text-center",
+        isLarge ? "text-3xl" : "text-xl"
+      )}>SET {setNumber}</h3>
       
-      <div className="text-5xl font-bold mb-3 text-center">
+      <div className={cn(
+        "font-bold mb-3 text-center",
+        isLarge ? "text-7xl" : "text-5xl"
+      )}>
         {hasBeenPlayed ? teamAScore : "0"} - {hasBeenPlayed ? teamBScore : "0"}
       </div>
       
@@ -99,7 +110,7 @@ const SetBox: React.FC<SetBoxProps> = ({
           <div className="py-6">
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="text-center">
-                <p className="text-sm font-medium mb-2 text-green-500">Team A</p>
+                <p className="text-sm font-medium mb-2 text-red-500">Team A</p>
                 <input
                   ref={teamAInputRef}
                   type="number"
@@ -107,21 +118,21 @@ const SetBox: React.FC<SetBoxProps> = ({
                   value={localTeamAScore}
                   onChange={(e) => setLocalTeamAScore(parseInt(e.target.value) || 0)}
                   onKeyDown={handleKeyDown}
-                  className="w-20 h-14 text-center text-2xl border-2 rounded-md border-green-500"
+                  className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500"
                 />
               </div>
               
               <div className="text-2xl font-medium self-end">vs.</div>
               
               <div className="text-center">
-                <p className="text-sm font-medium mb-2 text-purple-500">Team B</p>
+                <p className="text-sm font-medium mb-2 text-emerald-500">Team B</p>
                 <input
                   type="number"
                   min="0"
                   value={localTeamBScore}
                   onChange={(e) => setLocalTeamBScore(parseInt(e.target.value) || 0)}
                   onKeyDown={handleKeyDown}
-                  className="w-20 h-14 text-center text-2xl border-2 rounded-md border-purple-500"
+                  className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500"
                 />
               </div>
             </div>

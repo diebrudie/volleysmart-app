@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navbar from "@/components/layout/Navbar";
 import SetBox from "@/components/match/SetBox";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Pencil } from "lucide-react";
 
 // Mock data for today's match
 const initialMatch = {
@@ -89,9 +91,14 @@ const Dashboard = () => {
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Today's Game Overview */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-serif mb-2">Today's Game Overview</h1>
-            <p className="text-gray-600">{formatDate(matchData.date)}</p>
+          <div className="mb-8 flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-serif mb-2">Today's Game Overview</h1>
+              <p className="text-gray-600">{formatDate(matchData.date)}</p>
+            </div>
+            <button className="flex items-center gap-1 text-sm font-medium">
+              <Pencil className="h-4 w-4" /> Edit Teams
+            </button>
           </div>
 
           {/* Main Content */}
@@ -107,7 +114,7 @@ const Dashboard = () => {
                     {hasPlayedAnySet ? winner : "TBD"}
                   </h3>
                   <div className="text-5xl font-bold">
-                    <span className="text-green-500">{teamAWins}</span> - <span className="text-purple-500">{teamBWins}</span>
+                    <span className="text-red-500">{teamAWins}</span> - <span className="text-emerald-500">{teamBWins}</span>
                   </div>
                 </div>
               </div>
@@ -117,24 +124,24 @@ const Dashboard = () => {
             <div className="h-full">
               <div className="flex h-full rounded-lg overflow-hidden border border-gray-200">
                 {/* Team A Card */}
-                <div className="w-1/2 bg-green-100 p-0">
-                  <h3 className="bg-green-500 text-white py-1 px-2 text-center">Team A</h3>
-                  <ul className="space-y-1 p-4">
-                    {matchData.teamA.map((player) => (
+                <div className="w-1/2 bg-white p-0">
+                  <h3 className="bg-red-500 text-white py-1 px-2 text-center">Team A</h3>
+                  <ul className="space-y-0.5 p-4">
+                    {matchData.teamA.map((player, index) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium">{player.name.split(' ')[0]}</span> - <span className="text-gray-600">{player.position}</span>
+                        <span className="font-medium">{index + 1}. {player.name}</span> - <span className="text-gray-600">{player.position}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 
                 {/* Team B Card */}
-                <div className="w-1/2 bg-purple-100 p-0">
-                  <h3 className="bg-purple-500 text-white py-1 px-2 text-center">Team B</h3>
-                  <ul className="space-y-1 p-4">
-                    {matchData.teamB.map((player) => (
+                <div className="w-1/2 bg-white p-0">
+                  <h3 className="bg-emerald-500 text-white py-1 px-2 text-center">Team B</h3>
+                  <ul className="space-y-0.5 p-4">
+                    {matchData.teamB.map((player, index) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium">{player.name.split(' ')[0]}</span> - <span className="text-gray-600">{player.position}</span>
+                        <span className="font-medium">{index + 1}. {player.name}</span> - <span className="text-gray-600">{player.position}</span>
                       </li>
                     ))}
                   </ul>
@@ -143,26 +150,55 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Sets Layout - New grid structure */}
+          {/* Sets Layout - New grid arrangement */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Sets 1-2 in first column */}
-            <div className="space-y-6">
-              {[1, 2].map((setNumber) => {
-                const setData = matchData.scores.find(score => score.gameNumber === setNumber);
-                return (
-                  <SetBox
-                    key={setNumber}
-                    setNumber={setNumber}
-                    teamAScore={setData?.teamA}
-                    teamBScore={setData?.teamB}
-                    onScoreUpdate={handleSetScoreUpdate}
-                  />
-                );
-              })}
+            {/* Set 1 - Larger box on the left spanning two rows */}
+            <div className="md:row-span-2">
+              <SetBox
+                key={1}
+                setNumber={1}
+                teamAScore={matchData.scores.find(score => score.gameNumber === 1)?.teamA}
+                teamBScore={matchData.scores.find(score => score.gameNumber === 1)?.teamB}
+                onScoreUpdate={handleSetScoreUpdate}
+                isLarge={true}
+              />
             </div>
 
-            {/* Set 5 in second column, spanning full height */}
-            <div className="md:col-span-1 md:row-span-2">
+            {/* Column 2 top row: Set 2 */}
+            <div>
+              <SetBox
+                key={2}
+                setNumber={2}
+                teamAScore={matchData.scores.find(score => score.gameNumber === 2)?.teamA}
+                teamBScore={matchData.scores.find(score => score.gameNumber === 2)?.teamB}
+                onScoreUpdate={handleSetScoreUpdate}
+              />
+            </div>
+
+            {/* Column 3 top row: Set 4 */}
+            <div>
+              <SetBox
+                key={4}
+                setNumber={4}
+                teamAScore={matchData.scores.find(score => score.gameNumber === 4)?.teamA}
+                teamBScore={matchData.scores.find(score => score.gameNumber === 4)?.teamB}
+                onScoreUpdate={handleSetScoreUpdate}
+              />
+            </div>
+
+            {/* Column 2 bottom row: Set 3 */}
+            <div>
+              <SetBox
+                key={3}
+                setNumber={3}
+                teamAScore={matchData.scores.find(score => score.gameNumber === 3)?.teamA}
+                teamBScore={matchData.scores.find(score => score.gameNumber === 3)?.teamB}
+                onScoreUpdate={handleSetScoreUpdate}
+              />
+            </div>
+
+            {/* Column 3 bottom row: Set 5 */}
+            <div>
               <SetBox
                 key={5}
                 setNumber={5}
@@ -170,22 +206,6 @@ const Dashboard = () => {
                 teamBScore={matchData.scores.find(score => score.gameNumber === 5)?.teamB}
                 onScoreUpdate={handleSetScoreUpdate}
               />
-            </div>
-
-            {/* Sets 3-4 in third column */}
-            <div className="space-y-6">
-              {[3, 4].map((setNumber) => {
-                const setData = matchData.scores.find(score => score.gameNumber === setNumber);
-                return (
-                  <SetBox
-                    key={setNumber}
-                    setNumber={setNumber}
-                    teamAScore={setData?.teamA}
-                    teamBScore={setData?.teamB}
-                    onScoreUpdate={handleSetScoreUpdate}
-                  />
-                );
-              })}
             </div>
           </div>
         </div>
