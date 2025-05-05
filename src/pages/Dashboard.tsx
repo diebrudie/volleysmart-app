@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import SetBox from "@/components/match/SetBox";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Pencil } from "lucide-react";
+import { format, isWednesday } from "date-fns";
 
 // Mock data for today's match
 const initialMatch = {
@@ -50,6 +51,15 @@ const Dashboard = () => {
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
+  // Determine if the match is from today and if today is Wednesday
+  const matchDate = new Date(matchData.date);
+  const today = new Date();
+  const isMatchToday = matchDate.toDateString() === today.toDateString();
+  const isTodayWednesday = isWednesday(today);
+  
+  // Determine which heading to display
+  const headingText = (isMatchToday && isTodayWednesday) ? "Today's Game Overview" : "Last Game Overview";
+
   // Calculate the match result
   const teamAWins = matchData.scores.filter(game => 
     game.teamA !== null && game.teamB !== null && game.teamA > game.teamB
@@ -90,10 +100,10 @@ const Dashboard = () => {
       
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Today's Game Overview */}
+          {/* Game Overview with dynamic heading */}
           <div className="mb-8 flex justify-between items-center">
             <div>
-              <h1 className="text-4xl font-serif mb-2">Today's Game Overview</h1>
+              <h1 className="text-4xl font-serif mb-2">{headingText}</h1>
               <p className="text-gray-600">{formatDate(matchData.date)}</p>
             </div>
             <button className="flex items-center gap-1 text-sm font-medium">
