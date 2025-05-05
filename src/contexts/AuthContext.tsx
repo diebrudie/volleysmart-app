@@ -20,6 +20,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -170,6 +172,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password reset email sent. Please check your inbox.",
+      });
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send password reset email.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Your password has been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error('Update password error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update password.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await supabase.auth.signOut();
@@ -195,7 +243,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isLoading, 
       login, 
       signup, 
-      logout 
+      logout,
+      resetPassword,
+      updatePassword
     }}>
       {children}
     </AuthContext.Provider>

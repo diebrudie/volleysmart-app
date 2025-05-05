@@ -95,6 +95,14 @@ const Login = () => {
                   </FormItem>
                 )}
               />
+              <div className="flex justify-end">
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm text-volleyball-primary hover:underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
               <Button 
                 type="submit" 
                 className="w-full" 
