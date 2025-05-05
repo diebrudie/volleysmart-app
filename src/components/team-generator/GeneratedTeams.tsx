@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -11,14 +12,7 @@ import { TeamTable } from "./TeamTable";
 import { SaveMatchDialog } from "./SaveMatchDialog";
 import { TeamEditDialog } from "./TeamEditDialog";
 import { useState } from "react";
-
-interface Player {
-  id: number;
-  name: string;
-  positions: string[];
-  preferredPosition: string;
-  skillRating: number;
-}
+import { Player } from "@/types/supabase";
 
 interface GeneratedTeamsProps {
   teams: {

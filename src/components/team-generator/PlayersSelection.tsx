@@ -3,15 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertCircle, Shuffle, Users } from "lucide-react";
 import { PlayerItem } from "./PlayerItem";
-
-interface Player {
-  id: number;
-  name: string;
-  positions: string[];
-  preferredPosition: string;
-  skillRating: number;
-  availability: boolean;
-}
+import { Player } from "@/types/supabase";
 
 interface PlayersSelectionProps {
   allPlayers: Player[];

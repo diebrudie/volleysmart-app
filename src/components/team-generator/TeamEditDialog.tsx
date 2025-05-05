@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Dialog, 
@@ -25,14 +24,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { SortablePlayer } from "./SortablePlayer";
-
-interface Player {
-  id: number;
-  name: string;
-  positions: string[];
-  preferredPosition: string;
-  skillRating: number;
-}
+import { Player } from "@/types/supabase";
 
 interface TeamEditDialogProps {
   open: boolean;
