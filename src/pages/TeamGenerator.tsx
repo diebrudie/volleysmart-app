@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -8,26 +7,16 @@ import { PlayersSelection } from '@/components/team-generator/PlayersSelection';
 import { GeneratedTeams } from '@/components/team-generator/GeneratedTeams';
 import { EmptyTeamsState } from '@/components/team-generator/EmptyTeamsState';
 import { allPlayers } from '@/components/team-generator/mockData';
+import { Player } from '@/types/supabase';
 
-// Define the player types to help with team generation logic
+// Define player types for team generation logic
 type PlayerPosition = 'Setter' | 'Outside Hitter' | 'Middle Blocker' | 'Opposite Hitter' | 'Libero';
-type PlayerGender = 'male' | 'female' | 'other';
-
-interface Player {
-  id: number;
-  name: string;
-  positions: string[];
-  preferredPosition: string;
-  skillRating: number;
-  availability: boolean;
-  gender: PlayerGender;
-}
 
 const TeamGenerator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedPlayers, setSelectedPlayers] = useState<number[]>([]);
-  const [generatedTeams, setGeneratedTeams] = useState<{ teamA: any[]; teamB: any[] } | null>(null);
+  const [generatedTeams, setGeneratedTeams] = useState<{ teamA: Player[]; teamB: Player[] } | null>(null);
   
   const canGenerateTeams = selectedPlayers.length >= 6;
   
@@ -133,7 +122,7 @@ const TeamGenerator = () => {
       return;
     }
     
-    // Get the selected player objects
+    // Get the selected player objects with explicit typing
     const players = selectedPlayers.map(id => 
       allPlayers.find(p => p.id === id)
     ).filter(p => p !== undefined) as Player[];

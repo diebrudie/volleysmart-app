@@ -1,6 +1,8 @@
 
+import { Player } from "@/types/supabase";
+
 // Mock players data with gender added
-export const allPlayers = Array.from({ length: 24 }, (_, i) => {
+export const allPlayers: Player[] = Array.from({ length: 24 }, (_, i) => {
   const positions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite Hitter", "Libero"];
   const randomPositions = [];
   const numPositions = Math.floor(Math.random() * 2) + 1; // 1-2 positions per player
@@ -11,6 +13,9 @@ export const allPlayers = Array.from({ length: 24 }, (_, i) => {
       randomPositions.push(pos);
     }
   }
+  
+  // Explicitly set gender as one of the allowed types
+  const gender: 'male' | 'female' | 'other' = Math.random() > 0.5 ? 'male' : 'female';
   
   return {
     id: i + 1,
@@ -26,7 +31,7 @@ export const allPlayers = Array.from({ length: 24 }, (_, i) => {
     preferredPosition: randomPositions[0],
     skillRating: Math.floor(Math.random() * 3) + 3, // Rating 3-5
     availability: Math.random() > 0.2, // 80% available,
-    gender: Math.random() > 0.5 ? 'male' : 'female', // Add gender information
+    gender,
     matchesPlayed: Math.floor(Math.random() * 10),
     isPublic: true
   };
