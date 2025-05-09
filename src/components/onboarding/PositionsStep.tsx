@@ -49,27 +49,27 @@ const PositionsStep = () => {
       
       <div className="grid grid-cols-2 gap-4 mt-4">
         {positions.map((position) => {
-          // Determine if this position is selected
-          const isChecked = selectedPositions.includes(position.id);
+          const isSelected = selectedPositions.includes(position.id);
           
           return (
             <div
               key={position.id}
               className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                isChecked 
+                isSelected 
                   ? "bg-primary/10 border-primary" 
                   : "bg-white hover:bg-gray-50"
               }`}
               onClick={() => togglePosition(position.id)}
             >
               <div className="flex items-center space-x-3">
-                <Checkbox
-                  id={`position-${position.id}`}
-                  checked={isChecked}
-                  // Use onClick instead of onCheckedChange to avoid double toggles
-                  // since the parent div already has an onClick handler
-                  // This prevents the infinite update loop
-                />
+                <div className="flex items-center justify-center h-4 w-4">
+                  <Checkbox
+                    id={`position-${position.id}`}
+                    checked={isSelected}
+                    // Completely remove any change handlers from the checkbox itself
+                    // This is crucial to prevent the infinite update loop
+                  />
+                </div>
                 <label
                   htmlFor={`position-${position.id}`}
                   className="font-medium cursor-pointer"
