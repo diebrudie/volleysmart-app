@@ -58,7 +58,19 @@ const PlayerOnboarding = () => {
     mode: "onChange",
   });
 
-  const nextStep = () => {
+  const nextStep = async () => {
+    const currentStepFields = {
+      0: ["positions"],
+      1: ["skillRating"],
+      2: [], // Photo upload is optional
+      3: ["gender", "birthday"],
+    }[currentStep];
+
+    if (currentStepFields && currentStepFields.length > 0) {
+      const isValid = await form.trigger(currentStepFields as any);
+      if (!isValid) return;
+    }
+
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
   };
 
@@ -113,23 +125,6 @@ const PlayerOnboarding = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleStepValidation = (stepIndex: number) => {
-    const currentStepFields: Record<number, string[]> = {
-      0: ["positions"],
-      1: ["skillRating"],
-      2: [], // Photo upload is optional
-      3: ["gender", "birthday"],
-    };
-    
-    const fieldsToValidate = currentStepFields[stepIndex] || [];
-    
-    if (fieldsToValidate.length > 0) {
-      return form.trigger(fieldsToValidate as any);
-    }
-    
-    return Promise.resolve(true);
   };
 
   const renderStepContent = () => {
@@ -197,11 +192,7 @@ const PlayerOnboarding = () => {
                     ) : (
                       <Button
                         type="button"
-                        onClick={() => {
-                          handleStepValidation(currentStep).then((isValid) => {
-                            if (isValid) nextStep();
-                          });
-                        }}
+                        onClick={nextStep}
                       >
                         Next
                       </Button>
