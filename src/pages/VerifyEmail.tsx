@@ -1,15 +1,14 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { MailCheck } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [countdown, setCountdown] = useState(15);
+  const [countdown, setCountdown] = useState(60);
   const email = location.state?.email || "your email";
 
   useEffect(() => {
@@ -29,39 +28,43 @@ const VerifyEmail = () => {
 
   return (
     <AuthLayout>
-      <Card className="border-0 shadow-none">
-        <CardHeader className="space-y-1 px-0 pt-0">
-          <div className="flex justify-center mb-4">
-            <CheckCircle className="h-16 w-16 text-green-500"/>
+      <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
+        <div className="flex flex-col items-center">
+          <div className="flex justify-center mb-6">
+            <MailCheck className="h-16 w-16 text-green-500" />
           </div>
-          <CardTitle className="text-2xl font-bold text-center">Check Your Email</CardTitle>
-          <CardDescription className="text-center">
-            We sent a verification link to <span className="font-medium">{email}</span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 px-0">
-          <p className="text-sm text-gray-500 text-center">
-            Please click the link in your email to verify your account. If you don't see it, check your spam folder.
-          </p>
           
-          <div className="text-center mt-6">
-            <p className="text-sm text-gray-600">
-              Redirecting to login in {countdown} seconds...
+          <h1 className="text-2xl font-bold mb-4 text-center">
+            Almost there! Check your inbox to confirm your email
+          </h1>
+          
+          <div className="text-center mb-6">
+            <p className="text-gray-600 mb-4">
+              To complete your registration, please verify your email address.
             </p>
-            <div className="flex justify-center gap-3 mt-4">
-              <Button onClick={() => navigate('/login')} variant="outline">
-                Go to Login
-              </Button>
-              <Button 
-                onClick={() => navigate('/')} 
-                variant="default"
-              >
-                Back to Home
-              </Button>
-            </div>
+            <p className="text-gray-600 mb-4">
+              We've just sent a confirmation link to <span className="font-medium">{email}</span>.
+              If you don't see it within a few minutes, check your spam or promotions folder.
+            </p>
+            <p className="text-gray-600">
+              Once verified, you'll be automatically redirected to log in page.
+            </p>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="flex justify-center mt-6">
+            <Button 
+              onClick={() => navigate('/login')} 
+              variant="default"
+            >
+              Go to Login
+            </Button>
+          </div>
+          
+          <p className="text-sm text-gray-500 mt-6">
+            Automatically redirecting to login in {countdown} seconds...
+          </p>
+        </div>
+      </div>
     </AuthLayout>
   );
 };

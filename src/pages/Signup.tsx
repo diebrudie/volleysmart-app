@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft } from "lucide-react";
 import AuthLayout from '@/components/auth/AuthLayout';
 
 const Signup = () => {
@@ -38,7 +37,8 @@ const Signup = () => {
         title: "Success",
         description: "Account created successfully",
       });
-      navigate('/players/onboarding');
+      // Redirect to verify email page with the email
+      navigate('/verify-email', { state: { email } });
     } catch (error) {
       console.error('Signup error:', error);
       toast({
