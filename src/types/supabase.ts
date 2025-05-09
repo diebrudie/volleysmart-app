@@ -35,3 +35,24 @@ export interface Match {
   };
   status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
 }
+
+// New club-related types
+export interface Club {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  slug?: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export type ClubMemberRole = 'admin' | 'editor' | 'member';
+
+export interface ClubMember {
+  id: string;
+  clubId: string;
+  userId: string;
+  role: ClubMemberRole;
+  joinedAt: string;
+}
