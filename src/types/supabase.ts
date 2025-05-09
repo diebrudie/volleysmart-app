@@ -18,7 +18,7 @@ export interface Player {
   skillRating: number;
   isPublic: boolean;
   gender: 'male' | 'female' | 'other' | 'diverse';
-  birthday?: Date;
+  birthday?: string | Date; // Updated to allow both string and Date
 }
 
 export interface Match {
