@@ -17,13 +17,12 @@ const PhotoUploadStep = ({ imagePreview, setImagePreview }: PhotoUploadStepProps
       // Create a preview for the image
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        const result = reader.result as string;
+        setImagePreview(result);
+        // Set the data URL directly to be used later
+        setValue("imageUrl", result, { shouldValidate: true });
       };
       reader.readAsDataURL(file);
-      
-      // Store the file data directly instead of using URL.createObjectURL
-      // This prevents the URL becoming invalid when navigating between steps
-      setValue("imageUrl", file, { shouldValidate: true });
     }
   };
 

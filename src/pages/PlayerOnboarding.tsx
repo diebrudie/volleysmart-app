@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,6 +40,7 @@ const PlayerOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -60,6 +61,13 @@ const PlayerOnboarding = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
+  // Prevent automatic navigation to start page if form submission is in progress
+  useEffect(() => {
+    if (formSubmitted && !isSubmitting) {
+      navigate("/start");
+    }
+  }, [formSubmitted, isSubmitting, navigate]);
+
   const onSubmit = async (data: FormValues) => {
     if (!user) {
       toast({
@@ -71,6 +79,7 @@ const PlayerOnboarding = () => {
     }
 
     setIsSubmitting(true);
+    console.log("Form submitted with data:", data);
 
     try {
       // If data.imageUrl is a File, we need to generate a proper URL or handle it differently
@@ -99,8 +108,8 @@ const PlayerOnboarding = () => {
         description: "Your player profile has been created",
       });
 
-      // Navigate to the start page
-      navigate("/start");
+      // Set form as submitted successfully - navigation will happen in the useEffect
+      setFormSubmitted(true);
     } catch (error) {
       console.error("Error creating player profile:", error);
       toast({
@@ -108,9 +117,25 @@ const PlayerOnboarding = () => {
         description: "Failed to create player profile",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleStepValidation = (stepIndex: number) => {
+    const currentStepFields: Record<number, string[]> = {
+      0: ["positions"],
+      1: ["skillRating"],
+      2: [], // Photo upload is optional
+      3: ["gender"],
+    };
+    
+    const fieldsToValidate = currentStepFields[stepIndex] || [];
+    
+    if (fieldsToValidate.length > 0) {
+      return form.trigger(fieldsToValidate as any);
+    }
+    
+    return Promise.resolve(true);
   };
 
   const renderStepContent = () => {
@@ -179,20 +204,9 @@ const PlayerOnboarding = () => {
                       <Button
                         type="button"
                         onClick={() => {
-                          const currentStepFields = {
-                            0: ["positions"],
-                            1: ["skillRating"],
-                            2: [], // Photo upload is optional
-                            3: ["gender"],
-                          }[currentStep];
-
-                          if (currentStepFields.length > 0) {
-                            form.trigger(currentStepFields as any).then((isValid) => {
-                              if (isValid) nextStep();
-                            });
-                          } else {
-                            nextStep();
-                          }
+                          handleStepValidation(currentStep).then((isValid) => {
+                            if (isValid) nextStep();
+                          });
                         }}
                       >
                         Next
