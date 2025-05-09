@@ -1,16 +1,16 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navbar from "@/components/layout/Navbar";
 import SetBox from "@/components/match/SetBox";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Pencil, Users, CalendarDays } from "lucide-react";
 import { format, isWednesday } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import NoClubMessage from "@/components/club/NoClubMessage";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -106,30 +106,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-grow flex flex-col items-center justify-center p-6">
-          <Card className="max-w-lg w-full">
-            <CardHeader className="text-center">
-              <CardTitle>Welcome to VolleyApp</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center p-6">
-                <Users className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-4 text-lg font-medium">You're not in a club yet</h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  You need to join or create a club to see match history and player data.
-                </p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button 
-                  onClick={() => navigate("/start")}
-                  className="w-full"
-                >
-                  Create or Join a Club
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <NoClubMessage />
       </div>
     );
   }
@@ -166,10 +143,10 @@ const Dashboard = () => {
 
   const formatDate = (dateString) => {
     const options = { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
+      weekday: 'long' as const, 
+      day: 'numeric' as const, 
+      month: 'long' as const, 
+      year: 'numeric' as const 
     };
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
