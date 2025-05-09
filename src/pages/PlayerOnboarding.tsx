@@ -59,6 +59,7 @@ const PlayerOnboarding = () => {
   });
 
   const nextStep = async () => {
+    // Validate the current step fields before proceeding
     const currentStepFields = {
       0: ["positions"],
       1: ["skillRating"],
@@ -71,6 +72,7 @@ const PlayerOnboarding = () => {
       if (!isValid) return;
     }
 
+    // Only proceed to the next step if validation passed
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
   };
 
@@ -88,9 +90,13 @@ const PlayerOnboarding = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    console.log("Form submitted with data:", data);
+    // Ensure we only process the submission when on the last step
+    if (currentStep !== steps.length - 1) {
+      return;
+    }
 
+    setIsSubmitting(true);
+    
     try {
       // If we have imagePreview, use that as the URL (it's a data URL)
       let imageUrl = imagePreview || "";
@@ -167,7 +173,13 @@ const PlayerOnboarding = () => {
 
           <CardContent>
             <FormProvider {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)}>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                // Only call onSubmit when the form is manually submitted on the last step
+                if (isLastStep) {
+                  form.handleSubmit(onSubmit)(e);
+                }
+              }}>
                 <div className="space-y-6">
                   {renderStepContent()}
 
