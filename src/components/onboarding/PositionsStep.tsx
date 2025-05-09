@@ -4,7 +4,7 @@ import { getAllPositions } from "@/integrations/supabase/positions";
 import { useFormContext } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { FormMessage } from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Check } from "lucide-react";
 
 const PositionsStep = () => {
   const [positions, setPositions] = useState<{ id: string; name: string }[]>([]);
@@ -62,16 +62,12 @@ const PositionsStep = () => {
               onClick={() => togglePosition(position.id)}
             >
               <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center h-4 w-4">
-                  <Checkbox
-                    id={`position-${position.id}`}
-                    checked={isSelected}
-                    // Completely remove any change handlers from the checkbox itself
-                    // This is crucial to prevent the infinite update loop
-                  />
+                <div className="h-4 w-4 rounded-sm border flex items-center justify-center bg-white">
+                  {isSelected && (
+                    <Check className="h-3 w-3 text-primary" />
+                  )}
                 </div>
                 <label
-                  htmlFor={`position-${position.id}`}
                   className="font-medium cursor-pointer"
                 >
                   {position.name}
