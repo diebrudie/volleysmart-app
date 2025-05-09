@@ -17,7 +17,8 @@ export interface Player {
   matchesPlayed: number;
   skillRating: number;
   isPublic: boolean;
-  gender: 'male' | 'female' | 'other';
+  gender: 'male' | 'female' | 'other' | 'diverse';
+  birthday?: Date;
 }
 
 export interface Match {

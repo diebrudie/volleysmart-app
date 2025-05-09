@@ -1,52 +1,77 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { createPlayer } from "@/integrations/supabase/players";
+import { getAllPositions } from "@/integrations/supabase/positions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Check, ChevronsUpDown, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// Import the Supabase utility functions
-import { getAllPositions } from "@/integrations/supabase/positions";
-import { createPlayer } from "@/integrations/supabase/players";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/contexts/AuthContext';
+// Define the schema for the form
+const formSchema = z.object({
+  positions: z.array(z.string()).min(1, "Select at least one position"),
+  skillRating: z.number().min(1).max(10),
+  imageUrl: z.string().optional(),
+  gender: z.enum(["male", "female", "diverse"]),
+  birthday: z.date().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const PlayerOnboarding = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [bio, setBio] = useState('');
-  const [skillLevel, setSkillLevel] = useState(3);
-  const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-  
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [positions, setPositions] = useState<Array<{ id: string; name: string }>>([]);
-  
-  // Load positions on component mount
+  const [positions, setPositions] = useState<{ id: string; name: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      positions: [],
+      skillRating: 5,
+      imageUrl: "",
+      gender: "male",
+    },
+  });
+
   useEffect(() => {
+    // Load positions from database
     const loadPositions = async () => {
       try {
         const positionsData = await getAllPositions();
@@ -55,197 +80,299 @@ const PlayerOnboarding = () => {
         console.error("Error loading positions:", error);
         toast({
           title: "Error",
-          description: "Failed to load player positions.",
-          variant: "destructive"
+          description: "Failed to load player positions",
+          variant: "destructive",
         });
       }
     };
-    
+
     loadPositions();
   }, [toast]);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      if (!user) {
-        throw new Error("You must be logged in to create a player profile");
-      }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Create a preview for the image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
       
-      await createPlayer(user.id, {
-        first_name: firstName,
-        last_name: lastName,
-        bio,
-        skill_rating: skillLevel,
-        positions: selectedPositions
+      // In a real implementation, you would upload the file to storage
+      // This is a placeholder for now
+      form.setValue("imageUrl", URL.createObjectURL(file));
+    }
+  };
+
+  const onSubmit = async (data: FormValues) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to complete onboarding",
+        variant: "destructive",
       });
-      
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Create player profile
+      await createPlayer(user.id, {
+        first_name: user.name.split(' ')[0] || '',
+        last_name: user.name.split(' ').slice(1).join(' ') || '',
+        bio: "",
+        image_url: data.imageUrl,
+        skill_rating: data.skillRating,
+        positions: data.positions,
+        member_association: true,
+      });
+
       toast({
         title: "Success",
-        description: "Your player profile has been created successfully.",
+        description: "Your player profile has been created",
       });
-      
-      // Redirect to dashboard after successful player creation
-      navigate('/dashboard');
+
+      // Navigate to the start page
+      navigate("/start");
     } catch (error) {
       console.error("Error creating player profile:", error);
       toast({
         title: "Error",
-        description: "Failed to create player profile. Please try again.",
-        variant: "destructive"
+        description: "Failed to create player profile",
+        variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  const handleSelectPosition = (positionId: string) => {
-    setSelectedPositions((current) => {
-      if (current.includes(positionId)) {
-        return current.filter(id => id !== positionId);
-      } else {
-        return [...current, positionId];
-      }
-    });
-  };
-
-  const getPositionNameById = (positionId: string): string => {
-    const position = positions.find(p => p.id === positionId);
-    return position ? position.name : '';
-  };
-
-  const removePosition = (positionId: string) => {
-    setSelectedPositions(selectedPositions.filter(id => id !== positionId));
-  };
-  
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-grow">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Your Player Profile</CardTitle>
-              <CardDescription>
-                Tell us a bit about yourself to get started.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    type="text"
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    type="text"
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Tell us about your volleyball experience..."
-                  />
-                </div>
-                <div>
-                  <Label>Skill Level (1-5)</Label>
-                  <Slider
-                    defaultValue={[skillLevel]}
-                    max={5}
-                    min={1}
-                    step={1}
-                    onValueChange={(value) => setSkillLevel(value[0])}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Selected skill level: {skillLevel}
-                  </p>
-                </div>
-                <div>
-                  <Label>Positions</Label>
-                  <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        className="w-full justify-between"
-                      >
-                        {selectedPositions.length > 0
-                          ? `${selectedPositions.length} position${selectedPositions.length > 1 ? 's' : ''} selected`
-                          : "Select your positions"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput placeholder="Search positions..." />
-                        <CommandEmpty>No position found.</CommandEmpty>
-                        <CommandGroup>
-                          {positions.map((position) => (
-                            <CommandItem
-                              key={position.id}
-                              value={position.name}
-                              onSelect={() => handleSelectPosition(position.id)}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedPositions.includes(position.id) ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {position.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  
-                  {selectedPositions.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedPositions.map(positionId => (
-                        <Badge 
-                          key={positionId}
-                          variant="secondary"
-                          className="flex items-center gap-1"
-                        >
-                          {getPositionNameById(positionId)}
-                          <button 
-                            type="button" 
-                            onClick={() => removePosition(positionId)}
-                            className="ml-1 rounded-full hover:bg-muted p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-3xl">
+        <Card className="border shadow-md">
+          <CardHeader>
+            <CardTitle>Complete Your Player Profile</CardTitle>
+            <CardDescription>
+              Help us match you with the right team and positions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8"
+              >
+                {/* Positions Selection */}
+                <FormField
+                  control={form.control}
+                  name="positions"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel className="text-base">
+                        Which positions do you play? (Select one or many)
+                      </FormLabel>
+                      <FormDescription>
+                        Choose all positions you're comfortable playing
+                      </FormDescription>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                        {positions.map((position) => (
+                          <FormField
+                            key={position.id}
+                            control={form.control}
+                            name="positions"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={position.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(position.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([
+                                              ...field.value,
+                                              position.id,
+                                            ])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== position.id
+                                              )
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {position.name}
+                                  </FormLabel>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Submitting...' : 'Create Profile'}
+                />
+
+                {/* Skill Rating */}
+                <FormField
+                  control={form.control}
+                  name="skillRating"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        From 1 to 10, how would you rate your level in Volleyball?
+                      </FormLabel>
+                      <FormControl>
+                        <div className="space-y-4">
+                          <Slider
+                            min={1}
+                            max={10}
+                            step={1}
+                            defaultValue={[field.value]}
+                            onValueChange={(vals) => field.onChange(vals[0])}
+                          />
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>Beginner (1)</span>
+                            <span>Intermediate (5)</span>
+                            <span>Advanced (10)</span>
+                          </div>
+                          <div className="text-center font-semibold">
+                            Your rating: {field.value}
+                          </div>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Image Upload */}
+                <FormItem>
+                  <FormLabel>
+                    Upload a picture for others to know who you are (optional)
+                  </FormLabel>
+                  <FormDescription>
+                    This will help teammates recognize you
+                  </FormDescription>
+                  <div className="mt-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                    {imagePreview && (
+                      <div className="mt-4">
+                        <p className="mb-2 text-sm">Preview:</p>
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-32 h-32 object-cover rounded-full"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </FormItem>
+
+                {/* Gender */}
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Gender</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-1"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="male" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Male</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="female" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Female</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="diverse" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Diverse</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Birthday */}
+                <FormField
+                  control={form.control}
+                  name="birthday"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Birthday</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Submitting..." : "Complete Profile"}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-      <Footer />
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

@@ -9,6 +9,8 @@ export interface PlayerData {
   skill_rating?: number;
   positions?: string[];
   member_association?: boolean;
+  gender?: 'male' | 'female' | 'other' | 'diverse';
+  birthday?: Date;
 }
 
 export async function createPlayer(userId: string, playerData: PlayerData) {
@@ -22,7 +24,9 @@ export async function createPlayer(userId: string, playerData: PlayerData) {
       bio: playerData.bio,
       image_url: playerData.image_url,
       skill_rating: playerData.skill_rating || 5,
-      member_association: playerData.member_association || false
+      member_association: playerData.member_association || false,
+      gender: playerData.gender || 'other',
+      birthday: playerData.birthday
     })
     .select()
     .single();
@@ -108,7 +112,9 @@ export async function updatePlayer(playerId: string, playerData: Partial<PlayerD
       last_name: playerData.last_name,
       bio: playerData.bio,
       image_url: playerData.image_url,
-      skill_rating: playerData.skill_rating
+      skill_rating: playerData.skill_rating,
+      gender: playerData.gender,
+      birthday: playerData.birthday
     })
     .eq('id', playerId)
     .select()

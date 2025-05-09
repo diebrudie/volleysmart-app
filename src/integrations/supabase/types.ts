@@ -136,6 +136,7 @@ export type Database = {
       players: {
         Row: {
           bio: string | null
+          birthday: string | null
           first_name: string
           gender: string
           id: string
@@ -148,6 +149,7 @@ export type Database = {
         }
         Insert: {
           bio?: string | null
+          birthday?: string | null
           first_name: string
           gender?: string
           id?: string
@@ -160,6 +162,7 @@ export type Database = {
         }
         Update: {
           bio?: string | null
+          birthday?: string | null
           first_name?: string
           gender?: string
           id?: string

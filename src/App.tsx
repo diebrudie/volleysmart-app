@@ -25,6 +25,7 @@ import PlayerDetail from "./pages/PlayerDetail";
 import TeamGenerator from "./pages/TeamGenerator";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import Start from "./pages/Start";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,16 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <PlayerOnboarding />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Start Page after onboarding */}
+              <Route 
+                path="/start" 
+                element={
+                  <ProtectedRoute>
+                    <Start />
                   </ProtectedRoute>
                 } 
               />
