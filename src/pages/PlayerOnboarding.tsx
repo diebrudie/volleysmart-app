@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
@@ -14,14 +13,20 @@ import SkillRatingStep from "@/components/onboarding/SkillRatingStep";
 import PhotoUploadStep from "@/components/onboarding/PhotoUploadStep";
 import PersonalDetailsStep from "@/components/onboarding/PersonalDetailsStep";
 import { Volleyball } from "lucide-react";
+import { differenceInYears } from "date-fns";
 
-// Define the schema for the form
+// Define the schema for the form with age validation
 const formSchema = z.object({
   positions: z.array(z.string()).min(1, "Select at least one position"),
   skillRating: z.number().min(1).max(10),
-  imageUrl: z.any().optional(), // Changed to accept File objects
+  imageUrl: z.any().optional(),
   gender: z.enum(["male", "female", "diverse"]),
-  birthday: z.date().optional(),
+  birthday: z.date()
+    .refine((date) => {
+      // Validate the user is at least 18 years old
+      return differenceInYears(new Date(), date) >= 18;
+    }, "You must be at least 18 years old")
+    .optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -126,7 +131,7 @@ const PlayerOnboarding = () => {
       0: ["positions"],
       1: ["skillRating"],
       2: [], // Photo upload is optional
-      3: ["gender"],
+      3: ["gender", "birthday"],
     };
     
     const fieldsToValidate = currentStepFields[stepIndex] || [];
