@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
@@ -152,7 +153,7 @@ const PlayerOnboarding = () => {
 
           <CardContent>
             <FormProvider {...form}>
-              <form>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="space-y-6">
                   {renderStepContent()}
 
@@ -169,7 +170,7 @@ const PlayerOnboarding = () => {
 
                     {isLastStep ? (
                       <Button
-                        onClick={form.handleSubmit(onSubmit)}
+                        type="submit"
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? "Completing..." : "Complete Profile"}
