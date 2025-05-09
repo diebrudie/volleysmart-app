@@ -119,7 +119,7 @@ const PlayerOnboarding = () => {
         description: "Your player profile has been created",
       });
       
-      // Navigate to start page after successful submission
+      // Always navigate to start page after successful submission
       navigate("/start");
     } catch (error) {
       console.error("Error creating player profile:", error);

@@ -1,64 +1,150 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Navbar from "@/components/layout/Navbar";
 import SetBox from "@/components/match/SetBox";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Pencil } from "lucide-react";
+import { Pencil, Users, CalendarDays } from "lucide-react";
 import { format, isWednesday } from "date-fns";
-
-// Mock data for today's match
-const initialMatch = {
-  date: new Date().toISOString(),
-  teamA: [
-    { id: 1, name: "Isabel", position: "Outside Hitter" },
-    { id: 2, name: "Eduardo", position: "Middle Blocker" },
-    { id: 3, name: "Carlotta", position: "Outside Hitter" },
-    { id: 4, name: "Juan", position: "Opposite Hitter" },
-    { id: 5, name: "Nacho", position: "Libero" },
-    { id: 6, name: "Paco", position: "Setter" },
-  ],
-  teamB: [
-    { id: 7, name: "Ana", position: "Middle Blocker" },
-    { id: 8, name: "Maria", position: "Outside Hitter" },
-    { id: 9, name: "Pepito", position: "Opposite Hitter" },
-    { id: 10, name: "Carlos", position: "Outside Hitter" },
-    { id: 11, name: "Natalia", position: "Setter" },
-    { id: 12, name: "Ana Isabel", position: "Libero" },
-  ],
-  scores: [
-    { gameNumber: 1, teamA: null, teamB: null },
-    { gameNumber: 2, teamA: null, teamB: null },
-    { gameNumber: 3, teamA: null, teamB: null },
-    { gameNumber: 4, teamA: null, teamB: null },
-    { gameNumber: 5, teamA: null, teamB: null },
-  ]
-};
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [matchData, setMatchData] = useState(initialMatch);
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const isMobile = useIsMobile();
-
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
+  const [isLoadingClub, setIsLoadingClub] = useState(true);
+  const [hasClub, setHasClub] = useState(false);
+  const [matchData, setMatchData] = useState(null);
+  
+  // Check if user belongs to a club
+  useEffect(() => {
+    const checkClubMembership = async () => {
+      try {
+        setIsLoadingClub(true);
+        const { data: clubMemberships, error } = await supabase
+          .from('club_members')
+          .select('club_id')
+          .eq('user_id', user?.id)
+          .limit(1);
+        
+        if (error) {
+          throw error;
+        }
+        
+        setHasClub(clubMemberships && clubMemberships.length > 0);
+        
+        // If they have a club, fetch the latest match data
+        if (clubMemberships && clubMemberships.length > 0) {
+          fetchLatestMatchData(clubMemberships[0].club_id);
+        }
+        
+      } catch (error) {
+        console.error("Error checking club membership:", error);
+        toast({
+          title: "Error",
+          description: "Failed to check club membership",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingClub(false);
+      }
     };
-    return new Date(dateString).toLocaleDateString('en-US', options);
+    
+    if (user?.id) {
+      checkClubMembership();
+    }
+  }, [user?.id, toast]);
+  
+  // Fetch the latest match data for the club
+  const fetchLatestMatchData = async (clubId) => {
+    try {
+      // This is placeholder code - will need to be updated with actual data fetching
+      // Mock data structure as a placeholder
+      setMatchData({
+        date: new Date().toISOString(),
+        teamA: [
+          { id: 1, name: "Isabel", position: "Outside Hitter" },
+          { id: 2, name: "Eduardo", position: "Middle Blocker" },
+          { id: 3, name: "Carlotta", position: "Outside Hitter" },
+          { id: 4, name: "Juan", position: "Opposite Hitter" },
+          { id: 5, name: "Nacho", position: "Libero" },
+          { id: 6, name: "Paco", position: "Setter" },
+        ],
+        teamB: [
+          { id: 7, name: "Ana", position: "Middle Blocker" },
+          { id: 8, name: "Maria", position: "Outside Hitter" },
+          { id: 9, name: "Pepito", position: "Opposite Hitter" },
+          { id: 10, name: "Carlos", position: "Outside Hitter" },
+          { id: 11, name: "Natalia", position: "Setter" },
+          { id: 12, name: "Ana Isabel", position: "Libero" },
+        ],
+        scores: [
+          { gameNumber: 1, teamA: null, teamB: null },
+          { gameNumber: 2, teamA: null, teamB: null },
+          { gameNumber: 3, teamA: null, teamB: null },
+          { gameNumber: 4, teamA: null, teamB: null },
+          { gameNumber: 5, teamA: null, teamB: null },
+        ]
+      });
+    } catch (error) {
+      console.error("Error fetching match data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch match data",
+        variant: "destructive"
+      });
+    }
   };
 
-  // Determine if the match is from today and if today is Wednesday
-  const matchDate = new Date(matchData.date);
-  const today = new Date();
-  const isMatchToday = matchDate.toDateString() === today.toDateString();
-  const isTodayWednesday = isWednesday(today);
-  
-  // Determine which heading to display
-  const headingText = (isMatchToday && isTodayWednesday) ? "Today's Game Overview" : "Last Game Overview";
+  // Redirect to the start page if the user doesn't have a club
+  if (!isLoadingClub && !hasClub) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex flex-col items-center justify-center p-6">
+          <Card className="max-w-lg w-full">
+            <CardHeader className="text-center">
+              <CardTitle>Welcome to VolleyApp</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center p-6">
+                <Users className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-4 text-lg font-medium">You're not in a club yet</h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  You need to join or create a club to see match history and player data.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={() => navigate("/start")}
+                  className="w-full"
+                >
+                  Create or Join a Club
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoadingClub || !matchData) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+          <span className="ml-2">Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate the match result
   const teamAWins = matchData.scores.filter(game => 
@@ -78,7 +164,26 @@ const Dashboard = () => {
     ? (teamAWins > teamBWins ? "Team A" : (teamBWins > teamAWins ? "Team B" : "Tie")) 
     : "TBD";
 
-  const handleSetScoreUpdate = (setNumber: number, teamAScore: number, teamBScore: number) => {
+  const formatDate = (dateString) => {
+    const options = { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
+  // Determine if the match is from today and if today is Wednesday
+  const matchDate = new Date(matchData.date);
+  const today = new Date();
+  const isMatchToday = matchDate.toDateString() === today.toDateString();
+  const isTodayWednesday = isWednesday(today);
+  
+  // Determine which heading to display
+  const headingText = (isMatchToday && isTodayWednesday) ? "Today's Game Overview" : "Last Game Overview";
+
+  const handleSetScoreUpdate = (setNumber, teamAScore, teamBScore) => {
     setMatchData(prevMatchData => {
       const updatedScores = [...prevMatchData.scores];
       const index = updatedScores.findIndex(score => score.gameNumber === setNumber);

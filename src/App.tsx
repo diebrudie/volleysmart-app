@@ -1,4 +1,3 @@
-
 import { ToastProvider } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { getPlayerByUserId } from "@/integrations/supabase/players";
 
 // Pages
 import Home from "./pages/Home";
@@ -33,6 +34,51 @@ const queryClient = new QueryClient();
 const HomeRoute = () => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Home />;
+};
+
+// Check for new users needing onboarding
+const AuthenticatedRoute = ({ children }) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+  const [hasPlayerProfile, setHasPlayerProfile] = useState(null);
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+
+  // Check if the user has completed onboarding
+  useEffect(() => {
+    const checkPlayerProfile = async () => {
+      if (!isLoading && isAuthenticated && user?.id) {
+        try {
+          setIsCheckingProfile(true);
+          const playerProfile = await getPlayerByUserId(user.id);
+          setHasPlayerProfile(!!playerProfile);
+        } catch (error) {
+          // If error is because profile doesn't exist
+          setHasPlayerProfile(false);
+        } finally {
+          setIsCheckingProfile(false);
+        }
+      }
+    };
+
+    checkPlayerProfile();
+  }, [isLoading, isAuthenticated, user?.id]);
+
+  // Show loading while checking profile status
+  if (isLoading || isCheckingProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <span className="ml-2">Loading...</span>
+      </div>
+    );
+  }
+
+  // Redirect to onboarding if the user doesn't have a profile
+  if (isAuthenticated && !hasPlayerProfile) {
+    return <Navigate to="/players/onboarding" replace />;
+  }
+
+  // Otherwise, render the children (protected content)
+  return <>{children}</>;
 };
 
 const App = () => (
@@ -72,12 +118,14 @@ const App = () => (
                 } 
               />
               
-              {/* Protected Routes - need authentication */}
+              {/* Protected Routes - need authentication and completed onboarding */}
               <Route 
                 path="/dashboard" 
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <AuthenticatedRoute>
+                      <Dashboard />
+                    </AuthenticatedRoute>
                   </ProtectedRoute>
                 } 
               />
@@ -85,7 +133,9 @@ const App = () => (
                 path="/matches" 
                 element={
                   <ProtectedRoute>
-                    <Matches />
+                    <AuthenticatedRoute>
+                      <Matches />
+                    </AuthenticatedRoute>
                   </ProtectedRoute>
                 } 
               />
@@ -93,7 +143,9 @@ const App = () => (
                 path="/matches/:id" 
                 element={
                   <ProtectedRoute>
-                    <MatchDetail />
+                    <AuthenticatedRoute>
+                      <MatchDetail />
+                    </AuthenticatedRoute>
                   </ProtectedRoute>
                 } 
               />
@@ -101,7 +153,9 @@ const App = () => (
                 path="/players" 
                 element={
                   <ProtectedRoute>
-                    <Players />
+                    <AuthenticatedRoute>
+                      <Players />
+                    </AuthenticatedRoute>
                   </ProtectedRoute>
                 } 
               />
@@ -109,7 +163,9 @@ const App = () => (
                 path="/players/:id" 
                 element={
                   <ProtectedRoute>
-                    <PlayerDetail />
+                    <AuthenticatedRoute>
+                      <PlayerDetail />
+                    </AuthenticatedRoute>
                   </ProtectedRoute>
                 } 
               />
@@ -119,7 +175,9 @@ const App = () => (
                 path="/generate-teams" 
                 element={
                   <ProtectedRoute allowedRoles={['admin', 'editor']}>
-                    <TeamGenerator />
+                    <AuthenticatedRoute>
+                      <TeamGenerator />
+                    </AuthenticatedRoute>
                   </ProtectedRoute>
                 } 
               />
@@ -129,7 +187,9 @@ const App = () => (
                 path="/admin" 
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
-                    <Admin />
+                    <AuthenticatedRoute>
+                      <Admin />
+                    </AuthenticatedRoute>
                   </ProtectedRoute>
                 } 
               />
