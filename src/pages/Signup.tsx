@@ -37,8 +37,11 @@ const Signup = () => {
         title: "Success",
         description: "Account created successfully",
       });
-      // Redirect to verify email page with the email
-      navigate('/verify-email', { state: { email } });
+      // Temporarily redirect directly to onboarding instead of verify-email page
+      navigate('/players/onboarding');
+      
+      // Comment out the original redirect to verify-email
+      // navigate('/verify-email', { state: { email } });
     } catch (error) {
       console.error('Signup error:', error);
       toast({
