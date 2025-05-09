@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 import { getAllPositions } from "@/integrations/supabase/positions";
 import { useFormContext } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const PositionsStep = () => {
   const [positions, setPositions] = useState<{ id: string; name: string }[]>([]);
-  const { register, setValue, watch, formState: { errors } } = useFormContext();
+  const { setValue, watch, formState: { errors } } = useFormContext();
   const { toast } = useToast();
   const selectedPositions = watch("positions") || [];
 
@@ -48,31 +48,38 @@ const PositionsStep = () => {
       )}
       
       <div className="grid grid-cols-2 gap-4 mt-4">
-        {positions.map((position) => (
-          <div
-            key={position.id}
-            className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-              selectedPositions.includes(position.id) 
-                ? "bg-primary/10 border-primary" 
-                : "bg-white hover:bg-gray-50"
-            }`}
-            onClick={() => togglePosition(position.id)}
-          >
-            <div className="flex items-center space-x-3">
-              <Checkbox
-                id={`position-${position.id}`}
-                checked={selectedPositions.includes(position.id)}
-                onCheckedChange={() => togglePosition(position.id)}
-              />
-              <label
-                htmlFor={`position-${position.id}`}
-                className="font-medium cursor-pointer"
-              >
-                {position.name}
-              </label>
+        {positions.map((position) => {
+          // Determine if this position is selected
+          const isChecked = selectedPositions.includes(position.id);
+          
+          return (
+            <div
+              key={position.id}
+              className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                isChecked 
+                  ? "bg-primary/10 border-primary" 
+                  : "bg-white hover:bg-gray-50"
+              }`}
+              onClick={() => togglePosition(position.id)}
+            >
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id={`position-${position.id}`}
+                  checked={isChecked}
+                  // Use onClick instead of onCheckedChange to avoid double toggles
+                  // since the parent div already has an onClick handler
+                  // This prevents the infinite update loop
+                />
+                <label
+                  htmlFor={`position-${position.id}`}
+                  className="font-medium cursor-pointer"
+                >
+                  {position.name}
+                </label>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
