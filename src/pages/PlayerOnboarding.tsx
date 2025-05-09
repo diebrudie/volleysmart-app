@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,7 +46,6 @@ const PlayerOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -66,13 +66,6 @@ const PlayerOnboarding = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  // Prevent automatic navigation to start page if form submission is in progress
-  useEffect(() => {
-    if (formSubmitted && !isSubmitting) {
-      navigate("/start");
-    }
-  }, [formSubmitted, isSubmitting, navigate]);
-
   const onSubmit = async (data: FormValues) => {
     if (!user) {
       toast({
@@ -87,13 +80,8 @@ const PlayerOnboarding = () => {
     console.log("Form submitted with data:", data);
 
     try {
-      // If data.imageUrl is a File, we need to generate a proper URL or handle it differently
-      let imageUrl = "";
-      
       // If we have imagePreview, use that as the URL (it's a data URL)
-      if (imagePreview) {
-        imageUrl = imagePreview;
-      }
+      let imageUrl = imagePreview || "";
 
       // Create player profile with the proper image URL
       await createPlayer(user.id, {
@@ -112,9 +100,9 @@ const PlayerOnboarding = () => {
         title: "Success",
         description: "Your player profile has been created",
       });
-
-      // Set form as submitted successfully - navigation will happen in the useEffect
-      setFormSubmitted(true);
+      
+      // Navigate to start page after successful submission
+      navigate("/start");
     } catch (error) {
       console.error("Error creating player profile:", error);
       toast({
@@ -122,6 +110,7 @@ const PlayerOnboarding = () => {
         description: "Failed to create player profile",
         variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -203,7 +192,7 @@ const PlayerOnboarding = () => {
                         type="submit"
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? "Completing..." : "Complete Profile"}
+                        {isSubmitting ? "Submitting..." : "Submit"}
                       </Button>
                     ) : (
                       <Button
