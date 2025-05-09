@@ -53,7 +53,7 @@ const Signup = () => {
 
   return (
     <AuthLayout>
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+      <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
         <h2 className="text-2xl font-semibold mb-6">Create an Account</h2>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-4 mb-4">
