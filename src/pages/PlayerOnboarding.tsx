@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
@@ -19,7 +18,7 @@ import { Volleyball } from "lucide-react";
 const formSchema = z.object({
   positions: z.array(z.string()).min(1, "Select at least one position"),
   skillRating: z.number().min(1).max(10),
-  imageUrl: z.string().optional(),
+  imageUrl: z.any().optional(), // Changed to accept File objects
   gender: z.enum(["male", "female", "diverse"]),
   birthday: z.date().optional(),
 });
@@ -73,12 +72,20 @@ const PlayerOnboarding = () => {
     setIsSubmitting(true);
 
     try {
-      // Create player profile
+      // If data.imageUrl is a File, we need to generate a proper URL or handle it differently
+      let imageUrl = "";
+      
+      // If we have imagePreview, use that as the URL (it's a data URL)
+      if (imagePreview) {
+        imageUrl = imagePreview;
+      }
+
+      // Create player profile with the proper image URL
       await createPlayer(user.id, {
         first_name: user.name?.split(' ')[0] || '',
         last_name: user.name?.split(' ').slice(1).join(' ') || '',
         bio: "",
-        image_url: data.imageUrl,
+        image_url: imageUrl,
         skill_rating: data.skillRating,
         positions: data.positions,
         member_association: true,

@@ -21,9 +21,9 @@ const PhotoUploadStep = ({ imagePreview, setImagePreview }: PhotoUploadStepProps
       };
       reader.readAsDataURL(file);
       
-      // In a real implementation, you would upload the file to storage
-      // This is a placeholder for now
-      setValue("imageUrl", URL.createObjectURL(file), { shouldValidate: true });
+      // Store the file data directly instead of using URL.createObjectURL
+      // This prevents the URL becoming invalid when navigating between steps
+      setValue("imageUrl", file, { shouldValidate: true });
     }
   };
 
