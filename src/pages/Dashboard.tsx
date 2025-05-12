@@ -22,6 +22,7 @@ const Dashboard = () => {
   const [hasClub, setHasClub] = useState(false);
   const [matchData, setMatchData] = useState(null);
   const [hasError, setHasError] = useState(false);
+  const [hasCheckedClub, setHasCheckedClub] = useState(false);
   
   // Check if user belongs to a club
   useEffect(() => {
@@ -43,6 +44,7 @@ const Dashboard = () => {
           console.error("Error fetching player data:", playerError);
         } else if (clubData?.club_id) {
           setHasClub(true);
+          setHasCheckedClub(true);
           fetchLatestMatchData(clubData.club_id);
           return;
         }
@@ -56,9 +58,12 @@ const Dashboard = () => {
         
         if (error) {
           if (error.code === '42P17') {
-            // Handle infinite recursion error by checking directly for players instead
-            console.warn("RLS policy error, falling back to alternative method");
-            navigate('/start');
+            // Handle infinite recursion error
+            console.warn("RLS policy error, but continue showing the dashboard");
+            // Don't navigate away, just show the no club message
+            setHasClub(false);
+            setHasCheckedClub(true);
+            setIsLoadingClub(false);
             return;
           }
           
@@ -74,6 +79,7 @@ const Dashboard = () => {
         
         const hasClubMembership = clubMemberships && clubMemberships.length > 0;
         setHasClub(hasClubMembership);
+        setHasCheckedClub(true);
         
         // If they have a club, fetch the latest match data
         if (hasClubMembership) {
@@ -164,8 +170,8 @@ const Dashboard = () => {
     );
   }
 
-  // Redirect to the start page if the user doesn't have a club
-  if (!isLoadingClub && !hasClub) {
+  // Show NoClubMessage if the user doesn't have a club and we've finished checking
+  if (!isLoadingClub && hasCheckedClub && !hasClub) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />

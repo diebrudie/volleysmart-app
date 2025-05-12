@@ -108,7 +108,7 @@ const App = () => (
                 } 
               />
               
-              {/* Start Page after onboarding */}
+              {/* Start Page after onboarding - This should not redirect once a user has visited it */}
               <Route 
                 path="/start" 
                 element={
