@@ -16,12 +16,11 @@ const Home = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Always define useEffect regardless of conditions
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !isRedirecting) {
       setIsRedirecting(true);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isRedirecting]);
 
   // If we're still checking authentication status, show loading indicator
   if (isLoading) {

@@ -1,4 +1,3 @@
-
 import { ToastProvider } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -31,19 +30,13 @@ import Start from "./pages/Start";
 
 const queryClient = new QueryClient();
 
-// Home route with authentication check
-const HomeRoute = () => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Home />;
-};
-
 // Check for new users needing onboarding
 const AuthenticatedRoute = ({ children }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const [hasPlayerProfile, setHasPlayerProfile] = useState(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+  const [profileError, setProfileError] = useState(false);
 
-  // Always use useEffect regardless of authentication state
   useEffect(() => {
     const checkPlayerProfile = async () => {
       if (!isLoading && isAuthenticated && user?.id) {
@@ -51,9 +44,12 @@ const AuthenticatedRoute = ({ children }) => {
           setIsCheckingProfile(true);
           const playerProfile = await getPlayerByUserId(user.id);
           setHasPlayerProfile(!!playerProfile);
+          setProfileError(false);
         } catch (error) {
+          console.error("Error checking player profile:", error);
           // If error is because profile doesn't exist
           setHasPlayerProfile(false);
+          setProfileError(true);
         } finally {
           setIsCheckingProfile(false);
         }
@@ -95,7 +91,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               {/* Public Routes */}
-              <Route path="/" element={<HomeRoute />} />
+              <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
