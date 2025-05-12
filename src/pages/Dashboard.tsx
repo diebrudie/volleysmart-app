@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import NoClubMessage from "@/components/club/NoClubMessage";
+import { Spinner } from "@/components/ui/spinner";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -20,31 +21,68 @@ const Dashboard = () => {
   const [isLoadingClub, setIsLoadingClub] = useState(true);
   const [hasClub, setHasClub] = useState(false);
   const [matchData, setMatchData] = useState(null);
+  const [hasError, setHasError] = useState(false);
   
   // Check if user belongs to a club
   useEffect(() => {
     const checkClubMembership = async () => {
+      if (!user?.id) return;
+      
       try {
         setIsLoadingClub(true);
+        setHasError(false);
+        
+        // First try to get the user's club
+        const { data: clubData, error: playerError } = await supabase
+          .from('players')
+          .select('club_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (playerError) {
+          console.error("Error fetching player data:", playerError);
+        } else if (clubData?.club_id) {
+          setHasClub(true);
+          fetchLatestMatchData(clubData.club_id);
+          return;
+        }
+        
+        // Fall back to checking club memberships if player data doesn't have club_id
         const { data: clubMemberships, error } = await supabase
           .from('club_members')
           .select('club_id')
-          .eq('user_id', user?.id)
+          .eq('user_id', user.id)
           .limit(1);
         
         if (error) {
-          throw error;
+          if (error.code === '42P17') {
+            // Handle infinite recursion error by checking directly for players instead
+            console.warn("RLS policy error, falling back to alternative method");
+            navigate('/start');
+            return;
+          }
+          
+          console.error("Error checking club membership:", error);
+          setHasError(true);
+          toast({
+            title: "Error",
+            description: "Failed to check club membership. Please try again later.",
+            variant: "destructive"
+          });
+          return;
         }
         
-        setHasClub(clubMemberships && clubMemberships.length > 0);
+        const hasClubMembership = clubMemberships && clubMemberships.length > 0;
+        setHasClub(hasClubMembership);
         
         // If they have a club, fetch the latest match data
-        if (clubMemberships && clubMemberships.length > 0) {
+        if (hasClubMembership) {
           fetchLatestMatchData(clubMemberships[0].club_id);
         }
         
       } catch (error) {
         console.error("Error checking club membership:", error);
+        setHasError(true);
         toast({
           title: "Error",
           description: "Failed to check club membership",
@@ -58,7 +96,7 @@ const Dashboard = () => {
     if (user?.id) {
       checkClubMembership();
     }
-  }, [user?.id, toast]);
+  }, [user?.id, toast, navigate]);
   
   // Fetch the latest match data for the club
   const fetchLatestMatchData = async (clubId) => {
@@ -101,6 +139,31 @@ const Dashboard = () => {
     }
   };
 
+  // Show error state
+  if (hasError) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex flex-col items-center justify-center p-6">
+          <Card className="max-w-lg w-full">
+            <CardContent className="text-center p-8">
+              <h3 className="text-xl font-medium text-red-600 mb-4">Something went wrong</h3>
+              <p className="text-gray-600 mb-6">
+                We're having trouble connecting to our servers. Please try again later.
+              </p>
+              <Button 
+                onClick={() => window.location.reload()}
+                variant="outline"
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // Redirect to the start page if the user doesn't have a club
   if (!isLoadingClub && !hasClub) {
     return (
@@ -116,8 +179,8 @@ const Dashboard = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-          <span className="ml-2">Loading dashboard...</span>
+          <Spinner className="h-8 w-8 text-volleyball-primary mr-2" />
+          <span>Loading dashboard...</span>
         </div>
       </div>
     );

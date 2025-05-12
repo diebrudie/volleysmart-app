@@ -1,23 +1,44 @@
 
+import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
+import { Spinner } from "@/components/ui/spinner";
 
-// Import the new component files
+// Import the component files
 import HeroSection from "@/components/home/HeroSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import CtaSection from "@/components/home/CtaSection";
 
 const Home = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Redirect authenticated users to dashboard
-  if (isAuthenticated) {
+  // If we're still checking authentication status, show loading indicator
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Spinner className="h-8 w-8 text-volleyball-primary mb-4" />
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  // Redirect authenticated users to dashboard with a slight delay
+  // This helps prevent flickering between pages
+  useEffect(() => {
+    if (isAuthenticated) {
+      setIsRedirecting(true);
+    }
+  }, [isAuthenticated]);
+
+  if (isRedirecting) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // Only show the public home page for non-authenticated users
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
