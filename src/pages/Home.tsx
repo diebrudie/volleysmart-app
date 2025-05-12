@@ -16,6 +16,13 @@ const Home = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
+  // Always define useEffect regardless of conditions
+  useEffect(() => {
+    if (isAuthenticated) {
+      setIsRedirecting(true);
+    }
+  }, [isAuthenticated]);
+
   // If we're still checking authentication status, show loading indicator
   if (isLoading) {
     return (
@@ -26,14 +33,7 @@ const Home = () => {
     );
   }
 
-  // Redirect authenticated users to dashboard with a slight delay
-  // This helps prevent flickering between pages
-  useEffect(() => {
-    if (isAuthenticated) {
-      setIsRedirecting(true);
-    }
-  }, [isAuthenticated]);
-
+  // Redirect authenticated users to dashboard
   if (isRedirecting) {
     return <Navigate to="/dashboard" replace />;
   }

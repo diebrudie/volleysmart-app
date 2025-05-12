@@ -1,3 +1,4 @@
+
 import { ToastProvider } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -42,7 +43,7 @@ const AuthenticatedRoute = ({ children }) => {
   const [hasPlayerProfile, setHasPlayerProfile] = useState(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
 
-  // Check if the user has completed onboarding
+  // Always use useEffect regardless of authentication state
   useEffect(() => {
     const checkPlayerProfile = async () => {
       if (!isLoading && isAuthenticated && user?.id) {
@@ -56,6 +57,9 @@ const AuthenticatedRoute = ({ children }) => {
         } finally {
           setIsCheckingProfile(false);
         }
+      } else if (!isLoading) {
+        // Make sure we exit loading state even if not authenticated
+        setIsCheckingProfile(false);
       }
     };
 
