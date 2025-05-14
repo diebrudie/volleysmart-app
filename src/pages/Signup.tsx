@@ -38,8 +38,8 @@ const Signup = () => {
         description: "Account created successfully",
       });
       
-      // After signup, navigate to onboarding
-      navigate('/players/onboarding');
+      // After signup, navigate to dashboard instead of onboarding
+      navigate('/dashboard');
     } catch (error) {
       console.error('Signup error:', error);
       toast({

@@ -48,14 +48,10 @@ export const routes: RouteObject[] = [
     element: <ResetPassword />,
   },
   
-  // Player Onboarding
+  // Player Onboarding - No longer requires auth to prevent blocking
   {
     path: "/players/onboarding",
-    element: (
-      <ProtectedRoute>
-        <PlayerOnboarding />
-      </ProtectedRoute>
-    ),
+    element: <PlayerOnboarding />,
   },
   
   // Start Page after onboarding
@@ -68,14 +64,12 @@ export const routes: RouteObject[] = [
     ),
   },
   
-  // Protected Routes - need authentication and completed onboarding
+  // Protected Routes - need authentication
   {
     path: "/dashboard",
     element: (
       <ProtectedRoute>
-        <AuthenticatedRoute>
-          <Dashboard />
-        </AuthenticatedRoute>
+        <Dashboard />
       </ProtectedRoute>
     ),
   },
@@ -83,9 +77,7 @@ export const routes: RouteObject[] = [
     path: "/matches",
     element: (
       <ProtectedRoute>
-        <AuthenticatedRoute>
-          <Matches />
-        </AuthenticatedRoute>
+        <Matches />
       </ProtectedRoute>
     ),
   },
@@ -93,9 +85,7 @@ export const routes: RouteObject[] = [
     path: "/matches/:id",
     element: (
       <ProtectedRoute>
-        <AuthenticatedRoute>
-          <MatchDetail />
-        </AuthenticatedRoute>
+        <MatchDetail />
       </ProtectedRoute>
     ),
   },
@@ -103,9 +93,7 @@ export const routes: RouteObject[] = [
     path: "/players",
     element: (
       <ProtectedRoute>
-        <AuthenticatedRoute>
-          <Players />
-        </AuthenticatedRoute>
+        <Players />
       </ProtectedRoute>
     ),
   },
@@ -113,9 +101,7 @@ export const routes: RouteObject[] = [
     path: "/players/:id",
     element: (
       <ProtectedRoute>
-        <AuthenticatedRoute>
-          <PlayerDetail />
-        </AuthenticatedRoute>
+        <PlayerDetail />
       </ProtectedRoute>
     ),
   },
@@ -125,9 +111,7 @@ export const routes: RouteObject[] = [
     path: "/generate-teams",
     element: (
       <ProtectedRoute allowedRoles={['admin', 'editor']}>
-        <AuthenticatedRoute>
-          <TeamGenerator />
-        </AuthenticatedRoute>
+        <TeamGenerator />
       </ProtectedRoute>
     ),
   },
@@ -137,9 +121,7 @@ export const routes: RouteObject[] = [
     path: "/admin",
     element: (
       <ProtectedRoute allowedRoles={['admin']}>
-        <AuthenticatedRoute>
-          <Admin />
-        </AuthenticatedRoute>
+        <Admin />
       </ProtectedRoute>
     ),
   },

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { getAllPositions } from "@/integrations/supabase/positions";
 import { useFormContext } from "react-hook-form";
@@ -5,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FormMessage } from "@/components/ui/form";
 import { Check, AlertCircle } from "lucide-react";
 
+// Fallback default positions if API fails
 const DEFAULT_POSITIONS = [
   { id: "setter", name: "Setter" },
   { id: "outside", name: "Outside Hitter" },

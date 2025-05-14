@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { getPlayerByUserId } from '@/integrations/supabase/players';
 import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthenticatedRouteProps {
   children: React.ReactNode;
@@ -10,12 +12,16 @@ interface AuthenticatedRouteProps {
 
 const AuthenticatedRoute = ({ children }: AuthenticatedRouteProps) => {
   const { isAuthenticated, user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [hasPlayerProfile, setHasPlayerProfile] = useState<boolean | null>(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [profileCheckError, setProfileCheckError] = useState(false);
+  const [retryAttempts, setRetryAttempts] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
+    let checkTimeout: NodeJS.Timeout | null = null;
 
     const checkPlayerProfile = async () => {
       if (!isLoading && isAuthenticated && user?.id) {
@@ -35,9 +41,27 @@ const AuthenticatedRoute = ({ children }: AuthenticatedRouteProps) => {
           console.error("Error checking player profile:", error);
           // Only update state if component is still mounted
           if (isMounted) {
-            setHasPlayerProfile(false);
             setProfileCheckError(true);
             setIsCheckingProfile(false);
+            
+            // If we've tried less than 3 times, retry after a delay
+            if (retryAttempts < 3) {
+              setRetryAttempts(prev => prev + 1);
+              checkTimeout = setTimeout(() => {
+                console.log('Retrying player profile check, attempt:', retryAttempts + 1);
+                checkPlayerProfile();
+              }, 1000);
+            } else {
+              // After 3 attempts, just assume profile exists to avoid blocking the user
+              console.log('Max retry attempts reached, allowing user to proceed');
+              setHasPlayerProfile(true);
+              
+              toast({
+                title: "Warning",
+                description: "Profile check failed, but you can continue using the app",
+                variant: "destructive"
+              });
+            }
           }
         }
       } else if (!isLoading) {
@@ -57,8 +81,9 @@ const AuthenticatedRoute = ({ children }: AuthenticatedRouteProps) => {
 
     return () => {
       isMounted = false;
+      if (checkTimeout) clearTimeout(checkTimeout);
     };
-  }, [isLoading, isAuthenticated, user?.id]);
+  }, [isLoading, isAuthenticated, user?.id, retryAttempts, toast]);
 
   // Show loading while checking profile status
   if (isLoading || isCheckingProfile) {
@@ -70,6 +95,11 @@ const AuthenticatedRoute = ({ children }: AuthenticatedRouteProps) => {
         </div>
       </div>
     );
+  }
+
+  // If max retry attempts reached, just show the children
+  if (retryAttempts >= 3 && profileCheckError) {
+    return <>{children}</>;
   }
 
   // Redirect to onboarding if the user doesn't have a profile
