@@ -2,29 +2,39 @@
 import { supabase } from "./client";
 
 export async function getAllPositions() {
-  const { data, error } = await supabase
-    .from('positions')
-    .select('*');
+  try {
+    const { data, error } = await supabase
+      .from('positions')
+      .select('*');
+      
+    if (error) {
+      console.error("Error fetching positions:", error);
+      throw error;
+    }
     
-  if (error) {
-    console.error("Error fetching positions:", error);
+    return data || [];
+  } catch (error) {
+    console.error("Exception in getAllPositions:", error);
     throw error;
   }
-  
-  return data;
 }
 
 export async function getPositionById(id: string) {
-  const { data, error } = await supabase
-    .from('positions')
-    .select('*')
-    .eq('id', id)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('positions')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+      
+    if (error) {
+      console.error("Error fetching position:", error);
+      throw error;
+    }
     
-  if (error) {
-    console.error("Error fetching position:", error);
+    return data;
+  } catch (error) {
+    console.error("Exception in getPositionById:", error);
     throw error;
   }
-  
-  return data;
 }

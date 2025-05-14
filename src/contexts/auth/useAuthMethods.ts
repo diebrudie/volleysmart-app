@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from '@/types/auth';
+import { createUserProfile } from '@/integrations/supabase/profiles';
 
 export function useAuthMethods(
   setUser: (user: AuthUser | null) => void,
@@ -58,6 +59,18 @@ export function useAuthMethods(
       });
 
       if (error) throw error;
+      
+      if (data?.user) {
+        // Manually create the user profile since the database trigger might not be working
+        try {
+          console.log('Creating user profile for new signup:', data.user.id);
+          await createUserProfile(data.user);
+        } catch (profileError) {
+          console.error('Error creating profile during signup:', profileError);
+          // Continue with signup even if profile creation fails
+          // The user will be prompted to complete their profile later
+        }
+      }
 
       console.log('Signup successful');
       toast({
