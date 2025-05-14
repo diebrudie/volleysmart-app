@@ -24,19 +24,19 @@ interface AppProvidersProps {
 
 const AppProviders = ({ children }: AppProvidersProps) => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
               {children}
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
-      </ToastProvider>
-    </QueryClientProvider>
+            </TooltipProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
   );
 };
 

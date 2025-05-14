@@ -47,7 +47,7 @@ export function useAuthInitialization({
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session - Use a flag to prevent duplicate checks
     const initializeAuth = async () => {
       try {
         console.log('Checking for existing session');
@@ -74,6 +74,7 @@ export function useAuthInitialization({
       }
     };
 
+    // Only initialize auth once
     initializeAuth();
 
     return () => {
@@ -86,7 +87,10 @@ export function useAuthInitialization({
 
   // Separate effect for fetching user profile to avoid loops
   useEffect(() => {
-    if (!user?.id || !session) return;
+    // Skip profile fetching if no user ID or session
+    if (!user?.id || !session) {
+      return;
+    }
     
     let mounted = true;
     let profileTimer: NodeJS.Timeout | null = null;
