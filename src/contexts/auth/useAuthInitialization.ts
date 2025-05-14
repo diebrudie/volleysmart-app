@@ -86,12 +86,14 @@ export function useAuthInitialization({
 
   // Separate effect for fetching user profile to avoid loops
   useEffect(() => {
+    if (!user?.id || !session) return;
+    
     let mounted = true;
+    let profileTimer: NodeJS.Timeout | null = null;
     
     const loadUserProfile = async () => {
-      if (!user?.id || !session) return;
-      
       try {
+        console.log('Fetching profile for user:', user.id);
         const profile = await fetchUserProfile(user.id);
         
         if (!mounted) return;
@@ -105,17 +107,14 @@ export function useAuthInitialization({
       }
     };
 
-    if (user?.id && session) {
-      // Use setTimeout to avoid recursive RLS issues
-      setTimeout(() => {
-        if (mounted) loadUserProfile();
-      }, 0);
-    }
+    // Use setTimeout to avoid recursive RLS issues
+    profileTimer = setTimeout(() => {
+      if (mounted) loadUserProfile();
+    }, 100);
 
     return () => {
       mounted = false;
+      if (profileTimer) clearTimeout(profileTimer);
     };
   }, [user?.id, session, setUser]);
-
-  return null;
 }

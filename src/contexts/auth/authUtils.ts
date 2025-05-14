@@ -7,18 +7,24 @@ import { UserRole } from "@/types/supabase";
 export const fetchUserProfile = async (userId: string): Promise<any> => {
   console.log('Fetching user profile for ID:', userId);
   
-  const { data: profile, error } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-  
-  if (error) {
-    console.error('Error fetching user profile:', error);
-    throw error;
+  try {
+    const { data: profile, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
+    
+    return profile;
+  } catch (error) {
+    console.error('Exception in fetchUserProfile:', error);
+    // Return null instead of throwing to prevent auth initialization failures
+    return null;
   }
-  
-  return profile;
 };
 
 export const createMinimalUser = (user: User | null): AuthUser | null => {
@@ -34,6 +40,7 @@ export const createMinimalUser = (user: User | null): AuthUser | null => {
 
 export const enrichUserWithProfile = (baseUser: AuthUser | null, profile: any): AuthUser | null => {
   if (!baseUser) return null;
+  if (!profile) return baseUser; // Return existing user if profile doesn't exist
   
   return {
     ...baseUser,
