@@ -47,6 +47,7 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
+      console.log("Attempting to log in with:", data.email);
       await login(data.email, data.password);
       // The redirection will happen automatically in the useEffect hook
     } catch (error) {

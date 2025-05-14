@@ -30,12 +30,19 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Start from "./pages/Start";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Check for new users needing onboarding
-const AuthenticatedRoute = ({ children }) => {
+const AuthenticatedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
-  const [hasPlayerProfile, setHasPlayerProfile] = useState(null);
+  const [hasPlayerProfile, setHasPlayerProfile] = useState<boolean | null>(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [profileCheckError, setProfileCheckError] = useState(false);
 
@@ -45,11 +52,14 @@ const AuthenticatedRoute = ({ children }) => {
     const checkPlayerProfile = async () => {
       if (!isLoading && isAuthenticated && user?.id) {
         try {
+          console.log('Checking if user has a player profile:', user.id);
           setIsCheckingProfile(true);
           const playerProfile = await getPlayerByUserId(user.id);
           
           if (isMounted) {
-            setHasPlayerProfile(!!playerProfile);
+            const profileExists = !!playerProfile;
+            console.log('Player profile exists:', profileExists);
+            setHasPlayerProfile(profileExists);
             setProfileCheckError(false);
             setIsCheckingProfile(false);
           }
@@ -65,12 +75,17 @@ const AuthenticatedRoute = ({ children }) => {
       } else if (!isLoading) {
         // Make sure we exit loading state even if not authenticated
         if (isMounted) {
+          console.log('Auth loaded, but user is not authenticated');
           setIsCheckingProfile(false);
         }
       }
     };
 
-    checkPlayerProfile();
+    if (isAuthenticated && user) {
+      checkPlayerProfile();
+    } else {
+      setIsCheckingProfile(false);
+    }
 
     return () => {
       isMounted = false;
@@ -90,7 +105,8 @@ const AuthenticatedRoute = ({ children }) => {
   }
 
   // Redirect to onboarding if the user doesn't have a profile
-  if (isAuthenticated && !hasPlayerProfile) {
+  if (isAuthenticated && hasPlayerProfile === false) {
+    console.log('User authenticated but no profile, redirecting to onboarding');
     return <Navigate to="/players/onboarding" replace />;
   }
 

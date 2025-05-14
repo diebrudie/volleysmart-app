@@ -14,14 +14,6 @@ import CtaSection from "@/components/home/CtaSection";
 
 const Home = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
-
-  // Only update redirect state once authentication state is confirmed
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      setShouldRedirect(true);
-    }
-  }, [isAuthenticated, isLoading]);
 
   // If we're still checking authentication status, show loading indicator
   if (isLoading) {
@@ -34,7 +26,8 @@ const Home = () => {
   }
 
   // Redirect authenticated users to dashboard
-  if (shouldRedirect) {
+  if (isAuthenticated) {
+    console.log("User is authenticated, redirecting to dashboard");
     return <Navigate to="/dashboard" replace />;
   }
 

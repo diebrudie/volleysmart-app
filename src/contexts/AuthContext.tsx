@@ -43,9 +43,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Initialize auth state
   useEffect(() => {
     let mounted = true;
+    console.log('AuthProvider initialized');
     
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         if (!mounted) return;
         
@@ -68,6 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         } else {
           setUser(null);
+          console.log('User logged out or no session');
         }
       }
     );
@@ -75,12 +77,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // THEN check for existing session
     const initializeAuth = async () => {
       try {
+        console.log('Checking for existing session');
         const { data } = await supabase.auth.getSession();
+        
         if (!mounted) return;
         
         setSession(data.session);
         
         if (data.session?.user) {
+          console.log('Found existing session for user:', data.session.user.id);
           // Just set basic user info initially
           setUser({
             id: data.session.user.id,
@@ -88,11 +93,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: data.session.user.email?.split('@')[0] || 'User',
             role: 'user'
           });
+        } else {
+          console.log('No existing session found');
+          setUser(null);
         }
       } catch (error) {
         console.error("Error getting session:", error);
       } finally {
         if (mounted) {
+          console.log('Setting isLoading to false');
           setIsLoading(false);
         }
       }
@@ -102,7 +111,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -114,6 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!user?.id || !session) return;
       
       try {
+        console.log('Fetching user profile for ID:', user.id);
         // Fetch user profile from the user_profiles table
         const { data: profile, error } = await supabase
           .from('user_profiles')
@@ -129,13 +141,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (profile) {
+          console.log('Profile found:', profile);
           setUser(prevUser => {
             if (!prevUser) return null;
             
             return {
               ...prevUser,
-              name: profile?.email?.split('@')[0] || prevUser.email?.split('@')[0] || 'User',
-              role: profile?.role as UserRole || 'user',
+              name: profile.email?.split('@')[0] || prevUser.email?.split('@')[0] || 'User',
+              role: profile.role as UserRole || 'user',
             };
           });
         }
@@ -156,6 +169,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log('Attempting login for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -163,6 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
+      console.log('Login successful');
       toast({
         title: "Success",
         description: "You have successfully logged in",
@@ -185,6 +200,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (email: string, password: string, firstName?: string, lastName?: string) => {
     setIsLoading(true);
     try {
+      console.log('Attempting signup for:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -198,6 +214,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
+      console.log('Signup successful');
       toast({
         title: "Success",
         description: "Account created successfully. Please check your email for confirmation.",
@@ -217,12 +234,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const resetPassword = async (email: string) => {
     try {
+      console.log('Requesting password reset for:', email);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + '/reset-password',
       });
 
       if (error) throw error;
 
+      console.log('Password reset email sent');
       toast({
         title: "Success",
         description: "Password reset email sent. Please check your inbox.",
@@ -240,12 +259,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updatePassword = async (password: string) => {
     try {
+      console.log('Updating password');
       const { error } = await supabase.auth.updateUser({
         password
       });
 
       if (error) throw error;
 
+      console.log('Password updated successfully');
       toast({
         title: "Success",
         description: "Your password has been updated successfully.",
@@ -263,7 +284,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
+      console.log('Attempting logout');
       await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      console.log('Logout successful');
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
