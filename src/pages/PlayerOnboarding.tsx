@@ -1,159 +1,26 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useForm, FormProvider } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/auth";
-import { createPlayer } from "@/integrations/supabase/players";
+import { FormProvider } from "react-hook-form";
+import { Volleyball } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import PositionsStep from "@/components/onboarding/PositionsStep";
-import SkillRatingStep from "@/components/onboarding/SkillRatingStep";
-import PhotoUploadStep from "@/components/onboarding/PhotoUploadStep";
-import PersonalDetailsStep from "@/components/onboarding/PersonalDetailsStep";
-import { Volleyball } from "lucide-react";
-import { differenceInYears } from "date-fns";
-
-// Define the schema for the form with age validation
-const formSchema = z.object({
-  positions: z.array(z.string()).min(1, "Select at least one position"),
-  skillRating: z.number().min(1).max(10),
-  imageUrl: z.any().optional(),
-  gender: z.enum(["male", "female", "diverse"]),
-  birthday: z.date()
-    .refine((date) => {
-      // Validate the user is at least 18 years old
-      return differenceInYears(new Date(), date) >= 18;
-    }, "You must be at least 18 years old")
-    .optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-const steps = [
-  { id: "positions", title: "Positions" },
-  { id: "skillRating", title: "Skill Level" },
-  { id: "photoUpload", title: "Photo" },
-  { id: "personalDetails", title: "Personal Details" },
-];
+import { useOnboardingForm } from "@/hooks/useOnboardingForm";
+import StepRenderer from "@/components/onboarding/StepRenderer";
+import StepProgress from "@/components/onboarding/StepProgress";
+import { ONBOARDING_STEPS } from "@/components/onboarding/onboardingConstants";
 
 const PlayerOnboarding = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    form,
+    currentStep,
+    imagePreview,
+    setImagePreview,
+    isSubmitting,
+    nextStep,
+    prevStep,
+    onSubmit
+  } = useOnboardingForm();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      positions: [],
-      skillRating: 5,
-      imageUrl: "",
-      gender: "male",
-    },
-    mode: "onChange",
-  });
-
-  const nextStep = async () => {
-    // Validate the current step fields before proceeding
-    const currentStepFields = {
-      0: ["positions"],
-      1: ["skillRating"],
-      2: [], // Photo upload is optional
-      3: ["gender", "birthday"],
-    }[currentStep];
-
-    if (currentStepFields && currentStepFields.length > 0) {
-      const isValid = await form.trigger(currentStepFields as any);
-      if (!isValid) return;
-    }
-
-    // Only proceed to the next step if validation passed
-    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
-  };
-
-  const prevStep = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 0));
-  };
-
-  const onSubmit = async (data: FormValues) => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to complete onboarding",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Ensure we only process the submission when on the last step
-    if (currentStep !== steps.length - 1) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    try {
-      // If we have imagePreview, use that as the URL (it's a data URL)
-      let imageUrl = imagePreview || "";
-
-      // Create player profile with the proper image URL
-      await createPlayer(user.id, {
-        first_name: user.name?.split(' ')[0] || '',
-        last_name: user.name?.split(' ').slice(1).join(' ') || '',
-        bio: "",
-        image_url: imageUrl,
-        skill_rating: data.skillRating,
-        positions: data.positions,
-        member_association: true,
-        gender: data.gender,
-        birthday: data.birthday,
-      });
-
-      toast({
-        title: "Success",
-        description: "Your player profile has been created",
-      });
-      
-      // Navigate to club page after onboarding is complete
-      navigate("/club");
-    } catch (error) {
-      console.error("Error creating player profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create player profile",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return <PositionsStep />;
-      case 1:
-        return <SkillRatingStep />;
-      case 2:
-        return (
-          <PhotoUploadStep 
-            imagePreview={imagePreview} 
-            setImagePreview={setImagePreview} 
-          />
-        );
-      case 3:
-        return <PersonalDetailsStep />;
-      default:
-        return <PositionsStep />;
-    }
-  };
-
-  const isLastStep = currentStep === steps.length - 1;
+  const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
@@ -167,7 +34,7 @@ const PlayerOnboarding = () => {
             </div>
             <CardTitle className="text-center">Complete Your Player Profile</CardTitle>
             <CardDescription className="text-center">
-              Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}
+              Step {currentStep + 1} of {ONBOARDING_STEPS.length}: {ONBOARDING_STEPS[currentStep].title}
             </CardDescription>
           </CardHeader>
 
@@ -181,7 +48,11 @@ const PlayerOnboarding = () => {
                 }
               }}>
                 <div className="space-y-6">
-                  {renderStepContent()}
+                  <StepRenderer 
+                    currentStep={currentStep}
+                    imagePreview={imagePreview} 
+                    setImagePreview={setImagePreview} 
+                  />
 
                   <div className="flex justify-between pt-4">
                     <Button
@@ -211,17 +82,7 @@ const PlayerOnboarding = () => {
                     )}
                   </div>
 
-                  {/* Progress indicator */}
-                  <div className="flex justify-center gap-2 mt-6">
-                    {steps.map((_, index) => (
-                      <div
-                        key={index}
-                        className={`h-2 w-10 rounded-full ${
-                          index <= currentStep ? "bg-primary" : "bg-gray-200"
-                        }`}
-                      />
-                    ))}
-                  </div>
+                  <StepProgress currentStep={currentStep} />
                 </div>
               </form>
             </FormProvider>
