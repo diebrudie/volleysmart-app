@@ -102,7 +102,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     if (user?.id && session) {
-      loadUserProfile();
+      // Use setTimeout to avoid recursive RLS issues
+      setTimeout(() => {
+        if (mounted) loadUserProfile();
+      }, 0);
     }
 
     return () => {
