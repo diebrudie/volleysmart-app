@@ -35,11 +35,13 @@ const Signup = () => {
       await signup(email, password, firstName, lastName);
       toast({
         title: "Success",
-        description: "Account created successfully",
+        description: "Account created successfully. Redirecting to dashboard...",
       });
       
-      // After signup, navigate to dashboard instead of onboarding
-      navigate('/dashboard');
+      // After signup, give a small delay before redirecting to ensure auth state is updated
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     } catch (error) {
       console.error('Signup error:', error);
       toast({

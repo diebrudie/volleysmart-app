@@ -21,8 +21,8 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center">
-          <Spinner className="h-8 w-8 text-volleyball-primary" />
-          <span className="ml-2 text-gray-600">Checking authentication...</span>
+          <Spinner className="h-8 w-8 text-primary" />
+          <span className="ml-2 mt-2 text-gray-600">Checking authentication...</span>
         </div>
       </div>
     );
@@ -30,13 +30,12 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
 
   if (!isAuthenticated) {
     console.log('Not authenticated, redirecting to login');
-    // Redirect them to the login page, but save the current location they were
-    // trying to go to so you can send them back there after login
+    // Redirect to login page, saving the current location
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // If roles are specified, check if the user has one of the allowed roles
-  if (allowedRoles && user) {
+  if (allowedRoles && allowedRoles.length > 0 && user) {
     const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
     
     if (!hasRequiredRole) {
