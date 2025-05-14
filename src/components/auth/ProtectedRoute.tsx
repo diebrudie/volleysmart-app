@@ -1,6 +1,6 @@
 
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 import { Spinner } from '@/components/ui/spinner';
 
 type UserRole = 'admin' | 'editor' | 'user';

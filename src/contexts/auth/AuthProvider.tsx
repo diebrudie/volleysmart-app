@@ -1,38 +1,11 @@
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useState, ReactNode, useEffect } from 'react';
+import { User, Session } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from '@supabase/supabase-js';
-import { UserRole } from "@/types/supabase";
-
-interface AuthUser {
-  id: string;
-  email: string | undefined;
-  name: string;
-  role: UserRole;
-}
-
-interface AuthContextType {
-  user: AuthUser | null;
-  userProfile: AuthUser | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
-  logout: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (password: string) => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+import AuthContext from './AuthContext';
+import { AuthUser } from '@/types/auth';
+import { fetchUserProfile, createMinimalUser, enrichUserWithProfile } from './authUtils';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -58,12 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(prevUser => {
             if (!prevUser) {
               // Just set minimal user info until profile is fetched
-              return {
-                id: currentSession.user.id,
-                email: currentSession.user.email,
-                name: currentSession.user.email?.split('@')[0] || 'User',
-                role: 'user'
-              };
+              return createMinimalUser(currentSession.user);
             }
             return prevUser;
           });
@@ -87,12 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (data.session?.user) {
           console.log('Found existing session for user:', data.session.user.id);
           // Just set basic user info initially
-          setUser({
-            id: data.session.user.id,
-            email: data.session.user.email,
-            name: data.session.user.email?.split('@')[0] || 'User',
-            role: 'user'
-          });
+          setUser(createMinimalUser(data.session.user));
         } else {
           console.log('No existing session found');
           setUser(null);
@@ -121,36 +84,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
     
-    const fetchUserProfile = async () => {
+    const loadUserProfile = async () => {
       if (!user?.id || !session) return;
       
       try {
-        console.log('Fetching user profile for ID:', user.id);
-        // Fetch user profile from the user_profiles table
-        const { data: profile, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
+        const profile = await fetchUserProfile(user.id);
+        
         if (!mounted) return;
         
-        if (error) {
-          console.error('Error fetching user profile:', error);
-          return;
-        }
-
         if (profile) {
           console.log('Profile found:', profile);
-          setUser(prevUser => {
-            if (!prevUser) return null;
-            
-            return {
-              ...prevUser,
-              name: profile.email?.split('@')[0] || prevUser.email?.split('@')[0] || 'User',
-              role: profile.role as UserRole || 'user',
-            };
-          });
+          setUser(prevUser => enrichUserWithProfile(prevUser, profile));
         }
       } catch (error) {
         console.error('Error getting user profile:', error);
@@ -158,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     if (user?.id && session) {
-      fetchUserProfile();
+      loadUserProfile();
     }
 
     return () => {
