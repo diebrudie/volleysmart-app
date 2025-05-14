@@ -119,8 +119,8 @@ const PlayerOnboarding = () => {
         description: "Your player profile has been created",
       });
       
-      // Always navigate to start page after successful submission
-      navigate("/start");
+      // Navigate to club page after onboarding is complete
+      navigate("/club");
     } catch (error) {
       console.error("Error creating player profile:", error);
       toast({

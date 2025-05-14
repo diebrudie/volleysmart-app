@@ -32,6 +32,7 @@ const Login = () => {
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       console.log("User is authenticated, redirecting to:", from);
+      // The AuthenticatedRoute component will handle redirection based on profile status
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate, from]);
@@ -49,7 +50,7 @@ const Login = () => {
     try {
       console.log("Attempting to log in with:", data.email);
       await login(data.email, data.password);
-      // The redirection will happen automatically in the useEffect hook
+      // The redirection will happen automatically in the useEffect hook and through AuthenticatedRoute
     } catch (error) {
       console.error("Login error:", error);
       // Toast is already shown in the login function

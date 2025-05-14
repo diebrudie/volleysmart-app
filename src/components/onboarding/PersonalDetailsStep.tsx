@@ -4,14 +4,24 @@ import { parse, isValid, differenceInYears } from "date-fns";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const PersonalDetailsStep = () => {
-  const { setValue, watch, formState: { errors } } = useFormContext();
+  const { setValue, watch, formState: { errors }, trigger } = useFormContext();
   const [inputDateStr, setInputDateStr] = useState<string>("");
   const [dateError, setDateError] = useState<string | null>(null);
   
   const gender = watch("gender") || "male";
+  
+  // When the component loads, initialize the gender value if not already set
+  useEffect(() => {
+    if (!gender) {
+      setValue("gender", "male", { shouldValidate: true });
+    }
+    
+    // Trigger validation on mount to ensure form state is correct
+    trigger(["gender"]);
+  }, []);
   
   // Function to validate the date is at least 18 years ago
   const validateAge = (date: Date): boolean => {
@@ -59,6 +69,7 @@ const PersonalDetailsStep = () => {
         <div className="space-y-3">
           <FormLabel>Gender</FormLabel>
           <RadioGroup
+            defaultValue={gender}
             value={gender}
             onValueChange={(value: "male" | "female" | "diverse") => setValue("gender", value, { shouldValidate: true })}
             className="flex flex-col space-y-1"
