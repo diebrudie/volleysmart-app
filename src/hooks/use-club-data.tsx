@@ -1,7 +1,28 @@
-// Fix import statement for useAuth
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth';
+
+// Define and export the types that are used by other components
+export interface Player {
+  id: string;
+  name: string;
+  position: string;
+}
+
+export interface MatchScore {
+  gameNumber: number;
+  teamA: number | null;
+  teamB: number | null;
+}
+
+export interface MatchData {
+  id: string;
+  date: string;
+  teamA: Player[];
+  teamB: Player[];
+  scores: MatchScore[];
+}
 
 interface ClubData {
   id: string;
@@ -16,13 +37,97 @@ interface UseClubDataResult {
   clubData: ClubData | null;
   isLoading: boolean;
   error: Error | null;
+  isLoadingClub: boolean;
+  hasClub: boolean;
+  hasCheckedClub: boolean;
+  matchData: MatchData | null;
+  hasError: boolean;
+  handleSetScoreUpdate: (setNumber: number, teamAScore: number | null, teamBScore: number | null) => void;
+  getMatchStats: () => { teamAWins: number; teamBWins: number; hasPlayedAnySet: boolean; winner: string };
 }
 
-const useClubData = (): UseClubDataResult => {
+// Convert to named export instead of default export
+export const useClubData = (): UseClubDataResult => {
   const { user } = useAuth();
   const [clubData, setClubData] = useState<ClubData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  
+  // Mock data for the dashboard
+  const [matchData, setMatchData] = useState<MatchData | null>({
+    id: 'match-001',
+    date: new Date().toISOString(),
+    teamA: [
+      { id: 'p1', name: 'Alex Smith', position: 'Setter' },
+      { id: 'p2', name: 'Jamie Jones', position: 'Outside Hitter' },
+      { id: 'p3', name: 'Taylor Williams', position: 'Middle Blocker' },
+      { id: 'p4', name: 'Jordan Brown', position: 'Libero' },
+      { id: 'p5', name: 'Casey Garcia', position: 'Opposite' },
+      { id: 'p6', name: 'Riley Martinez', position: 'Outside Hitter' },
+    ],
+    teamB: [
+      { id: 'p7', name: 'Sam Wilson', position: 'Setter' },
+      { id: 'p8', name: 'Morgan Lee', position: 'Outside Hitter' },
+      { id: 'p9', name: 'Quinn Taylor', position: 'Middle Blocker' },
+      { id: 'p10', name: 'Drew Johnson', position: 'Libero' },
+      { id: 'p11', name: 'Avery Thompson', position: 'Opposite' },
+      { id: 'p12', name: 'Peyton Robinson', position: 'Outside Hitter' },
+    ],
+    scores: [
+      { gameNumber: 1, teamA: 25, teamB: 21 },
+      { gameNumber: 2, teamA: 22, teamB: 25 },
+      { gameNumber: 3, teamA: 25, teamB: 18 },
+      { gameNumber: 4, teamA: null, teamB: null },
+      { gameNumber: 5, teamA: null, teamB: null },
+    ],
+  });
+
+  // Added the required functions for dashboard
+  const handleSetScoreUpdate = (setNumber: number, teamAScore: number | null, teamBScore: number | null) => {
+    if (!matchData) return;
+    
+    const updatedScores = matchData.scores.map(score => {
+      if (score.gameNumber === setNumber) {
+        return { ...score, teamA: teamAScore, teamB: teamBScore };
+      }
+      return score;
+    });
+    
+    setMatchData({
+      ...matchData,
+      scores: updatedScores,
+    });
+  };
+
+  const getMatchStats = () => {
+    if (!matchData) return { teamAWins: 0, teamBWins: 0, hasPlayedAnySet: false, winner: 'none' };
+    
+    let teamAWins = 0;
+    let teamBWins = 0;
+    let hasPlayedAnySet = false;
+    
+    matchData.scores.forEach(score => {
+      if (score.teamA !== null && score.teamB !== null) {
+        hasPlayedAnySet = true;
+        if (score.teamA > score.teamB) {
+          teamAWins++;
+        } else if (score.teamB > score.teamA) {
+          teamBWins++;
+        }
+      }
+    });
+    
+    let winner = 'none';
+    if (teamAWins > teamBWins) {
+      winner = 'Team A';
+    } else if (teamBWins > teamAWins) {
+      winner = 'Team B';
+    } else if (hasPlayedAnySet) {
+      winner = 'Tie';
+    }
+    
+    return { teamAWins, teamBWins, hasPlayedAnySet, winner };
+  };
 
   useEffect(() => {
     const fetchClubData = async () => {
@@ -62,7 +167,16 @@ const useClubData = (): UseClubDataResult => {
     }
   }, [user?.id]);
 
-  return { clubData, isLoading, error };
+  return { 
+    clubData, 
+    isLoading, 
+    error,
+    isLoadingClub: isLoading,
+    hasClub: !!clubData,
+    hasCheckedClub: !isLoading,
+    matchData,
+    hasError: !!error,
+    handleSetScoreUpdate,
+    getMatchStats
+  };
 };
-
-export default useClubData;
