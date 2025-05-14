@@ -1,3 +1,4 @@
+
 import { ToastProvider } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,6 +10,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { getPlayerByUserId } from "@/integrations/supabase/players";
+import { Spinner } from "@/components/ui/spinner";
 
 // Pages
 import Home from "./pages/Home";
@@ -35,39 +37,54 @@ const AuthenticatedRoute = ({ children }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const [hasPlayerProfile, setHasPlayerProfile] = useState(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
-  const [profileError, setProfileError] = useState(false);
+  const [profileCheckError, setProfileCheckError] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkPlayerProfile = async () => {
       if (!isLoading && isAuthenticated && user?.id) {
         try {
           setIsCheckingProfile(true);
           const playerProfile = await getPlayerByUserId(user.id);
-          setHasPlayerProfile(!!playerProfile);
-          setProfileError(false);
+          
+          if (isMounted) {
+            setHasPlayerProfile(!!playerProfile);
+            setProfileCheckError(false);
+            setIsCheckingProfile(false);
+          }
         } catch (error) {
           console.error("Error checking player profile:", error);
-          // If error is because profile doesn't exist
-          setHasPlayerProfile(false);
-          setProfileError(true);
-        } finally {
-          setIsCheckingProfile(false);
+          // Only update state if component is still mounted
+          if (isMounted) {
+            setHasPlayerProfile(false);
+            setProfileCheckError(true);
+            setIsCheckingProfile(false);
+          }
         }
       } else if (!isLoading) {
         // Make sure we exit loading state even if not authenticated
-        setIsCheckingProfile(false);
+        if (isMounted) {
+          setIsCheckingProfile(false);
+        }
       }
     };
 
     checkPlayerProfile();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isLoading, isAuthenticated, user?.id]);
 
   // Show loading while checking profile status
   if (isLoading || isCheckingProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-        <span className="ml-2">Loading...</span>
+        <div className="flex flex-col items-center">
+          <Spinner className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+          <span className="ml-2 mt-2">Loading...</span>
+        </div>
       </div>
     );
   }

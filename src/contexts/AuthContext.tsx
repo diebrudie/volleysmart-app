@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,16 +42,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize auth state
   useEffect(() => {
+    let mounted = true;
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session);
-        setSession(session);
-        if (session?.user) {
-          // Get user profile on auth change
-          setTimeout(() => {
-            getUserProfile(session.user);
-          }, 0);
+      (event, currentSession) => {
+        if (!mounted) return;
+        
+        console.log('Auth state changed:', event);
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          // We'll fetch profile in a separate effect to avoid infinite loops
+          setUser(prevUser => {
+            if (!prevUser) {
+              // Just set minimal user info until profile is fetched
+              return {
+                id: currentSession.user.id,
+                email: currentSession.user.email,
+                name: currentSession.user.email?.split('@')[0] || 'User',
+                role: 'user'
+              };
+            }
+            return prevUser;
+          });
         } else {
           setUser(null);
         }
@@ -58,57 +73,85 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session);
-      setSession(session);
-      if (session?.user) {
-        getUserProfile(session.user);
-      } else {
-        setIsLoading(false);
+    const initializeAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        
+        setSession(data.session);
+        
+        if (data.session?.user) {
+          // Just set basic user info initially
+          setUser({
+            id: data.session.user.id,
+            email: data.session.user.email,
+            name: data.session.user.email?.split('@')[0] || 'User',
+            role: 'user'
+          });
+        }
+      } catch (error) {
+        console.error("Error getting session:", error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Function to get user profile data
-  const getUserProfile = async (authUser: User) => {
-    try {
-      setIsLoading(true);
+  // Separate effect for fetching user profile to avoid loops
+  useEffect(() => {
+    let mounted = true;
+    
+    const fetchUserProfile = async () => {
+      if (!user?.id || !session) return;
       
-      // Fetch user profile from the user_profiles table
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
+      try {
+        // Fetch user profile from the user_profiles table
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
 
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        throw error;
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          return;
+        }
+
+        if (profile) {
+          setUser(prevUser => {
+            if (!prevUser) return null;
+            
+            return {
+              ...prevUser,
+              name: profile?.email?.split('@')[0] || prevUser.email?.split('@')[0] || 'User',
+              role: profile?.role as UserRole || 'user',
+            };
+          });
+        }
+      } catch (error) {
+        console.error('Error getting user profile:', error);
       }
+    };
 
-      const userWithProfile: AuthUser = {
-        id: authUser.id,
-        email: authUser.email,
-        name: profile?.email?.split('@')[0] || authUser.email?.split('@')[0] || 'User',
-        role: profile?.role as UserRole || 'user',
-      };
-
-      setUser(userWithProfile);
-    } catch (error) {
-      console.error('Error getting user profile:', error);
-      // Even if we can't get the profile, we still have a user
-      setUser({
-        id: authUser.id,
-        email: authUser.email,
-        name: authUser.email?.split('@')[0] || 'User',
-        role: 'user'
-      });
-    } finally {
-      setIsLoading(false);
+    if (user?.id && session) {
+      fetchUserProfile();
     }
-  };
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id, session]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);

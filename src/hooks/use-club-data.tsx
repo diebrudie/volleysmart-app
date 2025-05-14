@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,12 +35,16 @@ export const useClubData = () => {
 
   // Check if user belongs to a club
   useEffect(() => {
+    let isMounted = true;
+    
     const checkClubMembership = async () => {
       if (!user?.id) return;
       
       try {
-        setIsLoadingClub(true);
-        setHasError(false);
+        if (isMounted) {
+          setIsLoadingClub(true);
+          setHasError(false);
+        }
         
         // First try to get the user's club
         const { data: clubData, error: playerError } = await supabase
@@ -51,51 +55,71 @@ export const useClubData = () => {
         
         if (playerError) {
           console.error("Error fetching player data:", playerError);
-        } else if (clubData?.club_id) {
+        } else if (clubData?.club_id && isMounted) {
           setHasClub(true);
           setHasCheckedClub(true);
           fetchLatestMatchData(clubData.club_id);
           return;
         }
         
-        // Fall back to checking club memberships if player data doesn't have club_id
-        const { data: clubMemberships, error } = await supabase
-          .from('club_members')
-          .select('club_id')
-          .eq('user_id', user.id)
-          .limit(1);
+        // Only proceed if component is still mounted
+        if (!isMounted) return;
         
-        if (error) {
-          if (error.code === '42P17') {
-            // Handle infinite recursion error
-            console.warn("RLS policy error, but continue showing the dashboard");
-            // Don't navigate away, just show the no club message
-            setHasClub(false);
-            setHasCheckedClub(true);
-            setIsLoadingClub(false);
+        // Fall back to checking club memberships if player data doesn't have club_id
+        try {
+          const { data: clubMemberships, error } = await supabase
+            .from('club_members')
+            .select('club_id')
+            .eq('user_id', user.id)
+            .limit(1);
+          
+          // Only update state if component is still mounted
+          if (!isMounted) return;
+          
+          if (error) {
+            if (error.code === '42P17') {
+              // Handle infinite recursion error
+              console.warn("RLS policy error, but continue showing the dashboard");
+              setHasClub(false);
+              setHasCheckedClub(true);
+              return;
+            }
+            
+            console.error("Error checking club membership:", error);
+            setHasError(true);
+            toast({
+              title: "Error",
+              description: "Failed to check club membership. Please try again later.",
+              variant: "destructive"
+            });
             return;
           }
           
-          console.error("Error checking club membership:", error);
+          const hasClubMembership = clubMemberships && clubMemberships.length > 0;
+          setHasClub(hasClubMembership);
+          setHasCheckedClub(true);
+          
+          // If they have a club, fetch the latest match data
+          if (hasClubMembership) {
+            fetchLatestMatchData(clubMemberships[0].club_id);
+          }
+        } catch (error) {
+          // Only update state if component is still mounted
+          if (!isMounted) return;
+          
+          console.error("Error in club membership check:", error);
           setHasError(true);
           toast({
             title: "Error",
-            description: "Failed to check club membership. Please try again later.",
+            description: "Failed to check club membership",
             variant: "destructive"
           });
-          return;
-        }
-        
-        const hasClubMembership = clubMemberships && clubMemberships.length > 0;
-        setHasClub(hasClubMembership);
-        setHasCheckedClub(true);
-        
-        // If they have a club, fetch the latest match data
-        if (hasClubMembership) {
-          fetchLatestMatchData(clubMemberships[0].club_id);
         }
         
       } catch (error) {
+        // Only update state if component is still mounted
+        if (!isMounted) return;
+        
         console.error("Error checking club membership:", error);
         setHasError(true);
         toast({
@@ -104,13 +128,28 @@ export const useClubData = () => {
           variant: "destructive"
         });
       } finally {
-        setIsLoadingClub(false);
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setIsLoadingClub(false);
+        }
       }
     };
     
     if (user?.id) {
       checkClubMembership();
+    } else {
+      // Reset states when no user
+      if (isMounted) {
+        setIsLoadingClub(false);
+        setHasClub(false);
+        setHasCheckedClub(false);
+        setMatchData(null);
+      }
     }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user?.id, toast]);
   
   // Fetch the latest match data for the club
@@ -154,7 +193,7 @@ export const useClubData = () => {
     }
   };
 
-  const handleSetScoreUpdate = (setNumber: number, teamAScore: number | null, teamBScore: number | null) => {
+  const handleSetScoreUpdate = useCallback((setNumber: number, teamAScore: number | null, teamBScore: number | null) => {
     setMatchData(prevMatchData => {
       if (!prevMatchData) return null;
       
@@ -170,10 +209,10 @@ export const useClubData = () => {
         scores: updatedScores
       };
     });
-  };
+  }, []);
 
   // Calculate match statistics
-  const getMatchStats = () => {
+  const getMatchStats = useCallback(() => {
     if (!matchData) return { teamAWins: 0, teamBWins: 0, hasPlayedAnySet: false, winner: "TBD" };
 
     const teamAWins = matchData.scores.filter(game => 
@@ -193,7 +232,7 @@ export const useClubData = () => {
       : "TBD";
 
     return { teamAWins, teamBWins, hasPlayedAnySet, winner };
-  };
+  }, [matchData]);
 
   return {
     isLoadingClub,
