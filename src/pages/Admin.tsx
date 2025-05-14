@@ -1,5 +1,5 @@
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth";
 import { Navigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import UserRoleManager from "@/components/admin/UserRoleManager";

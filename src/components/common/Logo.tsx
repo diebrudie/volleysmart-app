@@ -1,5 +1,6 @@
+
 import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg";

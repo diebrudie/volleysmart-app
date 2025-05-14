@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
 import { PlayersSelection } from '@/components/team-generator/PlayersSelection';
 import { GeneratedTeams } from '@/components/team-generator/GeneratedTeams';

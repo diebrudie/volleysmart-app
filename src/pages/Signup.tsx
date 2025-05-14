@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from "@/contexts/auth";
 import AuthLayout from '@/components/auth/AuthLayout';
 
 const Signup = () => {
