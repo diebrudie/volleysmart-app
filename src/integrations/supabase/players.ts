@@ -10,10 +10,15 @@ export interface PlayerData {
   positions?: string[];
   member_association?: boolean;
   gender?: 'male' | 'female' | 'other' | 'diverse';
-  birthday?: Date;
+  birthday?: string | Date; // Updated to allow both string and Date
 }
 
 export async function createPlayer(userId: string, playerData: PlayerData) {
+  // Format birthday as ISO string if it's a Date object
+  const formattedBirthday = playerData.birthday instanceof Date 
+    ? playerData.birthday.toISOString().split('T')[0] 
+    : playerData.birthday;
+  
   // First create the player
   const { data: player, error: playerError } = await supabase
     .from('players')
@@ -26,7 +31,7 @@ export async function createPlayer(userId: string, playerData: PlayerData) {
       skill_rating: playerData.skill_rating || 5,
       member_association: playerData.member_association || false,
       gender: playerData.gender || 'other',
-      birthday: playerData.birthday
+      birthday: formattedBirthday // Use the formatted birthday
     })
     .select()
     .single();
@@ -105,6 +110,11 @@ export async function getAllPlayers() {
 }
 
 export async function updatePlayer(playerId: string, playerData: Partial<PlayerData>) {
+  // Format birthday as ISO string if it's a Date object
+  const formattedBirthday = playerData.birthday instanceof Date 
+    ? playerData.birthday.toISOString().split('T')[0] 
+    : playerData.birthday;
+  
   const { data, error } = await supabase
     .from('players')
     .update({
@@ -114,7 +124,7 @@ export async function updatePlayer(playerId: string, playerData: Partial<PlayerD
       image_url: playerData.image_url,
       skill_rating: playerData.skill_rating,
       gender: playerData.gender,
-      birthday: playerData.birthday
+      birthday: formattedBirthday // Use the formatted birthday
     })
     .eq('id', playerId)
     .select()
