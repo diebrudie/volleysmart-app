@@ -6,7 +6,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,87 +92,80 @@ const ResetPassword = () => {
   if (!isValidLink) {
     return (
       <AuthLayout>
-        <Card className="border-0 shadow-none">
-          <CardHeader className="space-y-1 px-0 pt-0">
-            <CardTitle className="text-2xl font-bold">Invalid Link</CardTitle>
-            <CardDescription>
-              This password reset link is invalid or has expired.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-0">
-            <Button asChild className="w-full">
-              <Link to="/forgot-password">Request new reset link</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
+          <h2 className="text-2xl font-bold mb-2">Invalid Link</h2>
+          <p className="text-gray-600 mb-6">
+            This password reset link is invalid or has expired.
+          </p>
+          <Button asChild className="w-full">
+            <Link to="/forgot-password">Request new reset link</Link>
+          </Button>
+        </div>
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout>
-      <Card className="border-0 shadow-none">
-        <CardHeader className="space-y-1 px-0 pt-0">
-          <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
-          <CardDescription>
-            Enter a new password for your account.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-0">
-          {isSuccess ? (
-            <div className="text-center py-8">
-              <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
-                <Check className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-lg font-medium mb-2">Password Updated!</h3>
-              <p className="text-gray-600 mb-6">
-                Your password has been successfully reset. You will be redirected to the login page shortly.
-              </p>
-              <Button asChild>
-                <Link to="/login">Back to login</Link>
-              </Button>
+      <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
+        <h2 className="text-2xl font-bold mb-2">Reset Password</h2>
+        <p className="text-gray-600 mb-6">
+          Enter a new password for your account.
+        </p>
+        
+        {isSuccess ? (
+          <div className="text-center py-8">
+            <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <Check className="h-6 w-6 text-green-600" />
             </div>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>New Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Enter new password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Confirm new password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Resetting..." : "Reset Password"}
-                </Button>
-              </form>
-            </Form>
-          )}
-        </CardContent>
-      </Card>
+            <h3 className="text-lg font-medium mb-2">Password Updated!</h3>
+            <p className="text-gray-600 mb-6">
+              Your password has been successfully reset. You will be redirected to the login page shortly.
+            </p>
+            <Button asChild>
+              <Link to="/login">Back to login</Link>
+            </Button>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Enter new password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Confirm new password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading}
+              >
+                {isLoading ? "Resetting..." : "Reset Password"}
+              </Button>
+            </form>
+          </Form>
+        )}
+      </div>
     </AuthLayout>
   );
 };
