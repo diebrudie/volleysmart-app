@@ -101,7 +101,7 @@ export const useClubData = (): UseClubDataResult => {
     if (!matchData) return;
     
     const updatedScores = matchData.scores.map(score => {
-      if (score.gameNumber === setNumber) {
+      if (score.setNumber === setNumber) {
         return { 
           ...score, 
           teamA: teamAScore, 

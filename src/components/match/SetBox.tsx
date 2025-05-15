@@ -57,6 +57,13 @@ const SetBox: React.FC<SetBoxProps> = ({
 
   const handleSubmit = () => {
     if (onScoreUpdate) {
+      // Log the score update for debugging
+      console.info('Score updated:', {
+        setNumber,
+        teamAScore: localTeamAScore,
+        teamBScore: localTeamBScore
+      });
+      
       onScoreUpdate(setNumber, localTeamAScore, localTeamBScore);
       setIsOpen(false);
     }
