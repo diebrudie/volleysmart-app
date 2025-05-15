@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from '@/types/auth';
+import { createMinimalUser } from './authUtils';
 
 type AuthStateProps = {
   setUser: (user: AuthUser | null) => void;
@@ -28,20 +29,16 @@ export function useAuthInitialization({
     let mounted = true;
     console.log('AuthProvider initialized');
     
+    // Set up the auth listener first
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
         console.log('Auth state changed:', event, currentSession?.user?.id);
         
         if (!mounted) return;
         
         if (currentSession?.user) {
-          // Successfully authenticated
-          const userData: AuthUser = {
-            id: currentSession.user.id,
-            email: currentSession.user.email || '',
-            name: currentSession.user.email?.split('@')[0] || 'User',
-            role: 'user'
-          };
+          // Create a minimal user object to avoid circular references
+          const userData = createMinimalUser(currentSession.user);
           
           setUser(userData);
           setSession(currentSession);
@@ -55,6 +52,7 @@ export function useAuthInitialization({
       }
     );
 
+    // Then check for an existing session
     const initializeAuth = async () => {
       try {
         const { data } = await supabase.auth.getSession();
@@ -64,12 +62,8 @@ export function useAuthInitialization({
         if (data.session?.user) {
           console.log('Found existing session for user:', data.session.user.id);
           
-          const userData: AuthUser = {
-            id: data.session.user.id,
-            email: data.session.user.email || '',
-            name: data.session.user.email?.split('@')[0] || 'User',
-            role: 'user'
-          };
+          // Create a minimal user object to avoid circular references
+          const userData = createMinimalUser(data.session.user);
           
           setUser(userData);
           setSession(data.session);

@@ -8,8 +8,14 @@ export const createMinimalUser = (user: User | null): AuthUser | null => {
   
   return {
     id: user.id,
-    email: user.email,
+    email: user.email || '',
     name: user.email?.split('@')[0] || 'User',
     role: 'user'
   };
+};
+
+export const getUserDisplayName = (user: AuthUser | null): string => {
+  if (!user) return 'Guest';
+  
+  return user.name || user.email?.split('@')[0] || 'User';
 };

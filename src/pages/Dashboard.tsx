@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import DashboardContent from "@/components/dashboard/DashboardContent";
 import LoadingState from "@/components/dashboard/LoadingState";
@@ -9,9 +9,9 @@ import { useClubData } from "@/hooks/use-club-data";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
-  // Add auth context to check authentication status
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Use our refactored hook
   const { 
@@ -25,23 +25,26 @@ const Dashboard = () => {
   
   console.log('Dashboard - User:', user);
   console.log('Dashboard - Match Data:', matchData);
+  console.log('Dashboard - Auth status:', { isAuthenticated, authLoading });
 
   useEffect(() => {
-    if (error) {
+    // Only show the initial toast error once
+    if (!isLoading && error && isInitialLoad) {
       console.error("Dashboard error:", error);
       toast({
         title: "Error loading data",
-        description: "There was a problem loading the match data. Please try again.",
+        description: "There was a problem loading the match data. Using demo data instead.",
         variant: "destructive",
       });
+      setIsInitialLoad(false);
     }
-  }, [error, toast]);
+  }, [error, isLoading, toast, isInitialLoad]);
 
   // Get match statistics if we have match data
   const stats = matchData ? getMatchStats() : { teamAWins: 0, teamBWins: 0, hasPlayedAnySet: false, winner: "none" };
 
   // Show loading state while data is being fetched
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -50,16 +53,7 @@ const Dashboard = () => {
     );
   }
 
-  // Show error state if there was a problem loading the data
-  if (hasError) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <ErrorState />
-      </div>
-    );
-  }
-
+  // If there was an error but we still have mock data, continue showing the dashboard
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -74,6 +68,10 @@ const Dashboard = () => {
             winner={stats.winner}
             onScoreUpdate={handleSetScoreUpdate}
           />
+        )}
+        
+        {!matchData && !isLoading && (
+          <ErrorState />
         )}
       </main>
     </div>
