@@ -11,6 +11,9 @@ export interface Player {
 }
 
 export interface MatchScore {
+  gameNumber: number;
+  teamA: number | null;
+  teamB: number | null;
   setNumber: number;
   teamAScore: number | null;
   teamBScore: number | null;
@@ -85,11 +88,11 @@ export const useClubData = (): UseClubDataResult => {
       ]
     },
     scores: [
-      { setNumber: 1, teamAScore: 25, teamBScore: 21 },
-      { setNumber: 2, teamAScore: 22, teamBScore: 25 },
-      { setNumber: 3, teamAScore: 25, teamBScore: 18 },
-      { setNumber: 4, teamAScore: null, teamBScore: null },
-      { setNumber: 5, teamAScore: null, teamBScore: null },
+      { setNumber: 1, gameNumber: 1, teamA: 25, teamB: 21, teamAScore: 25, teamBScore: 21 },
+      { setNumber: 2, gameNumber: 2, teamA: 22, teamB: 25, teamAScore: 22, teamBScore: 25 },
+      { setNumber: 3, gameNumber: 3, teamA: 25, teamB: 18, teamAScore: 25, teamBScore: 18 },
+      { setNumber: 4, gameNumber: 4, teamA: null, teamB: null, teamAScore: null, teamBScore: null },
+      { setNumber: 5, gameNumber: 5, teamA: null, teamB: null, teamAScore: null, teamBScore: null },
     ],
   });
 
@@ -99,7 +102,13 @@ export const useClubData = (): UseClubDataResult => {
     
     const updatedScores = matchData.scores.map(score => {
       if (score.gameNumber === setNumber) {
-        return { ...score, teamA: teamAScore, teamB: teamBScore };
+        return { 
+          ...score, 
+          teamA: teamAScore, 
+          teamB: teamBScore,
+          teamAScore: teamAScore,
+          teamBScore: teamBScore
+        };
       }
       return score;
     });

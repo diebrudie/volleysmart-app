@@ -15,8 +15,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={1}
           setNumber={1}
-          teamAScore={scores.find(score => score.gameNumber === 1)?.teamA}
-          teamBScore={scores.find(score => score.gameNumber === 1)?.teamB}
+          teamAScore={scores.find(score => score.setNumber === 1)?.teamAScore}
+          teamBScore={scores.find(score => score.setNumber === 1)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
           isLarge={true}
         />
@@ -27,8 +27,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={2}
           setNumber={2}
-          teamAScore={scores.find(score => score.gameNumber === 2)?.teamA}
-          teamBScore={scores.find(score => score.gameNumber === 2)?.teamB}
+          teamAScore={scores.find(score => score.setNumber === 2)?.teamAScore}
+          teamBScore={scores.find(score => score.setNumber === 2)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
         />
       </div>
@@ -38,8 +38,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={4}
           setNumber={4}
-          teamAScore={scores.find(score => score.gameNumber === 4)?.teamA}
-          teamBScore={scores.find(score => score.gameNumber === 4)?.teamB}
+          teamAScore={scores.find(score => score.setNumber === 4)?.teamAScore}
+          teamBScore={scores.find(score => score.setNumber === 4)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
         />
       </div>
@@ -49,8 +49,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={3}
           setNumber={3}
-          teamAScore={scores.find(score => score.gameNumber === 3)?.teamA}
-          teamBScore={scores.find(score => score.gameNumber === 3)?.teamB}
+          teamAScore={scores.find(score => score.setNumber === 3)?.teamAScore}
+          teamBScore={scores.find(score => score.setNumber === 3)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
         />
       </div>
@@ -60,8 +60,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={5}
           setNumber={5}
-          teamAScore={scores.find(score => score.gameNumber === 5)?.teamA}
-          teamBScore={scores.find(score => score.gameNumber === 5)?.teamB}
+          teamAScore={scores.find(score => score.setNumber === 5)?.teamAScore}
+          teamBScore={scores.find(score => score.setNumber === 5)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
         />
       </div>
