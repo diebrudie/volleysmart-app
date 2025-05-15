@@ -6,9 +6,11 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/auth";
+import { ArrowLeft } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
 
 const loginSchema = z.object({
@@ -25,21 +27,21 @@ const Login = () => {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Prefill email if redirected from signup
-  const defaultEmail = location.state?.email || "";
+  // Get the intended destination from location state, or default to dashboard
+  const from = location.state?.from?.pathname || "/dashboard";
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      console.log("User is authenticated, redirecting to dashboard");
-      navigate("/dashboard", { replace: true });
+      console.log("User is authenticated, redirecting to:", from);
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, from]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: defaultEmail,
+      email: "",
       password: "",
     },
   });
@@ -47,17 +49,8 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      console.log("Attempting to log in with:", data.email);
       await login(data.email, data.password);
-      toast({
-        title: "Success",
-        description: "Successfully logged in. Redirecting...",
-      });
-      
-      // Additional delay to ensure auth state is updated
-      setTimeout(() => {
-        navigate("/dashboard", { replace: true });
-      }, 500);
+      // The redirection will happen automatically in the useEffect hook
     } catch (error) {
       console.error("Login error:", error);
       // Toast is already shown in the login function
@@ -68,60 +61,67 @@ const Login = () => {
 
   return (
     <AuthLayout>
-      <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
-        <h2 className="text-2xl font-semibold mb-6">Login</h2>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Email address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="Password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end">
-              <Link 
-                to="/forgot-password" 
-                className="text-sm text-volleyball-primary hover:underline"
+      <Card className="border-0 shadow-none">
+        <CardHeader className="space-y-1 px-0 pt-0">
+          <CardTitle className="text-2xl font-bold">Login</CardTitle>
+          <CardDescription>Enter your email and password to login to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="px-0">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Email address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end">
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm text-volleyball-primary hover:underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading}
               >
-                Forgot your password?
-              </Link>
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? "Logging in..." : "Login"}
-            </Button>
-          </form>
-        </Form>
-        <p className="mt-4 text-sm text-gray-600 text-center">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-volleyball-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
-      </div>
+                {isLoading ? "Logging in..." : "Login"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-2 px-0">
+          <div className="text-sm text-gray-500 text-center">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-volleyball-primary hover:underline">
+              Sign up
+            </Link>
+          </div>
+        </CardFooter>
+      </Card>
     </AuthLayout>
   );
 };

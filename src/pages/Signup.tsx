@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/auth";
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft } from "lucide-react";
 import AuthLayout from '@/components/auth/AuthLayout';
 
 const Signup = () => {
@@ -15,16 +16,9 @@ const Signup = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signup, isAuthenticated } = useAuth();
+  const { signup } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    }
-  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +36,16 @@ const Signup = () => {
       await signup(email, password, firstName, lastName);
       toast({
         title: "Success",
-        description: "Account created successfully! Please login with your credentials.",
+        description: "Account created successfully",
       });
-      
-      // Redirect to login page after signup
-      navigate('/login', { state: { email } });
+      navigate('/players/onboarding');
     } catch (error) {
       console.error('Signup error:', error);
-      // Toast is already shown in the signup function
+      toast({
+        title: "Error",
+        description: "Failed to create account. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -57,7 +53,7 @@ const Signup = () => {
 
   return (
     <AuthLayout>
-      <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h2 className="text-2xl font-semibold mb-6">Create an Account</h2>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-4 mb-4">

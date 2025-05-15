@@ -1,29 +1,47 @@
 
-import { useState } from 'react';
-import CreateClubDialog from '@/components/start/CreateClubDialog';
-import JoinClubDialog from '@/components/start/JoinClubDialog';
-import ClubOptionsCard from '@/components/start/ClubOptionsCard';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { UserPlus, UsersRound } from 'lucide-react';
 
 const Start = () => {
-  const [isCreating, setIsCreating] = useState(false);
-  const [isJoining, setIsJoining] = useState(false);
+  const navigate = useNavigate();
+
+  const handleCreateTeam = () => {
+    // For now, navigate to the team generator page
+    navigate('/generate-teams');
+  };
+
+  const handleJoinTeam = () => {
+    // For now, navigate to the matches page
+    navigate('/matches');
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      <ClubOptionsCard 
-        onCreateClub={() => setIsCreating(true)} 
-        onJoinClub={() => setIsJoining(true)} 
-      />
-      
-      <CreateClubDialog 
-        isOpen={isCreating} 
-        onOpenChange={setIsCreating} 
-      />
-      
-      <JoinClubDialog 
-        isOpen={isJoining} 
-        onOpenChange={setIsJoining} 
-      />
+      <div className="w-full max-w-lg bg-white rounded-lg shadow-md p-8">
+        <h1 className="text-2xl font-semibold text-center mb-6">
+          What would you like to do next?
+        </h1>
+        <div className="grid grid-cols-1 gap-6 mt-8">
+          <Button 
+            onClick={handleCreateTeam} 
+            className="h-16 text-lg"
+            size="lg"
+          >
+            <UserPlus className="mr-2 h-6 w-6" />
+            Create a Team
+          </Button>
+          <Button 
+            onClick={handleJoinTeam} 
+            className="h-16 text-lg"
+            variant="outline"
+            size="lg"
+          >
+            <UsersRound className="mr-2 h-6 w-6" />
+            Join a Team
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
