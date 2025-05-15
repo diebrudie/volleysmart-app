@@ -25,21 +25,21 @@ const Login = () => {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get the intended destination from location state, or default to dashboard
-  const from = location.state?.from?.pathname || "/dashboard";
+  // Prefill email if redirected from signup
+  const defaultEmail = location.state?.email || "";
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      console.log("User is authenticated, redirecting to:", from);
-      navigate(from, { replace: true });
+      console.log("User is authenticated, redirecting to dashboard");
+      navigate("/dashboard", { replace: true });
     }
-  }, [isAuthenticated, authLoading, navigate, from]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      email: defaultEmail,
       password: "",
     },
   });
@@ -54,7 +54,7 @@ const Login = () => {
         description: "Successfully logged in. Redirecting...",
       });
       
-      // Use a slight delay to ensure auth state is updated
+      // Additional delay to ensure auth state is updated
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
       }, 500);

@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -11,7 +11,25 @@ interface AuthenticatedRouteProps {
 
 const AuthenticatedRoute = ({ children, allowedRoles }: AuthenticatedRouteProps) => {
   const { isAuthenticated, user, isLoading } = useAuth();
+  const location = useLocation();
+  
+  console.log('AuthenticatedRoute - Current state:', { 
+    isAuthenticated, 
+    isLoading, 
+    path: location.pathname
+  });
 
+  // Limit how long we show the loading spinner to prevent potential infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('AuthenticatedRoute - Loading timeout reached, might be an auth issue');
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
+  
   // Show loading while checking auth status
   if (isLoading) {
     return (
@@ -27,7 +45,7 @@ const AuthenticatedRoute = ({ children, allowedRoles }: AuthenticatedRouteProps)
   // Not authenticated - redirect to login
   if (!isAuthenticated) {
     console.log('User not authenticated, redirecting to login');
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   // If roles are specified, check if user has required role

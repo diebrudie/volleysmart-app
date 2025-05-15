@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,9 +15,16 @@ const Signup = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signup } = useAuth();
+  const { signup, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,13 +42,11 @@ const Signup = () => {
       await signup(email, password, firstName, lastName);
       toast({
         title: "Success",
-        description: "Account created successfully. Redirecting to dashboard...",
+        description: "Account created successfully! Please login with your credentials.",
       });
       
-      // Use setTimeout to ensure auth state is updated before redirect
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      // Redirect to login page after signup
+      navigate('/login', { state: { email } });
     } catch (error) {
       console.error('Signup error:', error);
       // Toast is already shown in the signup function

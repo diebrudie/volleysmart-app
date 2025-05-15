@@ -1,103 +1,99 @@
 
 import Navbar from "@/components/layout/Navbar";
-import NoClubMessage from "@/components/club/NoClubMessage";
-import ErrorState from "@/components/dashboard/ErrorState";
-import LoadingState from "@/components/dashboard/LoadingState";
 import DashboardContent from "@/components/dashboard/DashboardContent";
-import { useClubData } from "@/hooks/use-club-data";
 import { useAuth } from "@/contexts/auth";
 
 const Dashboard = () => {
   // Add auth context to check authentication status
-  const { user, isAuthenticated, isLoading: isLoadingAuth } = useAuth();
+  const { user } = useAuth();
   
-  console.log('Dashboard - Auth state:', { 
-    isAuthenticated, 
-    isLoadingAuth, 
-    userId: user?.id,
-    userEmail: user?.email
-  });
-  
-  const { 
-    isLoadingClub, 
-    hasClub, 
-    hasCheckedClub, 
-    matchData, 
-    hasError,
-    handleSetScoreUpdate,
-    getMatchStats
-  } = useClubData();
-  
-  console.log('Dashboard - Club data state:', {
-    isLoadingClub,
-    hasClub,
-    hasCheckedClub,
-    hasMatchData: !!matchData,
-    hasError
-  });
+  console.log('Dashboard - User:', user);
 
-  // Show error state
-  if (hasError) {
-    console.log('Dashboard - Showing error state');
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <ErrorState />
-      </div>
-    );
-  }
+  // Create dummy match data for demonstration
+  const dummyMatchData = {
+    id: '123',
+    date: new Date().toISOString(),
+    teamA: {
+      name: 'Team Eagles',
+      players: [
+        { id: '1', name: 'John Smith', position: 'Setter' },
+        { id: '2', name: 'Mike Johnson', position: 'Outside Hitter' },
+        { id: '3', name: 'Sarah Williams', position: 'Middle Blocker' },
+      ]
+    },
+    teamB: {
+      name: 'Team Hawks',
+      players: [
+        { id: '4', name: 'Emma Davis', position: 'Setter' },
+        { id: '5', name: 'Ryan Wilson', position: 'Outside Hitter' },
+        { id: '6', name: 'Alex Brown', position: 'Middle Blocker' },
+      ]
+    },
+    scores: [
+      { setNumber: 1, teamAScore: 25, teamBScore: 23 },
+      { setNumber: 2, teamAScore: 22, teamBScore: 25 },
+      { setNumber: 3, teamAScore: 25, teamBScore: 21 },
+      { setNumber: 4, teamAScore: 25, teamBScore: 18 },
+      { setNumber: 5, teamAScore: null, teamBScore: null }
+    ]
+  };
 
-  // If still loading club data, show loading state
-  if (isLoadingClub) {
-    console.log('Dashboard - Still loading club data, showing LoadingState');
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <LoadingState />
-      </div>
-    );
-  }
+  // Calculate match statistics for the dummy data
+  const getMatchStats = () => {
+    const teamAWins = dummyMatchData.scores.filter(set => 
+      set.teamAScore !== null && 
+      set.teamBScore !== null && 
+      set.teamAScore > set.teamBScore
+    ).length;
 
-  // Show NoClubMessage if the user doesn't have a club and we've finished checking
-  if (hasCheckedClub && !hasClub) {
-    console.log('Dashboard - User has no club, showing NoClubMessage');
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <NoClubMessage />
-      </div>
-    );
-  }
+    const teamBWins = dummyMatchData.scores.filter(set => 
+      set.teamAScore !== null && 
+      set.teamBScore !== null && 
+      set.teamBScore > set.teamAScore
+    ).length;
 
-  // If no match data yet, show a welcome message instead
-  if (!matchData) {
-    console.log('Dashboard - No match data yet, showing welcome message');
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center p-4">
-          <div className="text-center max-w-md">
-            <h2 className="text-2xl font-bold mb-4">Welcome to VolleyTrack!</h2>
-            <p className="text-gray-600">
-              You're all set up. Start by creating or joining a club to track your matches and team performance.
-            </p>
-          </div>
-        </div>
-      </div>
+    const hasPlayedAnySet = dummyMatchData.scores.some(set => 
+      set.teamAScore !== null && set.teamBScore !== null
     );
-  }
+
+    let winner = "";
+    if (teamAWins > teamBWins) {
+      winner = dummyMatchData.teamA.name;
+    } else if (teamBWins > teamAWins) {
+      winner = dummyMatchData.teamB.name;
+    }
+
+    return { teamAWins, teamBWins, hasPlayedAnySet, winner };
+  };
+
+  // Mock score update function
+  const handleSetScoreUpdate = (setNumber: number, teamAScore: number | null, teamBScore: number | null) => {
+    console.log('Score updated:', { setNumber, teamAScore, teamBScore });
+    // In a real app, this would update the data
+  };
 
   // Get match statistics
   const { teamAWins, teamBWins, hasPlayedAnySet, winner } = getMatchStats();
-  console.log('Dashboard - Match statistics:', { teamAWins, teamBWins, hasPlayedAnySet, winner });
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-grow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6 mb-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Welcome, {user?.name || 'Player'}!
+            </h1>
+            <p className="text-gray-600">
+              This is a demo dashboard showing sample volleyball match data. In a real app, 
+              this data would come from your club's matches.
+            </p>
+          </div>
+        </div>
+        
         <DashboardContent 
-          matchData={matchData}
+          matchData={dummyMatchData}
           teamAWins={teamAWins}
           teamBWins={teamBWins}
           hasPlayedAnySet={hasPlayedAnySet}

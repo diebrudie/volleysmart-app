@@ -3,13 +3,11 @@ import { useEffect, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from '@/types/auth';
-import { fetchUserProfile, enrichUserWithProfile } from './authUtils';
 
 type AuthStateProps = {
-  setUser: (user: AuthUser | null | ((prev: AuthUser | null) => AuthUser | null)) => void;
+  setUser: (user: AuthUser | null) => void;
   setSession: (session: Session | null) => void;
   setIsLoading: (isLoading: boolean) => void;
-  setUserFromSession: (session: Session | null) => void;
   user: AuthUser | null;
   session: Session | null;
 }
@@ -18,14 +16,11 @@ export function useAuthInitialization({
   setUser,
   setSession,
   setIsLoading,
-  setUserFromSession,
   user,
   session
 }: AuthStateProps) {
-  // Use a ref to track initialization
   const initializedRef = useRef(false);
   
-  // Set up auth state listener and check for existing session
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
@@ -33,38 +28,51 @@ export function useAuthInitialization({
     let mounted = true;
     console.log('AuthProvider initialized');
     
-    // Set up auth state listener FIRST
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
+        console.log('Auth state changed:', event, currentSession?.user?.id);
+        
         if (!mounted) return;
         
-        console.log('Auth state changed:', event);
-        
-        if (event === 'SIGNED_OUT') {
+        if (currentSession?.user) {
+          // Successfully authenticated
+          const userData: AuthUser = {
+            id: currentSession.user.id,
+            email: currentSession.user.email || '',
+            name: currentSession.user.email?.split('@')[0] || 'User',
+            role: 'user'
+          };
+          
+          setUser(userData);
+          setSession(currentSession);
+        } else if (event === 'SIGNED_OUT') {
+          // User signed out
           setUser(null);
           setSession(null);
-        } else if (currentSession?.user) {
-          setSession(currentSession);
-          setUserFromSession(currentSession);
         }
         
-        // Always end loading state after an auth event
         setIsLoading(false);
       }
     );
 
-    // THEN check for existing session
     const initializeAuth = async () => {
       try {
-        console.log('Checking for existing session');
         const { data } = await supabase.auth.getSession();
         
         if (!mounted) return;
         
         if (data.session?.user) {
           console.log('Found existing session for user:', data.session.user.id);
+          
+          const userData: AuthUser = {
+            id: data.session.user.id,
+            email: data.session.user.email || '',
+            name: data.session.user.email?.split('@')[0] || 'User',
+            role: 'user'
+          };
+          
+          setUser(userData);
           setSession(data.session);
-          setUserFromSession(data.session);
         } else {
           console.log('No existing session found');
           setUser(null);
@@ -90,5 +98,5 @@ export function useAuthInitialization({
         authListener.subscription.unsubscribe();
       }
     };
-  }, [setUser, setSession, setIsLoading, setUserFromSession]);
+  }, [setUser, setSession, setIsLoading]);
 }

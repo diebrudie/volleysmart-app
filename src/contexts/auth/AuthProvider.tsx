@@ -1,5 +1,5 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import AuthContext from './AuthContext';
 import { useAuthState } from './useAuthState';
 import { useAuthMethods } from './useAuthMethods';
@@ -13,8 +13,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     session,
     setSession,
     isLoading,
-    setIsLoading,
-    setUserFromSession
+    setIsLoading
   } = useAuthState();
 
   // Initialize auth and handle profile loading
@@ -22,7 +21,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser,
     setSession,
     setIsLoading,
-    setUserFromSession,
     user,
     session
   });

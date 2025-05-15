@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from '@/types/auth';
-import { createUserProfile } from '@/integrations/supabase/profiles';
 
 export function useAuthMethods(
   setUser: (user: AuthUser | null) => void,
@@ -23,11 +22,24 @@ export function useAuthMethods(
 
       if (error) throw error;
 
-      console.log('Login successful');
+      console.log('Login successful', data);
       toast({
         title: "Success",
         description: "You have successfully logged in",
       });
+      
+      if (data.user) {
+        // Set user data directly here for faster feedback
+        const userData: AuthUser = {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.email?.split('@')[0] || 'User',
+          role: 'user'
+        };
+        
+        setUser(userData);
+        setSession(data.session);
+      }
       
       return Promise.resolve();
     } catch (error: any) {
@@ -63,7 +75,7 @@ export function useAuthMethods(
       console.log('Signup successful');
       toast({
         title: "Success",
-        description: "Account created successfully. Please check your email for confirmation.",
+        description: "Account created successfully. You can now log in.",
       });
     } catch (error: any) {
       console.error('Signup error:', error);
