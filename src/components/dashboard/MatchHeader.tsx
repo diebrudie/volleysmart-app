@@ -28,7 +28,7 @@ const MatchHeader = ({ date, isToday, isWednesday }: MatchHeaderProps) => {
         <h1 className="text-4xl font-serif mb-2">{headingText}</h1>
         <p className="text-gray-600">{formatDate(date)}</p>
       </div>
-      <button className="flex items-center gap-1 text-sm font-medium">
+      <button className="flex items-center gap-1 text-sm font-medium border border-gray-300 rounded-md px-3 py-1.5">
         <Pencil className="h-4 w-4" /> Edit Teams
       </button>
     </div>
