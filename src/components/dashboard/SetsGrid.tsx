@@ -1,12 +1,13 @@
+
 import SetBox from "@/components/match/SetBox";
 import { MatchScore } from "@/hooks/use-club-data";
 
-interface SetsGridProps {interface SetsGridProps {
+interface SetsGridProps {
   scores: MatchScore[];
   onScoreUpdate: (setNumber: number, teamAScore: number | null, teamBScore: number | null) => void;
 }
 
-const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
+const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Set 1 - Larger box on the left spanning two rows */}

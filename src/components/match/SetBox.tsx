@@ -60,20 +60,20 @@ const SetBox = ({
     }
   };
 
-  // Get background color based on whether scores are set
+  // Get background style
   const getBackgroundStyle = () => {
-    // If scores are not set, use grey color
-    if (initialTeamAScore === null || initialTeamBScore === null) {
+    // If scores are set (not null and not both 0), use yellow with gradient
+    if (initialTeamAScore !== null && initialTeamBScore !== null && (initialTeamAScore > 0 || initialTeamBScore > 0)) {
       return {
-        backgroundColor: '#D8D6D3',
-        backgroundImage: 'none'
+        backgroundColor: '#FBBE24',
+        backgroundImage: `linear-gradient(to right, #FBBE24, #FBBE24 ${getGradientPercentage()}, #FBBE24)`
       };
     }
     
     // If scores are set, use yellow with gradient based on set number
     return {
-      backgroundColor: '#FBBE24',
-      backgroundImage: `linear-gradient(to right, #FBBE24, #FBBE24 ${getGradientPercentage()}, #FBBE24)`
+      backgroundColor: '#D8D6D3',
+      backgroundImage: 'none'
     };
   };
 
@@ -83,8 +83,8 @@ const SetBox = ({
         className={`rounded-lg overflow-hidden ${isLarge ? "h-full" : ""}`}
         style={getBackgroundStyle()}
       >
-        <div className="flex justify-between items-center px-4 py-3 border-b border-gray-300">
-          <h3 className="font-medium text-black text-xl">SET {setNumber}</h3>
+        <div className="flex justify-between items-center px-4 py-2">
+          <h3 className="font-semibold text-black text-xl">SET{setNumber}</h3>
           <button 
             className="text-black"
             onClick={() => setIsEditing(true)}
@@ -92,18 +92,18 @@ const SetBox = ({
             <Pencil className="h-5 w-5" />
           </button>
         </div>
-        <div className="p-6">
-          <div className="flex justify-center items-center py-6">
+        <div className="p-4">
+          <div className="flex justify-center items-center py-4">
             <div className="text-6xl font-bold text-black">
               {initialTeamAScore ?? "0"}
             </div>
-            <div className="text-6xl font-bold text-black mx-6">-</div>
+            <div className="text-6xl font-bold text-black mx-4">-</div>
             <div className="text-6xl font-bold text-black">
               {initialTeamBScore ?? "0"}
             </div>
           </div>
           
-          <div className="text-center mt-2 text-sm">
+          <div className="text-center mt-2 text-sm text-black">
             Team A vs. Team B
           </div>
         </div>
