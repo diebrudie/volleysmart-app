@@ -2,6 +2,7 @@
 import Navbar from "@/components/layout/Navbar";
 import DashboardContent from "@/components/dashboard/DashboardContent";
 import { useAuth } from "@/contexts/auth";
+import { MatchData } from "@/hooks/use-club-data";
 
 const Dashboard = () => {
   // Add auth context to check authentication status
@@ -10,7 +11,7 @@ const Dashboard = () => {
   console.log('Dashboard - User:', user);
 
   // Create dummy match data for demonstration
-  const dummyMatchData = {
+  const dummyMatchData: MatchData = {
     id: '123',
     date: new Date().toISOString(),
     teamA: {

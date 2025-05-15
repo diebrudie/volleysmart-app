@@ -11,16 +11,21 @@ export interface Player {
 }
 
 export interface MatchScore {
-  gameNumber: number;
-  teamA: number | null;
-  teamB: number | null;
+  setNumber: number;
+  teamAScore: number | null;
+  teamBScore: number | null;
+}
+
+export interface TeamData {
+  name: string;
+  players: Player[];
 }
 
 export interface MatchData {
   id: string;
   date: string;
-  teamA: Player[];
-  teamB: Player[];
+  teamA: TeamData;
+  teamB: TeamData;
   scores: MatchScore[];
 }
 
@@ -57,28 +62,34 @@ export const useClubData = (): UseClubDataResult => {
   const [matchData, setMatchData] = useState<MatchData | null>({
     id: 'match-001',
     date: new Date().toISOString(),
-    teamA: [
-      { id: 'p1', name: 'Alex Smith', position: 'Setter' },
-      { id: 'p2', name: 'Jamie Jones', position: 'Outside Hitter' },
-      { id: 'p3', name: 'Taylor Williams', position: 'Middle Blocker' },
-      { id: 'p4', name: 'Jordan Brown', position: 'Libero' },
-      { id: 'p5', name: 'Casey Garcia', position: 'Opposite' },
-      { id: 'p6', name: 'Riley Martinez', position: 'Outside Hitter' },
-    ],
-    teamB: [
-      { id: 'p7', name: 'Sam Wilson', position: 'Setter' },
-      { id: 'p8', name: 'Morgan Lee', position: 'Outside Hitter' },
-      { id: 'p9', name: 'Quinn Taylor', position: 'Middle Blocker' },
-      { id: 'p10', name: 'Drew Johnson', position: 'Libero' },
-      { id: 'p11', name: 'Avery Thompson', position: 'Opposite' },
-      { id: 'p12', name: 'Peyton Robinson', position: 'Outside Hitter' },
-    ],
+    teamA: {
+      name: 'Team A',
+      players: [
+        { id: 'p1', name: 'Alex Smith', position: 'Setter' },
+        { id: 'p2', name: 'Jamie Jones', position: 'Outside Hitter' },
+        { id: 'p3', name: 'Taylor Williams', position: 'Middle Blocker' },
+        { id: 'p4', name: 'Jordan Brown', position: 'Libero' },
+        { id: 'p5', name: 'Casey Garcia', position: 'Opposite' },
+        { id: 'p6', name: 'Riley Martinez', position: 'Outside Hitter' },
+      ]
+    },
+    teamB: {
+      name: 'Team B',
+      players: [
+        { id: 'p7', name: 'Sam Wilson', position: 'Setter' },
+        { id: 'p8', name: 'Morgan Lee', position: 'Outside Hitter' },
+        { id: 'p9', name: 'Quinn Taylor', position: 'Middle Blocker' },
+        { id: 'p10', name: 'Drew Johnson', position: 'Libero' },
+        { id: 'p11', name: 'Avery Thompson', position: 'Opposite' },
+        { id: 'p12', name: 'Peyton Robinson', position: 'Outside Hitter' },
+      ]
+    },
     scores: [
-      { gameNumber: 1, teamA: 25, teamB: 21 },
-      { gameNumber: 2, teamA: 22, teamB: 25 },
-      { gameNumber: 3, teamA: 25, teamB: 18 },
-      { gameNumber: 4, teamA: null, teamB: null },
-      { gameNumber: 5, teamA: null, teamB: null },
+      { setNumber: 1, teamAScore: 25, teamBScore: 21 },
+      { setNumber: 2, teamAScore: 22, teamBScore: 25 },
+      { setNumber: 3, teamAScore: 25, teamBScore: 18 },
+      { setNumber: 4, teamAScore: null, teamBScore: null },
+      { setNumber: 5, teamAScore: null, teamBScore: null },
     ],
   });
 
