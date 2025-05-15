@@ -81,18 +81,6 @@ const Dashboard = () => {
       <Navbar />
       
       <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6 mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Welcome, {user?.name || 'Player'}!
-            </h1>
-            <p className="text-gray-600">
-              This is a demo dashboard showing sample volleyball match data. In a real app, 
-              this data would come from your club's matches.
-            </p>
-          </div>
-        </div>
-        
         <DashboardContent 
           matchData={dummyMatchData}
           teamAWins={teamAWins}
