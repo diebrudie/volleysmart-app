@@ -6,12 +6,12 @@ import { UserPlus, UsersRound } from 'lucide-react';
 const Start = () => {
   const navigate = useNavigate();
 
-  const handleCreateTeam = () => {
+  const handleCreateClub = () => {
     // For now, navigate to the team generator page
     navigate('/generate-teams');
   };
 
-  const handleJoinTeam = () => {
+  const handleJoinClub = () => {
     // For now, navigate to the matches page
     navigate('/matches');
   };
@@ -24,21 +24,21 @@ const Start = () => {
         </h1>
         <div className="grid grid-cols-1 gap-6 mt-8">
           <Button 
-            onClick={handleCreateTeam} 
+            onClick={handleCreateClub} 
             className="h-16 text-lg"
             size="lg"
           >
             <UserPlus className="mr-2 h-6 w-6" />
-            Create a Team
+            Create a Club
           </Button>
           <Button 
-            onClick={handleJoinTeam} 
+            onClick={handleJoinClub} 
             className="h-16 text-lg"
             variant="outline"
             size="lg"
           >
             <UsersRound className="mr-2 h-6 w-6" />
-            Join a Team
+            Join a Club
           </Button>
         </div>
       </div>

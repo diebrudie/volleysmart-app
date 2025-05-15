@@ -9,8 +9,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      club_members: {
+        Row: {
+          club_id: string | null
+          id: string
+          joined_at: string | null
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          club_id?: string | null
+          id?: string
+          joined_at?: string | null
+          role?: string
+          user_id?: string | null
+        }
+        Update: {
+          club_id?: string | null
+          id?: string
+          joined_at?: string | null
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_members_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clubs: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          slug: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          slug?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          slug?: string | null
+        }
+        Relationships: []
+      }
       match_days: {
         Row: {
+          club_id: string | null
           created_at: string | null
           created_by: string | null
           date: string
@@ -19,6 +82,7 @@ export type Database = {
           team_generated: boolean | null
         }
         Insert: {
+          club_id?: string | null
           created_at?: string | null
           created_by?: string | null
           date: string
@@ -27,6 +91,7 @@ export type Database = {
           team_generated?: boolean | null
         }
         Update: {
+          club_id?: string | null
           created_at?: string | null
           created_by?: string | null
           date?: string
@@ -34,7 +99,15 @@ export type Database = {
           notes?: string | null
           team_generated?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "match_days_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       match_teams: {
         Row: {
@@ -137,6 +210,7 @@ export type Database = {
         Row: {
           bio: string | null
           birthday: string | null
+          club_id: string | null
           first_name: string
           gender: string
           id: string
@@ -150,6 +224,7 @@ export type Database = {
         Insert: {
           bio?: string | null
           birthday?: string | null
+          club_id?: string | null
           first_name: string
           gender?: string
           id?: string
@@ -163,6 +238,7 @@ export type Database = {
         Update: {
           bio?: string | null
           birthday?: string | null
+          club_id?: string | null
           first_name?: string
           gender?: string
           id?: string
@@ -173,7 +249,15 @@ export type Database = {
           skill_rating?: number | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "players_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       positions: {
         Row: {
@@ -259,7 +343,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_club_admin: {
+        Args: { club_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      is_club_admin_or_editor: {
+        Args: { club_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      is_club_member: {
+        Args: { club_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
