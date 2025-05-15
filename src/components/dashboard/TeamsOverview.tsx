@@ -15,7 +15,7 @@ const TeamsOverview = ({ teamA, teamB }: TeamsOverviewProps) => {
         <ul className="space-y-0.5 p-4">
           {teamA.players.map((player, index) => (
             <li key={player.id} className="text-sm">
-              <span className="font-medium">{index + 1}. {player.name}</span> - <span className="text-gray-600">{player.position}</span>
+              <span className="font-medium">{index + 1}. {player.name.split(' ')[0]}</span> - <span className="text-gray-600">{player.position}</span>
             </li>
           ))}
         </ul>
@@ -27,7 +27,7 @@ const TeamsOverview = ({ teamA, teamB }: TeamsOverviewProps) => {
         <ul className="space-y-0.5 p-4">
           {teamB.players.map((player, index) => (
             <li key={player.id} className="text-sm">
-              <span className="font-medium">{index + 1}. {player.name}</span> - <span className="text-gray-600">{player.position}</span>
+              <span className="font-medium">{index + 1}. {player.name.split(' ')[0]}</span> - <span className="text-gray-600">{player.position}</span>
             </li>
           ))}
         </ul>
