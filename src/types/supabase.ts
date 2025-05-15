@@ -56,3 +56,13 @@ export interface ClubMember {
   role: ClubMemberRole;
   joinedAt: string;
 }
+
+// Add the MatchScore type for consistency
+export interface MatchScore {
+  gameNumber: number;
+  teamA: number | null;
+  teamB: number | null;
+  setNumber: number;
+  teamAScore: number | null;
+  teamBScore: number | null;
+}
