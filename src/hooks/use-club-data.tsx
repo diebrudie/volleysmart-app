@@ -11,10 +11,12 @@ import {
   MatchData, 
   UseClubDataResult 
 } from '@/types/club-data';
+import { useToast } from '@/hooks/use-toast';
 
 // Convert to named export instead of default export
 export const useClubData = (): UseClubDataResult => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { 
     clubData, 
     isLoading, 
@@ -30,9 +32,24 @@ export const useClubData = (): UseClubDataResult => {
   const handleSetScoreUpdate = (setNumber: number, teamAScore: number | null, teamBScore: number | null) => {
     if (!matchData) return;
     
-    const updatedMatchData = updateMatchScores(matchData, setNumber, teamAScore, teamBScore);
-    console.log('Updated match data:', updatedMatchData);
-    setMatchData(updatedMatchData);
+    try {
+      const updatedMatchData = updateMatchScores(matchData, setNumber, teamAScore, teamBScore);
+      console.log('Updated match data:', updatedMatchData);
+      setMatchData(updatedMatchData);
+      
+      // Show a success toast
+      toast({
+        title: `Set ${setNumber} score updated`,
+        description: `Team A: ${teamAScore ?? '-'}, Team B: ${teamBScore ?? '-'}`,
+      });
+    } catch (err) {
+      console.error("Error updating match scores:", err);
+      toast({
+        title: "Error updating scores",
+        description: "There was a problem updating the scores. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getMatchStats = () => {
