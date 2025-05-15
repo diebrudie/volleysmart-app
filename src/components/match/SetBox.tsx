@@ -47,54 +47,72 @@ const SetBox = ({
     setIsEditing(false);
   };
 
-  const getScoreColor = (scoreA: number | null, scoreB: number | null) => {
-    if (scoreA === null || scoreB === null) return "";
-    return scoreA > scoreB ? "text-volleyball-primary font-medium" : "text-volleyball-accent font-medium";
+  // Calculate gradient percentage based on set number
+  const getGradientPercentage = () => {
+    switch (setNumber) {
+      case 1: return '30%';
+      case 2: return '45%';
+      case 3: return '60%';
+      case 4: return '75%';
+      case 5: return '90%';
+      default: return '50%';
+    }
   };
 
-  const getSubtitle = () => {
+  // Determine background color based on whether scores are set
+  const getBgColor = () => {
+    // If scores are not set, use grey color
     if (initialTeamAScore === null || initialTeamBScore === null) {
-      return "Not played yet";
+      return `bg-[#D8D6D3]`;
     }
-    return initialTeamAScore > initialTeamBScore ? "Team A won" : "Team B won";
+    
+    // If scores are set, use yellow with gradient
+    return `bg-[#FBBE24]`;
   };
 
   return (
     <>
       <div 
-        className={`bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors ${
-          isLarge ? "h-full" : ""
-        }`}
+        className={`rounded-lg overflow-hidden ${getBgColor()} ${isLarge ? "h-full" : ""}`}
+        style={{ 
+          backgroundImage: initialTeamAScore !== null && initialTeamBScore !== null ?
+            `linear-gradient(to right, #FBBE24, #FBBE24 ${getGradientPercentage()}, #FBBE24)` : 
+            'none' 
+        }}
       >
-        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-          <h3 className="font-medium text-gray-700">Set {setNumber}</h3>
+        <div className="px-4 py-3 border-b border-gray-300">
+          <h3 className="font-medium text-black text-xl">SET {setNumber}</h3>
         </div>
-        <div className="p-4">
-          <div className="flex justify-between mb-2">
-            <div className="text-sm text-gray-500">{getSubtitle()}</div>
+        <div className="p-6">
+          <div className="flex justify-between mb-4">
+            <div className="text-sm text-gray-700">
+              {initialTeamAScore === null && initialTeamBScore === null 
+                ? "Not played yet" 
+                : initialTeamAScore! > initialTeamBScore! ? "Team A won" : "Team B won"}
+            </div>
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm"
               onClick={() => setIsEditing(true)}
-              className="text-xs h-7 px-2"
+              className="text-xs h-7 px-2 bg-white border-gray-300"
             >
               {initialTeamAScore === null && initialTeamBScore === null ? "Add Score" : "Edit"}
             </Button>
           </div>
           
-          <div className="flex justify-center items-center space-x-4 py-2">
-            <div className={`text-2xl ${getScoreColor(initialTeamAScore, initialTeamBScore)}`}>
-              {initialTeamAScore ?? "-"}
+          <div className="flex justify-center items-center space-x-6 py-4">
+            <div className={`text-5xl font-bold ${initialTeamAScore !== null && initialTeamBScore !== null && initialTeamAScore > initialTeamBScore ? "text-black" : "text-gray-800"}`}>
+              {initialTeamAScore ?? "0"}
             </div>
-            <div className="text-xl text-gray-400">:</div>
-            <div className={`text-2xl ${getScoreColor(initialTeamBScore, initialTeamAScore)}`}>
-              {initialTeamBScore ?? "-"}
+            <div className="text-4xl text-black font-bold">-</div>
+            <div className={`text-5xl font-bold ${initialTeamAScore !== null && initialTeamBScore !== null && initialTeamBScore > initialTeamAScore ? "text-black" : "text-gray-800"}`}>
+              {initialTeamBScore ?? "0"}
             </div>
           </div>
           
-          <div className="flex justify-between mt-2">
-            <div className="text-xs text-gray-500">Team A</div>
-            <div className="text-xs text-gray-500">Team B</div>
+          <div className="flex justify-between mt-4">
+            <div className="text-sm text-gray-700">Team A</div>
+            <div className="text-sm text-gray-700">Team B</div>
           </div>
         </div>
       </div>
