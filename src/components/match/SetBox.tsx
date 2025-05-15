@@ -1,64 +1,41 @@
 
-import React, { useState, KeyboardEvent, useRef, useEffect } from 'react';
-import { Pencil } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import React, { useState, useEffect } from "react";
+import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 interface SetBoxProps {
   setNumber: number;
-  teamAScore?: number | null;
-  teamBScore?: number | null;
-  onScoreUpdate?: (setNumber: number, teamAScore: number, teamBScore: number) => void;
+  teamAScore: number | null;
+  teamBScore: number | null;
+  onScoreUpdate: (setNumber: number, teamAScore: number | null, teamBScore: number | null) => void;
   isLarge?: boolean;
 }
 
-const SetBox: React.FC<SetBoxProps> = ({ 
-  setNumber, 
-  teamAScore = null, 
-  teamBScore = null,
-  onScoreUpdate,
-  isLarge = false
-}) => {
-  const [localTeamAScore, setLocalTeamAScore] = useState<number>(teamAScore || 0);
-  const [localTeamBScore, setLocalTeamBScore] = useState<number>(teamBScore || 0);
+const SetBox = ({ setNumber, teamAScore, teamBScore, onScoreUpdate, isLarge = false }: SetBoxProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const isMobile = useIsMobile();
-  const teamAInputRef = useRef<HTMLInputElement>(null);
-  
+  const [localTeamAScore, setLocalTeamAScore] = useState<number | null>(teamAScore);
+  const [localTeamBScore, setLocalTeamBScore] = useState<number | null>(teamBScore);
+
   // Update local state when props change
   useEffect(() => {
-    setLocalTeamAScore(teamAScore || 0);
-    setLocalTeamBScore(teamBScore || 0);
+    setLocalTeamAScore(teamAScore);
+    setLocalTeamBScore(teamBScore);
   }, [teamAScore, teamBScore]);
-  
-  const hasBeenPlayed = teamAScore !== null && teamBScore !== null && 
-                        (teamAScore > 0 || teamBScore > 0);
-  
-  const getOpacity = () => {
-    switch(setNumber) {
-      case 1: return '0.3';
-      case 2: return '0.45';
-      case 3: return '0.6';
-      case 4: return '0.75';
-      case 5: return '0.9';
-      default: return '0.6';
-    }
+
+  const handleTeamAScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    setLocalTeamAScore(isNaN(value as number) ? null : value);
   };
 
-  const getBackgroundColor = () => {
-    if (hasBeenPlayed) {
-      return `rgba(251, 190, 36, ${getOpacity()})`; // Yellow with opacity
-    } else {
-      return `rgba(216, 214, 211, ${getOpacity()})`; // Grey with opacity
-    }
+  const handleTeamBScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    setLocalTeamBScore(isNaN(value as number) ? null : value);
   };
 
   const handleSubmit = () => {
     if (onScoreUpdate) {
-      // Log the score update for debugging
-      console.info('Score updated:', {
+      console.log('SetBox - Submitting score update:', {
         setNumber,
         teamAScore: localTeamAScore,
         teamBScore: localTeamBScore
@@ -69,96 +46,74 @@ const SetBox: React.FC<SetBoxProps> = ({
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !isMobile) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
-
-  const handleDialogOpen = (open: boolean) => {
-    setIsOpen(open);
-    if (open) {
-      // Reset local state to current props when opening dialog
-      setLocalTeamAScore(teamAScore || 0);
-      setLocalTeamBScore(teamBScore || 0);
-      
-      setTimeout(() => {
-        if (teamAInputRef.current) {
-          teamAInputRef.current.focus();
-        }
-      }, 100);
-    }
-  };
-
   return (
-    <div 
-      className={cn(
-        "rounded-lg p-6 flex flex-col items-center justify-center relative h-full",
-        isLarge && "p-10 md:p-12"
-      )}
-      style={{ backgroundColor: getBackgroundColor() }}
-    >
-      <h3 className={cn(
-        "font-serif mb-4 text-center",
-        isLarge ? "text-3xl" : "text-xl"
-      )}>SET {setNumber}</h3>
-      
-      <div className={cn(
-        "font-bold mb-3 text-center whitespace-nowrap min-w-0 overflow-hidden",
-        isLarge ? "text-[min(7vw,5rem)]" : "text-[min(6vw,3rem)]"
-      )}>
-        {hasBeenPlayed ? teamAScore : "0"} - {hasBeenPlayed ? teamBScore : "0"}
+    <div className="h-full">
+      <div 
+        className={`border border-gray-200 rounded-lg flex flex-col bg-white shadow-sm h-full cursor-pointer`}
+        onClick={() => setIsOpen(true)}
+      >
+        <div className="bg-volleyball-primary text-white py-2 px-4 rounded-t-lg">
+          <h3 className="font-medium text-center">Set {setNumber}</h3>
+        </div>
+        <div className={`flex-grow flex items-center justify-center p-4 ${isLarge ? 'py-12' : 'py-6'}`}>
+          {teamAScore === null || teamBScore === null ? (
+            <span className="text-gray-400">Not played</span>
+          ) : (
+            <div className={`flex items-center gap-2 ${isLarge ? 'text-4xl' : 'text-2xl'} font-bold`}>
+              <span className="text-red-500">{teamAScore}</span>
+              <span className="text-gray-400">-</span>
+              <span className="text-emerald-500">{teamBScore}</span>
+            </div>
+          )}
+        </div>
       </div>
-      
-      <p className="text-sm text-center">Team A vs. Team B</p>
-      
-      <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
-        <DialogTrigger asChild>
-          <button className="absolute top-2 right-2 p-1 hover:bg-black/10 rounded-md transition-colors">
-            <Pencil className="h-5 w-5" />
-          </button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center">Update Set {setNumber} Score</DialogTitle>
-          </DialogHeader>
-          
-          <div className="py-6">
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="text-center">
-                <p className="text-sm font-medium mb-2 text-red-500">Team A</p>
-                <input
-                  ref={teamAInputRef}
+
+      {/* Dialog for score input */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-bold mb-4">Update Set {setNumber} Score</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="teamAScore" className="block text-sm font-medium text-gray-700 mb-1">
+                  Team A Score
+                </label>
+                <Input
+                  id="teamAScore"
                   type="number"
-                  min="0"
-                  value={localTeamAScore}
-                  onChange={(e) => setLocalTeamAScore(parseInt(e.target.value) || 0)}
-                  onKeyDown={handleKeyDown}
-                  className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500"
+                  value={localTeamAScore === null ? '' : localTeamAScore}
+                  onChange={handleTeamAScoreChange}
+                  min={0}
+                  className="w-full"
                 />
               </div>
               
-              <div className="text-2xl font-medium self-end">vs.</div>
-              
-              <div className="text-center">
-                <p className="text-sm font-medium mb-2 text-emerald-500">Team B</p>
-                <input
+              <div>
+                <label htmlFor="teamBScore" className="block text-sm font-medium text-gray-700 mb-1">
+                  Team B Score
+                </label>
+                <Input
+                  id="teamBScore"
                   type="number"
-                  min="0"
-                  value={localTeamBScore}
-                  onChange={(e) => setLocalTeamBScore(parseInt(e.target.value) || 0)}
-                  onKeyDown={handleKeyDown}
-                  className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500"
+                  value={localTeamBScore === null ? '' : localTeamBScore}
+                  onChange={handleTeamBScoreChange}
+                  min={0}
+                  className="w-full"
                 />
               </div>
             </div>
             
-            <div className="flex justify-center">
-              <Button onClick={handleSubmit}>Submit</Button>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit}>
+                Save
+              </Button>
             </div>
           </div>
-        </DialogContent>
+        </div>
       </Dialog>
     </div>
   );
