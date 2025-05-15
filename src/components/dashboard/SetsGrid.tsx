@@ -8,6 +8,11 @@ interface SetsGridProps {
 }
 
 const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
+  // Function to find the score for a specific set
+  const getSetScore = (setNumber: number) => {
+    return scores.find(score => score.setNumber === setNumber);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Set 1 - Larger box on the left spanning two rows */}
@@ -15,8 +20,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={1}
           setNumber={1}
-          teamAScore={scores.find(score => score.setNumber === 1)?.teamAScore}
-          teamBScore={scores.find(score => score.setNumber === 1)?.teamBScore}
+          teamAScore={getSetScore(1)?.teamAScore}
+          teamBScore={getSetScore(1)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
           isLarge={true}
         />
@@ -27,8 +32,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={2}
           setNumber={2}
-          teamAScore={scores.find(score => score.setNumber === 2)?.teamAScore}
-          teamBScore={scores.find(score => score.setNumber === 2)?.teamBScore}
+          teamAScore={getSetScore(2)?.teamAScore}
+          teamBScore={getSetScore(2)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
         />
       </div>
@@ -38,8 +43,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={4}
           setNumber={4}
-          teamAScore={scores.find(score => score.setNumber === 4)?.teamAScore}
-          teamBScore={scores.find(score => score.setNumber === 4)?.teamBScore}
+          teamAScore={getSetScore(4)?.teamAScore}
+          teamBScore={getSetScore(4)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
         />
       </div>
@@ -49,8 +54,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={3}
           setNumber={3}
-          teamAScore={scores.find(score => score.setNumber === 3)?.teamAScore}
-          teamBScore={scores.find(score => score.setNumber === 3)?.teamBScore}
+          teamAScore={getSetScore(3)?.teamAScore}
+          teamBScore={getSetScore(3)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
         />
       </div>
@@ -60,8 +65,8 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         <SetBox
           key={5}
           setNumber={5}
-          teamAScore={scores.find(score => score.setNumber === 5)?.teamAScore}
-          teamBScore={scores.find(score => score.setNumber === 5)?.teamBScore}
+          teamAScore={getSetScore(5)?.teamAScore}
+          teamBScore={getSetScore(5)?.teamBScore}
           onScoreUpdate={onScoreUpdate}
         />
       </div>

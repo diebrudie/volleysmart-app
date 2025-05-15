@@ -1,5 +1,5 @@
 
-import React, { useState, KeyboardEvent, useRef } from 'react';
+import React, { useState, KeyboardEvent, useRef, useEffect } from 'react';
 import { Pencil } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -26,6 +26,12 @@ const SetBox: React.FC<SetBoxProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
   const teamAInputRef = useRef<HTMLInputElement>(null);
+  
+  // Update local state when props change
+  useEffect(() => {
+    setLocalTeamAScore(teamAScore || 0);
+    setLocalTeamBScore(teamBScore || 0);
+  }, [teamAScore, teamBScore]);
   
   const hasBeenPlayed = teamAScore !== null && teamBScore !== null && 
                         (teamAScore > 0 || teamBScore > 0);
@@ -66,6 +72,10 @@ const SetBox: React.FC<SetBoxProps> = ({
   const handleDialogOpen = (open: boolean) => {
     setIsOpen(open);
     if (open) {
+      // Reset local state to current props when opening dialog
+      setLocalTeamAScore(teamAScore || 0);
+      setLocalTeamBScore(teamBScore || 0);
+      
       setTimeout(() => {
         if (teamAInputRef.current) {
           teamAInputRef.current.focus();
