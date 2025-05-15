@@ -60,38 +60,6 @@ export function useAuthMethods(
 
       if (error) throw error;
       
-      if (data?.user) {
-        // Manually create the user profile since the database trigger might not be working
-        try {
-          console.log('Creating user profile for new signup:', data.user.id);
-          await createUserProfile(data.user);
-          
-          // Create a basic player profile to bypass onboarding
-          try {
-            const { error: playerError } = await supabase
-              .from('players')
-              .insert({
-                user_id: data.user.id,
-                first_name: firstName || email.split('@')[0],
-                last_name: lastName || '',
-                skill_rating: 5,
-                positions: ['setter'],
-                gender: 'diverse',
-                member_association: true,
-              })
-              .single();
-              
-            if (playerError) {
-              console.error('Error creating player profile during signup:', playerError);
-            }
-          } catch (playerProfileError) {
-            console.error('Exception in creating player profile during signup:', playerProfileError);
-          }
-        } catch (profileError) {
-          console.error('Error creating profile during signup:', profileError);
-        }
-      }
-
       console.log('Signup successful');
       toast({
         title: "Success",

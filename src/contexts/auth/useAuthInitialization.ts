@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from "@/integrations/supabase/client";
@@ -42,13 +43,13 @@ export function useAuthInitialization({
         if (event === 'SIGNED_OUT') {
           setUser(null);
           setSession(null);
-        } else {
+        } else if (currentSession?.user) {
           setSession(currentSession);
-          
-          if (currentSession?.user) {
-            setUserFromSession(currentSession);
-          }
+          setUserFromSession(currentSession);
         }
+        
+        // Always end loading state after an auth event
+        setIsLoading(false);
       }
     );
 
@@ -60,17 +61,19 @@ export function useAuthInitialization({
         
         if (!mounted) return;
         
-        setSession(data.session);
-        
         if (data.session?.user) {
           console.log('Found existing session for user:', data.session.user.id);
+          setSession(data.session);
           setUserFromSession(data.session);
         } else {
           console.log('No existing session found');
           setUser(null);
+          setSession(null);
         }
       } catch (error) {
         console.error("Error getting session:", error);
+        setUser(null);
+        setSession(null);
       } finally {
         if (mounted) {
           console.log('Setting isLoading to false');
@@ -88,45 +91,4 @@ export function useAuthInitialization({
       }
     };
   }, [setUser, setSession, setIsLoading, setUserFromSession]);
-
-  // Separate effect for fetching user profile to avoid loops
-  useEffect(() => {
-    // Skip profile fetching if no user ID or session
-    if (!user?.id || !session) {
-      return;
-    }
-    
-    let mounted = true;
-    let profileTimer: NodeJS.Timeout | null = null;
-    
-    const loadUserProfile = async () => {
-      try {
-        console.log('Fetching profile for user:', user.id);
-        const profile = await fetchUserProfile(user.id);
-        
-        if (!mounted) return;
-        
-        if (profile) {
-          console.log('Profile found:', profile);
-          setUser(prevUser => enrichUserWithProfile(prevUser, profile));
-        } else {
-          // If no profile found, we'll still keep the basic user info
-          console.log('No profile found, keeping basic user info');
-        }
-      } catch (error) {
-        console.error('Error getting user profile:', error);
-        // Continue with basic user info even if profile fetch fails
-      }
-    };
-
-    // Use a short delay to avoid recursive RLS issues
-    profileTimer = setTimeout(() => {
-      if (mounted) loadUserProfile();
-    }, 100);
-
-    return () => {
-      mounted = false;
-      if (profileTimer) clearTimeout(profileTimer);
-    };
-  }, [user?.id, session, setUser]);
 }

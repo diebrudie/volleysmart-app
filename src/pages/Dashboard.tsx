@@ -47,8 +47,19 @@ const Dashboard = () => {
     );
   }
 
+  // If still loading club data, show loading state
+  if (isLoadingClub) {
+    console.log('Dashboard - Still loading club data, showing LoadingState');
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <LoadingState />
+      </div>
+    );
+  }
+
   // Show NoClubMessage if the user doesn't have a club and we've finished checking
-  if (!isLoadingClub && hasCheckedClub && !hasClub) {
+  if (hasCheckedClub && !hasClub) {
     console.log('Dashboard - User has no club, showing NoClubMessage');
     return (
       <div className="min-h-screen flex flex-col">
@@ -58,13 +69,20 @@ const Dashboard = () => {
     );
   }
 
-  // Show loading state
-  if (isLoadingClub || !matchData) {
-    console.log('Dashboard - Still loading club or match data, showing LoadingState');
+  // If no match data yet, show a welcome message instead
+  if (!matchData) {
+    console.log('Dashboard - No match data yet, showing welcome message');
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <LoadingState />
+        <div className="flex-grow flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <h2 className="text-2xl font-bold mb-4">Welcome to VolleyTrack!</h2>
+            <p className="text-gray-600">
+              You're all set up. Start by creating or joining a club to track your matches and team performance.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

@@ -32,10 +32,7 @@ const Login = () => {
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       console.log("User is authenticated, redirecting to:", from);
-      // Give a small delay before navigation to ensure state is properly updated
-      setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 500);
+      navigate(from, { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate, from]);
 
@@ -56,6 +53,11 @@ const Login = () => {
         title: "Success",
         description: "Successfully logged in. Redirecting...",
       });
+      
+      // Use a slight delay to ensure auth state is updated
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 500);
     } catch (error) {
       console.error("Login error:", error);
       // Toast is already shown in the login function

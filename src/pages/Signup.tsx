@@ -38,17 +38,13 @@ const Signup = () => {
         description: "Account created successfully. Redirecting to dashboard...",
       });
       
-      // After signup, give a small delay before redirecting to ensure auth state is updated
+      // Use setTimeout to ensure auth state is updated before redirect
       setTimeout(() => {
         navigate('/dashboard');
-      }, 500);
+      }, 1000);
     } catch (error) {
       console.error('Signup error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create account. Please try again.",
-        variant: "destructive"
-      });
+      // Toast is already shown in the signup function
     } finally {
       setIsSubmitting(false);
     }
