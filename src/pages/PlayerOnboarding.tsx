@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { createPlayer } from "@/integrations/supabase/players";
@@ -32,22 +31,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 // Define the schema for the form
 const formSchema = z.object({
-  positions: z.array(z.string()).min(1, "Select at least one position"),
+  mainPosition: z.string({
+    required_error: "Please select your main position",
+  }),
+  otherPositions: z.array(z.string()).min(1, "Select at least one other position"),
   skillRating: z.number().min(1).max(10),
   imageUrl: z.string().optional(),
   gender: z.enum(["male", "female", "diverse"]),
-  birthday: z.date().optional(),
+  birthday: z.string().regex(/^\d{2}\.\d{2}\.\d{4}$/, {
+    message: "Please enter a valid date in DD.MM.YYYY format",
+  }).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,10 +59,12 @@ const PlayerOnboarding = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      positions: [],
+      mainPosition: "",
+      otherPositions: [],
       skillRating: 5,
       imageUrl: "",
       gender: "male",
+      birthday: "",
     },
   });
 
@@ -100,7 +98,6 @@ const PlayerOnboarding = () => {
       reader.readAsDataURL(file);
       
       // In a real implementation, you would upload the file to storage
-      // This is a placeholder for now
       form.setValue("imageUrl", URL.createObjectURL(file));
     }
   };
@@ -118,15 +115,19 @@ const PlayerOnboarding = () => {
     setIsLoading(true);
 
     try {
-      // Create player profile
+      // Create player profile with main position and other positions combined
+      const allPositions = [data.mainPosition, ...data.otherPositions];
+      
       await createPlayer(user.id, {
-        first_name: user.name.split(' ')[0] || '',
-        last_name: user.name.split(' ').slice(1).join(' ') || '',
+        first_name: user.name?.split(' ')[0] || '',
+        last_name: user.name?.split(' ').slice(1).join(' ') || '',
         bio: "",
         image_url: data.imageUrl,
         skill_rating: data.skillRating,
-        positions: data.positions,
+        positions: allPositions,
         member_association: true,
+        gender: data.gender,
+        birthday: data.birthday ? convertDateFormat(data.birthday) : undefined,
       });
 
       toast({
@@ -147,6 +148,12 @@ const PlayerOnboarding = () => {
       setIsLoading(false);
     }
   };
+  
+  // Helper function to convert DD.MM.YYYY to YYYY-MM-DD for database
+  const convertDateFormat = (date: string) => {
+    const [day, month, year] = date.split('.');
+    return `${year}-${month}-${day}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
@@ -164,24 +171,59 @@ const PlayerOnboarding = () => {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-8"
               >
-                {/* Positions Selection */}
+                {/* Question 1: Main Position */}
                 <FormField
                   control={form.control}
-                  name="positions"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel className="text-base">
-                        Which positions do you play? (Select one or many)
+                  name="mainPosition"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className="text-base font-medium">
+                        1. Which is your main position?
                       </FormLabel>
                       <FormDescription>
-                        Choose all positions you're comfortable playing
+                        This is the position you'd like to play always or the one you feel more comfortable with.
+                      </FormDescription>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2"
+                        >
+                          {positions.map((position) => (
+                            <FormItem key={position.id} className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value={position.id} />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                {position.name}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Question 2: Other Positions */}
+                <FormField
+                  control={form.control}
+                  name="otherPositions"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        2. Which other positions can you play?
+                      </FormLabel>
+                      <FormDescription>
+                        Please select at least one different position you feel comfortable playing besides your main position.
                       </FormDescription>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
                         {positions.map((position) => (
                           <FormField
                             key={position.id}
                             control={form.control}
-                            name="positions"
+                            name="otherPositions"
                             render={({ field }) => {
                               return (
                                 <FormItem
@@ -192,6 +234,11 @@ const PlayerOnboarding = () => {
                                     <Checkbox
                                       checked={field.value?.includes(position.id)}
                                       onCheckedChange={(checked) => {
+                                        // Don't allow selecting main position as other position
+                                        if (position.id === form.getValues("mainPosition")) {
+                                          return;
+                                        }
+                                      
                                         return checked
                                           ? field.onChange([
                                               ...field.value,
@@ -219,15 +266,18 @@ const PlayerOnboarding = () => {
                   )}
                 />
 
-                {/* Skill Rating */}
+                {/* Question 3: Skill Rating */}
                 <FormField
                   control={form.control}
                   name="skillRating"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        From 1 to 10, how would you rate your level in Volleyball?
+                      <FormLabel className="text-base font-medium">
+                        3. From 1 to 10, how would you rate your level in Volleyball?
                       </FormLabel>
+                      <FormDescription>
+                        Try to rate yourself based on the team's general level
+                      </FormDescription>
                       <FormControl>
                         <div className="space-y-4">
                           <Slider
@@ -252,10 +302,10 @@ const PlayerOnboarding = () => {
                   )}
                 />
 
-                {/* Image Upload */}
+                {/* Question 4: Image Upload */}
                 <FormItem>
-                  <FormLabel>
-                    Upload a picture for others to know who you are (optional)
+                  <FormLabel className="text-base font-medium">
+                    4. Please upload a profile picture
                   </FormLabel>
                   <FormDescription>
                     This will help teammates recognize you
@@ -265,6 +315,7 @@ const PlayerOnboarding = () => {
                       type="file"
                       accept="image/*"
                       onChange={handleImageUpload}
+                      className="border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 file:bg-gray-200 file:text-gray-700 file:border-0 file:mr-2 file:py-2 file:px-4 cursor-pointer"
                     />
                     {imagePreview && (
                       <div className="mt-4">
@@ -279,13 +330,15 @@ const PlayerOnboarding = () => {
                   </div>
                 </FormItem>
 
-                {/* Gender */}
+                {/* Question 5: Gender */}
                 <FormField
                   control={form.control}
                   name="gender"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel>Gender</FormLabel>
+                      <FormLabel className="text-base font-medium">
+                        5. How do you identify yourself?
+                      </FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
@@ -317,45 +370,21 @@ const PlayerOnboarding = () => {
                   )}
                 />
 
-                {/* Birthday */}
+                {/* Question 6: Birthday */}
                 <FormField
                   control={form.control}
                   name="birthday"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Birthday</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        6. When is your birthday?
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="DD.MM.YYYY"
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
