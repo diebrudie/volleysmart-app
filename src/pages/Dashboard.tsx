@@ -15,7 +15,7 @@ const Dashboard = () => {
     id: '123',
     date: new Date().toISOString(),
     teamA: {
-      name: 'Team Eagles',
+      name: 'Team A',
       players: [
         { id: '1', name: 'John Smith', position: 'Setter' },
         { id: '2', name: 'Mike Johnson', position: 'Outside Hitter' },
@@ -23,7 +23,7 @@ const Dashboard = () => {
       ]
     },
     teamB: {
-      name: 'Team Hawks',
+      name: 'Team B',
       players: [
         { id: '4', name: 'Emma Davis', position: 'Setter' },
         { id: '5', name: 'Ryan Wilson', position: 'Outside Hitter' },
@@ -59,9 +59,11 @@ const Dashboard = () => {
 
     let winner = "";
     if (teamAWins > teamBWins) {
-      winner = dummyMatchData.teamA.name;
+      winner = "Team A";
     } else if (teamBWins > teamAWins) {
-      winner = dummyMatchData.teamB.name;
+      winner = "Team B";
+    } else if (hasPlayedAnySet) {
+      winner = "Tie";
     }
 
     return { teamAWins, teamBWins, hasPlayedAnySet, winner };
