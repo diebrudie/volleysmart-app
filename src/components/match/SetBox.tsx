@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -59,60 +60,51 @@ const SetBox = ({
     }
   };
 
-  // Determine background color based on whether scores are set
-  const getBgColor = () => {
+  // Get background color based on whether scores are set
+  const getBackgroundStyle = () => {
     // If scores are not set, use grey color
     if (initialTeamAScore === null || initialTeamBScore === null) {
-      return `bg-[#D8D6D3]`;
+      return {
+        backgroundColor: '#D8D6D3',
+        backgroundImage: 'none'
+      };
     }
     
-    // If scores are set, use yellow with gradient
-    return `bg-[#FBBE24]`;
+    // If scores are set, use yellow with gradient based on set number
+    return {
+      backgroundColor: '#FBBE24',
+      backgroundImage: `linear-gradient(to right, #FBBE24, #FBBE24 ${getGradientPercentage()}, #FBBE24)`
+    };
   };
 
   return (
     <>
       <div 
-        className={`rounded-lg overflow-hidden ${getBgColor()} ${isLarge ? "h-full" : ""}`}
-        style={{ 
-          backgroundImage: initialTeamAScore !== null && initialTeamBScore !== null ?
-            `linear-gradient(to right, #FBBE24, #FBBE24 ${getGradientPercentage()}, #FBBE24)` : 
-            'none' 
-        }}
+        className={`rounded-lg overflow-hidden ${isLarge ? "h-full" : ""}`}
+        style={getBackgroundStyle()}
       >
-        <div className="px-4 py-3 border-b border-gray-300">
+        <div className="flex justify-between items-center px-4 py-3 border-b border-gray-300">
           <h3 className="font-medium text-black text-xl">SET {setNumber}</h3>
+          <button 
+            className="text-black"
+            onClick={() => setIsEditing(true)}
+          >
+            <Pencil className="h-5 w-5" />
+          </button>
         </div>
         <div className="p-6">
-          <div className="flex justify-between mb-4">
-            <div className="text-sm text-gray-700">
-              {initialTeamAScore === null && initialTeamBScore === null 
-                ? "Not played yet" 
-                : initialTeamAScore! > initialTeamBScore! ? "Team A won" : "Team B won"}
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsEditing(true)}
-              className="text-xs h-7 px-2 bg-white border-gray-300"
-            >
-              {initialTeamAScore === null && initialTeamBScore === null ? "Add Score" : "Edit"}
-            </Button>
-          </div>
-          
-          <div className="flex justify-center items-center space-x-6 py-4">
-            <div className={`text-5xl font-bold ${initialTeamAScore !== null && initialTeamBScore !== null && initialTeamAScore > initialTeamBScore ? "text-black" : "text-gray-800"}`}>
+          <div className="flex justify-center items-center py-6">
+            <div className="text-6xl font-bold text-black">
               {initialTeamAScore ?? "0"}
             </div>
-            <div className="text-4xl text-black font-bold">-</div>
-            <div className={`text-5xl font-bold ${initialTeamAScore !== null && initialTeamBScore !== null && initialTeamBScore > initialTeamAScore ? "text-black" : "text-gray-800"}`}>
+            <div className="text-6xl font-bold text-black mx-6">-</div>
+            <div className="text-6xl font-bold text-black">
               {initialTeamBScore ?? "0"}
             </div>
           </div>
           
-          <div className="flex justify-between mt-4">
-            <div className="text-sm text-gray-700">Team A</div>
-            <div className="text-sm text-gray-700">Team B</div>
+          <div className="text-center mt-2 text-sm">
+            Team A vs. Team B
           </div>
         </div>
       </div>

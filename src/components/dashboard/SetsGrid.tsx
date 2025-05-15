@@ -14,9 +14,9 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
       {/* Set 1 - Larger box on the left spanning two rows */}
-      <div className="md:row-span-2">
+      <div className="md:col-span-1 md:row-span-2">
         <SetBox
           key={1}
           setNumber={1}
@@ -27,7 +27,7 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         />
       </div>
 
-      {/* Column 2 top row: Set 2 */}
+      {/* Top right section: Sets 2 and 4 */}
       <div>
         <SetBox
           key={2}
@@ -37,8 +37,6 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
           onScoreUpdate={onScoreUpdate}
         />
       </div>
-
-      {/* Column 3 top row: Set 4 */}
       <div>
         <SetBox
           key={4}
@@ -49,7 +47,7 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
         />
       </div>
 
-      {/* Column 2 bottom row: Set 3 */}
+      {/* Bottom right section: Sets 3 and 5 */}
       <div>
         <SetBox
           key={3}
@@ -59,8 +57,6 @@ const SetsGrid = ({ scores, onScoreUpdate }: SetsGridProps) => {
           onScoreUpdate={onScoreUpdate}
         />
       </div>
-
-      {/* Column 3 bottom row: Set 5 */}
       <div>
         <SetBox
           key={5}
