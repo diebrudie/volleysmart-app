@@ -98,9 +98,9 @@ const NewClub = () => {
           // If image upload failed but we want to continue
           if (!imageUrl) {
             toast({
-              title: "Warning",
+              title: "Notice",
               description: "Image upload failed, but club will be created without an image.",
-              variant: "warning"
+              variant: "default"
             });
           }
         } catch (error) {
@@ -133,20 +133,22 @@ const NewClub = () => {
         throw new Error("Failed to create club: No club data returned");
       }
       
-      // Add user as club admin - direct SQL function call to avoid RLS recursion
+      // Add user as club admin - using a direct insert since the RPC function isn't recognized
       const { error: memberError } = await supabase
-        .rpc('add_club_admin', { 
-          club_uuid: clubData.id, 
-          user_uuid: user.id 
+        .from('club_members')
+        .insert({
+          club_id: clubData.id,
+          user_id: user.id,
+          role: 'admin'
         });
       
       if (memberError) {
         console.error('Error adding user as admin:', memberError);
         // We created the club but couldn't set admin - handle gracefully
         toast({
-          title: "Warning",
+          title: "Notice",
           description: "Club was created, but there was an issue setting you as the admin. Please contact support.",
-          variant: "warning"
+          variant: "default"
         });
       }
       
