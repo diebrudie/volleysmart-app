@@ -1,4 +1,6 @@
+
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +17,7 @@ type PlayerPosition = 'Setter' | 'Outside Hitter' | 'Middle Blocker' | 'Opposite
 const TeamGenerator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedPlayers, setSelectedPlayers] = useState<number[]>([]);
   const [generatedTeams, setGeneratedTeams] = useState<{ teamA: Player[]; teamB: Player[] } | null>(null);
   
@@ -237,6 +240,10 @@ const TeamGenerator = () => {
     setSelectedPlayers([]);
   };
 
+  const handleInviteMembers = () => {
+    navigate('/invite-members');
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -270,6 +277,7 @@ const TeamGenerator = () => {
                 <EmptyTeamsState
                   canGenerateTeams={canGenerateTeams}
                   onGenerateTeams={generateTeams}
+                  onInviteMembers={handleInviteMembers}
                 />
               )}
             </div>

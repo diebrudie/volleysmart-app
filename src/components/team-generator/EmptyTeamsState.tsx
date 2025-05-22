@@ -20,7 +20,7 @@ export const EmptyTeamsState = ({
         <Users className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-lg font-medium text-gray-900">No teams generated yet</h3>
         <p className="mt-1 text-sm text-gray-500">
-          Select at least 6 players from the list and click "Generate Teams"
+          Select at least 6 players from the list and click "Create Game"
         </p>
         <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
           <Button 
@@ -33,9 +33,10 @@ export const EmptyTeamsState = ({
           <Button
             disabled={!canGenerateTeams}
             onClick={onGenerateTeams}
+            className="bg-volleyball-primary hover:bg-volleyball-primary/90"
           >
             <Shuffle className="mr-2 h-4 w-4" />
-            Generate Teams
+            Create Game
           </Button>
         </div>
       </div>
