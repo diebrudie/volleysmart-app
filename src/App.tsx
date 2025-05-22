@@ -26,6 +26,8 @@ import TeamGenerator from "./pages/TeamGenerator";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Start from "./pages/Start";
+import NewClub from "./pages/NewClub";
+import InviteMembers from "./pages/InviteMembers";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +70,24 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Start />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Club Creation Flow */}
+              <Route 
+                path="/new-club" 
+                element={
+                  <ProtectedRoute>
+                    <NewClub />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/invite-members/:clubId" 
+                element={
+                  <ProtectedRoute>
+                    <InviteMembers />
                   </ProtectedRoute>
                 } 
               />

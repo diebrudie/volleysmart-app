@@ -7,8 +7,7 @@ const Start = () => {
   const navigate = useNavigate();
 
   const handleCreateClub = () => {
-    // For now, navigate to the team generator page
-    navigate('/generate-teams');
+    navigate('/new-club');
   };
 
   const handleJoinClub = () => {
