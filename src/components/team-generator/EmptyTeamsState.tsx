@@ -1,13 +1,19 @@
 
 import { Button } from "@/components/ui/button";
 import { Shuffle, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface EmptyTeamsStateProps {
   canGenerateTeams: boolean;
   onGenerateTeams: () => void;
+  onInviteMembers: () => void;
 }
 
-export const EmptyTeamsState = ({ canGenerateTeams, onGenerateTeams }: EmptyTeamsStateProps) => {
+export const EmptyTeamsState = ({ 
+  canGenerateTeams, 
+  onGenerateTeams, 
+  onInviteMembers 
+}: EmptyTeamsStateProps) => {
   return (
     <div className="h-full flex items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-300 p-12">
       <div className="text-center">
@@ -16,7 +22,14 @@ export const EmptyTeamsState = ({ canGenerateTeams, onGenerateTeams }: EmptyTeam
         <p className="mt-1 text-sm text-gray-500">
           Select at least 6 players from the list and click "Generate Teams"
         </p>
-        <div className="mt-6">
+        <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+          <Button 
+            variant="outline" 
+            className="bg-amber-400 hover:bg-amber-500 border-amber-400 text-black"
+            onClick={onInviteMembers}
+          >
+            Invite Members
+          </Button>
           <Button
             disabled={!canGenerateTeams}
             onClick={onGenerateTeams}

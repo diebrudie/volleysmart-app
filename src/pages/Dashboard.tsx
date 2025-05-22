@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +8,7 @@ import Navbar from "@/components/layout/Navbar";
 import SetBox from "@/components/match/SetBox";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Pencil } from "lucide-react";
 import { format, isWednesday } from "date-fns";
@@ -116,21 +116,11 @@ const Dashboard = () => {
             <p className="text-gray-600 mb-8">
               Proceed with inviting other members to your club or creating a game:
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                variant="outline" 
-                className="bg-amber-400 hover:bg-amber-500 border-amber-400 text-black"
-                onClick={handleInviteMembers}
-              >
-                Invite Members
-              </Button>
-              <Button 
-                className="bg-blue-700 hover:bg-blue-800"
-                onClick={handleCreateGame}
-              >
-                Create Game
-              </Button>
-            </div>
+            <EmptyTeamsState 
+              canGenerateTeams={false} 
+              onGenerateTeams={handleCreateGame} 
+              onInviteMembers={handleInviteMembers}
+            />
           </div>
         </div>
       </div>
