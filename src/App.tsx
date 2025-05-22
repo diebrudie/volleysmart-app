@@ -28,6 +28,7 @@ import NotFound from "./pages/NotFound";
 import Start from "./pages/Start";
 import NewClub from "./pages/NewClub";
 import InviteMembers from "./pages/InviteMembers";
+import NewGame from "./pages/NewGame";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,16 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <InviteMembers />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Game Creation */}
+              <Route 
+                path="/new-game" 
+                element={
+                  <ProtectedRoute>
+                    <NewGame />
                   </ProtectedRoute>
                 } 
               />
