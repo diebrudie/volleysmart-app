@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+import { FileInput } from "@/components/ui/file-input";
 import {
   Card,
   CardContent,
@@ -86,19 +87,16 @@ const PlayerOnboarding = () => {
     loadPositions();
   }, [toast]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Create a preview for the image
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      
-      // In a real implementation, you would upload the file to storage
-      form.setValue("imageUrl", URL.createObjectURL(file));
-    }
+  const handleImageUpload = (file: File) => {
+    // Create a preview for the image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    
+    // In a real implementation, you would upload the file to storage
+    form.setValue("imageUrl", URL.createObjectURL(file));
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -313,7 +311,7 @@ const PlayerOnboarding = () => {
                   )}
                 />
 
-                {/* Question 4: Image Upload */}
+                {/* Question 4: Image Upload - Updated with the new FileInput component */}
                 <FormItem>
                   <FormLabel className="text-base font-medium">
                     4. Please upload a profile picture
@@ -322,11 +320,10 @@ const PlayerOnboarding = () => {
                     This will help teammates recognize you
                   </FormDescription>
                   <div className="mt-2">
-                    <Input
-                      type="file"
+                    <FileInput
                       accept="image/*"
-                      onChange={handleImageUpload}
-                      className="border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 file:bg-gray-200 file:text-gray-700 file:border-0 file:mr-2 file:py-2 file:px-4 cursor-pointer"
+                      buttonText="Choose profile photo"
+                      onImageSelected={handleImageUpload}
                     />
                     {imagePreview && (
                       <div className="mt-4">
