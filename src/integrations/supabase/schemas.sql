@@ -48,3 +48,17 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Create function to add a user as a club admin safely
+CREATE OR REPLACE FUNCTION public.add_club_admin(club_uuid UUID, user_uuid UUID)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO public.club_members (club_id, user_id, role)
+  VALUES (club_uuid, user_uuid, 'admin');
+EXCEPTION
+  WHEN unique_violation THEN
+    UPDATE public.club_members
+    SET role = 'admin'
+    WHERE club_id = club_uuid AND user_id = user_uuid;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

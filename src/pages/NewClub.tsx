@@ -50,6 +50,27 @@ const NewClub = () => {
     reader.readAsDataURL(file);
   };
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      // Generate unique filename to avoid collisions
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `clubs/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('club-images')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      return supabase.storage.from('club-images').getPublicUrl(filePath).data.publicUrl;
+    } catch (error: any) {
+      console.error('Image upload error:', error);
+      setUploadError(`Image upload failed: ${error.message}`);
+      return null;
+    }
+  };
+
   const onSubmit = async (data: NewClubFormData) => {
     if (!user) {
       toast({
@@ -72,39 +93,19 @@ const NewClub = () => {
       // Handle image upload if provided
       if (imageFile) {
         try {
-          // First check if the bucket exists
-          const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+          imageUrl = await uploadImage(imageFile);
           
-          if (bucketsError) {
-            throw new Error(`Error checking storage buckets: ${bucketsError.message}`);
+          // If image upload failed but we want to continue
+          if (!imageUrl) {
+            toast({
+              title: "Warning",
+              description: "Image upload failed, but club will be created without an image.",
+              variant: "warning"
+            });
           }
-          
-          const bucketExists = buckets.some(bucket => bucket.name === 'club-images');
-          
-          if (!bucketExists) {
-            throw new Error("Club images storage is not configured properly. Please contact support.");
-          }
-          
-          const fileExt = imageFile.name.split('.').pop();
-          const fileName = `${Date.now()}.${fileExt}`;
-          const filePath = `clubs/${fileName}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('club-images')
-            .upload(filePath, imageFile);
-            
-          if (uploadError) throw uploadError;
-          
-          imageUrl = supabase.storage.from('club-images').getPublicUrl(filePath).data.publicUrl;
-        } catch (error: any) {
-          console.error('Image upload error:', error);
-          setUploadError(`Image upload failed: ${error.message}`);
+        } catch (error) {
           // Continue without image if upload fails
-          toast({
-            title: "Warning",
-            description: "Image upload failed, but club will be created without an image.",
-            variant: "destructive"
-          });
+          console.error('Error uploading image:', error);
         }
       }
       
@@ -124,18 +125,30 @@ const NewClub = () => {
         .select()
         .single();
         
-      if (clubError) throw clubError;
+      if (clubError) {
+        throw clubError;
+      }
       
-      // Add user as club admin
+      if (!clubData || !clubData.id) {
+        throw new Error("Failed to create club: No club data returned");
+      }
+      
+      // Add user as club admin - direct SQL function call to avoid RLS recursion
       const { error: memberError } = await supabase
-        .from('club_members')
-        .insert({
-          club_id: clubData.id,
-          user_id: user.id,
-          role: 'admin'
+        .rpc('add_club_admin', { 
+          club_uuid: clubData.id, 
+          user_uuid: user.id 
         });
-        
-      if (memberError) throw memberError;
+      
+      if (memberError) {
+        console.error('Error adding user as admin:', memberError);
+        // We created the club but couldn't set admin - handle gracefully
+        toast({
+          title: "Warning",
+          description: "Club was created, but there was an issue setting you as the admin. Please contact support.",
+          variant: "warning"
+        });
+      }
       
       toast({
         title: "Club created!",
