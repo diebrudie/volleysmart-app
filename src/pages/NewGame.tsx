@@ -70,6 +70,21 @@ const NewGame = () => {
     enabled: !!clubData?.club_id,
   });
 
+  // Fetch a default position ID to use - we'll use the first one
+  const { data: defaultPosition } = useQuery({
+    queryKey: ['defaultPosition'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('positions')
+        .select('id')
+        .limit(1)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handlePlayerToggle = (playerId: string) => {
     setSelectedPlayers(current => 
       current.includes(playerId)
@@ -94,6 +109,15 @@ const NewGame = () => {
       toast({
         title: "Not enough players",
         description: "Please select at least 6 players to create teams",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!defaultPosition) {
+      toast({
+        title: "Position data missing",
+        description: "Unable to create teams without position data",
         variant: "destructive"
       });
       return;
@@ -146,16 +170,18 @@ const NewGame = () => {
       
       if (teamBError) throw teamBError;
 
-      // Add players to Team A
+      // Add players to Team A with position_id
       const teamAPlayers = teamA.map(playerId => ({
         match_team_id: teamAData.id,
         player_id: playerId,
+        position_id: defaultPosition.id, // Add the required position_id
       }));
 
-      // Add players to Team B
+      // Add players to Team B with position_id
       const teamBPlayers = teamB.map(playerId => ({
         match_team_id: teamBData.id,
         player_id: playerId,
+        position_id: defaultPosition.id, // Add the required position_id
       }));
 
       // Insert players into teams
