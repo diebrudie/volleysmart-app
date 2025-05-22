@@ -23,6 +23,7 @@ const NewClub = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -39,6 +40,7 @@ const NewClub = () => {
 
   const handleImageChange = (file: File) => {
     setImageFile(file);
+    setUploadError(null); // Clear any previous errors
     
     // Create preview
     const reader = new FileReader();
@@ -59,6 +61,8 @@ const NewClub = () => {
     }
 
     setIsSubmitting(true);
+    setUploadError(null);
+    
     try {
       // Generate a random identifier for the club
       const clubIdentifier = generateClubIdentifier();
@@ -67,17 +71,41 @@ const NewClub = () => {
       
       // Handle image upload if provided
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `clubs/${fileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('club-images')
-          .upload(filePath, imageFile);
+        try {
+          // First check if the bucket exists
+          const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
           
-        if (uploadError) throw uploadError;
-        
-        imageUrl = `${supabase.storage.from('club-images').getPublicUrl(filePath).data.publicUrl}`;
+          if (bucketsError) {
+            throw new Error(`Error checking storage buckets: ${bucketsError.message}`);
+          }
+          
+          const bucketExists = buckets.some(bucket => bucket.name === 'club-images');
+          
+          if (!bucketExists) {
+            throw new Error("Club images storage is not configured properly. Please contact support.");
+          }
+          
+          const fileExt = imageFile.name.split('.').pop();
+          const fileName = `${Date.now()}.${fileExt}`;
+          const filePath = `clubs/${fileName}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('club-images')
+            .upload(filePath, imageFile);
+            
+          if (uploadError) throw uploadError;
+          
+          imageUrl = supabase.storage.from('club-images').getPublicUrl(filePath).data.publicUrl;
+        } catch (error: any) {
+          console.error('Image upload error:', error);
+          setUploadError(`Image upload failed: ${error.message}`);
+          // Continue without image if upload fails
+          toast({
+            title: "Warning",
+            description: "Image upload failed, but club will be created without an image.",
+            variant: "destructive"
+          });
+        }
       }
       
       // Ensure standard volleyball positions exist in the database
@@ -162,6 +190,10 @@ const NewClub = () => {
               buttonText="Choose club image"
               onImageSelected={handleImageChange}
             />
+            
+            {uploadError && (
+              <p className="text-sm text-red-500">{uploadError}</p>
+            )}
             
             {imagePreview && (
               <div className="mt-2">
