@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -133,7 +132,7 @@ const PlayerOnboarding = () => {
         description: "Your player profile has been created",
       });
 
-      // Navigate to the start page
+      // Navigate to the start page after successful profile creation
       navigate("/start");
     } catch (error) {
       console.error("Error creating player profile:", error);

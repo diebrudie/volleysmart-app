@@ -8,9 +8,10 @@ type UserRole = 'admin' | 'editor' | 'user';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
+  requiresOnboarding?: boolean;
 }
 
-const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, allowedRoles, requiresOnboarding = true }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 

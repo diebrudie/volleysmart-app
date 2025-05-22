@@ -1,12 +1,10 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft } from "lucide-react";
 import AuthLayout from '@/components/auth/AuthLayout';
 
 const Signup = () => {
@@ -16,9 +14,16 @@ const Signup = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signup } = useAuth();
+  const { signup, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/players/onboarding');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,18 +39,11 @@ const Signup = () => {
     setIsSubmitting(true);
     try {
       await signup(email, password, firstName, lastName);
-      toast({
-        title: "Success",
-        description: "Account created successfully",
-      });
+      // Navigate to onboarding page
       navigate('/players/onboarding');
     } catch (error) {
       console.error('Signup error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create account. Please try again.",
-        variant: "destructive"
-      });
+      // Toast is already shown in the signup function
     } finally {
       setIsSubmitting(false);
     }
