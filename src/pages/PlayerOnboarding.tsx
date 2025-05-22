@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -7,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { createPlayer } from "@/integrations/supabase/players";
 import { getAllPositions } from "@/integrations/supabase/positions";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,6 +57,8 @@ const PlayerOnboarding = () => {
   const [positions, setPositions] = useState<{ id: string; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -87,16 +91,49 @@ const PlayerOnboarding = () => {
     loadPositions();
   }, [toast]);
 
-  const handleImageUpload = (file: File) => {
+  const handleImageUpload = async (file: File) => {
+    setImageFile(file);
+    setUploadError(null);
+    
     // Create a preview for the image
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
     };
     reader.readAsDataURL(file);
-    
-    // In a real implementation, you would upload the file to storage
-    form.setValue("imageUrl", URL.createObjectURL(file));
+  };
+
+  const uploadImageToStorage = async (file: File): Promise<string | null> => {
+    try {
+      // Check if bucket exists
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        throw new Error(`Error checking storage buckets: ${bucketsError.message}`);
+      }
+      
+      const bucketExists = buckets.some(bucket => bucket.name === 'player-images');
+      
+      if (!bucketExists) {
+        throw new Error("Player images storage is not configured properly. Please contact support.");
+      }
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `profiles/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('player-images')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      return supabase.storage.from('player-images').getPublicUrl(filePath).data.publicUrl;
+    } catch (error: any) {
+      console.error('Image upload error:', error);
+      setUploadError(`Image upload failed: ${error.message}`);
+      return null;
+    }
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -112,11 +149,26 @@ const PlayerOnboarding = () => {
     setIsLoading(true);
 
     try {
+      // Upload image if provided
+      let imageUrl = null;
+      if (imageFile) {
+        imageUrl = await uploadImageToStorage(imageFile);
+        
+        // If image upload failed but we still want to continue
+        if (!imageUrl) {
+          toast({
+            title: "Warning",
+            description: "Image upload failed, but profile will be created without an image.",
+            variant: "destructive",
+          });
+        }
+      }
+
       await createPlayer(user.id, {
         first_name: user.name?.split(' ')[0] || '',
         last_name: user.name?.split(' ').slice(1).join(' ') || '',
         bio: "",
-        image_url: data.imageUrl,
+        image_url: imageUrl,
         skill_rating: data.skillRating,
         primary_position: data.primaryPosition,
         secondary_positions: data.secondaryPositions,
@@ -325,6 +377,11 @@ const PlayerOnboarding = () => {
                       buttonText="Choose profile photo"
                       onImageSelected={handleImageUpload}
                     />
+                    
+                    {uploadError && (
+                      <p className="text-sm text-red-500">{uploadError}</p>
+                    )}
+                    
                     {imagePreview && (
                       <div className="mt-4">
                         <p className="mb-2 text-sm">Preview:</p>
