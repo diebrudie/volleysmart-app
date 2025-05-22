@@ -68,25 +68,7 @@ const Dashboard = () => {
   });
 
   const handleInviteMembers = () => {
-    // Get club ID from latest game or query if needed
-    if (latestGame) {
-      navigate(`/invite-members/${latestGame.id}`);
-    } else {
-      // If no game yet, we need to query for the club ID
-      const getClubId = async () => {
-        const { data } = await supabase
-          .from('club_members')
-          .select('club_id')
-          .eq('user_id', user?.id)
-          .single();
-        
-        if (data) {
-          navigate(`/invite-members/${data.club_id}`);
-        }
-      };
-      
-      getClubId();
-    }
+    navigate('/invite-members');
   };
 
   const handleCreateGame = () => {
