@@ -34,10 +34,10 @@ import {
 
 // Define the schema for the form
 const formSchema = z.object({
-  mainPosition: z.string({
+  primaryPosition: z.string({
     required_error: "Please select your main position",
   }),
-  otherPositions: z.array(z.string()).min(1, "Select at least one other position"),
+  secondaryPositions: z.array(z.string()).min(1, "Select at least one other position"),
   skillRating: z.number().min(1).max(10),
   imageUrl: z.string().optional(),
   gender: z.enum(["male", "female", "diverse"]),
@@ -59,8 +59,8 @@ const PlayerOnboarding = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      mainPosition: "",
-      otherPositions: [],
+      primaryPosition: "",
+      secondaryPositions: [],
       skillRating: 5,
       imageUrl: "",
       gender: "male",
@@ -115,16 +115,14 @@ const PlayerOnboarding = () => {
     setIsLoading(true);
 
     try {
-      // Create player profile with main position and other positions combined
-      const allPositions = [data.mainPosition, ...data.otherPositions];
-      
       await createPlayer(user.id, {
         first_name: user.name?.split(' ')[0] || '',
         last_name: user.name?.split(' ').slice(1).join(' ') || '',
         bio: "",
         image_url: data.imageUrl,
         skill_rating: data.skillRating,
-        positions: allPositions,
+        primary_position: data.primaryPosition,
+        secondary_positions: data.secondaryPositions,
         member_association: true,
         gender: data.gender,
         birthday: data.birthday ? convertDateFormat(data.birthday) : undefined,
@@ -171,10 +169,10 @@ const PlayerOnboarding = () => {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-8"
               >
-                {/* Question 1: Main Position */}
+                {/* Question 1: Primary Position */}
                 <FormField
                   control={form.control}
-                  name="mainPosition"
+                  name="primaryPosition"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel className="text-base font-medium">
@@ -185,7 +183,17 @@ const PlayerOnboarding = () => {
                       </FormDescription>
                       <FormControl>
                         <RadioGroup
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // When primary position changes, remove it from secondary positions if present
+                            const currentSecondary = form.getValues("secondaryPositions");
+                            if (currentSecondary.includes(value)) {
+                              form.setValue(
+                                "secondaryPositions",
+                                currentSecondary.filter(pos => pos !== value)
+                              );
+                            }
+                          }}
                           defaultValue={field.value}
                           className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2"
                         >
@@ -206,10 +214,10 @@ const PlayerOnboarding = () => {
                   )}
                 />
 
-                {/* Question 2: Other Positions */}
+                {/* Question 2: Secondary Positions */}
                 <FormField
                   control={form.control}
-                  name="otherPositions"
+                  name="secondaryPositions"
                   render={() => (
                     <FormItem>
                       <FormLabel className="text-base font-medium">
@@ -223,7 +231,7 @@ const PlayerOnboarding = () => {
                           <FormField
                             key={position.id}
                             control={form.control}
-                            name="otherPositions"
+                            name="secondaryPositions"
                             render={({ field }) => {
                               return (
                                 <FormItem
@@ -234,8 +242,8 @@ const PlayerOnboarding = () => {
                                     <Checkbox
                                       checked={field.value?.includes(position.id)}
                                       onCheckedChange={(checked) => {
-                                        // Don't allow selecting main position as other position
-                                        if (position.id === form.getValues("mainPosition")) {
+                                        // Don't allow selecting primary position as secondary position
+                                        if (position.id === form.getValues("primaryPosition")) {
                                           return;
                                         }
                                       
@@ -250,10 +258,14 @@ const PlayerOnboarding = () => {
                                               )
                                             );
                                       }}
+                                      disabled={position.id === form.getValues("primaryPosition")}
                                     />
                                   </FormControl>
                                   <FormLabel className="font-normal">
                                     {position.name}
+                                    {position.id === form.getValues("primaryPosition") && 
+                                      <span className="text-gray-400 ml-1">(Primary)</span>
+                                    }
                                   </FormLabel>
                                 </FormItem>
                               );

@@ -176,16 +176,19 @@ export type Database = {
       player_positions: {
         Row: {
           id: string
+          is_primary: boolean
           player_id: string
           position_id: string
         }
         Insert: {
           id?: string
+          is_primary?: boolean
           player_id: string
           position_id: string
         }
         Update: {
           id?: string
+          is_primary?: boolean
           player_id?: string
           position_id?: string
         }

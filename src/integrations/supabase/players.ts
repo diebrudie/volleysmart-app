@@ -7,7 +7,8 @@ export interface PlayerData {
   bio?: string;
   image_url?: string;
   skill_rating?: number;
-  positions?: string[];
+  primary_position?: string;
+  secondary_positions?: string[];
   member_association?: boolean;
   gender?: 'male' | 'female' | 'other' | 'diverse';
   birthday?: string | Date; // Updated to allow both string and Date
@@ -41,20 +42,37 @@ export async function createPlayer(userId: string, playerData: PlayerData) {
     throw playerError;
   }
   
-  // If positions are provided, add them to player_positions
-  if (playerData.positions && playerData.positions.length > 0) {
-    const positionInserts = playerData.positions.map(positionId => ({
+  // Add primary position if provided
+  if (playerData.primary_position) {
+    const { error: primaryPositionError } = await supabase
+      .from('player_positions')
+      .insert({
+        player_id: player.id,
+        position_id: playerData.primary_position,
+        is_primary: true
+      });
+      
+    if (primaryPositionError) {
+      console.error("Error adding primary position:", primaryPositionError);
+      throw primaryPositionError;
+    }
+  }
+  
+  // Add secondary positions if provided
+  if (playerData.secondary_positions && playerData.secondary_positions.length > 0) {
+    const positionInserts = playerData.secondary_positions.map(positionId => ({
       player_id: player.id,
-      position_id: positionId
+      position_id: positionId,
+      is_primary: false
     }));
     
-    const { error: positionsError } = await supabase
+    const { error: secondaryPositionsError } = await supabase
       .from('player_positions')
       .insert(positionInserts);
       
-    if (positionsError) {
-      console.error("Error adding player positions:", positionsError);
-      throw positionsError;
+    if (secondaryPositionsError) {
+      console.error("Error adding secondary positions:", secondaryPositionsError);
+      throw secondaryPositionsError;
     }
   }
   
@@ -69,6 +87,7 @@ export async function getPlayerByUserId(userId: string) {
       player_positions (
         id,
         position_id,
+        is_primary,
         positions (
           id,
           name
@@ -94,6 +113,7 @@ export async function getAllPlayers() {
       player_positions (
         id,
         position_id,
+        is_primary,
         positions (
           id,
           name
@@ -138,7 +158,7 @@ export async function updatePlayer(playerId: string, playerData: Partial<PlayerD
   return data;
 }
 
-export async function updatePlayerPositions(playerId: string, positionIds: string[]) {
+export async function updatePlayerPositions(playerId: string, primaryPositionId: string, secondaryPositionIds: string[]) {
   // First delete existing positions
   const { error: deleteError } = await supabase
     .from('player_positions')
@@ -150,20 +170,35 @@ export async function updatePlayerPositions(playerId: string, positionIds: strin
     throw deleteError;
   }
   
-  // Then add new positions
-  if (positionIds.length > 0) {
-    const positionInserts = positionIds.map(positionId => ({
+  // Add primary position
+  const { error: primaryError } = await supabase
+    .from('player_positions')
+    .insert({
       player_id: playerId,
-      position_id: positionId
+      position_id: primaryPositionId,
+      is_primary: true
+    });
+    
+  if (primaryError) {
+    console.error("Error adding primary position:", primaryError);
+    throw primaryError;
+  }
+  
+  // Add secondary positions
+  if (secondaryPositionIds.length > 0) {
+    const positionInserts = secondaryPositionIds.map(positionId => ({
+      player_id: playerId,
+      position_id: positionId,
+      is_primary: false
     }));
     
-    const { error: insertError } = await supabase
+    const { error: secondaryError } = await supabase
       .from('player_positions')
       .insert(positionInserts);
       
-    if (insertError) {
-      console.error("Error adding player positions:", insertError);
-      throw insertError;
+    if (secondaryError) {
+      console.error("Error adding secondary positions:", secondaryError);
+      throw secondaryError;
     }
   }
   
