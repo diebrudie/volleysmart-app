@@ -350,11 +350,19 @@ export type Database = {
         Args: { club_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      club_has_members: {
+        Args: { club_uuid: string }
+        Returns: boolean
+      }
       is_club_admin: {
         Args: { club_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_club_admin_or_editor: {
+        Args: { club_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      is_club_admin_safe: {
         Args: { club_uuid: string; user_uuid: string }
         Returns: boolean
       }

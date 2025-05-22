@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -10,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/spinner';
+import { ensurePositionsExist } from '@/integrations/supabase/positions';
 
 interface NewClubFormData {
   name: string;
@@ -77,6 +79,9 @@ const NewClub = () => {
         
         imageUrl = `${supabase.storage.from('club-images').getPublicUrl(filePath).data.publicUrl}`;
       }
+      
+      // Ensure standard volleyball positions exist in the database
+      await ensurePositionsExist();
       
       // Insert club data
       const { data: clubData, error: clubError } = await supabase
