@@ -3,7 +3,7 @@ import { supabase } from './client';
 
 /**
  * Creates a club admin record for a given club and user
- * Using service role client to bypass RLS policies that might cause recursion
+ * Using optimized approach that works with our RLS policies
  */
 export const addClubAdmin = async (clubId: string, userId: string): Promise<void> => {
   try {
