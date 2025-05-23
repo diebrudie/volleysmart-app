@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -12,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/spinner';
 import { ensurePositionsExist } from '@/integrations/supabase/positions';
 import { ensureStorageBucketExists } from '@/integrations/supabase/storage';
+import { addClubAdmin } from '@/integrations/supabase/club';
 
 interface NewClubFormData {
   name: string;
@@ -144,33 +146,17 @@ const NewClub = () => {
         throw new Error("Failed to create club: No club data returned");
       }
       
-      // Separately insert the club member record
-      const { error: memberError } = await supabase
-        .rpc('add_club_admin', {
-          p_club_id: clubData.id,
-          p_user_id: user.id
-        });
-      
-      if (memberError) {
-        console.error('Error adding user as admin:', memberError);
+      // Add the user as a club admin
+      try {
+        await addClubAdmin(clubData.id, user.id);
+      } catch (adminError: any) {
+        console.error('Error adding user as admin:', adminError);
         
-        // Try direct insert as fallback
-        const { error: directError } = await supabase
-          .from('club_members')
-          .insert({
-            club_id: clubData.id,
-            user_id: user.id,
-            role: 'admin'
-          });
-          
-        if (directError) {
-          console.error('Fallback direct insert also failed:', directError);
-          toast({
-            title: "Notice",
-            description: "Club was created, but there was an issue setting you as the admin. Please contact support.",
-            variant: "default"
-          });
-        }
+        toast({
+          title: "Notice",
+          description: "Club was created, but there was an issue setting you as the admin. Please contact support.",
+          variant: "default"
+        });
       }
       
       toast({
