@@ -14,6 +14,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { ensurePositionsExist } from '@/integrations/supabase/positions';
 import { ensureStorageBucketExists, getPublicUrl } from '@/integrations/supabase/storage';
 import { addClubAdmin } from '@/integrations/supabase/club';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface NewClubFormData {
   name: string;
@@ -27,6 +29,7 @@ const NewClub = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [bucketReady, setBucketReady] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -111,6 +114,7 @@ const NewClub = () => {
 
     setIsSubmitting(true);
     setUploadError(null);
+    setServerError(null);
     
     try {
       // Generate a random identifier for the club
@@ -149,7 +153,7 @@ const NewClub = () => {
           created_by: user.id,
           slug: clubIdentifier
         })
-        .select()
+        .select('id')
         .single();
         
       if (clubError) {
@@ -165,6 +169,18 @@ const NewClub = () => {
         await addClubAdmin(clubData.id, user.id);
       } catch (adminError: any) {
         console.error('Error adding user as admin:', adminError);
+        
+        if (adminError.message.includes('infinite recursion')) {
+          setServerError('There was an issue with permissions. Please try again later or contact support.');
+          toast({
+            title: "Error",
+            description: "Club was created, but there was a permissions issue. Please contact support.",
+            variant: "destructive"
+          });
+          // We can still proceed to the next page since the club was created
+          navigate(`/invite-members/${clubData.id}`);
+          return;
+        }
         
         toast({
           title: "Notice",
@@ -183,6 +199,13 @@ const NewClub = () => {
       
     } catch (error: any) {
       console.error('Error creating club:', error);
+      
+      if (error.message.includes('infinite recursion')) {
+        setServerError('There was a permission issue with the server. Please try again later or contact support.');
+      } else {
+        setServerError(error.message || "Failed to create club. Please try again.");
+      }
+      
       toast({
         title: "Error",
         description: error.message || "Failed to create club. Please try again.",
@@ -197,6 +220,14 @@ const NewClub = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-lg bg-white rounded-lg shadow-md p-8">
         <h1 className="text-2xl font-semibold text-center mb-6">Create a New Club</h1>
+        
+        {serverError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{serverError}</AlertDescription>
+          </Alert>
+        )}
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
