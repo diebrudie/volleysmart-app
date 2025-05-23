@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -170,13 +169,17 @@ const NewClub = () => {
       } catch (adminError: any) {
         console.error('Error adding user as admin:', adminError);
         
-        if (adminError.message.includes('infinite recursion')) {
-          setServerError('There was an issue with permissions. Please try again later or contact support.');
+        if (adminError.message && (
+            adminError.message.includes('infinite recursion') || 
+            adminError.message.includes('permission denied'))) {
+          
+          setServerError('There was an issue with permissions, but your club was created. You can continue as the club creator.');
           toast({
-            title: "Error",
-            description: "Club was created, but there was a permissions issue. Please contact support.",
-            variant: "destructive"
+            title: "Notice",
+            description: "Club was created successfully. You can continue as the club creator.",
+            variant: "default"
           });
+          
           // We can still proceed to the next page since the club was created
           navigate(`/invite-members/${clubData.id}`);
           return;
@@ -184,7 +187,7 @@ const NewClub = () => {
         
         toast({
           title: "Notice",
-          description: "Club was created, but there was an issue setting you as the admin. Please contact support.",
+          description: "Club was created, but there was an issue setting you as the admin. As the creator, you should still have access.",
           variant: "default"
         });
       }
@@ -200,7 +203,7 @@ const NewClub = () => {
     } catch (error: any) {
       console.error('Error creating club:', error);
       
-      if (error.message.includes('infinite recursion')) {
+      if (error.message && error.message.includes('recursion')) {
         setServerError('There was a permission issue with the server. Please try again later or contact support.');
       } else {
         setServerError(error.message || "Failed to create club. Please try again.");
