@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +18,36 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [isCheckingClub, setIsCheckingClub] = useState(true);
+
+  // First check if user belongs to any club
+  useEffect(() => {
+    const checkUserClub = async () => {
+      if (!user?.id) return;
+
+      try {
+        const { data: clubMember, error } = await supabase
+          .from('club_members')
+          .select('club_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error || !clubMember) {
+          // User doesn't belong to any club, redirect to start page
+          navigate('/start');
+          return;
+        }
+        
+        setIsCheckingClub(false);
+      } catch (error) {
+        console.error('Error checking user club:', error);
+        // On error, safely redirect to start
+        navigate('/start');
+      }
+    };
+
+    checkUserClub();
+  }, [user, navigate]);
 
   // Query to fetch the latest game
   const { data: latestGame, isLoading } = useQuery({
@@ -64,7 +95,7 @@ const Dashboard = () => {
 
       return matchDay;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isCheckingClub,
   });
 
   const handleInviteMembers = () => {
@@ -75,7 +106,19 @@ const Dashboard = () => {
     navigate('/new-game');
   };
 
-  // Empty state when no games exist yet
+  // Show loading state while checking club membership
+  if (isCheckingClub) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <Spinner className="h-8 w-8" />
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state while fetching the latest game
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -94,7 +137,7 @@ const Dashboard = () => {
         <Navbar />
         <div className="flex-grow flex flex-col items-center justify-center p-4">
           <div className="max-w-lg w-full text-center">
-            <h1 className="text-3xl font-bold mb-4">You haven't play any games yet.</h1>
+            <h1 className="text-3xl font-bold mb-4">You haven't played any games yet.</h1>
             <p className="text-gray-600 mb-8">
               Proceed with inviting other members to your club or creating a game:
             </p>

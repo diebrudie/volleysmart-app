@@ -35,7 +35,7 @@ const queryClient = new QueryClient();
 // Home route with authentication check
 const HomeRoute = () => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Home />;
+  return isAuthenticated ? <Navigate to="/start" replace /> : <Home />;
 };
 
 const App = () => (
