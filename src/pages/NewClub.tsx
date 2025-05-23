@@ -26,6 +26,7 @@ const NewClub = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [bucketReady, setBucketReady] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -35,9 +36,11 @@ const NewClub = () => {
     const initStorage = async () => {
       try {
         await ensureStorageBucketExists('club-images');
+        setBucketReady(true);
       } catch (error) {
         console.error('Failed to ensure storage bucket exists:', error);
         // Continue anyway - the bucket might already exist on the server
+        setBucketReady(true);
       }
     };
     
@@ -68,6 +71,15 @@ const NewClub = () => {
 
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
+      if (!bucketReady) {
+        // Try again just to be safe
+        try {
+          await ensureStorageBucketExists('club-images');
+        } catch (e) {
+          console.log('Last attempt to ensure bucket exists failed, continuing anyway');
+        }
+      }
+      
       // Generate unique filename to avoid collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
