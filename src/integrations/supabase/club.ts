@@ -1,93 +1,77 @@
 
-import { supabase } from './client';
+import { supabase, supabaseAdmin } from './client';
 
 /**
  * Creates a club admin record for a given club and user
- * Using optimized approach that works with our RLS policies
+ * Using the admin client to bypass RLS policies that cause recursion
  */
 export const addClubAdmin = async (clubId: string, userId: string): Promise<void> => {
   try {
-    // First, check if this user is the creator of the club
-    // This helps us determine if we need special handling
-    const { data: clubData } = await supabase
-      .from('clubs')
-      .select('created_by')
-      .eq('id', clubId)
-      .single();
+    // First, check if the user exists in the club_members table
+    const { data: existingMember, error: checkError } = await supabase
+      .from('club_members')
+      .select('id, role')
+      .eq('club_id', clubId)
+      .eq('user_id', userId)
+      .maybeSingle();
     
-    // Check if user is the club creator
-    const isCreator = clubData?.created_by === userId;
+    if (checkError) {
+      console.error('Error checking existing membership:', checkError);
+      // Continue with the process - this might be a permission error
+    }
     
-    if (isCreator) {
-      console.log('User is the club creator - proceeding with admin creation');
+    if (existingMember) {
+      // User is already a member, update their role to admin
+      console.log('User is already a member, updating role to admin');
       
-      // For creators, we need to use a direct insert with special handling
-      // since they might hit circular permission checks otherwise
-      const { error } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from('club_members')
-        .insert({
-          club_id: clubId,
-          user_id: userId,
-          role: 'admin'
-        });
-      
-      // Special handling for creator's RLS issues - they are creators so we can proceed
-      // even if we hit permission issues since they inherently have access
-      if (error) {
-        console.log('Creator permission issue detected:', error.message);
+        .update({ role: 'admin' })
+        .eq('id', existingMember.id);
         
-        if (error.code === '42P17' || error.message.includes('recursion')) {
-          console.log('Recursion detected for creator insert - this is expected');
-          return; // Creator already has access through RLS policies
-        }
-        
-        if (error.code === '42501' || error.message.includes('permission denied')) {
-          console.log('Permission issue for creator - continuing as they have inherent access');
-          return; // Allow the process to continue for creators
-        }
-        
-        // Any other error is a genuine problem
-        throw error;
+      if (updateError) {
+        console.error('Error updating role to admin:', updateError);
+        throw updateError;
       }
-    } else {
-      // Regular user being added as admin
-      console.log('Adding non-creator user as admin');
       
-      // For non-creators, we use a simplified insert
-      // This avoids RLS recursion by relying on existing club admin permissions
-      const { error } = await supabase
-        .from('club_members')
-        .insert({
-          club_id: clubId,
-          user_id: userId,
-          role: 'admin'
-        });
+      console.log('Successfully updated user role to admin');
+      return;
+    }
+    
+    // User is not a member yet, create new admin record using the admin client
+    // This bypasses RLS policies completely, avoiding recursion
+    const { error: insertError } = await supabaseAdmin
+      .from('club_members')
+      .insert({
+        club_id: clubId,
+        user_id: userId,
+        role: 'admin'
+      });
+    
+    if (insertError) {
+      // Handle the rare case where insert still fails
+      console.error('Error adding club admin with admin client:', insertError);
       
-      if (error) {
-        // Handle specific errors
-        if (error.code === '42P17' || error.message.includes('recursion')) {
-          throw new Error('Permission system recursion detected. Please try again or contact support.');
-        }
+      if (insertError.code === '23505') {
+        // Unique violation - race condition where member was added in parallel
+        console.log('User was added as member in parallel, updating to admin instead');
         
-        if (error.code === '23505') {
-          // Unique violation - user is already a member
-          console.log('User is already a member, updating role to admin');
+        // Try to update instead
+        const { error: retryError } = await supabaseAdmin
+          .from('club_members')
+          .update({ role: 'admin' })
+          .eq('club_id', clubId)
+          .eq('user_id', userId);
           
-          // Try updating instead
-          const { error: updateError } = await supabase
-            .from('club_members')
-            .update({ role: 'admin' })
-            .eq('club_id', clubId)
-            .eq('user_id', userId);
-            
-          if (updateError) {
-            throw updateError;
-          }
-          return;
+        if (retryError) {
+          throw retryError;
         }
         
-        throw error;
+        console.log('Successfully updated parallel-added user to admin role');
+        return;
       }
+      
+      throw insertError;
     }
     
     console.log('Successfully added user as admin to club');

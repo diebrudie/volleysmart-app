@@ -163,51 +163,33 @@ const NewClub = () => {
         throw new Error("Failed to create club: No club data returned");
       }
       
-      // Add the user as a club admin
+      // Add the user as a club admin using the improved function
       try {
         await addClubAdmin(clubData.id, user.id);
+        
+        toast({
+          title: "Club created!",
+          description: "Your club has been created successfully."
+        });
+        
+        // Navigate to invite members page with club id as parameter
+        navigate(`/invite-members/${clubData.id}`);
       } catch (adminError: any) {
         console.error('Error adding user as admin:', adminError);
         
-        if (adminError.message && (
-            adminError.message.includes('infinite recursion') || 
-            adminError.message.includes('permission denied'))) {
-          
-          setServerError('There was an issue with permissions, but your club was created. You can continue as the club creator.');
-          toast({
-            title: "Notice",
-            description: "Club was created successfully. You can continue as the club creator.",
-            variant: "default"
-          });
-          
-          // We can still proceed to the next page since the club was created
-          navigate(`/invite-members/${clubData.id}`);
-          return;
-        }
-        
+        // Even if there's an admin error, the club was created
+        // Let the user proceed as they are the club creator
         toast({
-          title: "Notice",
-          description: "Club was created, but there was an issue setting you as the admin. As the creator, you should still have access.",
-          variant: "default"
+          title: "Club created",
+          description: "Your club was created but there was an issue with permissions. You can still proceed as the club creator."
         });
+        
+        navigate(`/invite-members/${clubData.id}`);
       }
-      
-      toast({
-        title: "Club created!",
-        description: "Your club has been created successfully."
-      });
-      
-      // Navigate to invite members page with club id as parameter
-      navigate(`/invite-members/${clubData.id}`);
-      
     } catch (error: any) {
       console.error('Error creating club:', error);
       
-      if (error.message && error.message.includes('recursion')) {
-        setServerError('There was a permission issue with the server. Please try again later or contact support.');
-      } else {
-        setServerError(error.message || "Failed to create club. Please try again.");
-      }
+      setServerError(error.message || "Failed to create club. Please try again.");
       
       toast({
         title: "Error",

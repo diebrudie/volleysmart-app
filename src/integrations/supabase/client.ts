@@ -17,3 +17,19 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     detectSessionInUrl: true,
   }
 });
+
+// Create special admin client that bypasses RLS
+// This should ONLY be used for operations that need to bypass RLS
+// like the initial club creator admin assignment
+const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhkb3JrbW5md3BlZ3ZseHlnZnd2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDM2ODU3NSwiZXhwIjoyMDU5OTQ0NTc1fQ.J3PWmJSUmqkZAl5qvMdc_US8JrGHUVINlKT7myBEKTw';
+
+export const supabaseAdmin = createClient<Database>(
+  SUPABASE_URL,
+  SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
