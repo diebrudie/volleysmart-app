@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/spinner';
 import { ensurePositionsExist } from '@/integrations/supabase/positions';
-import { ensureStorageBucketExists } from '@/integrations/supabase/storage';
+import { ensureStorageBucketExists, getPublicUrl } from '@/integrations/supabase/storage';
 import { addClubAdmin } from '@/integrations/supabase/club';
 
 interface NewClubFormData {
@@ -33,7 +33,12 @@ const NewClub = () => {
   // Ensure storage bucket exists on component mount
   useEffect(() => {
     const initStorage = async () => {
-      await ensureStorageBucketExists('club-images');
+      try {
+        await ensureStorageBucketExists('club-images');
+      } catch (error) {
+        console.error('Failed to ensure storage bucket exists:', error);
+        // Continue anyway - the bucket might already exist on the server
+      }
     };
     
     initStorage();
@@ -63,21 +68,18 @@ const NewClub = () => {
 
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
-      // Ensure bucket exists
-      await ensureStorageBucketExists('club-images');
-      
       // Generate unique filename to avoid collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `clubs/${fileName}`;
       
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data } = await supabase.storage
         .from('club-images')
         .upload(filePath, file);
         
       if (uploadError) throw uploadError;
       
-      return supabase.storage.from('club-images').getPublicUrl(filePath).data.publicUrl;
+      return getPublicUrl('club-images', filePath);
     } catch (error: any) {
       console.error('Image upload error:', error);
       setUploadError(`Image upload failed: ${error.message}`);

@@ -366,6 +366,10 @@ export type Database = {
         Args: { club_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      is_club_admin_secure: {
+        Args: { club_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
       is_club_member: {
         Args: { club_uuid: string; user_uuid: string }
         Returns: boolean
