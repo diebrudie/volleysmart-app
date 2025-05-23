@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/spinner';
 import { ensurePositionsExist } from '@/integrations/supabase/positions';
+import { ensureStorageBucketExists } from '@/integrations/supabase/storage';
 
 interface NewClubFormData {
   name: string;
@@ -27,6 +27,15 @@ const NewClub = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Ensure storage bucket exists on component mount
+  useEffect(() => {
+    const initStorage = async () => {
+      await ensureStorageBucketExists('club-images');
+    };
+    
+    initStorage();
+  }, []);
 
   // Generate a random 5 character identifier with capital letters and numbers
   const generateClubIdentifier = () => {
@@ -52,6 +61,9 @@ const NewClub = () => {
 
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
+      // Ensure bucket exists
+      await ensureStorageBucketExists('club-images');
+      
       // Generate unique filename to avoid collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
@@ -95,7 +107,6 @@ const NewClub = () => {
         try {
           imageUrl = await uploadImage(imageFile);
           
-          // If image upload failed but we want to continue
           if (!imageUrl) {
             toast({
               title: "Notice",
@@ -133,23 +144,33 @@ const NewClub = () => {
         throw new Error("Failed to create club: No club data returned");
       }
       
-      // Add user as club admin - using a direct insert since the RPC function isn't recognized
+      // Separately insert the club member record
       const { error: memberError } = await supabase
-        .from('club_members')
-        .insert({
-          club_id: clubData.id,
-          user_id: user.id,
-          role: 'admin'
+        .rpc('add_club_admin', {
+          p_club_id: clubData.id,
+          p_user_id: user.id
         });
       
       if (memberError) {
         console.error('Error adding user as admin:', memberError);
-        // We created the club but couldn't set admin - handle gracefully
-        toast({
-          title: "Notice",
-          description: "Club was created, but there was an issue setting you as the admin. Please contact support.",
-          variant: "default"
-        });
+        
+        // Try direct insert as fallback
+        const { error: directError } = await supabase
+          .from('club_members')
+          .insert({
+            club_id: clubData.id,
+            user_id: user.id,
+            role: 'admin'
+          });
+          
+        if (directError) {
+          console.error('Fallback direct insert also failed:', directError);
+          toast({
+            title: "Notice",
+            description: "Club was created, but there was an issue setting you as the admin. Please contact support.",
+            variant: "default"
+          });
+        }
       }
       
       toast({
