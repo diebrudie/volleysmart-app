@@ -24,14 +24,14 @@ export const addClubAdmin = async (clubId: string, userId: string): Promise<void
         club_id: clubId,
         user_id: userId,
         role: 'admin'
-      })
-      .select('id');
+      });
     
     if (error) {
       console.error('Error adding club admin:', error);
       
-      // If the error is related to RLS/permissions, we can handle it differently
-      if (error.code === '42501' || error.message.includes('permission denied') || 
+      // Handle different error types
+      if (error.code === '42501' || 
+          error.message.includes('permission denied') || 
           error.message.includes('recursion')) {
         
         // For club creators, we can log the issue but not fail the operation
