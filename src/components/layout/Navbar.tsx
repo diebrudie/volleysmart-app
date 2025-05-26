@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown, Settings, User, Users } from "lucide-react";
+import { Menu, X, ChevronDown, Settings, User, Users, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -42,6 +42,7 @@ const Navbar = () => {
   // Account dropdown items
   const accountItems = [
     { label: "Profile", path: "/profile", icon: User },
+    { label: "Create/Join Club", path: "/start", icon: UserPlus },
     { label: "Settings", path: "/settings", icon: Settings },
     user?.role === "admin" && { label: "Users", path: "/admin", icon: Users },
   ].filter(Boolean);
