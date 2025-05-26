@@ -346,6 +346,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_profile: {
+        Args: { viewed_user_id: string }
+        Returns: boolean
+      }
       check_is_club_member: {
         Args: { club_uuid: string; user_uuid: string }
         Returns: boolean
@@ -371,7 +375,7 @@ export type Database = {
         Returns: boolean
       }
       is_club_creator: {
-        Args: { club_uuid: string; user_uuid: string }
+        Args: { input_club_id: string; input_user_id: string }
         Returns: boolean
       }
       is_club_member: {

@@ -39,8 +39,7 @@ const Signup = () => {
     setIsSubmitting(true);
     try {
       await signup(email, password, firstName, lastName);
-      // Navigate to onboarding page
-      navigate('/players/onboarding');
+      // The useEffect will handle the redirect to onboarding when isAuthenticated becomes true
     } catch (error) {
       console.error('Signup error:', error);
       // Toast is already shown in the signup function

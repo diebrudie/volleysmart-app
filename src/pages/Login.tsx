@@ -25,43 +25,55 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingClub, setIsCheckingClub] = useState(false);
+  const [isCheckingProfile, setIsCheckingProfile] = useState(false);
 
   // Get the intended destination from location state, or default to start
   const from = location.state?.from?.pathname || "/start";
 
-  // Redirect if already authenticated, check club membership first
+  // Redirect if already authenticated, check if user needs onboarding first
   useEffect(() => {
     if (isAuthenticated && !authLoading && user) {
-      setIsCheckingClub(true);
+      setIsCheckingProfile(true);
       
-      // Check if user belongs to any club
-      const checkUserClub = async () => {
+      // Check if user has completed player profile (onboarding)
+      const checkUserProfile = async () => {
         try {
-          const { data: clubMember, error } = await supabase
-            .from('club_members')
-            .select('club_id')
+          const { data: player, error } = await supabase
+            .from('players')
+            .select('id')
             .eq('user_id', user.id)
             .single();
 
-          if (error || !clubMember) {
-            // User doesn't belong to any club, redirect to start page
-            navigate('/start', { replace: true });
+          if (error || !player) {
+            // User hasn't completed onboarding, redirect to onboarding
+            navigate('/players/onboarding', { replace: true });
           } else {
-            // User belongs to a club, redirect to dashboard or original destination
-            const destination = from === '/start' ? '/dashboard' : from;
-            navigate(destination, { replace: true });
+            // User has completed onboarding, check club membership
+            const { data: clubMember, error: clubError } = await supabase
+              .from('club_members')
+              .select('club_id')
+              .eq('user_id', user.id)
+              .single();
+
+            if (clubError || !clubMember) {
+              // User doesn't belong to any club, redirect to start page
+              navigate('/start', { replace: true });
+            } else {
+              // User belongs to a club, redirect to dashboard or original destination
+              const destination = from === '/start' ? '/dashboard' : from;
+              navigate(destination, { replace: true });
+            }
           }
         } catch (error) {
-          console.error('Error checking club membership:', error);
-          // Default to start page on error
-          navigate('/start', { replace: true });
+          console.error('Error checking user profile:', error);
+          // Default to onboarding on error to be safe
+          navigate('/players/onboarding', { replace: true });
         } finally {
-          setIsCheckingClub(false);
+          setIsCheckingProfile(false);
         }
       };
       
-      checkUserClub();
+      checkUserProfile();
     }
   }, [isAuthenticated, authLoading, navigate, from, user]);
 
@@ -86,13 +98,13 @@ const Login = () => {
     }
   };
 
-  // Show loading state while checking club membership
-  if (isCheckingClub) {
+  // Show loading state while checking profile
+  if (isCheckingProfile) {
     return (
       <AuthLayout>
         <div className="flex items-center justify-center p-8">
           <Spinner className="h-8 w-8" />
-          <span className="ml-2">Checking club membership...</span>
+          <span className="ml-2">Checking profile...</span>
         </div>
       </AuthLayout>
     );
