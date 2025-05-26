@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +16,34 @@ const JoinClub = () => {
   const { toast } = useToast();
   const [clubId, setClubId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [userCreatedClubs, setUserCreatedClubs] = useState<any[]>([]);
+
+  // Fetch clubs created by the current user
+  useEffect(() => {
+    const fetchUserCreatedClubs = async () => {
+      if (!user?.id) return;
+
+      console.log('Current user ID:', user.id);
+
+      try {
+        const { data: clubs, error } = await supabase
+          .from('clubs')
+          .select('id, name, slug, created_at')
+          .eq('created_by', user.id);
+
+        if (error) {
+          console.error('Error fetching user created clubs:', error);
+        } else {
+          console.log('Clubs created by user:', clubs);
+          setUserCreatedClubs(clubs || []);
+        }
+      } catch (error) {
+        console.error('Unexpected error fetching clubs:', error);
+      }
+    };
+
+    fetchUserCreatedClubs();
+  }, [user?.id]);
 
   const handleBack = () => {
     // Use browser's history to go back to the previous page
@@ -172,6 +201,33 @@ const JoinClub = () => {
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back
         </Button>
+
+        {/* Debug Information */}
+        <Card className="mb-4 bg-blue-50 border-blue-200">
+          <CardHeader>
+            <h2 className="text-lg font-semibold">Debug Information</h2>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <p><strong>Current User ID:</strong> {user?.id || 'Not logged in'}</p>
+              <p><strong>User Email:</strong> {user?.email || 'N/A'}</p>
+              <div>
+                <strong>Clubs created by this user:</strong>
+                {userCreatedClubs.length > 0 ? (
+                  <ul className="mt-1 list-disc list-inside">
+                    {userCreatedClubs.map((club) => (
+                      <li key={club.id} className="text-xs">
+                        <strong>ID:</strong> {club.id} | <strong>Name:</strong> {club.name} | <strong>Slug:</strong> {club.slug}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-gray-500"> None found</span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
