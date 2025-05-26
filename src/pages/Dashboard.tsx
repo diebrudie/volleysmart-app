@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -31,6 +32,9 @@ const Dashboard = () => {
       try {
         // If clubId is provided in URL, use that
         if (clubId) {
+          // Store the visited club in localStorage for future logins
+          localStorage.setItem('lastVisitedClub', clubId);
+          
           // Verify user has access to this club
           const { data: memberCheck } = await supabase
             .from('club_members')

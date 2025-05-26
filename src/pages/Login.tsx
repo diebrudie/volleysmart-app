@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -68,8 +69,20 @@ const Login = () => {
               // User belongs to exactly one club, redirect to that club's dashboard
               navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
             } else {
-              // User belongs to multiple clubs, redirect to clubs overview page
-              navigate('/clubs', { replace: true });
+              // User belongs to multiple clubs, check for last visited club
+              const lastVisitedClubId = localStorage.getItem('lastVisitedClub');
+              
+              // Verify the last visited club is still in user's club list
+              const isLastClubValid = lastVisitedClubId && 
+                clubMembers.some(member => member.club_id === lastVisitedClubId);
+              
+              if (isLastClubValid) {
+                // Redirect to last visited club dashboard
+                navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
+              } else {
+                // No valid last visited club, redirect to clubs overview page
+                navigate('/clubs', { replace: true });
+              }
             }
           }
         } catch (error) {
