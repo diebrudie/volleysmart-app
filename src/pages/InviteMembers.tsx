@@ -74,7 +74,7 @@ const InviteMembers = () => {
       if (clubError) throw clubError;
       
       // Call our edge function to send invitation emails
-      const response = await fetch(`${window.location.origin}/api/functions/v1/send-club-invitations`, {
+      const response = await fetch(`https://hdorkmnfwpegvlxygfwv.supabase.co/functions/v1/send-club-invitations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,8 +91,14 @@ const InviteMembers = () => {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send invitations');
+        // Handle non-JSON responses
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to send invitations');
+        } else {
+          throw new Error(`Failed to send invitations: ${response.status} ${response.statusText}`);
+        }
       }
       
       toast({

@@ -67,32 +67,40 @@ serve(async (req: Request) => {
       );
     }
     
-    // Get sender's info
-    const { data: senderData } = await supabaseClient
-      .from("user_profiles")
-      .select("email")
-      .eq("id", user.id)
-      .single();
-    
-    // Check if the user is an admin of the club
-    const { data: memberData, error: memberError } = await supabaseClient
-      .from("club_members")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("club_id", clubInfo.id)
+    // Check if the user is the creator of the club or an admin
+    const { data: clubData, error: clubError } = await supabaseClient
+      .from("clubs")
+      .select("created_by")
+      .eq("id", clubInfo.id)
       .single();
       
-    if (memberError || !memberData || memberData.role !== "admin") {
+    if (clubError || !clubData) {
       return new Response(
-        JSON.stringify({ error: "Not authorized to invite members to this club" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Club not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // Here you would implement the actual email sending logic
-    // For demonstration purposes, we'll just log the invitations and return success
-    // In a real implementation, you would integrate with an email service like Resend, SendGrid, etc.
+    // Check if user is the club creator
+    if (clubData.created_by !== user.id) {
+      // Also check if they are an admin
+      const { data: memberData, error: memberError } = await supabaseClient
+        .from("club_members")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("club_id", clubInfo.id)
+        .single();
+        
+      if (memberError || !memberData || memberData.role !== "admin") {
+        return new Response(
+          JSON.stringify({ error: "Not authorized to invite members to this club" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
     
+    // Here you would implement the actual email sending logic
+    // For now, we'll just log the invitations and return success
     console.log(`Sending ${invites.length} invitations to join club ${clubInfo.name}`);
     
     // Mock "sending" invitations
