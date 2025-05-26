@@ -21,10 +21,14 @@ export const ensureStorageBucketExists = async (bucketName: string): Promise<voi
       // Use service role to create bucket if needed
       // Note: This will only work if the user has admin privileges
       // For regular users, they'll rely on pre-created buckets
+      /*
       const { error: createError } = await supabase.storage.createBucket(bucketName, {
         public: true,
         fileSizeLimit: 1024 * 1024 * 5 // 5MB limit
+      */
+      console.warn(`Bucket ${bucketName} does not exist. Please create it manually in Supabase.`);
       });
+      
       
       if (createError) {
         console.error(`Error creating bucket ${bucketName}:`, createError);
