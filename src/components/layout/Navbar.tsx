@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ const Navbar = () => {
 
   // Account dropdown items
   const accountItems = [
-    { label: "Profile", path: "/profile", icon: User },
+    { label: "Profile", path: `/user/${user?.id}`, icon: User },
     { label: "Create/Join Club", path: "/start", icon: UserPlus },
     { label: "Settings", path: "/settings", icon: Settings },
     user?.role === "admin" && { label: "Users", path: "/admin", icon: Users },

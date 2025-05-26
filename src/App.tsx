@@ -1,3 +1,4 @@
+
 import { ToastProvider } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -31,6 +32,7 @@ import NewClub from "./pages/NewClub";
 import JoinClub from "./pages/JoinClub";
 import InviteMembers from "./pages/InviteMembers";
 import NewGame from "./pages/NewGame";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +121,16 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <NewGame />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* Profile Route */}
+                <Route 
+                  path="/user/:userId" 
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
                     </ProtectedRoute>
                   } 
                 />
