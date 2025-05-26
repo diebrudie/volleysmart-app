@@ -1,34 +1,30 @@
 import { supabase } from './client';
 
 /**
- * Checks if a specific Supabase storage bucket exists.
- * Logs a warning if it doesn't, but does NOT attempt to create it.
+ * Ensures the storage bucket exists, logs a warning if not
  */
-export const verifyStorageBucket = async (bucketName: string): Promise<void> => {
+export const ensureStorageBucketExists = async (bucketName: string): Promise<void> => {
   try {
     const { data: buckets, error } = await supabase.storage.listBuckets();
 
     if (error) {
-      console.error(`Error fetching bucket list:`, error);
+      console.error('Error checking storage buckets:', error);
       return;
     }
 
-    const exists = buckets.some(bucket => bucket.name === bucketName);
-    if (!exists) {
-      console.warn(`🚨 Bucket "${bucketName}" does not exist. Please create it manually in Supabase.`);
+    const bucketExists = buckets.some(bucket => bucket.name === bucketName);
+    if (!bucketExists) {
+      console.warn(`Bucket "${bucketName}" does not exist. Please create it manually in Supabase.`);
     } else {
-      console.log(`✅ Bucket "${bucketName}" verified.`);
+      console.log(`Bucket "${bucketName}" already exists.`);
     }
   } catch (error) {
-    console.error('Unexpected error in verifyStorageBucket:', error);
+    console.error('Error in ensureStorageBucketExists:', error);
   }
 };
 
 /**
- * Get a public URL for a file stored in Supabase storage.
- * @param bucketName The name of the bucket (e.g., 'player-images' or 'club-images')
- * @param filePath The path to the file inside the bucket
- * @returns The public URL as a string
+ * Get public URL for a file in storage
  */
 export const getPublicUrl = (bucketName: string, filePath: string): string => {
   return supabase.storage.from(bucketName).getPublicUrl(filePath).data.publicUrl;
