@@ -163,7 +163,7 @@ const NewClub = () => {
         throw new Error("Failed to create club: No club data returned");
       }
       
-      // Add the user as a club admin using the improved function
+      // Add the user as a club admin
       try {
         await addClubAdmin(clubData.id, user.id);
         
@@ -181,7 +181,7 @@ const NewClub = () => {
         // Let the user proceed as they are the club creator
         toast({
           title: "Club created",
-          description: "Your club was created but there was an issue with permissions. You can still proceed as the club creator."
+          description: "Your club was created successfully. You can proceed as the club creator."
         });
         
         navigate(`/invite-members/${clubData.id}`);

@@ -355,7 +355,7 @@ export type Database = {
         Returns: boolean
       }
       is_club_admin: {
-        Args: { club_uuid: string; user_uuid: string }
+        Args: { _club_id: string } | { club_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_club_admin_or_editor: {
