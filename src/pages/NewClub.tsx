@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/spinner';
 import { ensurePositionsExist } from '@/integrations/supabase/positions';
-import { ensureStorageBucketExists, getPublicUrl } from '@/integrations/supabase/storage';
+import { getPublicUrl } from '@/integrations/supabase/storage';
 import { addClubAdmin } from '@/integrations/supabase/club';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
