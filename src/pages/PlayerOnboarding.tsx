@@ -4,9 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { createPlayer } from '@/integrations/supabase/players';
@@ -22,33 +21,18 @@ const PlayerOnboarding = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [bio, setBio] = useState('');
-  const [skillRating, setSkillRating] = useState(5);
+  const [skillRating, setSkillRating] = useState([5]);
   const [primaryPosition, setPrimaryPosition] = useState('');
   const [secondaryPositions, setSecondaryPositions] = useState<string[]>([]);
   const [memberAssociation, setMemberAssociation] = useState(false);
   const [gender, setGender] = useState<'male' | 'female' | 'other' | 'diverse'>('other');
-  const [birthday, setBirthday] = useState('');
+  const [birthday, setBirthday] = useState('2000-01-01');
   const [positions, setPositions] = useState<Position[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Load user metadata to populate first and last names
-    if (user) {
-      const getUserMetadata = async () => {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (authUser?.user_metadata) {
-          setFirstName(authUser.user_metadata.first_name || '');
-          setLastName(authUser.user_metadata.last_name || '');
-        }
-      };
-      getUserMetadata();
-    }
-
     fetchPositions();
-  }, [user]);
+  }, []);
 
   const fetchPositions = async () => {
     try {
@@ -81,13 +65,26 @@ const PlayerOnboarding = () => {
     e.preventDefault();
     if (!user) return;
 
+    // Get user metadata for first and last names
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const firstName = authUser?.user_metadata?.first_name || '';
+    const lastName = authUser?.user_metadata?.last_name || '';
+
+    if (!firstName || !lastName) {
+      toast({
+        title: "Error",
+        description: "First and last names are required from your account.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await createPlayer(user.id, {
         first_name: firstName,
         last_name: lastName,
-        bio,
-        skill_rating: skillRating,
+        skill_rating: skillRating[0],
         primary_position: primaryPosition,
         secondary_positions: secondaryPositions,
         member_association: memberAssociation,
@@ -120,66 +117,8 @@ const PlayerOnboarding = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Complete Your Player Profile</h1>
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">First Name *</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Last Name *</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="birthday">Birthday</Label>
-                <Input
-                  id="birthday"
-                  type="date"
-                  value={birthday}
-                  onChange={(e) => setBirthday(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Gender</Label>
-                <Select value={gender} onValueChange={(value: 'male' | 'female' | 'other' | 'diverse') => setGender(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="diverse">Diverse</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
             <div>
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell us about yourself..."
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label>Main Position *</Label>
+              <Label>What is your main position? *</Label>
               <Select value={primaryPosition} onValueChange={setPrimaryPosition} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select your main position" />
@@ -195,7 +134,7 @@ const PlayerOnboarding = () => {
             </div>
 
             <div>
-              <Label>Secondary Positions</Label>
+              <Label>Which positions can you also play?</Label>
               <div className="mt-2 space-y-2">
                 {positions.map((position) => (
                   <div key={position.id} className="flex items-center space-x-2">
@@ -208,7 +147,7 @@ const PlayerOnboarding = () => {
                       className="rounded"
                     />
                     <Label htmlFor={`secondary-${position.id}`} className={primaryPosition === position.id ? "text-gray-400" : ""}>
-                      {position.name} {primaryPosition === position.id && "(Primary)"}
+                      {position.name} {primaryPosition === position.id && "(Your main position)"}
                     </Label>
                   </div>
                 ))}
@@ -216,19 +155,48 @@ const PlayerOnboarding = () => {
             </div>
 
             <div>
-              <Label>Skill Level (1-10) *</Label>
-              <RadioGroup
-                value={skillRating.toString()}
-                onValueChange={(value) => setSkillRating(parseInt(value))}
-                className="flex flex-wrap gap-4 mt-2"
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
-                  <div key={level} className="flex items-center space-x-2">
-                    <RadioGroupItem value={level.toString()} id={`level-${level}`} />
-                    <Label htmlFor={`level-${level}`}>{level}</Label>
-                  </div>
-                ))}
-              </RadioGroup>
+              <Label>How would you rate your volleyball skills? (1-10) *</Label>
+              <div className="mt-4 px-2">
+                <Slider
+                  value={skillRating}
+                  onValueChange={setSkillRating}
+                  max={10}
+                  min={1}
+                  step={1}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-sm text-gray-500 mt-2">
+                  <span>1 (Beginner)</span>
+                  <span className="font-medium">Current: {skillRating[0]}</span>
+                  <span>10 (Expert)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Gender</Label>
+                <Select value={gender} onValueChange={(value: 'male' | 'female' | 'other' | 'diverse') => setGender(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="diverse">Diverse</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="birthday">Birthday</Label>
+                <Input
+                  id="birthday"
+                  type="date"
+                  value={birthday}
+                  onChange={(e) => setBirthday(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center space-x-2">
