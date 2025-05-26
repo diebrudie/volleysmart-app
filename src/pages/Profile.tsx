@@ -49,9 +49,15 @@ const Profile = () => {
     if (userId) {
       fetchProfile();
       fetchPositions();
-      fetchPlayerPositions();
     }
   }, [userId]);
+
+  // Fetch player positions after profile is loaded
+  useEffect(() => {
+    if (profile?.id) {
+      fetchPlayerPositions();
+    }
+  }, [profile?.id]);
 
   const fetchProfile = async () => {
     try {
