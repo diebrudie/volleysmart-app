@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -249,18 +247,15 @@ const Clubs = () => {
               <Button 
                 variant="outline" 
                 onClick={handleJoinClub}
-                className="h-16 text-lg"
-                size="lg"
               >
-                <UsersRound className="mr-2 h-6 w-6" />
+                <UsersRound className="mr-2 h-4 w-4" />
                 Join a Club
               </Button>
               <Button 
                 onClick={handleCreateClub}
-                className="h-16 text-lg bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90"
-                size="lg"
+                className="bg-volleyball-secondary text-black hover:bg-volleyball-secondary/90"
               >
-                <UserPlus className="mr-2 h-6 w-6" />
+                <UserPlus className="mr-2 h-4 w-4" />
                 Create a Club
               </Button>
             </div>
@@ -347,18 +342,15 @@ const Clubs = () => {
                 <Button 
                   variant="outline" 
                   onClick={handleJoinClub}
-                  className="h-16 text-lg"
-                  size="lg"
                 >
-                  <UsersRound className="mr-2 h-6 w-6" />
+                  <UsersRound className="mr-2 h-4 w-4" />
                   Join a Club
                 </Button>
                 <Button 
                   onClick={handleCreateClub}
-                  className="h-16 text-lg bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90"
-                  size="lg"
+                  className="bg-volleyball-secondary text-black hover:bg-volleyball-secondary/90"
                 >
-                  <UserPlus className="mr-2 h-6 w-6" />
+                  <UserPlus className="mr-2 h-4 w-4" />
                   Create a Club
                 </Button>
               </div>
@@ -405,4 +397,3 @@ const Clubs = () => {
 };
 
 export default Clubs;
-
