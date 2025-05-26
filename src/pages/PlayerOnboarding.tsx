@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -97,7 +96,9 @@ const PlayerOnboarding = () => {
         description: "Player profile created successfully!",
       });
 
-      navigate('/start');
+      // Force a page reload after navigation to ensure the ProtectedRoute re-checks onboarding status
+      navigate('/start', { replace: true });
+      window.location.reload();
     } catch (error) {
       console.error('Error creating player:', error);
       toast({
