@@ -334,6 +334,16 @@ const Profile = () => {
                   )}
                 </div>
 
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    value={user?.email || ''}
+                    disabled
+                    className="bg-gray-100"
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>
