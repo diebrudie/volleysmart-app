@@ -14,7 +14,7 @@ import { ensurePositionsExist } from '@/integrations/supabase/positions';
 import { ensureStorageBucketExists, getPublicUrl } from '@/integrations/supabase/storage';
 import { addClubAdmin } from '@/integrations/supabase/club';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 interface NewClubFormData {
   name: string;
@@ -31,6 +31,11 @@ const NewClub = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();  
+
+  const handleBack = () => {
+    // Use browser's history to go back to the previous page
+    window.history.back();
+  };
 
   // Generate a random 5 character identifier with capital letters and numbers
   const generateClubIdentifier = () => {
@@ -177,76 +182,87 @@ const NewClub = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-lg bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-semibold text-center mb-6">Create a New Club</h1>
-        
-        {serverError && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{serverError}</AlertDescription>
-          </Alert>
-        )}
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">What's the name of your Club?</Label>
-            <Input 
-              id="name"
-              placeholder="Club name"
-              {...register("name", { required: "Club name is required" })}
-            />
-            {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
-          </div>
+      <div className="w-full max-w-lg">
+        <Button
+          variant="ghost"
+          onClick={handleBack}
+          className="mb-6 p-0 h-auto font-normal text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          Back
+        </Button>
+
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <h1 className="text-2xl font-semibold text-center mb-6">Create a New Club</h1>
           
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (optional)</Label>
-            <Textarea 
-              id="description"
-              placeholder="Tell us about your club"
-              {...register("description")}
-            />
-          </div>
+          {serverError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
+          )}
           
-          <div className="space-y-2">
-            <Label htmlFor="image">Upload an Image (optional)</Label>
-            <FileInput 
-              id="image"
-              accept="image/*"
-              buttonText="Choose club image"
-              onImageSelected={handleImageChange}
-            />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="name">What's the name of your Club?</Label>
+              <Input 
+                id="name"
+                placeholder="Club name"
+                {...register("name", { required: "Club name is required" })}
+              />
+              {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+            </div>
             
-            {uploadError && (
-              <p className="text-sm text-red-500">{uploadError}</p>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description (optional)</Label>
+              <Textarea 
+                id="description"
+                placeholder="Tell us about your club"
+                {...register("description")}
+              />
+            </div>
             
-            {imagePreview && (
-              <div className="mt-2">
-                <img 
-                  src={imagePreview} 
-                  alt="Club preview" 
-                  className="h-32 w-32 object-cover rounded-md"
-                />
-              </div>
-            )}
-          </div>
-          
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="w-full"
-          >
-            {isSubmitting ? (
-              <>
-                <Spinner className="mr-2 h-4 w-4" />
-                Creating...
-              </>
-            ) : (
-              'Create Club'
-            )}
-          </Button>
-        </form>
+            <div className="space-y-2">
+              <Label htmlFor="image">Upload an Image (optional)</Label>
+              <FileInput 
+                id="image"
+                accept="image/*"
+                buttonText="Choose club image"
+                onImageSelected={handleImageChange}
+              />
+              
+              {uploadError && (
+                <p className="text-sm text-red-500">{uploadError}</p>
+              )}
+              
+              {imagePreview && (
+                <div className="mt-2">
+                  <img 
+                    src={imagePreview} 
+                    alt="Club preview" 
+                    className="h-32 w-32 object-cover rounded-md"
+                  />
+                </div>
+              )}
+            </div>
+            
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="w-full"
+            >
+              {isSubmitting ? (
+                <>
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Creating...
+                </>
+              ) : (
+                'Create Club'
+              )}
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );
