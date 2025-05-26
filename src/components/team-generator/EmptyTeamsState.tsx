@@ -22,8 +22,8 @@ export const EmptyTeamsState = ({
         <h3 className="mt-2 text-lg font-medium text-gray-900">No members in your club</h3>
         <p className="mt-1 text-sm text-gray-500">
           {canInviteMembers 
-            ? "Invite at least 4 members to create your first Game"
-            : "Wait for the admin to invite at least 4 members to create a Game"
+            ? "Invite more members to create your first Game. You must be min. 4 members"
+            : "Min. 4 members required to create a game. Contact your admin to invite more members"
           }
         </p>
         <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
