@@ -66,7 +66,8 @@ const Clubs = () => {
             name,
             image_url,
             created_at,
-            created_by
+            created_by,
+            description
           )
         `)
         .eq('user_id', user.id);
@@ -81,7 +82,8 @@ const Clubs = () => {
           name,
           image_url,
           created_at,
-          created_by
+          created_by,
+          description
         `)
         .eq('created_by', user.id);
 
@@ -101,7 +103,8 @@ const Clubs = () => {
             created_by: member.clubs.created_by,
             creator_first_name: '',
             creator_last_name: '',
-            role: member.role
+            role: member.role,
+            description: member.clubs.description
           });
         }
       });
@@ -117,7 +120,8 @@ const Clubs = () => {
             created_by: club.created_by,
             creator_first_name: '',
             creator_last_name: '',
-            role: 'admin' // Creator is always admin
+            role: 'admin', // Creator is always admin
+            description: club.description
           });
         }
       });
