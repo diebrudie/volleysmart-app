@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -39,9 +39,24 @@ const ClubSettingsDialog = ({ isOpen, onClose, club }: ClubSettingsDialogProps) 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Reset form when dialog opens with new club data
+  useEffect(() => {
+    if (isOpen) {
+      setName(club.name);
+      setDescription(club.description || "");
+      setImageFile(null);
+    }
+  }, [isOpen, club]);
+
   const handleImageChange = (file: File) => {
     setImageFile(file);
   };
+
+  // Check if there are any changes
+  const hasChanges = 
+    name.trim() !== club.name ||
+    description !== (club.description || "") ||
+    imageFile !== null;
 
   const handleSave = async () => {
     if (!user?.id) return;
@@ -143,15 +158,15 @@ const ClubSettingsDialog = ({ isOpen, onClose, club }: ClubSettingsDialogProps) 
         </div>
 
         <DialogFooter className="flex gap-2">
+          <Button variant="outline" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
           <Button
             onClick={handleSave}
-            disabled={isLoading || !name.trim()}
+            disabled={isLoading || !name.trim() || !hasChanges}
             className="flex-1"
           >
             {isLoading ? "Saving..." : "Save Changes"}
-          </Button>
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Cancel
           </Button>
         </DialogFooter>
       </DialogContent>
