@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -32,11 +33,16 @@ const Navbar = () => {
     navigate("/");
   };
 
+  // Get current club ID from localStorage for members link
+  const getCurrentClubId = () => {
+    return localStorage.getItem('lastVisitedClub') || '';
+  };
+
   // Navigation items
   const navItems = [
     { label: "Dashboard", path: "/dashboard", visible: isAuthenticated },
     { label: "Archive", path: "/matches", visible: isAuthenticated },
-    { label: "Players", path: "/players", visible: isAuthenticated },
+    { label: "Members", path: `/members/${getCurrentClubId()}`, visible: isAuthenticated },
   ];
 
   // Account dropdown items

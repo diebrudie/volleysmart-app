@@ -1,4 +1,3 @@
-
 import { ToastProvider } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -23,6 +22,7 @@ import Dashboard from "./pages/Dashboard";
 import Matches from "./pages/Matches";
 import MatchDetail from "./pages/MatchDetail";
 import Players from "./pages/Players";
+import Members from "./pages/Members";
 import PlayerDetail from "./pages/PlayerDetail";
 import TeamGenerator from "./pages/TeamGenerator";
 import Admin from "./pages/Admin";
@@ -184,6 +184,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <Players />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/members/:clubId" 
+                  element={
+                    <ProtectedRoute>
+                      <Members />
                     </ProtectedRoute>
                   } 
                 />
