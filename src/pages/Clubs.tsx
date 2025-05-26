@@ -12,8 +12,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MoreVertical } from "lucide-react";
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ClubWithDetails {
   id: string;
@@ -30,8 +42,12 @@ interface ClubWithDetails {
 const Clubs = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedClub, setSelectedClub] = useState<ClubWithDetails | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [clubToDelete, setClubToDelete] = useState<ClubWithDetails | null>(null);
 
   // Query to fetch all clubs user is a member of
   const { data: userClubs, isLoading } = useQuery({
@@ -141,10 +157,46 @@ const Clubs = () => {
     navigate(`/dashboard/${clubId}`);
   };
 
-  const handleSettingsClick = (e: React.MouseEvent, club: ClubWithDetails) => {
+  const handleEditClick = (e: React.MouseEvent, club: ClubWithDetails) => {
     e.stopPropagation();
     setSelectedClub(club);
     setIsSettingsOpen(true);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, club: ClubWithDetails) => {
+    e.stopPropagation();
+    setClubToDelete(club);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!clubToDelete || !user?.id) return;
+    
+    try {
+      // Delete club (this will cascade delete members, matches, etc.)
+      const { error } = await supabase
+        .from('clubs')
+        .delete()
+        .eq('id', clubToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Club deleted successfully",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['userClubs'] });
+      setShowDeleteDialog(false);
+      setClubToDelete(null);
+    } catch (error) {
+      console.error('Error deleting club:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete club",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -237,14 +289,24 @@ const Clubs = () => {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-40 p-2" align="end">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start"
-                              onClick={(e) => handleSettingsClick(e, club)}
-                            >
-                              Settings
-                            </Button>
+                            <div className="flex flex-col space-y-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start"
+                                onClick={(e) => handleEditClick(e, club)}
+                              >
+                                Edit Club
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-destructive hover:text-destructive"
+                                onClick={(e) => handleDeleteClick(e, club)}
+                              >
+                                Delete Club
+                              </Button>
+                            </div>
                           </PopoverContent>
                         </Popover>
                       )}
@@ -291,6 +353,28 @@ const Clubs = () => {
           club={selectedClub}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the club
+              "{clubToDelete?.name}" and all associated data including matches, teams, and member records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Club
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
