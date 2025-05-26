@@ -20,34 +20,38 @@ const Dashboard = () => {
   const [isCheckingClub, setIsCheckingClub] = useState(true);
   const [userClubId, setUserClubId] = useState<string | null>(null);
 
-  // First check if user belongs to any club or has created one
+  // Check if user belongs to any club or has created one
   useEffect(() => {
     const checkUserClub = async () => {
       if (!user?.id) return;
 
       try {
-        // First check if user is a member of any club
-        const { data: clubMember, error: memberError } = await supabase
-          .from('club_members')
-          .select('club_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (clubMember) {
-          setUserClubId(clubMember.club_id);
-          setIsCheckingClub(false);
-          return;
-        }
-
-        // If not a member, check if user has created any club
+        // First check if user has created any club
         const { data: createdClub, error: createdError } = await supabase
           .from('clubs')
           .select('id')
           .eq('created_by', user.id)
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (createdClub) {
           setUserClubId(createdClub.id);
+          setIsCheckingClub(false);
+          return;
+        }
+
+        // If not a creator, check if user is a member of any club
+        const { data: clubMember, error: memberError } = await supabase
+          .from('club_members')
+          .select('club_id')
+          .eq('user_id', user.id)
+          .order('joined_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (clubMember) {
+          setUserClubId(clubMember.club_id);
           setIsCheckingClub(false);
           return;
         }
@@ -58,6 +62,8 @@ const Dashboard = () => {
         console.error('Error checking user club:', error);
         // On error, safely redirect to start
         navigate('/start');
+      } finally {
+        setIsCheckingClub(false);
       }
     };
 
@@ -99,7 +105,7 @@ const Dashboard = () => {
         .eq('club_id', userClubId)
         .order('date', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       return matchDay;
     },
