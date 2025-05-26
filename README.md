@@ -4,6 +4,9 @@
 
 **URL**: https://lovable.dev/projects/4d14f056-03fa-45ae-8594-895b9508e68d
 
+## Information
+Storage buckets (`player-images` and `club-images`) must be created manually in Supabase. Dynamic creation is disabled due to RLS.
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
