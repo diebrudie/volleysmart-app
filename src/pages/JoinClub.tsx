@@ -117,15 +117,18 @@ const JoinClub = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="clubId">Please add the Club's Id</Label>
+                <Label htmlFor="clubId">Club ID</Label>
                 <Input
                   id="clubId"
                   type="text"
-                  placeholder="AB12C"
+                  placeholder="Enter the club's public ID (e.g., AB12C)"
                   value={clubId}
                   onChange={(e) => setClubId(e.target.value)}
                   required
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  Ask your club admin for the club's public ID
+                </p>
               </div>
               <Button 
                 type="submit" 
