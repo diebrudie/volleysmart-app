@@ -24,14 +24,31 @@ const JoinClub = () => {
     setIsLoading(true);
 
     try {
-      // First check if the club exists by slug
+      console.log('Searching for club with slug:', clubId.trim());
+      
+      // First check if the club exists by slug (case-insensitive)
       const { data: club, error: clubError } = await supabase
         .from('clubs')
-        .select('id, name')
-        .eq('slug', clubId.trim())
+        .select('id, name, slug')
+        .ilike('slug', clubId.trim())
         .maybeSingle();
 
-      if (clubError || !club) {
+      console.log('Club search result:', club);
+      console.log('Club search error:', clubError);
+
+      if (clubError) {
+        console.error('Database error when searching for club:', clubError);
+        toast({
+          title: "Database error",
+          description: "There was an error searching for the club. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!club) {
+        console.log('No club found with slug:', clubId.trim());
         toast({
           title: "Club not found",
           description: "Please check the Club ID and try again.",
@@ -41,13 +58,28 @@ const JoinClub = () => {
         return;
       }
 
+      console.log('Found club:', club.name, 'with ID:', club.id);
+
       // Check if user is already a member
-      const { data: existingMember } = await supabase
+      const { data: existingMember, error: memberError } = await supabase
         .from('club_members')
         .select('id')
         .eq('club_id', club.id)
         .eq('user_id', user.id)
         .maybeSingle();
+
+      console.log('Existing member check:', existingMember);
+
+      if (memberError) {
+        console.error('Error checking membership:', memberError);
+        toast({
+          title: "Error checking membership",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
 
       if (existingMember) {
         toast({
@@ -60,6 +92,7 @@ const JoinClub = () => {
       }
 
       // Add user as a member
+      console.log('Adding user as member to club:', club.id);
       const { error: insertError } = await supabase
         .from('club_members')
         .insert({
@@ -79,6 +112,7 @@ const JoinClub = () => {
         return;
       }
 
+      console.log('Successfully joined club:', club.name);
       toast({
         title: "Successfully joined club!",
         description: `Welcome to ${club.name}`,
@@ -87,7 +121,7 @@ const JoinClub = () => {
       // Redirect to dashboard
       navigate('/dashboard');
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Unexpected error:', error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
