@@ -41,10 +41,7 @@ const Clubs = () => {
             name,
             image_url,
             created_at,
-            created_by,
-            creator:user_profiles!clubs_created_by_fkey (
-              id
-            )
+            created_by
           )
         `)
         .eq('user_id', user.id);
@@ -59,10 +56,7 @@ const Clubs = () => {
           name,
           image_url,
           created_at,
-          created_by,
-          creator:user_profiles!clubs_created_by_fkey (
-            id
-          )
+          created_by
         `)
         .eq('created_by', user.id);
 
@@ -74,13 +68,6 @@ const Clubs = () => {
       // Add member clubs
       memberClubs?.forEach(member => {
         if (member.clubs) {
-          // Get creator details
-          const { data: creatorPlayer } = supabase
-            .from('players')
-            .select('first_name, last_name')
-            .eq('user_id', member.clubs.created_by)
-            .single();
-
           allClubs.push({
             id: member.clubs.id,
             name: member.clubs.name,
@@ -112,19 +99,21 @@ const Clubs = () => {
 
       // Get creator names for all clubs
       const creatorIds = [...new Set(allClubs.map(club => club.created_by))];
-      const { data: creators } = await supabase
-        .from('players')
-        .select('user_id, first_name, last_name')
-        .in('user_id', creatorIds);
+      if (creatorIds.length > 0) {
+        const { data: creators } = await supabase
+          .from('players')
+          .select('user_id, first_name, last_name')
+          .in('user_id', creatorIds);
 
-      // Map creator names to clubs
-      allClubs.forEach(club => {
-        const creator = creators?.find(c => c.user_id === club.created_by);
-        if (creator) {
-          club.creator_first_name = creator.first_name;
-          club.creator_last_name = creator.last_name;
-        }
-      });
+        // Map creator names to clubs
+        allClubs.forEach(club => {
+          const creator = creators?.find(c => c.user_id === club.created_by);
+          if (creator) {
+            club.creator_first_name = creator.first_name;
+            club.creator_last_name = creator.last_name;
+          }
+        });
+      }
 
       return allClubs;
     },
