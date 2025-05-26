@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -49,19 +48,28 @@ const Login = () => {
             // User hasn't completed onboarding, redirect to onboarding
             navigate('/players/onboarding', { replace: true });
           } else {
-            // User has completed onboarding, check club membership
-            const { data: clubMember, error: clubError } = await supabase
+            // User has completed onboarding, check club membership count
+            const { data: clubMembers, error: clubError } = await supabase
               .from('club_members')
               .select('club_id')
-              .eq('user_id', user.id)
-              .single();
+              .eq('user_id', user.id);
 
-            if (clubError || !clubMember) {
+            if (clubError) {
+              console.error('Error checking club membership:', clubError);
+              // Default to start page on error
+              navigate('/start', { replace: true });
+              return;
+            }
+
+            if (!clubMembers || clubMembers.length === 0) {
               // User doesn't belong to any club, redirect to start page
               navigate('/start', { replace: true });
+            } else if (clubMembers.length === 1) {
+              // User belongs to exactly one club, redirect to that club's dashboard
+              navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
             } else {
-              // User belongs to a club, redirect to dashboard or original destination
-              navigate(from, { replace: true });
+              // User belongs to multiple clubs, redirect to clubs overview page
+              navigate('/clubs', { replace: true });
             }
           }
         } catch (error) {
