@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -19,26 +18,42 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isCheckingClub, setIsCheckingClub] = useState(true);
+  const [userClubId, setUserClubId] = useState<string | null>(null);
 
-  // First check if user belongs to any club
+  // First check if user belongs to any club or has created one
   useEffect(() => {
     const checkUserClub = async () => {
       if (!user?.id) return;
 
       try {
-        const { data: clubMember, error } = await supabase
+        // First check if user is a member of any club
+        const { data: clubMember, error: memberError } = await supabase
           .from('club_members')
           .select('club_id')
           .eq('user_id', user.id)
           .single();
 
-        if (error || !clubMember) {
-          // User doesn't belong to any club, redirect to start page
-          navigate('/start');
+        if (clubMember) {
+          setUserClubId(clubMember.club_id);
+          setIsCheckingClub(false);
           return;
         }
-        
-        setIsCheckingClub(false);
+
+        // If not a member, check if user has created any club
+        const { data: createdClub, error: createdError } = await supabase
+          .from('clubs')
+          .select('id')
+          .eq('created_by', user.id)
+          .single();
+
+        if (createdClub) {
+          setUserClubId(createdClub.id);
+          setIsCheckingClub(false);
+          return;
+        }
+
+        // User doesn't belong to any club and hasn't created one
+        navigate('/start');
       } catch (error) {
         console.error('Error checking user club:', error);
         // On error, safely redirect to start
@@ -51,18 +66,11 @@ const Dashboard = () => {
 
   // Query to fetch the latest game
   const { data: latestGame, isLoading } = useQuery({
-    queryKey: ['latestGame', user?.id],
+    queryKey: ['latestGame', userClubId],
     queryFn: async () => {
-      // First get the user's club
-      const { data: clubMember } = await supabase
-        .from('club_members')
-        .select('club_id')
-        .eq('user_id', user?.id)
-        .single();
+      if (!userClubId) return null;
 
-      if (!clubMember) return null;
-
-      // Then get the latest match day for that club
+      // Get the latest match day for that club
       const { data: matchDay } = await supabase
         .from('match_days')
         .select(`
@@ -88,18 +96,20 @@ const Dashboard = () => {
             team_b_score
           )
         `)
-        .eq('club_id', clubMember.club_id)
+        .eq('club_id', userClubId)
         .order('date', { ascending: false })
         .limit(1)
         .single();
 
       return matchDay;
     },
-    enabled: !!user?.id && !isCheckingClub,
+    enabled: !!userClubId && !isCheckingClub,
   });
 
   const handleInviteMembers = () => {
-    navigate('/invite-members');
+    if (userClubId) {
+      navigate(`/invite-members/${userClubId}`);
+    }
   };
 
   const handleCreateGame = () => {
@@ -152,7 +162,6 @@ const Dashboard = () => {
     );
   }
 
-  // If games exist, display the game data (existing dashboard functionality)
   // Format and prepare match data
   const teamA = latestGame.match_teams?.find(team => team.team_name === 'Team A');
   const teamB = latestGame.match_teams?.find(team => team.team_name === 'Team B');
