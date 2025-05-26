@@ -24,17 +24,42 @@ const JoinClub = () => {
     setIsLoading(true);
 
     try {
-      console.log('Searching for club with slug:', clubId.trim());
+      const trimmedClubId = clubId.trim();
+      console.log('Searching for club with slug:', trimmedClubId);
       
-      // First check if the club exists by slug (case-insensitive)
-      const { data: club, error: clubError } = await supabase
+      // First try exact match
+      let { data: club, error: clubError } = await supabase
         .from('clubs')
         .select('id, name, slug')
-        .ilike('slug', clubId.trim())
+        .eq('slug', trimmedClubId)
         .maybeSingle();
 
-      console.log('Club search result:', club);
-      console.log('Club search error:', clubError);
+      console.log('Exact match result:', club);
+      console.log('Exact match error:', clubError);
+
+      // If no exact match, try case-insensitive
+      if (!club && !clubError) {
+        console.log('No exact match found, trying case-insensitive search...');
+        const { data: clubCaseInsensitive, error: clubCaseError } = await supabase
+          .from('clubs')
+          .select('id, name, slug')
+          .ilike('slug', trimmedClubId)
+          .maybeSingle();
+        
+        club = clubCaseInsensitive;
+        clubError = clubCaseError;
+        console.log('Case-insensitive result:', club);
+        console.log('Case-insensitive error:', clubError);
+      }
+
+      // Debug: Let's also check all clubs to see what's in the database
+      const { data: allClubs, error: allClubsError } = await supabase
+        .from('clubs')
+        .select('id, name, slug')
+        .limit(10);
+      
+      console.log('All clubs in database (first 10):', allClubs);
+      console.log('All clubs query error:', allClubsError);
 
       if (clubError) {
         console.error('Database error when searching for club:', clubError);
@@ -48,7 +73,7 @@ const JoinClub = () => {
       }
 
       if (!club) {
-        console.log('No club found with slug:', clubId.trim());
+        console.log('No club found with slug:', trimmedClubId);
         toast({
           title: "Club not found",
           description: "Please check the Club ID and try again.",
