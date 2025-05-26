@@ -7,6 +7,13 @@ import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { MoreVertical } from "lucide-react";
+import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
 
 interface ClubWithDetails {
   id: string;
@@ -17,11 +24,14 @@ interface ClubWithDetails {
   creator_first_name: string;
   creator_last_name: string;
   role: string;
+  description?: string;
 }
 
 const Clubs = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [selectedClub, setSelectedClub] = useState<ClubWithDetails | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Query to fetch all clubs user is a member of
   const { data: userClubs, isLoading } = useQuery({
@@ -131,6 +141,12 @@ const Clubs = () => {
     navigate(`/dashboard/${clubId}`);
   };
 
+  const handleSettingsClick = (e: React.MouseEvent, club: ClubWithDetails) => {
+    e.stopPropagation();
+    setSelectedClub(club);
+    setIsSettingsOpen(true);
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('de-DE', {
@@ -138,6 +154,10 @@ const Clubs = () => {
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  const isClubAdmin = (club: ClubWithDetails) => {
+    return club.role === 'admin' || club.created_by === user?.id;
   };
 
   if (isLoading) {
@@ -181,7 +201,7 @@ const Clubs = () => {
               {userClubs.map((club) => (
                 <Card 
                   key={club.id} 
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  className="cursor-pointer hover:shadow-lg transition-shadow relative"
                   onClick={() => handleClubClick(club.id)}
                 >
                   <CardHeader className="p-0">
@@ -202,7 +222,33 @@ const Clubs = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold mb-2">{club.name}</h3>
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-lg font-semibold flex-1 pr-2">{club.name}</h3>
+                      {isClubAdmin(club) && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-40 p-2" align="end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                              onClick={(e) => handleSettingsClick(e, club)}
+                            >
+                              Settings
+                            </Button>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600 mb-1">
                       Created on: {formatDate(club.created_at)}
                     </p>
@@ -233,6 +279,18 @@ const Clubs = () => {
           )}
         </div>
       </main>
+
+      {/* Club Settings Dialog */}
+      {selectedClub && (
+        <ClubSettingsDialog
+          isOpen={isSettingsOpen}
+          onClose={() => {
+            setIsSettingsOpen(false);
+            setSelectedClub(null);
+          }}
+          club={selectedClub}
+        />
+      )}
     </div>
   );
 };
