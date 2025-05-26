@@ -9,7 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
-import { ensureStorageBucketExists } from "@/integrations/supabase/storage";
+import { ensureStorageBucketExists, StorageBuckets } from "@/integrations/supabase/storage";
 
 // Pages
 import Home from "./pages/Home";
@@ -48,7 +48,7 @@ const App = () => {
   // Initialize storage buckets on app start
   useEffect(() => {
     const initStorage = async () => {
-      await ensureStorageBucketExists('club-images');
+      await ensureStorageBucketExists(StorageBuckets.ClubImages);
     };
     
     initStorage();
