@@ -33,6 +33,7 @@ import JoinClub from "./pages/JoinClub";
 import InviteMembers from "./pages/InviteMembers";
 import NewGame from "./pages/NewGame";
 import Profile from "./pages/Profile";
+import Clubs from "./pages/Clubs";
 
 const queryClient = new QueryClient();
 
@@ -111,6 +112,16 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <InviteMembers />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* Clubs Overview */}
+                <Route 
+                  path="/clubs" 
+                  element={
+                    <ProtectedRoute>
+                      <Clubs />
                     </ProtectedRoute>
                   } 
                 />
