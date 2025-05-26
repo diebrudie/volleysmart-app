@@ -47,8 +47,8 @@ const ProtectedRoute = ({ children, allowedRoles, requiresOnboarding = true }: P
     }
   }, [isAuthenticated, user, requiresOnboarding, location.pathname]);
 
+  // Show loading spinner while checking auth state
   if (isLoading || isCheckingOnboarding) {
-    // Show a spinner while checking authentication status or onboarding
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner className="h-8 w-8 text-volleyball-primary" />
@@ -57,9 +57,8 @@ const ProtectedRoute = ({ children, allowedRoles, requiresOnboarding = true }: P
     );
   }
 
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    // Redirect them to the login page, but save the current location they were
-    // trying to go to so you can send them back there after login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

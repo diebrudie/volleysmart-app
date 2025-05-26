@@ -1,3 +1,4 @@
+
 import { ToastProvider } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -70,17 +71,16 @@ const App = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 
-                {/* Player Onboarding */}
+                {/* All Protected Routes - require authentication */}
                 <Route 
                   path="/players/onboarding" 
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requiresOnboarding={false}>
                       <PlayerOnboarding />
                     </ProtectedRoute>
                   } 
                 />
                 
-                {/* Start Page after onboarding */}
                 <Route 
                   path="/start" 
                   element={
@@ -90,7 +90,6 @@ const App = () => {
                   } 
                 />
                 
-                {/* Club Creation Flow */}
                 <Route 
                   path="/new-club" 
                   element={
@@ -116,7 +115,6 @@ const App = () => {
                   } 
                 />
                 
-                {/* Clubs Overview */}
                 <Route 
                   path="/clubs" 
                   element={
@@ -126,7 +124,6 @@ const App = () => {
                   } 
                 />
                 
-                {/* Game Creation */}
                 <Route 
                   path="/new-game" 
                   element={
@@ -136,7 +133,6 @@ const App = () => {
                   } 
                 />
                 
-                {/* Profile Route */}
                 <Route 
                   path="/user/:userId" 
                   element={
@@ -146,7 +142,6 @@ const App = () => {
                   } 
                 />
                 
-                {/* Protected Routes - need authentication */}
                 <Route 
                   path="/dashboard" 
                   element={
