@@ -49,6 +49,8 @@ const Members = () => {
     );
   }
 
+  console.log('clubId from URL:', clubId);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
