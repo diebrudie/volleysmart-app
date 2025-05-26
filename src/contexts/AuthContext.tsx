@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }, 0);
         } else {
           setUser(null);
+          setIsLoading(false);
         }
       }
     );
@@ -76,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       
-      // Fetch user profile from the user_profiles table
+      // Try to fetch user profile from the user_profiles table
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -85,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Error fetching user profile:', error);
-        throw error;
+        // Don't throw error, fallback to basic user data
       }
 
       const userWithProfile: AuthUser = {
@@ -98,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(userWithProfile);
     } catch (error) {
       console.error('Error getting user profile:', error);
-      // Even if we can't get the profile, we still have a user
+      // Always set user even if profile fetch fails
       setUser({
         id: authUser.id,
         email: authUser.email,
