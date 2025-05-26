@@ -11,8 +11,7 @@ const Start = () => {
   };
 
   const handleJoinClub = () => {
-    // For now, navigate to the matches page
-    navigate('/matches');
+    navigate('/join-club');
   };
 
   return (

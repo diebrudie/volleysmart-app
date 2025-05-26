@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +20,8 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   const [isCheckingClub, setIsCheckingClub] = useState(true);
   const [userClubId, setUserClubId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [clubMemberCount, setClubMemberCount] = useState(0);
 
   // Check if user belongs to any club or has created one
   useEffect(() => {
@@ -37,6 +40,7 @@ const Dashboard = () => {
 
         if (createdClub) {
           setUserClubId(createdClub.id);
+          setUserRole('admin'); // Creator is always admin
           setIsCheckingClub(false);
           return;
         }
@@ -44,7 +48,7 @@ const Dashboard = () => {
         // If not a creator, check if user is a member of any club
         const { data: clubMember, error: memberError } = await supabase
           .from('club_members')
-          .select('club_id')
+          .select('club_id, role')
           .eq('user_id', user.id)
           .order('joined_at', { ascending: false })
           .limit(1)
@@ -52,6 +56,7 @@ const Dashboard = () => {
 
         if (clubMember) {
           setUserClubId(clubMember.club_id);
+          setUserRole(clubMember.role);
           setIsCheckingClub(false);
           return;
         }
@@ -69,6 +74,29 @@ const Dashboard = () => {
 
     checkUserClub();
   }, [user, navigate]);
+
+  // Query to fetch club member count
+  const { data: memberCount } = useQuery({
+    queryKey: ['clubMemberCount', userClubId],
+    queryFn: async () => {
+      if (!userClubId) return 0;
+
+      const { count } = await supabase
+        .from('club_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('club_id', userClubId);
+
+      return count || 0;
+    },
+    enabled: !!userClubId && !isCheckingClub,
+  });
+
+  // Update member count when query data changes
+  useEffect(() => {
+    if (memberCount !== undefined) {
+      setClubMemberCount(memberCount);
+    }
+  }, [memberCount]);
 
   // Query to fetch the latest game
   const { data: latestGame, isLoading } = useQuery({
@@ -148,6 +176,9 @@ const Dashboard = () => {
 
   // If no games exist yet, show the empty state
   if (!latestGame) {
+    const canGenerateTeams = clubMemberCount >= 4;
+    const canInviteMembers = userRole === 'admin';
+
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -155,12 +186,16 @@ const Dashboard = () => {
           <div className="max-w-lg w-full text-center">
             <h1 className="text-3xl font-bold mb-4">You haven't played any games yet.</h1>
             <p className="text-gray-600 mb-8">
-              Proceed with inviting other members to your club or creating a game:
+              {canInviteMembers 
+                ? "Proceed with inviting other members to your club or creating a game:"
+                : "Wait for the club admin to invite more members or create a game:"
+              }
             </p>
             <EmptyTeamsState 
-              canGenerateTeams={false} 
+              canGenerateTeams={canGenerateTeams} 
               onGenerateTeams={handleCreateGame} 
               onInviteMembers={handleInviteMembers}
+              canInviteMembers={canInviteMembers}
             />
           </div>
         </div>

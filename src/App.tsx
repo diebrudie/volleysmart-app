@@ -28,6 +28,7 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Start from "./pages/Start";
 import NewClub from "./pages/NewClub";
+import JoinClub from "./pages/JoinClub";
 import InviteMembers from "./pages/InviteMembers";
 import NewGame from "./pages/NewGame";
 
@@ -92,6 +93,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <NewClub />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/join-club" 
+                  element={
+                    <ProtectedRoute>
+                      <JoinClub />
                     </ProtectedRoute>
                   } 
                 />
