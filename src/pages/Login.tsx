@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -27,8 +28,8 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
 
-  // Get the intended destination from location state, or default to start
-  const from = location.state?.from?.pathname || "/start";
+  // Get the intended destination from location state, or default to dashboard
+  const from = location.state?.from?.pathname || "/dashboard";
 
   // Redirect if already authenticated, check if user needs onboarding first
   useEffect(() => {
@@ -60,8 +61,7 @@ const Login = () => {
               navigate('/start', { replace: true });
             } else {
               // User belongs to a club, redirect to dashboard or original destination
-              const destination = from === '/start' ? '/dashboard' : from;
-              navigate(destination, { replace: true });
+              navigate(from, { replace: true });
             }
           }
         } catch (error) {

@@ -252,21 +252,4 @@ const NewClub = () => {
   );
 };
 
-export const addClubAdmin = async (clubId: string, userId: string) => {
-  const { data, error } = await supabase
-    .from('club_members')
-    .insert({
-      club_id: clubId,
-      user_id: userId,
-      role: 'admin'
-    });
-
-  if (error) {
-    console.error('❌ Supabase insert error in addClubAdmin():', error);
-    throw error;
-  }
-
-  return data;
-};
-
 export default NewClub;
