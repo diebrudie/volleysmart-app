@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,11 +38,43 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const [originalProfile, setOriginalProfile] = useState<PlayerProfile | null>(null);
   const [positions, setPositions] = useState<any[]>([]);
   const [playerPositions, setPlayerPositions] = useState<PlayerPosition[]>([]);
+  const [originalPlayerPositions, setOriginalPlayerPositions] = useState<PlayerPosition[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const isOwnProfile = user?.id === userId;
+
+  // Track changes for Personal Info
+  const hasPersonalInfoChanges = () => {
+    if (!profile || !originalProfile) return false;
+    return (
+      profile.first_name !== originalProfile.first_name ||
+      profile.last_name !== originalProfile.last_name ||
+      profile.birthday !== originalProfile.birthday ||
+      profile.gender !== originalProfile.gender ||
+      profile.bio !== originalProfile.bio ||
+      imageFile !== null
+    );
+  };
+
+  // Track changes for Skills
+  const hasSkillsChanges = () => {
+    if (!profile || !originalProfile) return false;
+    
+    // Check skill rating change
+    if (profile.skill_rating !== originalProfile.skill_rating) return true;
+    
+    // Check positions changes
+    if (playerPositions.length !== originalPlayerPositions.length) return true;
+    
+    // Check if positions content has changed
+    const sortedCurrent = [...playerPositions].sort((a, b) => a.position_id.localeCompare(b.position_id));
+    const sortedOriginal = [...originalPlayerPositions].sort((a, b) => a.position_id.localeCompare(b.position_id));
+    
+    return JSON.stringify(sortedCurrent) !== JSON.stringify(sortedOriginal);
+  };
 
   useEffect(() => {
     if (userId) {
@@ -77,6 +108,7 @@ const Profile = () => {
       }
 
       setProfile(data);
+      setOriginalProfile(data); // Store original for comparison
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -110,6 +142,7 @@ const Profile = () => {
 
       if (!error && data) {
         setPlayerPositions(data);
+        setOriginalPlayerPositions(data); // Store original for comparison
       }
     } catch (error) {
       console.error('Error fetching player positions:', error);
@@ -157,7 +190,9 @@ const Profile = () => {
 
       if (error) throw error;
 
-      setProfile({ ...profile, image_url: imageUrl });
+      const updatedProfile = { ...profile, image_url: imageUrl };
+      setProfile(updatedProfile);
+      setOriginalProfile(updatedProfile); // Update original after successful save
       setImageFile(null);
 
       toast({
@@ -211,6 +246,10 @@ const Profile = () => {
         .eq('id', profile.id);
 
       if (profileError) throw profileError;
+
+      // Update original values after successful save
+      setOriginalProfile({ ...originalProfile!, skill_rating: profile.skill_rating });
+      setOriginalPlayerPositions([...playerPositions]);
 
       toast({
         title: "Success",
@@ -415,7 +454,11 @@ const Profile = () => {
                 </div>
 
                 {isOwnProfile && (
-                  <Button onClick={handlePersonalInfoSave} disabled={saving} className="w-full">
+                  <Button 
+                    onClick={handlePersonalInfoSave} 
+                    disabled={saving || !hasPersonalInfoChanges()} 
+                    className="w-full"
+                  >
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>
                 )}
@@ -496,7 +539,11 @@ const Profile = () => {
                 </div>
 
                 {isOwnProfile && (
-                  <Button onClick={handleSkillsSave} disabled={saving} className="w-full">
+                  <Button 
+                    onClick={handleSkillsSave} 
+                    disabled={saving || !hasSkillsChanges()} 
+                    className="w-full"
+                  >
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>
                 )}
