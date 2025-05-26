@@ -46,7 +46,7 @@ const ClubSettingsDialog = ({ isOpen, onClose, club }: ClubSettingsDialogProps) 
       setDescription(club.description || "");
       setImageFile(null);
     }
-  }, [isOpen, club]);
+  }, [isOpen, club.name, club.description]);
 
   const handleImageChange = (file: File) => {
     setImageFile(file);

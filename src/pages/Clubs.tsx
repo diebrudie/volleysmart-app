@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -216,6 +217,13 @@ const Clubs = () => {
     return club.role === 'admin' || club.created_by === user?.id;
   };
 
+  const getCreatorDisplayName = (club: ClubWithDetails) => {
+    if (club.created_by === user?.id) {
+      return "You";
+    }
+    return `${club.creator_first_name} ${club.creator_last_name}`;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -319,7 +327,7 @@ const Clubs = () => {
                       Created on: {formatDate(club.created_at)}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Created by: {club.creator_first_name} {club.creator_last_name}
+                      Created by: {getCreatorDisplayName(club)}
                     </p>
                   </CardContent>
                 </Card>
