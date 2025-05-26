@@ -43,6 +43,7 @@ const Profile = () => {
   const [playerPositions, setPlayerPositions] = useState<PlayerPosition[]>([]);
   const [originalPlayerPositions, setOriginalPlayerPositions] = useState<PlayerPosition[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
 
   const isOwnProfile = user?.id === userId;
 
@@ -80,6 +81,7 @@ const Profile = () => {
     if (userId) {
       fetchProfile();
       fetchPositions();
+      fetchUserCreatedAt();
     }
   }, [userId]);
 
@@ -113,6 +115,22 @@ const Profile = () => {
       console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserCreatedAt = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('created_at')
+        .eq('id', userId)
+        .single();
+
+      if (!error && data) {
+        setUserCreatedAt(data.created_at);
+      }
+    } catch (error) {
+      console.error('Error fetching user creation date:', error);
     }
   };
 
@@ -300,6 +318,15 @@ const Profile = () => {
     }
   };
 
+  const formatMemberSince = (createdAt: string) => {
+    const date = new Date(createdAt);
+    return date.toLocaleDateString('en-US', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -330,8 +357,13 @@ const Profile = () => {
           <h1 className="text-3xl font-bold text-gray-900">
             {profile.first_name} {profile.last_name}
           </h1>
+          {userCreatedAt && (
+            <p className="text-gray-600 mt-2">
+              Member since {formatMemberSince(userCreatedAt)}
+            </p>
+          )}
           {!isOwnProfile && (
-            <p className="text-gray-600 mt-2">Viewing player profile</p>
+            <p className="text-gray-600 mt-1">Viewing player profile</p>
           )}
         </div>
 
