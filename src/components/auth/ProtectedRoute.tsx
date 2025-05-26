@@ -11,9 +11,15 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
   requiresOnboarding?: boolean;
+  requiresCompletedOnboarding?: boolean;
 }
 
-const ProtectedRoute = ({ children, allowedRoles, requiresOnboarding = true }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ 
+  children, 
+  allowedRoles, 
+  requiresOnboarding = true,
+  requiresCompletedOnboarding = false 
+}: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
@@ -21,7 +27,7 @@ const ProtectedRoute = ({ children, allowedRoles, requiresOnboarding = true }: P
 
   // Check if user has completed onboarding (has a player profile)
   useEffect(() => {
-    if (isAuthenticated && user && requiresOnboarding && location.pathname !== '/players/onboarding') {
+    if (isAuthenticated && user && (requiresOnboarding || requiresCompletedOnboarding) && location.pathname !== '/players/onboarding') {
       setIsCheckingOnboarding(true);
       
       const checkOnboarding = async () => {
@@ -42,10 +48,12 @@ const ProtectedRoute = ({ children, allowedRoles, requiresOnboarding = true }: P
       };
 
       checkOnboarding();
-    } else if (!requiresOnboarding || location.pathname === '/players/onboarding') {
+    } else if (!requiresOnboarding && !requiresCompletedOnboarding) {
+      setHasCompletedOnboarding(true);
+    } else if (location.pathname === '/players/onboarding') {
       setHasCompletedOnboarding(true);
     }
-  }, [isAuthenticated, user, requiresOnboarding, location.pathname]);
+  }, [isAuthenticated, user, requiresOnboarding, requiresCompletedOnboarding, location.pathname]);
 
   // Show loading spinner while checking auth state
   if (isLoading || isCheckingOnboarding) {
@@ -64,6 +72,11 @@ const ProtectedRoute = ({ children, allowedRoles, requiresOnboarding = true }: P
 
   // If onboarding is required and user hasn't completed it, redirect to onboarding
   if (requiresOnboarding && hasCompletedOnboarding === false && location.pathname !== '/players/onboarding') {
+    return <Navigate to="/players/onboarding" replace />;
+  }
+
+  // If completed onboarding is required but user hasn't completed it, redirect to onboarding
+  if (requiresCompletedOnboarding && hasCompletedOnboarding === false) {
     return <Navigate to="/players/onboarding" replace />;
   }
 
