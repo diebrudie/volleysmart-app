@@ -24,11 +24,11 @@ const JoinClub = () => {
     setIsLoading(true);
 
     try {
-      // First check if the club exists
+      // First check if the club exists by slug
       const { data: club, error: clubError } = await supabase
         .from('clubs')
         .select('id, name')
-        .eq('id', clubId.trim())
+        .eq('slug', clubId.trim())
         .maybeSingle();
 
       if (clubError || !club) {
@@ -45,7 +45,7 @@ const JoinClub = () => {
       const { data: existingMember } = await supabase
         .from('club_members')
         .select('id')
-        .eq('club_id', clubId.trim())
+        .eq('club_id', club.id)
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -63,7 +63,7 @@ const JoinClub = () => {
       const { error: insertError } = await supabase
         .from('club_members')
         .insert({
-          club_id: clubId.trim(),
+          club_id: club.id,
           user_id: user.id,
           role: 'member'
         });
