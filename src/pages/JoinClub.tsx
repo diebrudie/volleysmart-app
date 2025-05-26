@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +15,11 @@ const JoinClub = () => {
   const { toast } = useToast();
   const [clubId, setClubId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleBack = () => {
+    // Use browser's history to go back to the previous page
+    window.history.back();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,7 +166,7 @@ const JoinClub = () => {
       <div className="w-full max-w-md">
         <Button
           variant="ghost"
-          onClick={() => navigate('/start')}
+          onClick={handleBack}
           className="mb-6 p-0 h-auto font-normal text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
