@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -23,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, UserPlus, UsersRound } from "lucide-react";
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -247,14 +248,20 @@ const Clubs = () => {
             <div className="flex gap-4">
               <Button 
                 variant="outline" 
-                onClick={handleCreateClub}
+                onClick={handleJoinClub}
+                className="h-16 text-lg"
+                size="lg"
               >
-                Create a Club
+                <UsersRound className="mr-2 h-6 w-6" />
+                Join a Club
               </Button>
               <Button 
-                onClick={handleJoinClub}
+                onClick={handleCreateClub}
+                className="h-16 text-lg bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90"
+                size="lg"
               >
-                Join a Club
+                <UserPlus className="mr-2 h-6 w-6" />
+                Create a Club
               </Button>
             </div>
           </div>
@@ -339,14 +346,20 @@ const Clubs = () => {
               <div className="flex gap-4 justify-center">
                 <Button 
                   variant="outline" 
-                  onClick={handleCreateClub}
+                  onClick={handleJoinClub}
+                  className="h-16 text-lg"
+                  size="lg"
                 >
-                  Create a Club
+                  <UsersRound className="mr-2 h-6 w-6" />
+                  Join a Club
                 </Button>
                 <Button 
-                  onClick={handleJoinClub}
+                  onClick={handleCreateClub}
+                  className="h-16 text-lg bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90"
+                  size="lg"
                 >
-                  Join a Club
+                  <UserPlus className="mr-2 h-6 w-6" />
+                  Create a Club
                 </Button>
               </div>
             </div>
@@ -392,3 +405,4 @@ const Clubs = () => {
 };
 
 export default Clubs;
+
