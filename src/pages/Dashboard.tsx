@@ -75,6 +75,24 @@ const Dashboard = () => {
     checkUserClub();
   }, [user, navigate]);
 
+  // Query to fetch club details including name
+  const { data: clubDetails } = useQuery({
+    queryKey: ['clubDetails', userClubId],
+    queryFn: async () => {
+      if (!userClubId) return null;
+
+      const { data, error } = await supabase
+        .from('clubs')
+        .select('id, name, slug')
+        .eq('id', userClubId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userClubId && !isCheckingClub,
+  });
+
   // Query to fetch club member count
   const { data: memberCount } = useQuery({
     queryKey: ['clubMemberCount', userClubId],
@@ -184,7 +202,12 @@ const Dashboard = () => {
         <Navbar />
         <div className="flex-grow flex flex-col items-center justify-center p-4">
           <div className="max-w-lg w-full text-center">
-            <h1 className="text-3xl font-bold mb-4">You haven't played any games yet.</h1>
+            <h1 className="text-3xl font-bold mb-2">You haven't played any games yet.</h1>
+            {clubDetails && (
+              <p className="text-lg text-gray-700 mb-4">
+                Welcome to <span className="font-semibold">{clubDetails.name}</span>!
+              </p>
+            )}
             <p className="text-gray-600 mb-8">
               {canInviteMembers 
                 ? "Proceed with inviting other members to your club or creating a game:"
