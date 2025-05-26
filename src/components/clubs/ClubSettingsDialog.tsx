@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FileInput } from "@/components/ui/file-input";
 
 interface ClubSettingsDialogProps {
   isOpen: boolean;
@@ -37,6 +38,10 @@ const ClubSettingsDialog = ({ isOpen, onClose, club }: ClubSettingsDialogProps) 
   const [description, setDescription] = useState(club.description || "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleImageChange = (file: File) => {
+    setImageFile(file);
+  };
 
   const handleSave = async () => {
     if (!user?.id) return;
@@ -128,11 +133,11 @@ const ClubSettingsDialog = ({ isOpen, onClose, club }: ClubSettingsDialogProps) 
 
           <div>
             <Label htmlFor="club-image">Club Image</Label>
-            <Input
+            <FileInput
               id="club-image"
-              type="file"
               accept="image/*"
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              buttonText="Choose club image"
+              onImageSelected={handleImageChange}
             />
           </div>
         </div>
