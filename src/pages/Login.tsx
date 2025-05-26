@@ -34,6 +34,7 @@ const Login = () => {
   // Redirect if already authenticated, check if user needs onboarding first
   useEffect(() => {
     if (isAuthenticated && !authLoading && user) {
+      console.log('User is authenticated, checking profile for redirect:', user);
       setIsCheckingProfile(true);
       
       // Check if user has completed player profile (onboarding)
@@ -45,8 +46,11 @@ const Login = () => {
             .eq('user_id', user.id)
             .single();
 
+          console.log('Player profile check result:', { player, error });
+
           if (error || !player) {
             // User hasn't completed onboarding, redirect to onboarding
+            console.log('Redirecting to onboarding');
             navigate('/players/onboarding', { replace: true });
           } else {
             // User has completed onboarding, check club membership count
@@ -54,6 +58,8 @@ const Login = () => {
               .from('club_members')
               .select('club_id')
               .eq('user_id', user.id);
+
+            console.log('Club membership check result:', { clubMembers, clubError });
 
             if (clubError) {
               console.error('Error checking club membership:', clubError);
@@ -64,13 +70,16 @@ const Login = () => {
 
             if (!clubMembers || clubMembers.length === 0) {
               // User doesn't belong to any club, redirect to start page
+              console.log('No club membership, redirecting to start');
               navigate('/start', { replace: true });
             } else if (clubMembers.length === 1) {
               // User belongs to exactly one club, redirect to that club's dashboard
+              console.log('Single club membership, redirecting to dashboard:', clubMembers[0].club_id);
               navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
             } else {
               // User belongs to multiple clubs, check for last visited club
               const lastVisitedClubId = localStorage.getItem('lastVisitedClub');
+              console.log('Multiple clubs, last visited:', lastVisitedClubId);
               
               // Verify the last visited club is still in user's club list
               const isLastClubValid = lastVisitedClubId && 
@@ -78,9 +87,11 @@ const Login = () => {
               
               if (isLastClubValid) {
                 // Redirect to last visited club dashboard
+                console.log('Redirecting to last visited club:', lastVisitedClubId);
                 navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
               } else {
                 // No valid last visited club, redirect to clubs overview page
+                console.log('No valid last club, redirecting to clubs overview');
                 navigate('/clubs', { replace: true });
               }
             }
@@ -109,7 +120,9 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
+      console.log('Attempting login for:', data.email);
       await login(data.email, data.password);
+      console.log('Login successful, redirection will happen in useEffect');
       // The redirection will happen automatically in the useEffect hook
     } catch (error) {
       console.error("Login error:", error);

@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +77,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       
+      // Clear any existing user data first to prevent confusion
+      setUser(null);
+      
       // Try to fetch user profile from the user_profiles table
       const { data: profile, error } = await supabase
         .from('user_profiles')
@@ -97,16 +99,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: profile?.role as UserRole || 'user',
       };
 
+      console.log('Setting user profile:', userWithProfile);
       setUser(userWithProfile);
     } catch (error) {
       console.error('Error getting user profile:', error);
       // Always set user even if profile fetch fails
-      setUser({
+      const fallbackUser: AuthUser = {
         id: authUser.id,
         email: authUser.email,
         name: authUser.email?.split('@')[0] || 'User',
         role: 'user'
-      });
+      };
+      console.log('Setting fallback user:', fallbackUser);
+      setUser(fallbackUser);
     } finally {
       setIsLoading(false);
     }
@@ -222,11 +227,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
+      // Clear user state immediately to prevent confusion
+      setUser(null);
+      setSession(null);
+      
       await supabase.auth.signOut();
+      
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
       });
+      
+      // Redirect to home page instead of /start
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
       toast({
