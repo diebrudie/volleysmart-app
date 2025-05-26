@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,6 +16,7 @@ import { format, isWednesday } from "date-fns";
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { clubId } = useParams();
   const isMobile = useIsMobile();
   const [isCheckingClub, setIsCheckingClub] = useState(true);
   const [userClubId, setUserClubId] = useState<string | null>(null);
@@ -29,6 +29,44 @@ const Dashboard = () => {
       if (!user?.id) return;
 
       try {
+        // If clubId is provided in URL, use that
+        if (clubId) {
+          // Verify user has access to this club
+          const { data: memberCheck } = await supabase
+            .from('club_members')
+            .select('role')
+            .eq('club_id', clubId)
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (memberCheck) {
+            setUserClubId(clubId);
+            setUserRole(memberCheck.role);
+            setIsCheckingClub(false);
+            return;
+          }
+
+          // Check if user is the creator
+          const { data: creatorCheck } = await supabase
+            .from('clubs')
+            .select('id')
+            .eq('id', clubId)
+            .eq('created_by', user.id)
+            .maybeSingle();
+
+          if (creatorCheck) {
+            setUserClubId(clubId);
+            setUserRole('admin');
+            setIsCheckingClub(false);
+            return;
+          }
+
+          // User doesn't have access to this club
+          navigate('/clubs');
+          return;
+        }
+
+        // Original logic for when no clubId is provided
         // First check if user has created any club
         const { data: createdClub, error: createdError } = await supabase
           .from('clubs')
@@ -73,7 +111,7 @@ const Dashboard = () => {
     };
 
     checkUserClub();
-  }, [user, navigate]);
+  }, [user, navigate, clubId]);
 
   // Query to fetch club details including name
   const { data: clubDetails } = useQuery({

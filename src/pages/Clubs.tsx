@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -129,7 +128,7 @@ const Clubs = () => {
   };
 
   const handleClubClick = (clubId: string) => {
-    navigate('/dashboard');
+    navigate(`/dashboard/${clubId}`);
   };
 
   const formatDate = (dateString: string) => {

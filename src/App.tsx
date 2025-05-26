@@ -156,6 +156,14 @@ const App = () => {
                   } 
                 />
                 <Route 
+                  path="/dashboard/:clubId" 
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
                   path="/matches" 
                   element={
                     <ProtectedRoute>
