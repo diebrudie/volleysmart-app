@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, useRef, ReactNode, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
@@ -24,6 +24,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const hasFetchedProfile = useRef(false);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -46,11 +47,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (event, session) => {
         console.log('Auth state changed:', event, session);
         setSession(session);
-        if (session?.user) {
-          // Get user profile on auth change
-          setTimeout(() => {
-            getUserProfile(session.user);
-          }, 0);
+        if (session?.user && !hasFetchedProfile.current) {
+          hasFetchedProfile.current = true;
+          getUserProfile(session.user);
         } else {
           setUser(null);
           setIsLoading(false);
@@ -62,7 +61,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session);
       setSession(session);
-      if (session?.user) {
+      if (session?.user && !hasFetchedProfile.current) {
+        hasFetchedProfile.current = true;
         getUserProfile(session.user);
       } else {
         setIsLoading(false);
