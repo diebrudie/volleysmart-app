@@ -98,7 +98,7 @@ const PlayerOnboarding = () => {
 
       // Force a page reload after navigation to ensure the ProtectedRoute re-checks onboarding status
       navigate('/start', { replace: true });
-      window.location.reload();
+      //window.location.reload();
     } catch (error) {
       console.error('Error creating player:', error);
       toast({
