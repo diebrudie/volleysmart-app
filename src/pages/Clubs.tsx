@@ -7,6 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { useClub } from "@/contexts/ClubContext";
 import {
   Popover,
   PopoverContent,
