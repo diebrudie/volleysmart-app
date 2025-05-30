@@ -43,12 +43,13 @@ const { clubId } = useClub();
   };
   */
   // Navigation items
-  const navItems = [
-    { label: "Dashboard", path: `/dashboard/${clubId}`, visible: isAuthenticated },
-    { label: "Archive", path: `/matches/${clubId}`, visible: isAuthenticated },
-    { label: "Members", path: `/members/${clubId}`, visible: isAuthenticated },
-  ];
-
+  const navItems = clubId
+  ? [
+      { label: "Dashboard", path: `/dashboard/${clubId}`, visible: isAuthenticated },
+      { label: "Archive", path: `/matches/${clubId}`, visible: isAuthenticated },
+      { label: "Members", path: `/members/${clubId}`, visible: isAuthenticated },
+    ]
+  : []; // ⬅️ Hide nav links until a club is selected
 
   // Account dropdown items
   const accountItems = [
