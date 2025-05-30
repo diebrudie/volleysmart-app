@@ -28,13 +28,18 @@ const Navbar = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const { clubId } = useClub();
 
   const handleLogout = async () => {
     await logout();
     navigate("/");
-  };
+  };  
 
-const { clubId } = useClub();
+  useEffect(() => {
+    const lastClub = localStorage.getItem("lastVisitedClub");
+    if (lastClub) setClubId(lastClub);
+  }, [setClubId]);
+
 
   // Get current club ID from localStorage for members link
   /*
@@ -65,7 +70,7 @@ const { clubId } = useClub();
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between border-b border-gray-200 lg:border-none">
           <div className="flex items-center">
-            <Logo size="md" linkTo={isAuthenticated ? "/dashboard" : "/"} />
+            <Logo size="md" linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"} />
           </div>
           
           {/* Centered Navigation Links */}
@@ -135,7 +140,7 @@ const { clubId } = useClub();
   const MobileNav = () => (
     <header className="bg-white shadow-sm">
       <nav className="px-4 py-3 flex items-center justify-between">
-        <Logo size="md" linkTo={isAuthenticated ? "/dashboard" : "/"} />
+        <Logo size="md" linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"} />
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -146,7 +151,7 @@ const { clubId } = useClub();
             <div className="flex flex-col h-full">
               <SheetHeader className="p-4 border-b">
                 <div className="flex justify-between items-center">
-                  <Logo size="md" linkTo={isAuthenticated ? "/dashboard" : "/"} />
+                  <Logo size="md" linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"} />
                   <SheetClose asChild>
                     <Button variant="ghost" size="icon">
                       <X className="h-6 w-6" />
