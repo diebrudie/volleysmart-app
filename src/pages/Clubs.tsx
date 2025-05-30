@@ -50,6 +50,13 @@ const Clubs = () => {
   const [clubToDelete, setClubToDelete] = useState<ClubWithDetails | null>(null);
   const { setClubId } = useClub();
 
+  useEffect(() => { 
+    const lastClub = localStorage.getItem('lastVisitedClub');
+    if (lastClub) {
+      setClubId(lastClub);
+    }
+  }, [setClubId]);
+
   // Query to fetch all clubs user is a member of
   const { data: userClubs, isLoading } = useQuery({
     queryKey: ['userClubs', user?.id],
