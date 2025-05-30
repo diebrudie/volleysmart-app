@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,16 +13,23 @@ import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Pencil } from "lucide-react";
 import { format, isWednesday } from "date-fns";
+import { useClub } from "@/contexts/ClubContext";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { clubId } = useParams();
   const isMobile = useIsMobile();
-  const [isCheckingClub, setIsCheckingClub] = useState(true);
-  const [userClubId, setUserClubId] = useState<string | null>(null);
+  const [isCheckingClub, setIsCheckingClub] = useState(true);  
   const [userRole, setUserRole] = useState<string | null>(null);
   const [clubMemberCount, setClubMemberCount] = useState(0);
+  const { clubId } = useClub();
+  const userClubId = clubId; 
+
+  useEffect(() => {
+    if (!clubId) {
+      navigate("/clubs");
+    }
+  }, [clubId, navigate]);
 
   // Check if user belongs to any club or has created one
   useEffect(() => {
@@ -44,7 +51,7 @@ const Dashboard = () => {
             .maybeSingle();
 
           if (memberCheck) {
-            setUserClubId(clubId);
+            
             setUserRole(memberCheck.role);
             setIsCheckingClub(false);
             return;
@@ -59,7 +66,7 @@ const Dashboard = () => {
             .maybeSingle();
 
           if (creatorCheck) {
-            setUserClubId(clubId);
+            
             setUserRole('admin');
             setIsCheckingClub(false);
             return;
@@ -67,23 +74,6 @@ const Dashboard = () => {
 
           // User doesn't have access to this club
           navigate('/clubs');
-          return;
-        }
-
-        // Original logic for when no clubId is provided
-        // First check if user has created any club
-        const { data: createdClub, error: createdError } = await supabase
-          .from('clubs')
-          .select('id')
-          .eq('created_by', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (createdClub) {
-          setUserClubId(createdClub.id);
-          setUserRole('admin'); // Creator is always admin
-          setIsCheckingClub(false);
           return;
         }
 
@@ -96,8 +86,7 @@ const Dashboard = () => {
           .limit(1)
           .maybeSingle();
 
-        if (clubMember) {
-          setUserClubId(clubMember.club_id);
+        if (clubMember) {          
           setUserRole(clubMember.role);
           setIsCheckingClub(false);
           return;
