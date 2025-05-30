@@ -6,6 +6,7 @@ import { Menu, X, ChevronDown, Settings, User, Users, UserPlus } from "lucide-re
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useClub } from "@/contexts/ClubContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,17 +34,21 @@ const Navbar = () => {
     navigate("/");
   };
 
+const { clubId } = useClub();
+
   // Get current club ID from localStorage for members link
+  /*
   const getCurrentClubId = () => {
     return localStorage.getItem('lastVisitedClub') || '';
   };
-
+  */
   // Navigation items
   const navItems = [
-    { label: "Dashboard", path: "/dashboard", visible: isAuthenticated },
-    { label: "Archive", path: "/matches", visible: isAuthenticated },
-    { label: "Members", path: `/members/${getCurrentClubId()}`, visible: isAuthenticated },
+    { label: "Dashboard", path: `/dashboard/${clubId}`, visible: isAuthenticated },
+    { label: "Archive", path: `/matches/${clubId}`, visible: isAuthenticated },
+    { label: "Members", path: `/members/${clubId}`, visible: isAuthenticated },
   ];
+
 
   // Account dropdown items
   const accountItems = [
