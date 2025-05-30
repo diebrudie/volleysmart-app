@@ -48,6 +48,7 @@ const Clubs = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [clubToDelete, setClubToDelete] = useState<ClubWithDetails | null>(null);
+  const { setClubId } = useClub();
 
   // Query to fetch all clubs user is a member of
   const { data: userClubs, isLoading } = useQuery({
@@ -158,6 +159,7 @@ const Clubs = () => {
   };
 
   const handleClubClick = (clubId: string) => {
+    setClubId(clubId); // set it globally
     localStorage.setItem('lastVisitedClub', clubId);
     navigate(`/dashboard/${clubId}`);
   };
