@@ -1,13 +1,21 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import { Spinner } from "@/components/ui/spinner";
 import { MemberCard } from "@/components/members/MemberCard";
 
 const Members = () => {
-  const { clubId } = useParams();
+  const { clubId } = useClub();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!clubId) {
+      navigate("/clubs");
+    }
+  }, [clubId, navigate]);
 
   // Query to fetch club members
   const { data: members, isLoading } = useQuery({
