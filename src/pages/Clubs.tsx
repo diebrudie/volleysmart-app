@@ -158,6 +158,7 @@ const Clubs = () => {
   };
 
   const handleClubClick = (clubId: string) => {
+    localStorage.setItem('lastVisitedClub', clubId);
     navigate(`/dashboard/${clubId}`);
   };
 
