@@ -76,21 +76,7 @@ const Dashboard = () => {
           navigate('/clubs');
           return;
         }
-
-        // If not a creator, check if user is a member of any club
-        const { data: clubMember, error: memberError } = await supabase
-          .from('club_members')
-          .select('club_id, role')
-          .eq('user_id', user.id)
-          .order('joined_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (clubMember) {          
-          setUserRole(clubMember.role);
-          setIsCheckingClub(false);
-          return;
-        }
+        
 
         // User doesn't belong to any club and hasn't created one
         navigate('/start');
