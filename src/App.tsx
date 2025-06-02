@@ -47,6 +47,7 @@ const HomeRoute = () => {
 
 const App = () => {
   // Initialize storage buckets on app start
+  /*
   useEffect(() => {
     const initStorage = async () => {
       await ensureStorageBucketExists(StorageBuckets.ClubImages);
@@ -54,6 +55,7 @@ const App = () => {
     
     initStorage();
   }, []);
+  */
 
   return (
     <QueryClientProvider client={queryClient}>
