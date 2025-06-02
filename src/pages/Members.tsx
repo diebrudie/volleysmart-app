@@ -68,6 +68,10 @@ const Members = () => {
   }
 
   console.log('clubId from URL:', clubId);
+  // ✅ Log the members array when it's not loading
+  if (!isLoading && members) {
+    console.log("📦 Rendered members list:", members);
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
