@@ -13,6 +13,7 @@ const Members = () => {
 
   useEffect(() => {
     if (!clubId) {
+      console.warn("❌ No clubId provided to members query.");
       navigate("/clubs");
     }
   }, [clubId, navigate]);
@@ -43,7 +44,13 @@ const Members = () => {
           .eq('club_id', clubId)
           .eq('is_active', true);
     
-        if (error) throw error;
+        if (error) {
+          console.error("❌ Supabase error fetching club members:", error);
+          throw error;
+        }
+      
+        console.log("✅ Members data fetched:", data);
+    
         return data;
       },
       enabled: !!clubId,
