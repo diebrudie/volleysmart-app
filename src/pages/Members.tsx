@@ -19,32 +19,35 @@ const Members = () => {
 
   // Query to fetch club members
   const { data: members, isLoading } = useQuery({
-    queryKey: ['clubMembers', clubId],
-    queryFn: async () => {
-      if (!clubId) return [];
+  queryKey: ['clubMembers', clubId],
+  queryFn: async () => {
+    if (!clubId) return [];
 
-      const { data, error } = await supabase
-        .from('players')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          image_url,
-          player_positions (
-            is_primary,
-            positions (
-              name
+    const { data, error } = await supabase
+          .from('club_members')
+          .select(`
+            player_id,
+            players (
+              id,
+              first_name,
+              last_name,
+              image_url,
+              player_positions (
+                is_primary,
+                positions (
+                  name
+                )
+              )
             )
-          )
-        `)
-        .eq('club_id', clubId)
-        .eq('is_active', true);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!clubId,
-  });
+          `)
+          .eq('club_id', clubId)
+          .eq('is_active', true);
+    
+        if (error) throw error;
+        return data;
+      },
+      enabled: !!clubId,
+    });
 
   if (isLoading) {
     return (
@@ -73,9 +76,9 @@ const Members = () => {
           </div>
 
           {/* Members Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">            
             {members?.map((member) => (
-              <MemberCard key={member.id} member={member} />
+              <MemberCard key={member.player_id} member={member.players} />
             ))}
           </div>
 
