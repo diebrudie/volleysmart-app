@@ -72,6 +72,10 @@ const Members = () => {
   if (!isLoading && members) {
     console.log("📦 Rendered members list:", members);
   }
+  
+  console.log("🔍 clubId in Members.tsx:", clubId);
+  console.log("📦 members fetched from Supabase:", members);
+  console.log("🧩 Full member response object:", members);
 
   return (
     <div className="min-h-screen flex flex-col">
