@@ -1,7 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
@@ -9,64 +8,54 @@ import { Spinner } from "@/components/ui/spinner";
 import { MemberCard } from "@/components/members/MemberCard";
 
 const Members = () => {
-  const { clubId: urlClubId } = useParams();
-  const { clubId, setClubId } = useClub();
+  const { clubId } = useClub();
   const navigate = useNavigate();
 
-  // Set clubId from URL parameter
   useEffect(() => {
-    if (urlClubId) {
-      setClubId(urlClubId);
-    }
-  }, [urlClubId, setClubId]);
-
-  useEffect(() => {
-    if (!clubId && !urlClubId) {
+    if (!clubId) {
       console.warn("❌ No clubId provided to members query.");
       navigate("/clubs");
     }
-  }, [clubId, urlClubId, navigate]);
-
-  const activeClubId = clubId || urlClubId;
+  }, [clubId, navigate]);
 
   // Query to fetch club members
   const { data: members, isLoading } = useQuery({
-    queryKey: ['clubMembers', activeClubId],
-    queryFn: async () => {
-      if (!activeClubId) return [];
+  queryKey: ['clubMembers', clubId],
+  queryFn: async () => {
+    if (!clubId) return [];
 
-      const { data, error } = await supabase
-        .from('club_members')
-        .select(`
-          user_id,
-          players (
-            id,
-            first_name,
-            last_name,
-            image_url,
-            player_positions (
-              is_primary,
-              positions (
-                name
+    const { data, error } = await supabase
+          .from('club_members')
+          .select(`
+            player_id,
+            players (
+              id,
+              first_name,
+              last_name,
+              image_url,
+              player_positions (
+                is_primary,
+                positions (
+                  name
+                )
               )
             )
-          )
-        `)
-        .eq('club_id', activeClubId)
-        .eq('is_active', true);
+          `)
+          .eq('club_id', clubId)
+          .eq('is_active', true);
     
-      if (error) {
-        console.error("❌ Supabase error fetching club members:", error);
-        throw error;
-      }
+        if (error) {
+          console.error("❌ Supabase error fetching club members:", error);
+          throw error;
+        }
       
-      console.log("✅ Members data fetched:", data);
-      console.log("📊 Number of members in this club:", data.length);
+        console.log("✅ Members data fetched:", data);
+        console.log("📊 Number of members in this club:", data.length);
     
-      return data;
-    },
-    enabled: !!activeClubId,
-  });
+        return data;
+      },
+      enabled: !!clubId,
+    });
 
   if (isLoading) {
     return (
@@ -79,13 +68,13 @@ const Members = () => {
     );
   }
 
-  console.log('clubId from URL:', activeClubId);
+  console.log('clubId from URL:', clubId);
   // ✅ Log the members array when it's not loading
   if (!isLoading && members) {
     console.log("📦 Rendered members list:", members);
   }
   
-  console.log("🔍 clubId in Members.tsx:", activeClubId);
+  console.log("🔍 clubId in Members.tsx:", clubId);
   console.log("📦 members fetched from Supabase:", members);
   console.log("🧩 Full member response object:", members);
 
@@ -104,23 +93,9 @@ const Members = () => {
 
           {/* Members Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">            
-            {members?.map((member) => {
-              // Type guard to ensure member.players is a valid player object
-              if (
-                member.players && 
-                member.players !== null &&
-                typeof member.players === 'object' && 
-                !('error' in member.players) &&
-                'id' in member.players &&
-                'first_name' in member.players &&
-                'last_name' in member.players
-              ) {
-                return (
-                  <MemberCard key={member.user_id} member={member.players} />
-                );
-              }
-              return null;
-            })}
+            {members?.map((member) => (
+              <MemberCard key={member.player_id} member={member.players} />
+            ))}
           </div>
 
           {/* Empty state */}

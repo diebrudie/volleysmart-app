@@ -13,7 +13,6 @@ export type Database = {
         Row: {
           club_id: string | null
           id: string
-          is_active: boolean
           joined_at: string | null
           role: string
           user_id: string | null
@@ -21,7 +20,6 @@ export type Database = {
         Insert: {
           club_id?: string | null
           id?: string
-          is_active?: boolean
           joined_at?: string | null
           role?: string
           user_id?: string | null
@@ -29,7 +27,6 @@ export type Database = {
         Update: {
           club_id?: string | null
           id?: string
-          is_active?: boolean
           joined_at?: string | null
           role?: string
           user_id?: string | null
@@ -225,7 +222,7 @@ export type Database = {
           last_name: string
           member_association: boolean
           skill_rating: number | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           bio?: string | null
@@ -239,7 +236,7 @@ export type Database = {
           last_name: string
           member_association: boolean
           skill_rating?: number | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           bio?: string | null
@@ -253,7 +250,7 @@ export type Database = {
           last_name?: string
           member_association?: boolean
           skill_rating?: number | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
