@@ -10,8 +10,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { Spinner } from "@/components/ui/spinner";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -21,7 +19,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const { login, isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,13 +28,13 @@ const Login = () => {
   // Get the intended destination from location state, or default to start
   const from = location.state?.from?.pathname || "/start";
 
-  // Simplified redirect logic - just check if authenticated and redirect
+  // Redirect authenticated users
   useEffect(() => {
-    if (isAuthenticated && !authLoading && user) {
+    if (isAuthenticated && !authLoading) {
       console.log('User is authenticated, redirecting to:', from);
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, authLoading, navigate, from, user]);
+  }, [isAuthenticated, authLoading, navigate, from]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -51,11 +49,10 @@ const Login = () => {
     try {
       console.log('Attempting login for:', data.email);
       await login(data.email, data.password);
-      console.log('Login successful, redirection will happen in useEffect');
-      // The redirection will happen automatically in the useEffect hook
+      // Navigation will happen in useEffect once auth state updates
     } catch (error) {
       console.error("Login error:", error);
-      // Toast is already shown in the login function
+      // Toast is shown in the login function
     } finally {
       setIsLoading(false);
     }

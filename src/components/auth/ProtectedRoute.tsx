@@ -27,36 +27,47 @@ const ProtectedRoute = ({
 
   // Check if user has completed onboarding (has a player profile)
   useEffect(() => {
-    if (isAuthenticated && user && (requiresOnboarding || requiresCompletedOnboarding) && location.pathname !== '/players/onboarding') {
+    const checkOnboarding = async () => {
+      if (!isAuthenticated || !user) {
+        setHasCompletedOnboarding(null);
+        return;
+      }
+
+      // Skip onboarding check for the onboarding page itself
+      if (location.pathname === '/players/onboarding') {
+        setHasCompletedOnboarding(true);
+        return;
+      }
+
+      // Skip onboarding check if not required
+      if (!requiresOnboarding && !requiresCompletedOnboarding) {
+        setHasCompletedOnboarding(true);
+        return;
+      }
+
       setIsCheckingOnboarding(true);
       
-      const checkOnboarding = async () => {
-        try {
-          const { data: player, error } = await supabase
-            .from('players')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
+      try {
+        const { data: player, error } = await supabase
+          .from('players')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
 
-          console.log('Onboarding check result:', { player, error });
-          setHasCompletedOnboarding(!error && !!player);
-        } catch (error) {
-          console.error('Error checking onboarding status:', error);
-          setHasCompletedOnboarding(false);
-        } finally {
-          setIsCheckingOnboarding(false);
-        }
-      };
+        console.log('Onboarding check result:', { player, error });
+        setHasCompletedOnboarding(!error && !!player);
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        setHasCompletedOnboarding(false);
+      } finally {
+        setIsCheckingOnboarding(false);
+      }
+    };
 
-      checkOnboarding();
-    } else if (!requiresOnboarding && !requiresCompletedOnboarding) {
-      setHasCompletedOnboarding(true);
-    } else if (location.pathname === '/players/onboarding') {
-      setHasCompletedOnboarding(true);
-    }
+    checkOnboarding();
   }, [isAuthenticated, user, requiresOnboarding, requiresCompletedOnboarding, location.pathname]);
 
-  // Show loading spinner while checking auth state
+  // Show loading spinner while checking auth state or onboarding
   if (isLoading || isCheckingOnboarding) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -72,7 +83,7 @@ const ProtectedRoute = ({
   }
 
   // If onboarding is required and user hasn't completed it, redirect to onboarding
-  if (requiresOnboarding && hasCompletedOnboarding === false && location.pathname !== '/players/onboarding') {
+  if (requiresOnboarding && hasCompletedOnboarding === false) {
     console.log('Redirecting to onboarding - user has not completed player profile');
     return <Navigate to="/players/onboarding" replace />;
   }

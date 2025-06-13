@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClub } from "@/contexts/ClubContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, ChevronDown } from "lucide-react";
 import Logo from "@/components/common/Logo";
 import {
   DropdownMenu,
@@ -53,6 +53,10 @@ const Navbar = () => {
     }
   };
 
+  const handleCreateGameClick = () => {
+    navigate('/new-game');
+  };
+
   const handleProfileClick = () => {
     navigate('/profile');
   };
@@ -70,46 +74,57 @@ const Navbar = () => {
             <Logo size="md" />
           </div>
 
-          {/* Three buttons in the middle */}
-          {user && clubId && (
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={handleDashboardClick}
-                className="text-gray-700 hover:text-gray-900"
-              >
-                Dashboard
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={handleArchiveClick}
-                className="text-gray-700 hover:text-gray-900"
-              >
-                Archive
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={handleMembersClick}
-                className="text-gray-700 hover:text-gray-900"
-              >
-                Members
-              </Button>
-            </div>
-          )}
+          {/* Navigation buttons in the center */}
+          <div className="flex items-center space-x-8">
+            {user && clubId && (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={handleDashboardClick}
+                  className="text-gray-700 hover:text-gray-900 font-medium"
+                >
+                  Dashboard
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleArchiveClick}
+                  className="text-gray-700 hover:text-gray-900 font-medium"
+                >
+                  Archive
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleMembersClick}
+                  className="text-gray-700 hover:text-gray-900 font-medium"
+                >
+                  Members
+                </Button>
+              </>
+            )}
+          </div>
 
-          {/* Profile circle on the right */}
-          <div className="flex items-center">
+          {/* Right side with Create Game button and Profile dropdown */}
+          <div className="flex items-center space-x-4">
+            {user && clubId && (
+              <Button
+                onClick={handleCreateGameClick}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
+              >
+                Create Game
+              </Button>
+            )}
+            
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                      <User className="h-4 w-4" />
-                    </div>
+                  <Button variant="ghost" className="flex items-center space-x-1 text-gray-700">
+                    <span className="font-medium">N</span>
+                    <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleProfileClick}>
+                    <User className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleClubsClick}>
