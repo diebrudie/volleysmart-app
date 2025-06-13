@@ -15,6 +15,7 @@ import { getPublicUrl } from '@/integrations/supabase/storage';
 import { addClubAdmin } from '@/integrations/supabase/club';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { useClub } from "@/contexts/ClubContext";
 
 interface NewClubFormData {
   name: string;
@@ -59,6 +60,8 @@ const NewClub = () => {
     reader.readAsDataURL(file);
   };
 
+  const { setClubId } = useClub();
+  
   const uploadImage = async (file: File): Promise<string | null> => {
     try {          
       // Generate unique filename to avoid collisions
@@ -152,6 +155,8 @@ const NewClub = () => {
         });
         
         // Navigate to invite members page with club id as parameter
+        setClubId(clubData.id); // ✅ Context
+        localStorage.setItem('lastVisitedClub', clubData.id); // ✅ Fallback on reload
         navigate(`/invite-members/${clubData.id}`);
       } catch (adminError: any) {
         console.error('Error adding user as admin:', adminError);
@@ -163,6 +168,8 @@ const NewClub = () => {
           description: "Your club was created successfully. You can proceed as the club creator."
         });
         
+        setClubId(clubData.id); // ✅ Context
+        localStorage.setItem('lastVisitedClub', clubData.id); // ✅ Fallback on reload
         navigate(`/invite-members/${clubData.id}`);
       }
     } catch (error: any) {
