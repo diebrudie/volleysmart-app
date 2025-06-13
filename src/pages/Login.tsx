@@ -33,7 +33,7 @@ const Login = () => {
 
   // Redirect if already authenticated, check if user needs onboarding first
   useEffect(() => {
-    if (isAuthenticated && !authLoading && user) {
+    if (isAuthenticated && !authLoading && user && !isCheckingProfile) {
       console.log('User is authenticated, checking profile for redirect:', user);
       setIsCheckingProfile(true);
       
@@ -52,48 +52,49 @@ const Login = () => {
             // User hasn't completed onboarding, redirect to onboarding
             console.log('Redirecting to onboarding');
             navigate('/players/onboarding', { replace: true });
+            return;
+          }
+
+          // User has completed onboarding, check club membership count
+          const { data: clubMembers, error: clubError } = await supabase
+            .from('club_members')
+            .select('club_id')
+            .eq('user_id', user.id);
+
+          console.log('Club membership check result:', { clubMembers, clubError });
+
+          if (clubError) {
+            console.error('Error checking club membership:', clubError);
+            // Default to start page on error
+            navigate('/start', { replace: true });
+            return;
+          }
+
+          if (!clubMembers || clubMembers.length === 0) {
+            // User doesn't belong to any club, redirect to join club page
+            console.log('No club membership, redirecting to join club');
+            navigate('/join-club', { replace: true });
+          } else if (clubMembers.length === 1) {
+            // User belongs to exactly one club, redirect to that club's dashboard
+            console.log('Single club membership, redirecting to dashboard:', clubMembers[0].club_id);
+            navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
           } else {
-            // User has completed onboarding, check club membership count
-            const { data: clubMembers, error: clubError } = await supabase
-              .from('club_members')
-              .select('club_id')
-              .eq('user_id', user.id);
-
-            console.log('Club membership check result:', { clubMembers, clubError });
-
-            if (clubError) {
-              console.error('Error checking club membership:', clubError);
-              // Default to start page on error
-              navigate('/start', { replace: true });
-              return;
-            }
-
-            if (!clubMembers || clubMembers.length === 0) {
-              // User doesn't belong to any club, redirect to start page
-              console.log('No club membership, redirecting to start');
-              navigate('/start', { replace: true });
-            } else if (clubMembers.length === 1) {
-              // User belongs to exactly one club, redirect to that club's dashboard
-              console.log('Single club membership, redirecting to dashboard:', clubMembers[0].club_id);
-              navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
+            // User belongs to multiple clubs, check for last visited club
+            const lastVisitedClubId = localStorage.getItem('lastVisitedClub');
+            console.log('Multiple clubs, last visited:', lastVisitedClubId);
+            
+            // Verify the last visited club is still in user's club list
+            const isLastClubValid = lastVisitedClubId && 
+              clubMembers.some(member => member.club_id === lastVisitedClubId);
+            
+            if (isLastClubValid) {
+              // Redirect to last visited club dashboard
+              console.log('Redirecting to last visited club:', lastVisitedClubId);
+              navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
             } else {
-              // User belongs to multiple clubs, check for last visited club
-              const lastVisitedClubId = localStorage.getItem('lastVisitedClub');
-              console.log('Multiple clubs, last visited:', lastVisitedClubId);
-              
-              // Verify the last visited club is still in user's club list
-              const isLastClubValid = lastVisitedClubId && 
-                clubMembers.some(member => member.club_id === lastVisitedClubId);
-              
-              if (isLastClubValid) {
-                // Redirect to last visited club dashboard
-                console.log('Redirecting to last visited club:', lastVisitedClubId);
-                navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
-              } else {
-                // No valid last visited club, redirect to clubs overview page
-                console.log('No valid last club, redirecting to clubs overview');
-                navigate('/clubs', { replace: true });
-              }
+              // No valid last visited club, redirect to clubs overview page
+              console.log('No valid last club, redirecting to clubs overview');
+              navigate('/clubs', { replace: true });
             }
           }
         } catch (error) {
@@ -107,7 +108,7 @@ const Login = () => {
       
       checkUserProfile();
     }
-  }, [isAuthenticated, authLoading, navigate, from, user]);
+  }, [isAuthenticated, authLoading, navigate, user, isCheckingProfile]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

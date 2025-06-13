@@ -109,6 +109,7 @@ const Members = () => {
               if (
                 member.players && 
                 typeof member.players === 'object' && 
+                !('error' in member.players) &&
                 'id' in member.players &&
                 'first_name' in member.players &&
                 'last_name' in member.players
