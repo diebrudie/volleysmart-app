@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { MemberCard } from "@/components/members/MemberCard";
 
 const Members = () => {
+  console.log("🚨 MEMBERS COMPONENT IS RENDERING!");
   const { clubId } = useClub();
   const navigate = useNavigate();
 
