@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClub } from "@/contexts/ClubContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, ChevronDown } from "lucide-react";
+import { LogOut, User, ChevronDown, Settings, Users } from "lucide-react";
 import Logo from "@/components/common/Logo";
 import {
   DropdownMenu,
@@ -65,6 +65,11 @@ const Navbar = () => {
     navigate('/clubs');
   };
 
+  const handleSettingsClick = () => {
+    // Navigate to settings page when implemented
+    console.log('Settings clicked');
+  };
+
   return (
     <nav className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -108,7 +113,7 @@ const Navbar = () => {
             {user && clubId && (
               <Button
                 onClick={handleCreateGameClick}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
+                className="bg-[#243F8D] hover:bg-[#1e3575] text-white px-4 py-2 rounded-md font-medium"
               >
                 Create Game
               </Button>
@@ -128,12 +133,17 @@ const Navbar = () => {
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleClubsClick}>
+                    <Users className="mr-2 h-4 w-4" />
                     Clubs
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSettingsClick}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    Logout
+                    Log Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
