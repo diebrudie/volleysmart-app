@@ -20,9 +20,11 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
   const [clubId, setClubIdState] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("lastVisitedClub");
-    if (stored) setClubIdState(stored);
-  }, []);
+    if (!clubId) {
+      const stored = localStorage.getItem("lastVisitedClub");
+      if (stored) setClubIdState(stored);
+    }
+  }, [clubId]);
 
   const setClubId = (id: string) => {
     localStorage.setItem("lastVisitedClub", id);
