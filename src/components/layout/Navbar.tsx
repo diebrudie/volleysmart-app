@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClub } from "@/contexts/ClubContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu, Users, Calendar } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import Logo from "@/components/common/Logo";
 import {
   DropdownMenu,
@@ -35,63 +35,93 @@ const Navbar = () => {
     }
   };
 
+  const handleDashboardClick = () => {
+    if (clubId) {
+      navigate(`/dashboard/${clubId}`);
+    }
+  };
+
+  const handleArchiveClick = () => {
+    if (clubId) {
+      navigate(`/matches/${clubId}`);
+    }
+  };
+
   const handleMembersClick = () => {
     if (clubId) {
       navigate(`/members/${clubId}`);
     }
   };
 
-  const handleMatchesClick = () => {
-    navigate('/matches');
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
+  const handleClubsClick = () => {
+    navigate('/clubs');
   };
 
   return (
     <nav className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo on the left */}
           <div className="flex items-center">
             <Logo size="md" />
           </div>
 
-          <div className="flex items-center space-x-4">
+          {/* Three buttons in the middle */}
+          {user && clubId && (
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                onClick={handleDashboardClick}
+                className="text-gray-700 hover:text-gray-900"
+              >
+                Dashboard
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleArchiveClick}
+                className="text-gray-700 hover:text-gray-900"
+              >
+                Archive
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleMembersClick}
+                className="text-gray-700 hover:text-gray-900"
+              >
+                Members
+              </Button>
+            </div>
+          )}
+
+          {/* Profile circle on the right */}
+          <div className="flex items-center">
             {user && (
-              <>
-                <Button
-                  variant="ghost"
-                  onClick={handleMembersClick}
-                  className="flex items-center space-x-2"
-                >
-                  <Users className="h-4 w-4" />
-                  <span>Members</span>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  onClick={handleMatchesClick}
-                  className="flex items-center space-x-2"
-                >
-                  <Calendar className="h-4 w-4" />
-                  <span>Matches</span>
-                </Button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <Menu className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <span className="font-medium">{user.name}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                      <User className="h-4 w-4" />
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleProfileClick}>
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleClubsClick}>
+                    Clubs
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
