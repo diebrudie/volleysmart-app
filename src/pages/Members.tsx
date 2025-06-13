@@ -50,11 +50,12 @@ const Members = () => {
         role,
         is_active,
         joined_at,
-        players!inner(
+        players!club_members_user_id_fkey(
           id,
           first_name,
           last_name,
           image_url,
+          user_id,
           player_positions (
             is_primary,
             positions (
@@ -64,8 +65,7 @@ const Members = () => {
         )
       `)
       .eq('club_id', clubId)
-      .eq('is_active', true)
-      .eq('players.user_id', 'club_members.user_id'); // Join condition
+      .eq('is_active', true);
 
     if (error) {
       console.error("❌ Supabase error fetching club members:", error);
