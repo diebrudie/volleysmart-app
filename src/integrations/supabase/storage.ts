@@ -1,4 +1,9 @@
+
 import { supabase } from './client';
+
+export enum StorageBuckets {
+  ClubImages = 'club-images'
+}
 
 /**
  * Ensures the storage bucket exists, logs a warning if not
