@@ -19,22 +19,20 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get the intended destination from location state, or default to start
-  const from = location.state?.from?.pathname || "/start";
-
-  // Redirect authenticated users
+  // Redirect authenticated users immediately
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      console.log('User is authenticated, redirecting to:', from);
+    if (isAuthenticated) {
+      const from = location.state?.from?.pathname || "/start";
+      console.log('User authenticated, redirecting to:', from);
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, authLoading, navigate, from]);
+  }, [isAuthenticated, navigate, location.state]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -49,7 +47,7 @@ const Login = () => {
     try {
       console.log('Attempting login for:', data.email);
       await login(data.email, data.password);
-      // Navigation will happen in useEffect once auth state updates
+      // The useEffect above will handle navigation once isAuthenticated becomes true
     } catch (error) {
       console.error("Login error:", error);
       // Toast is shown in the login function
@@ -57,6 +55,11 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  // Don't render anything if user is already authenticated (prevents flash)
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <AuthLayout>

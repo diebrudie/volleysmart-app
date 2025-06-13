@@ -54,7 +54,7 @@ const ProtectedRoute = ({
           .eq('user_id', user.id)
           .single();
 
-        console.log('Onboarding check result:', { player, error });
+        console.log('Onboarding check result:', { player, error, hasPlayer: !error && !!player });
         setHasCompletedOnboarding(!error && !!player);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
@@ -79,6 +79,7 @@ const ProtectedRoute = ({
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
+    console.log('Not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -99,12 +100,13 @@ const ProtectedRoute = ({
     const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
     
     if (!hasRequiredRole) {
-      // Redirect to start page if user doesn't have required role
+      console.log('User does not have required role, redirecting to start');
       return <Navigate to="/start" replace />;
     }
   }
 
   // If they're authenticated and have the required role (if specified), render the children
+  console.log('All checks passed, rendering protected content');
   return <>{children}</>;
 };
 
