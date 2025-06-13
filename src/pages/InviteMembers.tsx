@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -16,8 +16,7 @@ interface MemberInvite {
 
 const InviteMembers = () => {
   const [invites, setInvites] = useState<MemberInvite[]>([{ name: '', email: '' }]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { clubId } = useParams();
+  const [isSubmitting, setIsSubmitting] = useState(false);  
   const { toast } = useToast();
   const { setClubId } = useClub();
   const navigate = useNavigate();
