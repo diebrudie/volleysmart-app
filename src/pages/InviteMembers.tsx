@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Spinner } from '@/components/ui/spinner';
+import { useClub } from "@/contexts/ClubContext";
 
 interface MemberInvite {
   name: string;
@@ -18,8 +19,8 @@ const InviteMembers = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { clubId } = useParams();
   const { toast } = useToast();
+  const { setClubId } = useClub();
   const navigate = useNavigate();
-
   const handleAddInvite = () => {
     if (invites.length < 6) {
       setInvites([...invites, { name: '', email: '' }]);
@@ -46,7 +47,11 @@ const InviteMembers = () => {
   };
 
   const handleSkip = () => {
-    navigate('/dashboard');
+    if (clubId) {
+      navigate(`/dashboard/${clubId}`);
+    } else {
+      navigate('/clubs'); // fallback
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,7 +112,11 @@ const InviteMembers = () => {
       });
       
       // Navigate to dashboard
-      navigate('/dashboard');
+      if (clubId) {
+        navigate(`/dashboard/${clubId}`);
+      } else {
+        navigate('/clubs'); // fallback
+      }
       
     } catch (error: any) {
       console.error('Error sending invitations:', error);
