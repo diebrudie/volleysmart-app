@@ -104,11 +104,21 @@ const Members = () => {
 
           {/* Members Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">            
-            {members?.map((member) => (
-              member.players && (
-                <MemberCard key={member.user_id} member={member.players} />
-              )
-            ))}
+            {members?.map((member) => {
+              // Type guard to ensure member.players is a valid player object
+              if (
+                member.players && 
+                typeof member.players === 'object' && 
+                'id' in member.players &&
+                'first_name' in member.players &&
+                'last_name' in member.players
+              ) {
+                return (
+                  <MemberCard key={member.user_id} member={member.players} />
+                );
+              }
+              return null;
+            })}
           </div>
 
           {/* Empty state */}
