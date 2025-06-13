@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -18,8 +18,13 @@ const InviteMembers = () => {
   const [invites, setInvites] = useState<MemberInvite[]>([{ name: '', email: '' }]);
   const [isSubmitting, setIsSubmitting] = useState(false);  
   const { toast } = useToast();
-  const { setClubId } = useClub();
+  const { clubId, setClubId } = useClub();
+  const { clubId: urlClubId } = useParams();
   const navigate = useNavigate();
+  
+  // Use clubId from URL params or context
+  const activeClubId = clubId || urlClubId;
+
   const handleAddInvite = () => {
     if (invites.length < 6) {
       setInvites([...invites, { name: '', email: '' }]);
@@ -46,8 +51,8 @@ const InviteMembers = () => {
   };
 
   const handleSkip = () => {
-    if (clubId) {
-      navigate(`/dashboard/${clubId}`);
+    if (activeClubId) {
+      navigate(`/dashboard/${activeClubId}`);
     } else {
       navigate('/clubs'); // fallback
     }
@@ -72,7 +77,7 @@ const InviteMembers = () => {
       const { data: clubData, error: clubError } = await supabase
         .from('clubs')
         .select('name, slug')
-        .eq('id', clubId)
+        .eq('id', activeClubId)
         .single();
       
       if (clubError) throw clubError;
@@ -87,7 +92,7 @@ const InviteMembers = () => {
         body: JSON.stringify({
           invites: validInvites,
           clubInfo: {
-            id: clubId,
+            id: activeClubId,
             name: clubData.name,
             joinCode: clubData.slug
           }
@@ -111,8 +116,8 @@ const InviteMembers = () => {
       });
       
       // Navigate to dashboard
-      if (clubId) {
-        navigate(`/dashboard/${clubId}`);
+      if (activeClubId) {
+        navigate(`/dashboard/${activeClubId}`);
       } else {
         navigate('/clubs'); // fallback
       }
