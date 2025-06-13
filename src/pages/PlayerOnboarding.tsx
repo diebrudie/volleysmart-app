@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
-import { createPlayer } from '@/integrations/supabase/players';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Position {
@@ -60,6 +60,29 @@ const PlayerOnboarding = () => {
     }
   };
 
+  const createPlayer = async (playerData: {
+    first_name: string;
+    last_name: string;
+    gender: string;
+    birthday?: string;
+    skill_rating?: number;
+    member_association: boolean;
+    user_id: string;
+  }) => {
+    const { data, error } = await supabase
+      .from('players')
+      .insert(playerData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating player:', error);
+      throw error;
+    }
+
+    return data;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -80,25 +103,47 @@ const PlayerOnboarding = () => {
 
     setIsSubmitting(true);
     try {
-      await createPlayer(user.id, {
+      const player = await createPlayer({
         first_name: firstName,
         last_name: lastName,
         skill_rating: skillRating[0],
-        primary_position: primaryPosition,
-        secondary_positions: secondaryPositions,
         member_association: memberAssociation,
         gender,
         birthday: birthday || undefined,
+        user_id: user.id,
       });
+
+      // Create player positions
+      if (primaryPosition) {
+        await supabase
+          .from('player_positions')
+          .insert({
+            player_id: player.id,
+            position_id: primaryPosition,
+            is_primary: true
+          });
+      }
+
+      // Add secondary positions
+      if (secondaryPositions.length > 0) {
+        const secondaryPositionInserts = secondaryPositions.map(positionId => ({
+          player_id: player.id,
+          position_id: positionId,
+          is_primary: false
+        }));
+        
+        await supabase
+          .from('player_positions')
+          .insert(secondaryPositionInserts);
+      }
 
       toast({
         title: "Success",
         description: "Player profile created successfully!",
       });
 
-      // Force a page reload after navigation to ensure the ProtectedRoute re-checks onboarding status
+      // Navigate to start page after successful onboarding
       navigate('/start', { replace: true });
-      //window.location.reload();
     } catch (error) {
       console.error('Error creating player:', error);
       toast({
