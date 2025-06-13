@@ -50,6 +50,7 @@ const Members = () => {
         }
       
         console.log("✅ Members data fetched:", data);
+        console.log("📊 Number of members in this club:", data.length);
     
         return data;
       },
