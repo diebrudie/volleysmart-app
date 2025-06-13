@@ -117,9 +117,9 @@ const Members = () => {
           </div>
 
           {/* Members Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">            
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">            
             {members?.map((member) => (
-              <MemberCard key={member.player_id} member={member.players} />
+              <MemberCard key={member.user_id} member={member.players} />
             ))}
           </div>
 
