@@ -24,7 +24,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const hasFetchedProfile = useRef(false);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -39,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const hasFetchedProfile = useRef(false);
 
   // Initialize auth state
   useEffect(() => {

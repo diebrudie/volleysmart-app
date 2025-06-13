@@ -8,8 +8,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
-import { ensureStorageBucketExists, StorageBuckets } from "@/integrations/supabase/storage";
 import { ClubProvider } from "@/contexts/ClubContext";
 
 // Pages
@@ -46,17 +44,6 @@ const HomeRoute = () => {
 };
 
 const App = () => {
-  // Initialize storage buckets on app start
-  /*
-  useEffect(() => {
-    const initStorage = async () => {
-      await ensureStorageBucketExists(StorageBuckets.ClubImages);
-    };
-    
-    initStorage();
-  }, []);
-  */
-
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
