@@ -38,6 +38,7 @@ const ProtectedRoute = ({
             .eq('user_id', user.id)
             .single();
 
+          console.log('Onboarding check result:', { player, error });
           setHasCompletedOnboarding(!error && !!player);
         } catch (error) {
           console.error('Error checking onboarding status:', error);
@@ -72,11 +73,13 @@ const ProtectedRoute = ({
 
   // If onboarding is required and user hasn't completed it, redirect to onboarding
   if (requiresOnboarding && hasCompletedOnboarding === false && location.pathname !== '/players/onboarding') {
+    console.log('Redirecting to onboarding - user has not completed player profile');
     return <Navigate to="/players/onboarding" replace />;
   }
 
   // If completed onboarding is required but user hasn't completed it, redirect to onboarding
   if (requiresCompletedOnboarding && hasCompletedOnboarding === false) {
+    console.log('Redirecting to onboarding - completed onboarding required');
     return <Navigate to="/players/onboarding" replace />;
   }
 
@@ -85,8 +88,8 @@ const ProtectedRoute = ({
     const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
     
     if (!hasRequiredRole) {
-      // Redirect to dashboard if user doesn't have required role
-      return <Navigate to="/dashboard" replace />;
+      // Redirect to start page if user doesn't have required role
+      return <Navigate to="/start" replace />;
     }
   }
 

@@ -26,86 +26,15 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingProfile, setIsCheckingProfile] = useState(false);
 
-  // Get the intended destination from location state, or default to dashboard
-  const from = location.state?.from?.pathname || "/dashboard";
+  // Get the intended destination from location state, or default to start
+  const from = location.state?.from?.pathname || "/start";
 
-  // Redirect if already authenticated, check if user needs onboarding first
+  // Simplified redirect logic - just check if authenticated and redirect
   useEffect(() => {
     if (isAuthenticated && !authLoading && user) {
-      console.log('User is authenticated, checking profile for redirect:', user);
-      setIsCheckingProfile(true);
-      
-      // Check if user has completed player profile (onboarding)
-      const checkUserProfile = async () => {
-        try {
-          const { data: player, error } = await supabase
-            .from('players')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
-
-          console.log('Player profile check result:', { player, error });
-
-          if (error || !player) {
-            // User hasn't completed onboarding, redirect to onboarding
-            console.log('Redirecting to onboarding');
-            navigate('/players/onboarding', { replace: true });
-          } else {
-            // User has completed onboarding, check club membership count
-            const { data: clubMembers, error: clubError } = await supabase
-              .from('club_members')
-              .select('club_id')
-              .eq('user_id', user.id);
-
-            console.log('Club membership check result:', { clubMembers, clubError });
-
-            if (clubError) {
-              console.error('Error checking club membership:', clubError);
-              // Default to start page on error
-              navigate('/start', { replace: true });
-              return;
-            }
-
-            if (!clubMembers || clubMembers.length === 0) {
-              // User doesn't belong to any club, redirect to start page
-              console.log('No club membership, redirecting to start');
-              navigate('/start', { replace: true });
-            } else if (clubMembers.length === 1) {
-              // User belongs to exactly one club, redirect to that club's dashboard
-              console.log('Single club membership, redirecting to dashboard:', clubMembers[0].club_id);
-              navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
-            } else {
-              // User belongs to multiple clubs, check for last visited club
-              const lastVisitedClubId = localStorage.getItem('lastVisitedClub');
-              console.log('Multiple clubs, last visited:', lastVisitedClubId);
-              
-              // Verify the last visited club is still in user's club list
-              const isLastClubValid = lastVisitedClubId && 
-                clubMembers.some(member => member.club_id === lastVisitedClubId);
-              
-              if (isLastClubValid) {
-                // Redirect to last visited club dashboard
-                console.log('Redirecting to last visited club:', lastVisitedClubId);
-                navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
-              } else {
-                // No valid last visited club, redirect to clubs overview page
-                console.log('No valid last club, redirecting to clubs overview');
-                navigate('/clubs', { replace: true });
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Error checking user profile:', error);
-          // Default to onboarding on error to be safe
-          navigate('/players/onboarding', { replace: true });
-        } finally {
-          setIsCheckingProfile(false);
-        }
-      };
-      
-      checkUserProfile();
+      console.log('User is authenticated, redirecting to:', from);
+      navigate(from, { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate, from, user]);
 
@@ -131,18 +60,6 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-
-  // Show loading state while checking profile
-  if (isCheckingProfile) {
-    return (
-      <AuthLayout>
-        <div className="flex items-center justify-center p-8">
-          <Spinner className="h-8 w-8" />
-          <span className="ml-2">Checking profile...</span>
-        </div>
-      </AuthLayout>
-    );
-  }
 
   return (
     <AuthLayout>
