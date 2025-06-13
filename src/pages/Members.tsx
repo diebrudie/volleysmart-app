@@ -108,6 +108,7 @@ const Members = () => {
               // Type guard to ensure member.players is a valid player object
               if (
                 member.players && 
+                member.players !== null &&
                 typeof member.players === 'object' && 
                 !('error' in member.players) &&
                 'id' in member.players &&
