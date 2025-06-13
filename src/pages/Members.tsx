@@ -24,59 +24,62 @@ const Members = () => {
 
   // Query to fetch club members
   const { data: members, isLoading, error } = useQuery({
-    queryKey: ['clubMembers', clubId],
-    queryFn: async () => {
-      if (!clubId) {
-        console.log("❌ No clubId in queryFn");
-        return [];
-      }
+  queryKey: ['clubMembers', clubId],
+  queryFn: async () => {
+    if (!clubId) {
+      console.log("❌ No clubId in queryFn");
+      return [];
+    }
 
-      console.log("🚀 Starting query for clubId:", clubId);
-      
-      // First, let's check if there are ANY club_members for this club
-      const { data: allMembers, error: allMembersError } = await supabase
-        .from('club_members')
-        .select('*')
-        .eq('club_id', clubId);
-      
-      console.log("📊 All club_members for this club:", allMembers);
-      console.log("📊 All members count:", allMembers?.length);
+    console.log("🚀 Starting query for clubId:", clubId);
+    
+    // First, let's check if there are ANY club_members for this club
+    const { data: allMembers, error: allMembersError } = await supabase
+      .from('club_members')
+      .select('*')
+      .eq('club_id', clubId);
+    
+    console.log("📊 All club_members for this club:", allMembers);
+    console.log("📊 All members count:", allMembers?.length);
 
-      // Now the original query
-      const { data, error } = await supabase
-        .from('club_members')
-        .select(`
-          player_id,
-          is_active,
-          players (
-            id,
-            first_name,
-            last_name,
-            image_url,
-            player_positions (
-              is_primary,
-              positions (
-                name
-              )
+    // Corrected query - using user_id and joining to players table properly
+    const { data, error } = await supabase
+      .from('club_members')
+      .select(`
+        user_id,
+        role,
+        is_active,
+        joined_at,
+        players!inner(
+          id,
+          first_name,
+          last_name,
+          image_url,
+          player_positions (
+            is_primary,
+            positions (
+              name
             )
           )
-        `)
-        .eq('club_id', clubId)
-        .eq('is_active', true);
+        )
+      `)
+      .eq('club_id', clubId)
+      .eq('is_active', true)
+      .eq('players.user_id', 'club_members.user_id'); // Join condition
 
-      if (error) {
-        console.error("❌ Supabase error fetching club members:", error);
-        throw error;
-      }
+    if (error) {
+      console.error("❌ Supabase error fetching club members:", error);
+      throw error;
+    }
 
-      console.log("✅ Final members data fetched:", data);
-      console.log("📊 Active members count:", data?.length);
-      console.log("📊 Raw response:", JSON.stringify(data, null, 2));
+    console.log("✅ Final members data fetched:", data);
+    console.log("📊 Active members count:", data?.length);
+    console.log("📊 Raw response:", JSON.stringify(data, null, 2));
 
-      return data;
-    },
-    enabled: !!clubId,
-  });
+    return data;
+  },
+  enabled: !!clubId,
+});
 
   if (error) {
     console.error("❌ Query error:", error);
