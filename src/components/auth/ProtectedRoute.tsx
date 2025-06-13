@@ -27,47 +27,35 @@ const ProtectedRoute = ({
 
   // Check if user has completed onboarding (has a player profile)
   useEffect(() => {
-    const checkOnboarding = async () => {
-      if (!isAuthenticated || !user) {
-        setHasCompletedOnboarding(null);
-        return;
-      }
-
-      // Skip onboarding check for the onboarding page itself
-      if (location.pathname === '/players/onboarding') {
-        setHasCompletedOnboarding(true);
-        return;
-      }
-
-      // Skip onboarding check if not required
-      if (!requiresOnboarding && !requiresCompletedOnboarding) {
-        setHasCompletedOnboarding(true);
-        return;
-      }
-
+    if (isAuthenticated && user && (requiresOnboarding || requiresCompletedOnboarding) && location.pathname !== '/players/onboarding') {
       setIsCheckingOnboarding(true);
       
-      try {
-        const { data: player, error } = await supabase
-          .from('players')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
+      const checkOnboarding = async () => {
+        try {
+          const { data: player, error } = await supabase
+            .from('players')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
 
-        console.log('Onboarding check result:', { player, error, hasPlayer: !error && !!player });
-        setHasCompletedOnboarding(!error && !!player);
-      } catch (error) {
-        console.error('Error checking onboarding status:', error);
-        setHasCompletedOnboarding(false);
-      } finally {
-        setIsCheckingOnboarding(false);
-      }
-    };
+          setHasCompletedOnboarding(!error && !!player);
+        } catch (error) {
+          console.error('Error checking onboarding status:', error);
+          setHasCompletedOnboarding(false);
+        } finally {
+          setIsCheckingOnboarding(false);
+        }
+      };
 
-    checkOnboarding();
+      checkOnboarding();
+    } else if (!requiresOnboarding && !requiresCompletedOnboarding) {
+      setHasCompletedOnboarding(true);
+    } else if (location.pathname === '/players/onboarding') {
+      setHasCompletedOnboarding(true);
+    }
   }, [isAuthenticated, user, requiresOnboarding, requiresCompletedOnboarding, location.pathname]);
 
-  // Show loading spinner while checking auth state or onboarding
+  // Show loading spinner while checking auth state
   if (isLoading || isCheckingOnboarding) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -79,19 +67,16 @@ const ProtectedRoute = ({
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    console.log('Not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // If onboarding is required and user hasn't completed it, redirect to onboarding
-  if (requiresOnboarding && hasCompletedOnboarding === false) {
-    console.log('Redirecting to onboarding - user has not completed player profile');
+  if (requiresOnboarding && hasCompletedOnboarding === false && location.pathname !== '/players/onboarding') {
     return <Navigate to="/players/onboarding" replace />;
   }
 
   // If completed onboarding is required but user hasn't completed it, redirect to onboarding
   if (requiresCompletedOnboarding && hasCompletedOnboarding === false) {
-    console.log('Redirecting to onboarding - completed onboarding required');
     return <Navigate to="/players/onboarding" replace />;
   }
 
@@ -100,13 +85,12 @@ const ProtectedRoute = ({
     const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
     
     if (!hasRequiredRole) {
-      console.log('User does not have required role, redirecting to start');
-      return <Navigate to="/start" replace />;
+      // Redirect to dashboard if user doesn't have required role
+      return <Navigate to="/dashboard" replace />;
     }
   }
 
   // If they're authenticated and have the required role (if specified), render the children
-  console.log('All checks passed, rendering protected content');
   return <>{children}</>;
 };
 

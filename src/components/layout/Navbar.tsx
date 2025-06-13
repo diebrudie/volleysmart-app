@@ -1,11 +1,12 @@
 
-import { useEffect } from 'react';
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { useClub } from "@/contexts/ClubContext";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, ChevronDown, Settings, Users } from "lucide-react";
+import { Menu, X, ChevronDown, Settings, User, Users, UserPlus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useClub } from "@/contexts/ClubContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,146 +14,232 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
-  const { clubId, setClubId } = useClub();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
-  const params = useParams();
-
-  // Update clubId from URL params when available
-  useEffect(() => {
-    if (params.clubId && params.clubId !== clubId) {
-      setClubId(params.clubId);
-    }
-  }, [params.clubId, clubId, setClubId]);
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState(false);
+  const { clubId } = useClub();
 
   const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
+    await logout();
+    navigate("/");
+  };  
 
-  const handleDashboardClick = () => {
-    if (clubId) {
-      navigate(`/dashboard/${clubId}`);
-    }
-  };
+  useEffect(() => {
+    const lastClub = localStorage.getItem("lastVisitedClub");
+    if (lastClub) setClubId(lastClub);
+  }, [setClubId]);
 
-  const handleArchiveClick = () => {
-    if (clubId) {
-      navigate(`/matches/${clubId}`);
-    }
-  };
 
-  const handleMembersClick = () => {
-    if (clubId) {
-      navigate(`/members/${clubId}`);
-    }
+  // Get current club ID from localStorage for members link
+  /*
+  const getCurrentClubId = () => {
+    return localStorage.getItem('lastVisitedClub') || '';
   };
+  */
+  // Navigation items
+  const navItems = clubId
+  ? [
+      { label: "Dashboard", path: `/dashboard/${clubId}`, visible: isAuthenticated },
+      { label: "Archive", path: `/matches/${clubId}`, visible: isAuthenticated },
+      { label: "Members", path: `/members/${clubId}`, visible: isAuthenticated },
+    ]
+  : []; // ⬅️ Hide nav links until a club is selected
 
-  const handleCreateGameClick = () => {
-    navigate('/new-game');
-  };
+  // Account dropdown items
+  const accountItems = [
+    { label: "Profile", path: `/user/${user?.id}`, icon: User },
+    { label: "Clubs", path: "/clubs", icon: UserPlus },
+    { label: "Settings", path: "/settings", icon: Settings },
+    user?.role === "admin" && { label: "Users", path: "/admin", icon: Users },
+  ].filter(Boolean);
 
-  const handleProfileClick = () => {
-    navigate('/profile');
-  };
-
-  const handleClubsClick = () => {
-    navigate('/clubs');
-  };
-
-  const handleSettingsClick = () => {
-    // Navigate to settings page when implemented
-    console.log('Settings clicked');
-  };
-
-  return (
-    <nav className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo on the left */}
+  // Desktop navbar
+  const DesktopNav = () => (
+    <header className="bg-white shadow-sm">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
+        <div className="w-full py-4 flex items-center justify-between border-b border-gray-200 lg:border-none">
           <div className="flex items-center">
-            <Logo size="md" />
+            <Logo size="md" linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"} />
           </div>
-
-          {/* Navigation buttons in the center */}
-          <div className="flex items-center space-x-8">
-            {user && clubId && (
+          
+          {/* Centered Navigation Links */}
+          <div className="flex-grow hidden md:flex justify-center">
+            <div className="space-x-8">
+              {navItems.filter(item => item.visible).map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className="text-base font-medium text-gray-700 hover:text-volleyball-primary border-b border-transparent hover:border-[#243F8D] pb-1 transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {isAuthenticated ? (
               <>
                 <Button
-                  variant="ghost"
-                  onClick={handleDashboardClick}
-                  className="text-gray-700 hover:text-gray-900 font-medium"
+                  className="rounded-md bg-[#243F8D]"
+                  onClick={() => navigate("/generate-teams")}
                 >
-                  Dashboard
+                  Create Game
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={handleArchiveClick}
-                  className="text-gray-700 hover:text-gray-900 font-medium"
-                >
-                  Archive
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={handleMembersClick}
-                  className="text-gray-700 hover:text-gray-900 font-medium"
-                >
-                  Members
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex items-center">
+                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      {user?.email?.charAt(0).toUpperCase() || "U"}
+                    </div>
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    {accountItems.map((item, index) => (
+                      <DropdownMenuItem key={index} asChild>
+                        <Link to={item.path} className="flex items-center cursor-pointer">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      Log Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline">Log in</Button>
+                </Link>
+                <Link to="/signup">
+                  <Button variant="default">Sign up</Button>
+                </Link>
               </>
             )}
           </div>
-
-          {/* Right side with Create Game button and Profile dropdown */}
-          <div className="flex items-center space-x-4">
-            {user && clubId && (
-              <Button
-                onClick={handleCreateGameClick}
-                className="bg-[#243F8D] hover:bg-[#1e3575] text-white px-4 py-2 rounded-md font-medium"
-              >
-                Create Game
-              </Button>
-            )}
-            
-            {user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-1 text-gray-700">
-                    <span className="font-medium">N</span>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleProfileClick}>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleClubsClick}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Clubs
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSettingsClick}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
+
+  // Mobile navbar
+  const MobileNav = () => (
+    <header className="bg-white shadow-sm">
+      <nav className="px-4 py-3 flex items-center justify-between">
+        <Logo size="md" linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"} />
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0">
+            <div className="flex flex-col h-full">
+              <SheetHeader className="p-4 border-b">
+                <div className="flex justify-between items-center">
+                  <Logo size="md" linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"} />
+                  <SheetClose asChild>
+                    <Button variant="ghost" size="icon">
+                      <X className="h-6 w-6" />
+                    </Button>
+                  </SheetClose>
+                </div>
+              </SheetHeader>
+              
+              <div className="flex flex-col flex-1 overflow-auto">
+                {navItems.filter(item => item.visible).map((item) => (
+                  <SheetClose asChild key={item.path}>
+                    <Link 
+                      to={item.path} 
+                      className="px-4 py-3 text-base font-medium hover:bg-gray-50 text-center"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  </SheetClose>
+                ))}
+                
+                {isAuthenticated && (
+                  <div className="mt-2">
+                    <div className="px-4 py-2 flex items-center">
+                      <span className="text-sm font-semibold">Account</span>
+                      <ChevronDown className="ml-1 h-4 w-4" />
+                    </div>
+                    {accountItems.map((item, index) => (
+                      <SheetClose asChild key={index}>
+                        <Link 
+                          to={item.path} 
+                          className="px-8 py-2 text-base flex items-center hover:bg-gray-50"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-4 border-t mt-auto">
+                {isAuthenticated ? (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      className="w-full mb-3" 
+                      onClick={handleLogout}
+                    >
+                      Log Out
+                    </Button>
+                    <SheetClose asChild>
+                      <Button 
+                        className="w-full bg-[#243F8D]"
+                        onClick={() => {
+                          setIsOpen(false);
+                          navigate("/generate-teams");
+                        }}
+                      >
+                        Create Game
+                      </Button>
+                    </SheetClose>
+                  </>
+                ) : (
+                  <div className="space-y-3">
+                    <SheetClose asChild>
+                      <Link to="/login" className="block w-full">
+                        <Button variant="outline" className="w-full">Log in</Button>
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Link to="/signup" className="block w-full">
+                        <Button variant="default" className="w-full">Sign up</Button>
+                      </Link>
+                    </SheetClose>
+                  </div>
+                )}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </nav>
+    </header>
+  );
+
+  return isMobile ? <MobileNav /> : <DesktopNav />;
 };
 
 export default Navbar;
