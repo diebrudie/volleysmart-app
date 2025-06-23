@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useRef, ReactNode, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,37 +40,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const hasFetchedProfile = useRef(false);
+  const isInitialized = useRef(false);
 
   // Initialize auth state
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session);
-        setSession(session);
-        if (session?.user && !hasFetchedProfile.current) {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log('Auth state changed:', event, session?.user?.id);
+            
+            if (!mounted) return;
+            
+            setSession(session);
+            
+            if (session?.user) {
+              // Only fetch profile if we haven't already or if this is a new session
+              if (!hasFetchedProfile.current || event === 'SIGNED_IN') {
+                hasFetchedProfile.current = true;
+                await getUserProfile(session.user);
+              }
+            } else {
+              // Only clear user state if we're explicitly signed out
+              if (event === 'SIGNED_OUT') {
+                console.log('User signed out, clearing state');
+                setUser(null);
+                hasFetchedProfile.current = false;
+              }
+              setIsLoading(false);
+            }
+          }
+        );
+
+        // THEN check for existing session
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        console.log('Initial session check:', existingSession?.user?.id);
+        
+        if (!mounted) return;
+        
+        setSession(existingSession);
+        if (existingSession?.user) {
           hasFetchedProfile.current = true;
-          getUserProfile(session.user);
+          await getUserProfile(existingSession.user);
         } else {
-          setUser(null);
+          setIsLoading(false);
+        }
+
+        isInitialized.current = true;
+
+        return () => {
+          mounted = false;
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
           setIsLoading(false);
         }
       }
-    );
+    };
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session);
-      setSession(session);
-      if (session?.user && !hasFetchedProfile.current) {
-        hasFetchedProfile.current = true;
-        getUserProfile(session.user);
-      } else {
-        setIsLoading(false);
-      }
-    });
+    initializeAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Function to get user profile data
@@ -77,8 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       
-      // Clear any existing user data first to prevent confusion
-      setUser(null);
+      console.log('Fetching user profile for:', authUser.id);
       
       // Try to fetch user profile from the user_profiles table
       const { data: profile, error } = await supabase
@@ -88,8 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
-        // Don't throw error, fallback to basic user data
+        console.log('No profile found in user_profiles, using fallback data:', error.message);
       }
 
       const userWithProfile: AuthUser = {
@@ -230,6 +266,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clear user state immediately to prevent confusion
       setUser(null);
       setSession(null);
+      hasFetchedProfile.current = false;
       
       await supabase.auth.signOut();
       
