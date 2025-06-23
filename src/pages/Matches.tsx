@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, ChevronDown, ChevronUp, Search, Filter } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 
 // Mock match data
 const matchesData = Array.from({ length: 20 }, (_, i) => {
@@ -45,7 +44,6 @@ const Matches = () => {
     { key: 'date', direction: 'descending' }
   );
   const [filters, setFilters] = useState({
-    location: "all",
     winner: "all",
   });
 
@@ -71,18 +69,14 @@ const Matches = () => {
 
   // Filter matches
   const filteredMatches = sortedMatches.filter(match => {
-    // Filter by search term (search in date and location)
+    // Filter by search term (search in date only now)
     const matchesSearch = 
-      new Date(match.date).toLocaleDateString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-      match.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Filter by location
-    const matchesLocation = filters.location === "all" || match.location === filters.location;
+      new Date(match.date).toLocaleDateString().toLowerCase().includes(searchTerm.toLowerCase());
     
     // Filter by winner
     const matchesWinner = filters.winner === "all" || match.winner === filters.winner;
     
-    return matchesSearch && matchesLocation && matchesWinner;
+    return matchesSearch && matchesWinner;
   });
 
   const requestSort = (key: string) => {
@@ -109,9 +103,6 @@ const Matches = () => {
       day: 'numeric'
     });
   };
-
-  // Get unique locations for filter
-  const locations = Array.from(new Set(matchesData.map(match => match.location)));
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -141,20 +132,12 @@ const Matches = () => {
                   </div>
                   
                   <div className="flex gap-2">
-                    <Select 
-                      value={filters.location} 
-                      onValueChange={(value) => setFilters({...filters, location: value})}
+                    <button 
+                      className="flex items-center hover:text-volleyball-primary transition-colors px-3 py-2 border rounded-md"
+                      onClick={() => requestSort('date')}
                     >
-                      <SelectTrigger className="w-36">
-                        <SelectValue placeholder="Location" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Locations</SelectItem>
-                        {locations.map(location => (
-                          <SelectItem key={location} value={location}>{location}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      Sort by Date {getSortIcon('date')}
+                    </button>
                     
                     <Select 
                       value={filters.winner} 
@@ -176,44 +159,10 @@ const Matches = () => {
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[180px]">
-                        <button 
-                          className="flex items-center hover:text-volleyball-primary transition-colors"
-                          onClick={() => requestSort('date')}
-                        >
-                          Date {getSortIcon('date')}
-                        </button>
-                      </TableHead>
-                      <TableHead>
-                        <button 
-                          className="flex items-center hover:text-volleyball-primary transition-colors"
-                          onClick={() => requestSort('location')}
-                        >
-                          Location {getSortIcon('location')}
-                        </button>
-                      </TableHead>
-                      <TableHead className="text-center">
-                        <span className="flex items-center justify-center">
-                          Score
-                        </span>
-                      </TableHead>
-                      <TableHead>
-                        <button 
-                          className="flex items-center hover:text-volleyball-primary transition-colors"
-                          onClick={() => requestSort('winner')}
-                        >
-                          Winner {getSortIcon('winner')}
-                        </button>
-                      </TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
                   <TableBody>
                     {filteredMatches.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
                           No matches found. Try adjusting your filters.
                         </TableCell>
                       </TableRow>
@@ -223,7 +172,6 @@ const Matches = () => {
                           <TableCell className="font-medium">
                             {formatDate(match.date)}
                           </TableCell>
-                          <TableCell>{match.location}</TableCell>
                           <TableCell className="text-center font-semibold">
                             {match.teamAScore} - {match.teamBScore}
                           </TableCell>
@@ -255,8 +203,6 @@ const Matches = () => {
           </Card>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 };
