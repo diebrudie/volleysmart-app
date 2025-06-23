@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useRef, ReactNode, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,20 +38,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const hasFetchedProfile = useRef(false);
-  const isInitialized = useRef(false);
-  const profileFetchPromise = useRef<Promise<void> | null>(null);
 
   // Initialize auth state
   useEffect(() => {
     let mounted = true;
-    let authSubscription: any = null;
 
     const initializeAuth = async () => {
       try {
         console.log('Initializing auth...');
         
-        // Set up auth state listener FIRST
+        // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log('Auth state changed:', event, session?.user?.id);
@@ -61,36 +56,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             setSession(session);
             
-            if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-              // Only fetch profile on actual sign in or token refresh
-              console.log('User signed in, fetching profile...');
-              if (!profileFetchPromise.current) {
-                profileFetchPromise.current = getUserProfile(session.user);
-                await profileFetchPromise.current;
-                profileFetchPromise.current = null;
-              }
-            } else if (session?.user && !user) {
-              // User exists but we don't have profile yet
-              console.log('User session exists, fetching profile...');
-              if (!profileFetchPromise.current) {
-                profileFetchPromise.current = getUserProfile(session.user);
-                await profileFetchPromise.current;
-                profileFetchPromise.current = null;
-              }
-            } else if (!session) {
-              // No session, clear user state
+            if (session?.user) {
+              console.log('User session found, fetching profile...');
+              await getUserProfile(session.user);
+            } else {
               console.log('No session, clearing user state');
               setUser(null);
-              hasFetchedProfile.current = false;
-              profileFetchPromise.current = null;
               setIsLoading(false);
             }
           }
         );
 
-        authSubscription = subscription;
-
-        // THEN check for existing session
+        // Check for existing session
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         console.log('Initial session check:', existingSession?.user?.id);
         
@@ -99,17 +76,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(existingSession);
         if (existingSession?.user) {
           console.log('Existing session found, fetching profile...');
-          if (!profileFetchPromise.current) {
-            profileFetchPromise.current = getUserProfile(existingSession.user);
-            await profileFetchPromise.current;
-            profileFetchPromise.current = null;
-          }
+          await getUserProfile(existingSession.user);
         } else {
           setIsLoading(false);
         }
 
-        isInitialized.current = true;
         console.log('Auth initialization complete');
+
+        return () => {
+          mounted = false;
+          subscription.unsubscribe();
+        };
 
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -120,13 +97,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     initializeAuth();
-
-    return () => {
-      mounted = false;
-      if (authSubscription) {
-        authSubscription.unsubscribe();
-      }
-    };
   }, []);
 
   // Function to get user profile data
@@ -156,7 +126,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       console.log('Setting user profile:', userWithProfile);
       setUser(userWithProfile);
-      hasFetchedProfile.current = true;
     } catch (error) {
       console.error('Error getting user profile:', error);
       // Always set user even if profile fetch fails
@@ -168,7 +137,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
       console.log('Setting fallback user:', fallbackUser);
       setUser(fallbackUser);
-      hasFetchedProfile.current = true;
     } finally {
       setIsLoading(false);
     }
@@ -185,19 +153,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       console.log('Login successful');
-      toast({
-        title: "Success",
-        description: "You have successfully logged in",
-      });
-      
+      // Don't show toast here, let the login page handle it
       return Promise.resolve();
     } catch (error: any) {
       console.error('Login error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to log in. Please check your credentials.",
-        variant: "destructive"
-      });
       throw error;
     }
   };
@@ -284,11 +243,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       console.log('Logging out...');
-      // Clear user state immediately to prevent confusion
       setUser(null);
       setSession(null);
-      hasFetchedProfile.current = false;
-      profileFetchPromise.current = null;
       
       await supabase.auth.signOut();
       
@@ -297,7 +253,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "You have been logged out successfully",
       });
       
-      // Redirect to home page instead of /start
       window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
