@@ -61,8 +61,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             setSession(session);
             
-            if (session?.user && event === 'SIGNED_IN') {
-              // Only fetch profile on actual sign in, not on token refresh
+            if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+              // Only fetch profile on actual sign in or token refresh
               console.log('User signed in, fetching profile...');
               if (!profileFetchPromise.current) {
                 profileFetchPromise.current = getUserProfile(session.user);
@@ -175,7 +175,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
     try {
       console.log('Attempting login for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -200,8 +199,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         variant: "destructive"
       });
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
