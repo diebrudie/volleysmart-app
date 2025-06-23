@@ -26,29 +26,38 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
-  const [hasRedirected, setHasRedirected] = useState(false);
+  const [redirectHandled, setRedirectHandled] = useState(false);
 
   // Get the intended destination from location state, or default to dashboard
   const from = location.state?.from?.pathname || "/dashboard";
 
-  // Redirect if already authenticated - simplified logic
+  // Redirect if already authenticated - improved logic
   useEffect(() => {
-    if (isAuthenticated && user && !authLoading && !hasRedirected) {
+    if (isAuthenticated && user && !authLoading && !redirectHandled) {
       console.log('User is authenticated, handling redirect...', user);
-      setHasRedirected(true);
+      setRedirectHandled(true);
       
       const handleAuthenticatedRedirect = async () => {
         try {
+          // Add a small delay to ensure all auth state is properly set
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           // Check if user has completed player profile (onboarding)
           const { data: player, error } = await supabase
             .from('players')
             .select('id')
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
 
           console.log('Player profile check result:', { player, error });
 
-          if (error || !player) {
+          if (error && error.code !== 'PGRST116') {
+            console.error('Database error checking player profile:', error);
+            navigate('/start', { replace: true });
+            return;
+          }
+
+          if (!player) {
             // User hasn't completed onboarding, redirect to onboarding
             console.log('Redirecting to onboarding');
             navigate('/players/onboarding', { replace: true });
@@ -103,9 +112,10 @@ const Login = () => {
         }
       };
       
-      handleAuthenticatedRedirect();
+      // Execute redirect with a slight delay to ensure auth state is stable
+      setTimeout(handleAuthenticatedRedirect, 200);
     }
-  }, [isAuthenticated, user, authLoading, navigate, hasRedirected]);
+  }, [isAuthenticated, user, authLoading, navigate, redirectHandled]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -116,13 +126,15 @@ const Login = () => {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
+    if (isLoading || authLoading) return;
+    
     setIsLoading(true);
     try {
       console.log('Attempting login for:', data.email);
       await login(data.email, data.password);
       console.log('Login successful, redirection will happen in useEffect');
       // Reset redirect flag to allow new redirect
-      setHasRedirected(false);
+      setRedirectHandled(false);
     } catch (error) {
       console.error("Login error:", error);
       // Toast is already shown in the login function
@@ -132,7 +144,7 @@ const Login = () => {
   };
 
   // Show loading state if we're in the middle of handling authentication
-  if (isAuthenticated && !hasRedirected) {
+  if ((isAuthenticated && !redirectHandled) || (isAuthenticated && authLoading)) {
     return (
       <AuthLayout>
         <div className="flex items-center justify-center p-8">
@@ -186,9 +198,9 @@ const Login = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading}
+              disabled={isLoading || authLoading}
             >
-              {isLoading ? "Logging in..." : "Login"}
+              {(isLoading || authLoading) ? "Logging in..." : "Login"}
             </Button>
           </form>
         </Form>

@@ -41,13 +41,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const hasFetchedProfile = useRef(false);
   const isInitialized = useRef(false);
+  const profileFetchPromise = useRef<Promise<void> | null>(null);
 
   // Initialize auth state
   useEffect(() => {
     let mounted = true;
+    let authSubscription: any = null;
 
     const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
+        
         // Set up auth state listener FIRST
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
@@ -57,23 +61,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             setSession(session);
             
-            if (session?.user) {
-              // Only fetch profile if we haven't already or if this is a new session
-              if (!hasFetchedProfile.current || event === 'SIGNED_IN') {
-                hasFetchedProfile.current = true;
-                await getUserProfile(session.user);
+            if (session?.user && event === 'SIGNED_IN') {
+              // Only fetch profile on actual sign in, not on token refresh
+              console.log('User signed in, fetching profile...');
+              if (!profileFetchPromise.current) {
+                profileFetchPromise.current = getUserProfile(session.user);
+                await profileFetchPromise.current;
+                profileFetchPromise.current = null;
               }
-            } else {
-              // Only clear user state if we're explicitly signed out
-              if (event === 'SIGNED_OUT') {
-                console.log('User signed out, clearing state');
-                setUser(null);
-                hasFetchedProfile.current = false;
+            } else if (session?.user && !user) {
+              // User exists but we don't have profile yet
+              console.log('User session exists, fetching profile...');
+              if (!profileFetchPromise.current) {
+                profileFetchPromise.current = getUserProfile(session.user);
+                await profileFetchPromise.current;
+                profileFetchPromise.current = null;
               }
+            } else if (!session) {
+              // No session, clear user state
+              console.log('No session, clearing user state');
+              setUser(null);
+              hasFetchedProfile.current = false;
+              profileFetchPromise.current = null;
               setIsLoading(false);
             }
           }
         );
+
+        authSubscription = subscription;
 
         // THEN check for existing session
         const { data: { session: existingSession } } = await supabase.auth.getSession();
@@ -83,18 +98,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         setSession(existingSession);
         if (existingSession?.user) {
-          hasFetchedProfile.current = true;
-          await getUserProfile(existingSession.user);
+          console.log('Existing session found, fetching profile...');
+          if (!profileFetchPromise.current) {
+            profileFetchPromise.current = getUserProfile(existingSession.user);
+            await profileFetchPromise.current;
+            profileFetchPromise.current = null;
+          }
         } else {
           setIsLoading(false);
         }
 
         isInitialized.current = true;
+        console.log('Auth initialization complete');
 
-        return () => {
-          mounted = false;
-          subscription.unsubscribe();
-        };
       } catch (error) {
         console.error('Error initializing auth:', error);
         if (mounted) {
@@ -107,6 +123,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       mounted = false;
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -124,8 +143,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('id', authUser.id)
         .single();
 
-      if (error) {
-        console.log('No profile found in user_profiles, using fallback data:', error.message);
+      if (error && error.code !== 'PGRST116') {
+        console.log('Error fetching profile:', error.message);
       }
 
       const userWithProfile: AuthUser = {
@@ -137,6 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       console.log('Setting user profile:', userWithProfile);
       setUser(userWithProfile);
+      hasFetchedProfile.current = true;
     } catch (error) {
       console.error('Error getting user profile:', error);
       // Always set user even if profile fetch fails
@@ -148,6 +168,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
       console.log('Setting fallback user:', fallbackUser);
       setUser(fallbackUser);
+      hasFetchedProfile.current = true;
     } finally {
       setIsLoading(false);
     }
@@ -156,6 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log('Attempting login for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -163,6 +185,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
+      console.log('Login successful');
       toast({
         title: "Success",
         description: "You have successfully logged in",
@@ -263,10 +286,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
+      console.log('Logging out...');
       // Clear user state immediately to prevent confusion
       setUser(null);
       setSession(null);
       hasFetchedProfile.current = false;
+      profileFetchPromise.current = null;
       
       await supabase.auth.signOut();
       
