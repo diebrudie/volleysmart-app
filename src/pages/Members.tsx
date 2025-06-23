@@ -1,6 +1,7 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react"; // Add this import
+import { useEffect } from "react";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
@@ -118,9 +119,16 @@ const Members = () => {
 
           {/* Members Grid */}
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">            
-            {members?.map((member) => (
-              <MemberCard key={member.user_id} member={member.players} />
-            ))}
+            {members?.map((member) => {
+              // Handle case where players data might be null or have errors
+              if (!member.players || typeof member.players === 'string') {
+                console.warn("⚠️ Invalid player data for member:", member);
+                return null;
+              }
+              return (
+                <MemberCard key={member.user_id} member={member.players} />
+              );
+            })}
           </div>
 
           {/* Empty state */}

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown, Settings, User, Users, UserPlus } from "lucide-react";
@@ -28,7 +27,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const { clubId } = useClub();
+  const { clubId, setClubId } = useClub();
 
   const handleLogout = async () => {
     await logout();
@@ -40,13 +39,6 @@ const Navbar = () => {
     if (lastClub) setClubId(lastClub);
   }, [setClubId]);
 
-
-  // Get current club ID from localStorage for members link
-  /*
-  const getCurrentClubId = () => {
-    return localStorage.getItem('lastVisitedClub') || '';
-  };
-  */
   // Navigation items
   const navItems = clubId
   ? [

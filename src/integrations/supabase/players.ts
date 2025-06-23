@@ -1,4 +1,3 @@
-
 import { supabase } from "./client";
 
 export interface PlayerData {
@@ -20,9 +19,8 @@ export async function createPlayer(userId: string, playerData: PlayerData) {
     ? playerData.birthday.toISOString().split('T')[0] 
     : playerData.birthday;
   
-  console.log("user.id", user.id);
-  console.log("auth.uid", supabase.auth.getUser());
-
+  console.log("userId:", userId);
+  
   // First create the player
   const { data: player, error: playerError } = await supabase
     .from('players')
