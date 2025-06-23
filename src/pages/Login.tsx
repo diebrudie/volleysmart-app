@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +24,6 @@ const Login = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -125,11 +124,24 @@ const Login = () => {
         description: error.message || "Failed to log in. Please check your credentials.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };
 
-  // Show loading state during authentication or redirect
+  // Show loading state during authentication check
+  if (authLoading) {
+    return (
+      <AuthLayout>
+        <div className="flex items-center justify-center p-8">
+          <Spinner className="h-8 w-8" />
+          <span className="ml-2">Loading...</span>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  // Show redirect message if authenticated
   if (isAuthenticated && user) {
     return (
       <AuthLayout>
@@ -184,7 +196,7 @@ const Login = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             >
               {isLoading ? "Logging in..." : "Login"}
             </Button>

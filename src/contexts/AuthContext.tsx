@@ -47,6 +47,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         console.log('Initializing auth...');
         
+        // Get initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log('Initial session:', initialSession?.user?.id);
+        
+        if (mounted) {
+          setSession(initialSession);
+          if (initialSession?.user) {
+            await getUserProfile(initialSession.user);
+          } else {
+            setIsLoading(false);
+          }
+        }
+
         // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
@@ -67,22 +80,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         );
 
-        // Check for existing session
-        const { data: { session: existingSession } } = await supabase.auth.getSession();
-        console.log('Initial session check:', existingSession?.user?.id);
-        
-        if (!mounted) return;
-        
-        setSession(existingSession);
-        if (existingSession?.user) {
-          console.log('Existing session found, fetching profile...');
-          await getUserProfile(existingSession.user);
-        } else {
-          setIsLoading(false);
-        }
-
-        console.log('Auth initialization complete');
-
         return () => {
           mounted = false;
           subscription.unsubscribe();
@@ -102,8 +99,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Function to get user profile data
   const getUserProfile = async (authUser: User) => {
     try {
-      setIsLoading(true);
-      
       console.log('Fetching user profile for:', authUser.id);
       
       // Try to fetch user profile from the user_profiles table
@@ -111,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('user_profiles')
         .select('*')
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.log('Error fetching profile:', error.message);
@@ -143,6 +138,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
       console.log('Attempting login for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -153,10 +149,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       console.log('Login successful');
-      // Don't show toast here, let the login page handle it
       return Promise.resolve();
     } catch (error: any) {
       console.error('Login error:', error);
+      setIsLoading(false);
       throw error;
     }
   };
