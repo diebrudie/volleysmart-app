@@ -9,14 +9,23 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useClub } from "@/contexts/ClubContext";
+
+interface Club {
+    id: string;
+    name: string;
+    slug: string;
+    created_at: string;
+  }
 
 const JoinClub = () => {
   const { user } = useAuth();
+  const { setClubId: setGlobalClubId } = useClub();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [clubId, setClubId] = useState("");
+  const [clubIdInput, setClubIdInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [userCreatedClubs, setUserCreatedClubs] = useState<any[]>([]);
+  const [userCreatedClubs, setUserCreatedClubs] = useState<Club[]>([]);
 
   // Fetch clubs created by the current user
   useEffect(() => {
@@ -52,14 +61,14 @@ const JoinClub = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id || !clubId.trim()) return;
+    if (!user?.id || !clubIdInput.trim()) return;
 
     setIsLoading(true);
 
     try {
-      const trimmedClubId = clubId.trim();
+      const trimmedClubId = clubIdInput.trim();
       console.log('Searching for club with slug:', trimmedClubId);
-      
+
       // First try exact match
       let { data: club, error: clubError } = await supabase
         .from('clubs')
@@ -78,7 +87,7 @@ const JoinClub = () => {
           .select('id, name, slug')
           .ilike('slug', trimmedClubId)
           .maybeSingle();
-        
+
         club = clubCaseInsensitive;
         clubError = clubCaseError;
         console.log('Case-insensitive result:', club);
@@ -90,7 +99,7 @@ const JoinClub = () => {
         .from('clubs')
         .select('id, name, slug')
         .limit(10);
-      
+
       console.log('All clubs in database (first 10):', allClubs);
       console.log('All clubs query error:', allClubsError);
 
@@ -171,13 +180,17 @@ const JoinClub = () => {
       }
 
       console.log('Successfully joined club:', club.name);
+      setGlobalClubId(club.id);
+      localStorage.setItem('lastVisitedClub', club.id);
+
       toast({
         title: "Successfully joined club!",
         description: `Welcome to ${club.name}`,
       });
 
       // Redirect to dashboard
-      navigate('/dashboard');
+      navigate(`/dashboard/${club.id}`);
+
     } catch (error) {
       console.error('Unexpected error:', error);
       toast({
@@ -241,13 +254,13 @@ const JoinClub = () => {
                   id="clubId"
                   type="text"
                   placeholder="AB12C"
-                  value={clubId}
-                  onChange={(e) => setClubId(e.target.value)}
+                  value={clubIdInput}
+                  onChange={(e) => setClubIdInput(e.target.value)}
                   required
                 />
               </div>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full"
                 disabled={isLoading}
               >
