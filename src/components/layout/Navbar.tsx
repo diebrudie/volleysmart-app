@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useClub } from "@/contexts/ClubContext";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +53,7 @@ const Navbar = () => {
     return localStorage.getItem('lastVisitedClub') || '';
   };
   */
-  // Navigation items
+
   const navItems = clubId
   ? [
       { label: "Dashboard", path: `/dashboard/${clubId}`, visible: isAuthenticated },
@@ -60,6 +61,10 @@ const Navbar = () => {
       { label: "Members", path: `/members/${clubId}`, visible: isAuthenticated },
     ]
   : []; // ⬅️ Hide nav links until a club is selected
+
+  // Navigation items
+  console.log("🔍 Navbar navItems - clubId:", clubId);
+  console.log("🔍 Navbar navItems - navItems:", navItems);
 
   // Account dropdown items
   const accountItems = [
