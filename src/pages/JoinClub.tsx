@@ -188,7 +188,7 @@ const JoinClub = () => {
         description: `Welcome to ${club.name}`,
       });
 
-      // Redirect to dashboard
+      // Redirect to dashboardg
       navigate(`/dashboard/${club.id}`);
 
     } catch (error) {
