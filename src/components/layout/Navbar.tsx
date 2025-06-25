@@ -30,15 +30,20 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { clubId, setClubId } = useClub();
 
+  console.log("🔍 Navbar - clubId:", clubId);
+  console.log("🔍 Navbar - localStorage club:", localStorage.getItem("lastVisitedClub"));
+
   const handleLogout = async () => {
     await logout();
     navigate("/");
   };
 
   useEffect(() => {
-    const lastClub = localStorage.getItem("lastVisitedClub");
-    if (lastClub) setClubId(lastClub);
-  }, [setClubId]);
+  const lastClub = localStorage.getItem("lastVisitedClub");
+  if (lastClub && lastClub !== clubId) {
+    setClubId(lastClub);
+  }
+}, [setClubId, clubId]);
 
 
   // Get current club ID from localStorage for members link
