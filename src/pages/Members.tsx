@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,19 +38,37 @@ interface MemberWithPlayer {
 
 const Members = () => {
   console.log("🚨 MEMBERS COMPONENT IS RENDERING!");
-  const { clubId } = useClub();
+  const { clubId: urlClubId } = useParams<{ clubId: string }>();
+  const { clubId: contextClubId, setClubId } = useClub();
   const navigate = useNavigate();
+
+   // Use URL clubId first, fallback to context
+  const clubId = urlClubId || contextClubId;
 
   // Enhanced debugging
   console.log("🔍 Members component render - clubId:", clubId);
   console.log("🔍 Current URL:", window.location.pathname);
 
+  // Set context from URL if available (FIRST useEffect)
+  useEffect(() => {
+    if (urlClubId && urlClubId !== contextClubId) {
+      setClubId(urlClubId);
+    }
+  }, [urlClubId, contextClubId, setClubId]);
+
+  // Check if clubId exists and redirect if not (SECOND useEffect)
   useEffect(() => {
     if (!clubId) {
       console.warn("❌ No clubId provided to members query.");
       navigate("/clubs");
     }
   }, [clubId, navigate]);
+
+  // Enhanced debugging
+  console.log("🔍 Members component render - urlClubId:", urlClubId);
+  console.log("🔍 Members component render - contextClubId:", contextClubId);
+  console.log("🔍 Members component render - final clubId:", clubId);
+  console.log("🔍 Current URL:", window.location.pathname);
 
   // Query to fetch club members
   const { data: members, isLoading, error } = useQuery({
