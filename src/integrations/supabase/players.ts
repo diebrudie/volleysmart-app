@@ -20,8 +20,8 @@ export async function createPlayer(userId: string, playerData: PlayerData) {
     ? playerData.birthday.toISOString().split('T')[0] 
     : playerData.birthday;
   
-  console.log("user.id", user.id);
-  console.log("auth.uid", supabase.auth.getUser());
+  console.log("userId", userId);
+  console.log("auth.uid", (await supabase.auth.getUser()).data.user?.id);
 
   // First create the player
   const { data: player, error: playerError } = await supabase
