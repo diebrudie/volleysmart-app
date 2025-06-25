@@ -79,23 +79,23 @@ const NewGame = () => {
         .select('id')
         .limit(1)
         .single();
-      
+
       if (error) throw error;
       return data;
     },
   });
 
   // Filter and sort players
-  const filteredAndSortedPlayers = players 
+  const filteredAndSortedPlayers = players
     ? players
-        .filter(player => 
+        .filter(player =>
           `${player.first_name} ${player.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
         )
         .sort((a, b) => a.first_name.localeCompare(b.first_name))
     : [];
 
   const handlePlayerToggle = (playerId: string) => {
-    setSelectedPlayers(current => 
+    setSelectedPlayers(current =>
       current.includes(playerId)
         ? current.filter(id => id !== playerId)
         : [...current, playerId]
@@ -108,7 +108,7 @@ const NewGame = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!date) {
       toast({
         title: "Date required",
@@ -150,7 +150,7 @@ const NewGame = () => {
         })
         .select()
         .single();
-      
+
       if (matchDayError) throw matchDayError;
 
       // Shuffle players and split into two teams
@@ -168,7 +168,7 @@ const NewGame = () => {
         })
         .select()
         .single();
-      
+
       if (teamAError) throw teamAError;
 
       // Create Team B
@@ -180,7 +180,7 @@ const NewGame = () => {
         })
         .select()
         .single();
-      
+
       if (teamBError) throw teamBError;
 
       // Add players to Team A with position_id
@@ -201,7 +201,7 @@ const NewGame = () => {
       const { error: teamPlayersError } = await supabase
         .from('team_players')
         .insert([...teamAPlayers, ...teamBPlayers]);
-      
+
       if (teamPlayersError) throw teamPlayersError;
 
       // Create empty match scores for 5 sets
@@ -216,7 +216,7 @@ const NewGame = () => {
       const { error: matchesError } = await supabase
         .from('matches')
         .insert(matchScores);
-      
+
       if (matchesError) throw matchesError;
 
       toast({
@@ -226,7 +226,7 @@ const NewGame = () => {
 
       // Navigate to the dashboard to see the game
       navigate(`/dashboard/${clubId}`);
-      
+
     } catch (error: any) {
       console.error('Error creating game:', error);
       toast({
@@ -246,11 +246,11 @@ const NewGame = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
+
       <main className="flex-grow bg-gray-50 py-8">
         <div className="max-w-2xl mx-auto px-4">
           <h1 className="text-4xl font-serif mb-8">Create New Game</h1>
-          
+
           {isLoadingPlayers ? (
             <div className="flex justify-center py-12">
               <Spinner className="h-8 w-8" />
@@ -283,7 +283,7 @@ const NewGame = () => {
                   </PopoverContent>
                 </Popover>
               </div>
-              
+
               {/* Players Selection */}
               <div className="bg-white rounded-lg overflow-hidden">
                 <div className="bg-amber-400 p-4 flex items-center justify-between">
@@ -314,14 +314,14 @@ const NewGame = () => {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="max-h-96 overflow-y-auto">
                   {filteredAndSortedPlayers.length > 0 ? (
                     <div className="divide-y divide-gray-200">
                       {filteredAndSortedPlayers.map((player) => (
                         <div key={player.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
                           <span className="font-medium">{formatPlayerName(player)}</span>
-                          <Checkbox 
+                          <Checkbox
                             checked={selectedPlayers.includes(player.id)}
                             onCheckedChange={() => handlePlayerToggle(player.id)}
                           />
@@ -335,7 +335,7 @@ const NewGame = () => {
                   )}
                 </div>
               </div>
-              
+
               <Button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
