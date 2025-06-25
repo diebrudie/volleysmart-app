@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown, Settings, User, Users, UserPlus } from "lucide-react";
@@ -28,12 +28,12 @@ const Navbar = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const { clubId } = useClub();
+  const { clubId, setClubId } = useClub();
 
   const handleLogout = async () => {
     await logout();
     navigate("/");
-  };  
+  };
 
   useEffect(() => {
     const lastClub = localStorage.getItem("lastVisitedClub");
@@ -72,7 +72,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <Logo size="md" linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"} />
           </div>
-          
+
           {/* Centered Navigation Links */}
           <div className="flex-grow hidden md:flex justify-center">
             <div className="space-x-8">
@@ -87,7 +87,7 @@ const Navbar = () => {
               ))}
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
@@ -159,12 +159,12 @@ const Navbar = () => {
                   </SheetClose>
                 </div>
               </SheetHeader>
-              
+
               <div className="flex flex-col flex-1 overflow-auto">
                 {navItems.filter(item => item.visible).map((item) => (
                   <SheetClose asChild key={item.path}>
-                    <Link 
-                      to={item.path} 
+                    <Link
+                      to={item.path}
                       className="px-4 py-3 text-base font-medium hover:bg-gray-50 text-center"
                       onClick={() => setIsOpen(false)}
                     >
@@ -172,7 +172,7 @@ const Navbar = () => {
                     </Link>
                   </SheetClose>
                 ))}
-                
+
                 {isAuthenticated && (
                   <div className="mt-2">
                     <div className="px-4 py-2 flex items-center">
@@ -181,8 +181,8 @@ const Navbar = () => {
                     </div>
                     {accountItems.map((item, index) => (
                       <SheetClose asChild key={index}>
-                        <Link 
-                          to={item.path} 
+                        <Link
+                          to={item.path}
                           className="px-8 py-2 text-base flex items-center hover:bg-gray-50"
                           onClick={() => setIsOpen(false)}
                         >
@@ -194,19 +194,19 @@ const Navbar = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="p-4 border-t mt-auto">
                 {isAuthenticated ? (
                   <>
-                    <Button 
-                      variant="outline" 
-                      className="w-full mb-3" 
+                    <Button
+                      variant="outline"
+                      className="w-full mb-3"
                       onClick={handleLogout}
                     >
                       Log Out
                     </Button>
                     <SheetClose asChild>
-                      <Button 
+                      <Button
                         className="w-full bg-[#243F8D]"
                         onClick={() => {
                           setIsOpen(false);

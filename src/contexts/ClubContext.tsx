@@ -27,11 +27,13 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
   }, [clubId]);
 
   const setClubId = (id: string) => {
+    console.log('Setting clubId:', id);
     localStorage.setItem("lastVisitedClub", id);
     setClubIdState(id);
   };
 
   const clearClubId = () => {
+    console.log('Clearing clubId');
     localStorage.removeItem("lastVisitedClub");
     setClubIdState(null);
   };

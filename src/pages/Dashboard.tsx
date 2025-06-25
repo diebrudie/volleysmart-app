@@ -14,22 +14,27 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Pencil } from "lucide-react";
 import { format, isWednesday } from "date-fns";
 import { useClub } from "@/contexts/ClubContext";
+import { useParams } from "react-router-dom";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [isCheckingClub, setIsCheckingClub] = useState(true);  
+  const [isCheckingClub, setIsCheckingClub] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [clubMemberCount, setClubMemberCount] = useState(0);
   const { clubId } = useClub();
-  const userClubId = clubId; 
+  const { clubId: urlClubId } = useParams<{ clubId: string }>();
+  const { setClubId } = useClub();
 
   useEffect(() => {
-    if (!clubId) {
-      navigate("/clubs");
+    if (urlClubId) {
+      setClubId(urlClubId);
     }
-  }, [clubId, navigate]);
+  }, [urlClubId, setClubId]);
+
+  // Use urlClubId for the rest of the component
+  const userClubId = urlClubId;
 
   // Check if user belongs to any club or has created one
   useEffect(() => {
@@ -41,7 +46,7 @@ const Dashboard = () => {
         if (clubId) {
           // Store the visited club in localStorage for future logins
           localStorage.setItem('lastVisitedClub', clubId);
-          
+
           // Verify user has access to this club
           const { data: memberCheck } = await supabase
             .from('club_members')
@@ -51,7 +56,7 @@ const Dashboard = () => {
             .maybeSingle();
 
           if (memberCheck) {
-            
+
             setUserRole(memberCheck.role);
             setIsCheckingClub(false);
             return;
@@ -66,7 +71,7 @@ const Dashboard = () => {
             .maybeSingle();
 
           if (creatorCheck) {
-            
+
             setUserRole('admin');
             setIsCheckingClub(false);
             return;
@@ -76,7 +81,7 @@ const Dashboard = () => {
           navigate('/clubs');
           return;
         }
-        
+
 
         // User doesn't belong to any club and hasn't created one
         navigate('/start');
@@ -143,8 +148,8 @@ const Dashboard = () => {
       const { data: matchDay } = await supabase
         .from('match_days')
         .select(`
-          id, 
-          date, 
+          id,
+          date,
           notes,
           match_teams (
             id,
@@ -226,14 +231,14 @@ const Dashboard = () => {
             )}
             <h1 className="text-3xl font-bold mb-2">You haven't played any games yet.</h1>
             <p className="text-gray-600 mb-8">
-              {canInviteMembers 
+              {canInviteMembers
                 ? "Proceed with inviting other members to your club or creating a game:"
                 : "Wait for the club admin to invite more members or create a game:"
               }
             </p>
-            <EmptyTeamsState 
-              canGenerateTeams={canGenerateTeams} 
-              onGenerateTeams={handleCreateGame} 
+            <EmptyTeamsState
+              canGenerateTeams={canGenerateTeams}
+              onGenerateTeams={handleCreateGame}
               onInviteMembers={handleInviteMembers}
               canInviteMembers={canInviteMembers}
             />
@@ -246,13 +251,13 @@ const Dashboard = () => {
   // Format and prepare match data
   const teamA = latestGame.match_teams?.find(team => team.team_name === 'Team A');
   const teamB = latestGame.match_teams?.find(team => team.team_name === 'Team B');
-  
+
   const teamAPlayers = teamA?.team_players.map(tp => ({
     id: tp.player_id,
     name: `${tp.players.first_name} ${tp.players.last_name}`,
     position: '',
   })) || [];
-  
+
   const teamBPlayers = teamB?.team_players.map(tp => ({
     id: tp.player_id,
     name: `${tp.players.first_name} ${tp.players.last_name}`,
@@ -267,27 +272,27 @@ const Dashboard = () => {
   }));
 
   // Calculate the match result
-  const teamAWins = scores.filter(game => 
+  const teamAWins = scores.filter(game =>
     game.teamA !== null && game.teamB !== null && game.teamA > game.teamB
   ).length;
-  
-  const teamBWins = scores.filter(game => 
+
+  const teamBWins = scores.filter(game =>
     game.teamA !== null && game.teamB !== null && game.teamB > game.teamA
   ).length;
-  
+
   // Winner team
-  const hasPlayedAnySet = scores.some(game => 
+  const hasPlayedAnySet = scores.some(game =>
     game.teamA !== null && game.teamB !== null && (game.teamA > 0 || game.teamB > 0)
   );
-  
-  const winner = hasPlayedAnySet 
-    ? (teamAWins > teamBWins ? "Team A" : (teamBWins > teamAWins ? "Team B" : "Tie")) 
+
+  const winner = hasPlayedAnySet
+    ? (teamAWins > teamBWins ? "Team A" : (teamBWins > teamAWins ? "Team B" : "Tie"))
     : "TBD";
 
   const handleSetScoreUpdate = async (setNumber: number, teamAScore: number, teamBScore: number) => {
     // Update score in the database
     const matchToUpdate = latestGame.matches.find(m => m.game_number === setNumber);
-    
+
     if (matchToUpdate) {
       await supabase
         .from('matches')
@@ -302,11 +307,11 @@ const Dashboard = () => {
   // Format the match date
   const matchDate = latestGame.date ? new Date(latestGame.date) : new Date();
   const formatDate = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
     };
     return date.toLocaleDateString('en-US', options);
   };
@@ -315,14 +320,14 @@ const Dashboard = () => {
   const today = new Date();
   const isMatchToday = matchDate.toDateString() === today.toDateString();
   const isTodayWednesday = isWednesday(today);
-  
+
   // Determine which heading to display
   const headingText = (isMatchToday && isTodayWednesday) ? "Today's Game Overview" : "Last Game Overview";
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
+
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Game Overview with dynamic heading */}
@@ -370,7 +375,7 @@ const Dashboard = () => {
                     ))}
                   </ul>
                 </div>
-                
+
                 {/* Team B Card */}
                 <div className="w-1/2 bg-white p-0">
                   <h3 className="bg-emerald-500 text-white py-1 px-2 text-center">Team B</h3>

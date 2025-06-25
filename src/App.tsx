@@ -5,12 +5,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
-import { ensureStorageBucketExists, StorageBuckets } from "@/integrations/supabase/storage";
+import { useEffect, useState } from "react";
+//import { ensureStorageBucketExists, StorageBuckets } from "@/integrations/supabase/storage";
 import { ClubProvider } from "@/contexts/ClubContext";
+import { useClub } from "@/contexts/ClubContext";
+import { supabase } from "@/integrations/supabase/client"
 
 // Pages
 import Home from "./pages/Home";
@@ -41,8 +42,70 @@ const queryClient = new QueryClient();
 
 // Home route with authentication check
 const HomeRoute = () => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Navigate to="/start" replace /> : <Home />;
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const { clubId } = useClub();
+  const [isCheckingClub, setIsCheckingClub] = useState(true);
+
+  useEffect(() => {
+    if (isAuthenticated && !isLoading && user) {
+      // Check localStorage for last visited club
+      const lastClub = localStorage.getItem("lastVisitedClub");
+      console.log("Last visited club:", lastClub);
+
+      if (lastClub) {
+        // Verify user still has access to this club
+        const verifyClubAccess = async () => {
+          try {
+            const { data } = await supabase
+              .from('club_members')
+              .select('club_id')
+              .eq('club_id', lastClub)
+              .eq('user_id', isAuthenticated ? user?.id : null)
+              .single();
+
+            setIsCheckingClub(false);
+
+            if (data) {
+              // User has access, redirect to dashboard
+              window.location.href = `/dashboard/${lastClub}`;
+            } else {
+              // No access, go to clubs page
+              window.location.href = '/clubs';
+            }
+          } catch (error) {
+            console.error('Error verifying club access:', error);
+            setIsCheckingClub(false);
+            window.location.href = '/clubs';
+          }
+        };
+
+        verifyClubAccess();
+      } else {
+        // No last club, go to clubs page
+        setIsCheckingClub(false);
+        window.location.href = '/clubs';
+      }
+    } else if (!isAuthenticated && !isLoading) {
+      setIsCheckingClub(false);
+    }
+  }, [isAuthenticated, isLoading, user]);
+
+  // Show loading while checking
+  if (isLoading || (isAuthenticated && isCheckingClub)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div>Redirecting...</div>
+      </div>
+    );
+  }
+
+  // Show home page for non-authenticated users
+  if (!isAuthenticated) {
+    return <Home />;
+  }
+
+  // Fallback (shouldn't reach here)
+  return <Home />;
 };
 
 const App = () => {
@@ -52,7 +115,7 @@ const App = () => {
     const initStorage = async () => {
       await ensureStorageBucketExists(StorageBuckets.ClubImages);
     };
-    
+
     initStorage();
   }, []);
   */
@@ -74,155 +137,146 @@ const App = () => {
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-                  
+
                   {/* All Protected Routes - require authentication */}
-                  <Route 
-                    path="/players/onboarding" 
+                  <Route
+                    path="/players/onboarding"
                     element={
                       <ProtectedRoute requiresOnboarding={false}>
                         <PlayerOnboarding />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  
-                  <Route 
-                    path="/start" 
+
+                  <Route
+                    path="/start"
                     element={
                       <ProtectedRoute requiresCompletedOnboarding={true}>
                         <Start />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  
-                  <Route 
-                    path="/new-club" 
+
+                  <Route
+                    path="/new-club"
                     element={
                       <ProtectedRoute>
                         <NewClub />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/join-club" 
+                  <Route
+                    path="/join-club"
                     element={
                       <ProtectedRoute>
                         <JoinClub />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/invite-members/:clubId" 
+                  <Route
+                    path="/invite-members/:clubId"
                     element={
                       <ProtectedRoute>
                         <InviteMembers />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  
-                  <Route 
-                    path="/clubs" 
+
+                  <Route
+                    path="/clubs"
                     element={
                       <ProtectedRoute>
                         <Clubs />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  
-                  <Route 
-                    path="/new-game" 
+
+                  <Route
+                    path="/new-game"
                     element={
                       <ProtectedRoute>
                         <NewGame />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  
-                  <Route 
-                    path="/user/:userId" 
+
+                  <Route
+                    path="/user/:userId"
                     element={
                       <ProtectedRoute>
                         <Profile />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  
-                  <Route 
-                    path="/dashboard" 
+                  <Route
+                    path="/dashboard/:clubId"
                     element={
                       <ProtectedRoute>
                         <Dashboard />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/dashboard/:clubId" 
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/matches" 
+                  <Route
+                    path="/matches/:clubId"
                     element={
                       <ProtectedRoute>
                         <Matches />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/matches/:id" 
+                  <Route
+                    path="/matches/:id"
                     element={
                       <ProtectedRoute>
                         <MatchDetail />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/players" 
+                  <Route
+                    path="/players/:clubId"
                     element={
                       <ProtectedRoute>
                         <Players />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/members/:clubId" 
+                  <Route
+                    path="/members/:clubId"
                     element={
                       <ProtectedRoute>
                         <Members />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/players/:id" 
+                  <Route
+                    path="/players/:id"
                     element={
                       <ProtectedRoute>
                         <PlayerDetail />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  
+
                   {/* Admin/Editor Only Routes */}
-                  <Route 
-                    path="/generate-teams" 
+                  <Route
+                    path="/generate-teams"
                     element={
                       <ProtectedRoute allowedRoles={['admin', 'editor']}>
                         <TeamGenerator />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  
+
                   {/* Admin Only Routes */}
-                  <Route 
-                    path="/admin" 
+                  <Route
+                    path="/admin"
                     element={
                       <ProtectedRoute allowedRoles={['admin']}>
                         <Admin />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
-                  
+
                   {/* Catch-all route */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
