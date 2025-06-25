@@ -1,18 +1,17 @@
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { CalendarIcon, Search } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { CalendarIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useClub } from '@/contexts/ClubContext';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import {
   Popover,
@@ -20,6 +19,11 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+
+interface NewGameFormData {
+  date: Date;
+  players: string[];
+}
 
 interface ClubMember {
   id: string;
@@ -29,34 +33,44 @@ interface ClubMember {
 
 const NewGame = () => {
   const { user } = useAuth();
-  const { clubId } = useClub();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Fetch club ID for the current user
+  const { data: clubData, isLoading: isLoadingClub } = useQuery({
+    queryKey: ['userClub', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('club_members')
+        .select('club_id')
+        .eq('user_id', user?.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   // Fetch club members/players
   const { data: players, isLoading: isLoadingPlayers } = useQuery({
-    queryKey: ['clubPlayers', clubId],
+    queryKey: ['clubPlayers', clubData?.club_id],
     queryFn: async () => {
-      if (!clubId) throw new Error('No club selected');
-      
       const { data, error } = await supabase
         .from('players')
         .select('id, first_name, last_name')
-        .eq('club_id', clubId)
-        .order('first_name', { ascending: true });
+        .eq('club_id', clubData?.club_id);
       
       if (error) throw error;
       return data as ClubMember[];
     },
-    enabled: !!clubId,
+    enabled: !!clubData?.club_id,
   });
 
-  // Fetch a default position ID to use
+  // Fetch a default position ID to use - we'll use the first one
   const { data: defaultPosition } = useQuery({
     queryKey: ['defaultPosition'],
     queryFn: async () => {
@@ -71,25 +85,6 @@ const NewGame = () => {
     },
   });
 
-  // Filter and format players based on search
-  const filteredPlayers = useMemo(() => {
-    if (!players) return [];
-    
-    let filtered = players;
-    
-    if (searchQuery.trim()) {
-      filtered = players.filter(player => 
-        player.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        player.last_name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    return filtered.map(player => ({
-      ...player,
-      displayName: `${player.first_name} ${player.last_name.charAt(0)}.`
-    }));
-  }, [players, searchQuery]);
-
   const handlePlayerToggle = (playerId: string) => {
     setSelectedPlayers(current => 
       current.includes(playerId)
@@ -98,19 +93,9 @@ const NewGame = () => {
     );
   };
 
-  const handleSearchClick = () => {
-    setIsSearchExpanded(true);
-  };
-
-  const handleSearchBlur = () => {
-    if (!searchQuery.trim()) {
-      setIsSearchExpanded(false);
-    }
-  };
-
-  const canCreateTeams = selectedPlayers.length >= 4;
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!date) {
       toast({
         title: "Date required",
@@ -120,10 +105,10 @@ const NewGame = () => {
       return;
     }
 
-    if (!canCreateTeams) {
+    if (selectedPlayers.length < 6) {
       toast({
         title: "Not enough players",
-        description: "Please select at least 4 players to create teams",
+        description: "Please select at least 6 players to create teams",
         variant: "destructive"
       });
       return;
@@ -147,7 +132,7 @@ const NewGame = () => {
         .insert({
           date: format(date, 'yyyy-MM-dd'),
           created_by: user?.id,
-          club_id: clubId,
+          club_id: clubData?.club_id,
           team_generated: true,
         })
         .select()
@@ -185,19 +170,21 @@ const NewGame = () => {
       
       if (teamBError) throw teamBError;
 
-      // Add players to teams
+      // Add players to Team A with position_id
       const teamAPlayers = teamA.map(playerId => ({
         match_team_id: teamAData.id,
         player_id: playerId,
-        position_id: defaultPosition.id,
+        position_id: defaultPosition.id, // Add the required position_id
       }));
 
+      // Add players to Team B with position_id
       const teamBPlayers = teamB.map(playerId => ({
         match_team_id: teamBData.id,
         player_id: playerId,
-        position_id: defaultPosition.id,
+        position_id: defaultPosition.id, // Add the required position_id
       }));
 
+      // Insert players into teams
       const { error: teamPlayersError } = await supabase
         .from('team_players')
         .insert([...teamAPlayers, ...teamBPlayers]);
@@ -224,7 +211,8 @@ const NewGame = () => {
         description: "Your game has been created and teams have been generated",
       });
 
-      navigate(`/dashboard/${clubId}`);
+      // Navigate to the dashboard to see the game
+      navigate('/dashboard');
       
     } catch (error: any) {
       console.error('Error creating game:', error);
@@ -238,121 +226,102 @@ const NewGame = () => {
     }
   };
 
-  if (isLoadingPlayers) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <Spinner className="h-8 w-8" />
-        </div>
-      </div>
-    );
-  }
+  const isLoading = isLoadingClub || isLoadingPlayers;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-grow bg-gray-50 py-8">
-        <div className="max-w-2xl mx-auto px-4">
-          <h1 className="text-4xl font-serif mb-8">Create New Game</h1>
+        <div className="max-w-3xl mx-auto px-4">
+          <h1 className="text-3xl font-semibold mb-6">Let's Create a New Game</h1>
           
-          {/* Date Picker */}
-          <div className="mb-6">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal h-12 text-base",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'EEEE, do MMMM yyyy') : <span>Select Game's Date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Players Selection */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            {/* Header */}
-            <div className="bg-[#F5C842] px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Select Players</h2>
-              <div className="flex items-center">
-                {isSearchExpanded ? (
-                  <Input
-                    type="text"
-                    placeholder="Search players..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onBlur={handleSearchBlur}
-                    className="w-48 h-8 text-sm"
-                    autoFocus
-                  />
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSearchClick}
-                    className="p-1 h-8 w-8"
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Spinner className="h-8 w-8" />
             </div>
-
-            {/* Players List */}
-            <div className="max-h-96 overflow-y-auto">
-              {filteredPlayers.length > 0 ? (
-                filteredPlayers.map((player) => (
-                  <div key={player.id} className="flex items-center justify-between px-6 py-3 border-b border-gray-100 last:border-b-0">
-                    <label htmlFor={`player-${player.id}`} className="text-base font-medium text-gray-900 cursor-pointer flex-grow">
-                      {player.displayName}
-                    </label>
-                    <Checkbox 
-                      id={`player-${player.id}`}
-                      checked={selectedPlayers.includes(player.id)}
-                      onCheckedChange={() => handlePlayerToggle(player.id)}
-                      className="h-5 w-5"
-                    />
-                  </div>
-                ))
-              ) : (
-                <div className="px-6 py-8 text-center text-gray-500">
-                  {searchQuery ? 'No players found matching your search.' : 'No players found in your club.'}
+          ) : (
+            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
+              <div className="space-y-6">
+                {/* Date Picker */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Select the Date of the Game *
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Create Teams Button */}
-          <div className="mt-8 flex justify-center">
-            <Button
-              onClick={handleSubmit}
-              disabled={!canCreateTeams || isSubmitting || !date}
-              className="px-8 py-3 text-base"
-            >
-              {isSubmitting ? (
-                <>
-                  <Spinner className="mr-2 h-4 w-4" />
-                  Creating...
-                </>
-              ) : (
-                'Create Teams'
-              )}
-            </Button>
-          </div>
+                
+                {/* Players Selection */}
+                <div>
+                  <h3 className="text-md font-medium mb-2">
+                    Add all the players available for today's game
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Teams will be randomized after game's creation
+                  </p>
+                  
+                  {players && players.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {players.map((player) => (
+                        <div key={player.id} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`player-${player.id}`}
+                            checked={selectedPlayers.includes(player.id)}
+                            onCheckedChange={() => handlePlayerToggle(player.id)}
+                          />
+                          <label 
+                            htmlFor={`player-${player.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {player.first_name} {player.last_name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 italic">No players found in your club.</p>
+                  )}
+                </div>
+                
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting || selectedPlayers.length < 6 || !date}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Spinner className="mr-2 h-4 w-4" />
+                      Creating Game...
+                    </>
+                  ) : (
+                    'Create Game'
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </main>
     </div>

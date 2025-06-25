@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,9 +18,8 @@ const InviteMembers = () => {
   const [invites, setInvites] = useState<MemberInvite[]>([{ name: '', email: '' }]);
   const [isSubmitting, setIsSubmitting] = useState(false);  
   const { toast } = useToast();
-  const { clubId, setClubId } = useClub();
+  const { setClubId } = useClub();
   const navigate = useNavigate();
-  
   const handleAddInvite = () => {
     if (invites.length < 6) {
       setInvites([...invites, { name: '', email: '' }]);
