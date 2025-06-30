@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# My Hobby Side-Project App
 
 ## Project info
 
