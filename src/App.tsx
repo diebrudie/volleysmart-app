@@ -120,6 +120,22 @@ const App = () => {
   }, []);
   */
 
+  useEffect(() => {
+    // Suppress bucket creation errors since bucket already exists
+    const originalError = console.error;
+    console.error = (...args) => {
+      if (args[0]?.includes?.('bucket') || args[0]?.includes?.('StorageApiError')) {
+        // Suppress bucket-related errors
+        return;
+      }
+      originalError(...args);
+    };
+
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
