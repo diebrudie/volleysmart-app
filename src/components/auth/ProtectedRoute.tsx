@@ -14,11 +14,11 @@ interface ProtectedRouteProps {
   requiresCompletedOnboarding?: boolean;
 }
 
-const ProtectedRoute = ({ 
-  children, 
-  allowedRoles, 
+const ProtectedRoute = ({
+  children,
+  allowedRoles,
   requiresOnboarding = true,
-  requiresCompletedOnboarding = false 
+  requiresCompletedOnboarding = false
 }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
@@ -27,9 +27,15 @@ const ProtectedRoute = ({
 
   // Check if user has completed onboarding (has a player profile)
   useEffect(() => {
+    console.log('🔍 ProtectedRoute - Starting onboarding check');
+    console.log('🔍 ProtectedRoute - User:', user);
+    console.log('🔍 ProtectedRoute - Location:', location.pathname);
+    console.log('🔍 ProtectedRoute - requiresOnboarding:', requiresOnboarding);
+    console.log('🔍 ProtectedRoute - requiresCompletedOnboarding:', requiresCompletedOnboarding);
+
     if (isAuthenticated && user && (requiresOnboarding || requiresCompletedOnboarding) && location.pathname !== '/players/onboarding') {
       setIsCheckingOnboarding(true);
-      
+
       const checkOnboarding = async () => {
         try {
           const { data: player, error } = await supabase
@@ -83,7 +89,7 @@ const ProtectedRoute = ({
   // If roles are specified, check if the user has one of the allowed roles
   if (allowedRoles && user) {
     const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
-    
+
     if (!hasRequiredRole) {
       // Redirect to dashboard if user doesn't have required role
       return <Navigate to="/dashboard" replace />;
