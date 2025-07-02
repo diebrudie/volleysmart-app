@@ -19,7 +19,7 @@ const PlayerOnboarding = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [skillRating, setSkillRating] = useState([5]);
   const [primaryPosition, setPrimaryPosition] = useState('');
   const [secondaryPositions, setSecondaryPositions] = useState<string[]>([]);
@@ -64,10 +64,14 @@ const PlayerOnboarding = () => {
     e.preventDefault();
     if (!user) return;
 
+    console.log('🔍 Starting player creation for user:', user.id);
+
     // Get user metadata for first and last names
     const { data: { user: authUser } } = await supabase.auth.getUser();
     const firstName = authUser?.user_metadata?.first_name || '';
     const lastName = authUser?.user_metadata?.last_name || '';
+
+    console.log('🔍 User metadata:', { firstName, lastName });
 
     if (!firstName || !lastName) {
       toast({
@@ -80,30 +84,76 @@ const PlayerOnboarding = () => {
 
     setIsSubmitting(true);
     try {
-      await createPlayer(user.id, {
-        first_name: firstName,
-        last_name: lastName,
-        skill_rating: skillRating[0],
-        primary_position: primaryPosition,
-        secondary_positions: secondaryPositions,
-        member_association: memberAssociation,
-        gender,
-        birthday: birthday || undefined,
-      });
+      // Check if player already exists
+      const { data: existingPlayer } = await supabase
+        .from('players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingPlayer) {
+        console.log('🔍 Player already exists, redirecting to /start');
+        toast({
+          title: "Success",
+          description: "Player profile already exists!",
+        });
+        navigate('/start', { replace: true });
+        return;
+      }
+
+      console.log('🔍 Creating new player profile...');
+
+      // Try using your existing createPlayer function first
+      try {
+        const player = await createPlayer(user.id, {
+          first_name: firstName,
+          last_name: lastName,
+          skill_rating: skillRating[0],
+          primary_position: primaryPosition,
+          secondary_positions: secondaryPositions,
+          member_association: memberAssociation,
+          gender,
+          birthday: birthday || undefined,
+        });
+
+        console.log('✅ Player created successfully with positions:', player);
+      } catch (createPlayerError) {
+        console.warn('⚠️ createPlayer function failed, trying direct insert:', createPlayerError);
+
+        // Fallback: Create player without positions first
+        const { data: newPlayer, error: playerError } = await supabase
+          .from('players')
+          .insert({
+            user_id: user.id,
+            first_name: firstName,
+            last_name: lastName,
+            skill_rating: skillRating[0],
+            member_association: memberAssociation,
+            gender,
+            birthday: birthday || null,
+          })
+          .select()
+          .single();
+
+        if (playerError) {
+          console.error('🚨 Direct player creation error:', playerError);
+          throw playerError;
+        }
+
+        console.log('✅ Player created successfully (without positions):', newPlayer);
+      }
 
       toast({
         title: "Success",
         description: "Player profile created successfully!",
       });
 
-      // Force a page reload after navigation to ensure the ProtectedRoute re-checks onboarding status
       navigate('/start', { replace: true });
-      //window.location.reload();
     } catch (error) {
-      console.error('Error creating player:', error);
+      console.error('🚨 Error creating player:', error);
       toast({
         title: "Error",
-        description: "Failed to create player profile. Please try again.",
+        description: `Failed to create player profile: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -116,7 +166,7 @@ const PlayerOnboarding = () => {
       <div className="max-w-2xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Complete Your Player Profile</h1>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <Label>What is your main position? *</Label>
