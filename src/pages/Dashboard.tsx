@@ -183,7 +183,9 @@ const Dashboard = () => {
   };
 
   const handleCreateGame = () => {
-    navigate('/new-game');
+    if (userClubId) {
+      navigate(`/new-game/${userClubId}`);
+    }
   };
 
   // Show loading state while checking club membership

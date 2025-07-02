@@ -208,7 +208,7 @@ const App = () => {
                   />
 
                   <Route
-                    path="/new-game"
+                    path="new-game/:clubId"
                     element={
                       <ProtectedRoute>
                         <NewGame />

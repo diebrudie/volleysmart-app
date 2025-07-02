@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { CalendarIcon, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from "react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useClub } from '@/contexts/ClubContext';
@@ -14,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { useParams } from 'react-router-dom';
 import {
   Popover,
   PopoverContent,
@@ -29,7 +31,9 @@ interface ClubMember {
 
 const NewGame = () => {
   const { user } = useAuth();
-  const { clubId } = useClub();
+  const { clubId: urlClubId } = useParams<{ clubId: string }>();
+  const clubId = urlClubId;
+  const { setClubId } = useClub();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,6 +41,13 @@ const NewGame = () => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Set the club context from URL
+  useEffect(() => {
+    if (urlClubId) {
+      setClubId(urlClubId);
+    }
+  }, [urlClubId, setClubId]);
 
   // Fetch club members/players
   const { data: players, isLoading: isLoadingPlayers } = useQuery({
@@ -227,11 +238,11 @@ const NewGame = () => {
       // Navigate to the dashboard to see the game
       navigate(`/dashboard/${clubId}`);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating game:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create game. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create game. Please try again.",
         variant: "destructive"
       });
     } finally {

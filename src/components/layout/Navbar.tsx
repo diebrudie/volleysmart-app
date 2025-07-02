@@ -103,7 +103,13 @@ const Navbar = () => {
               <>
                 <Button
                   className="rounded-md bg-[#243F8D]"
-                  onClick={() => navigate("/generate-teams")}
+                  onClick={() => {
+                    if (clubId) {
+                      navigate(`/new-game/${clubId}`);
+                    } else {
+                      navigate('/new-game');
+                    }
+                  }}
                 >
                   Create Game
                 </Button>
@@ -220,7 +226,11 @@ const Navbar = () => {
                         className="w-full bg-[#243F8D]"
                         onClick={() => {
                           setIsOpen(false);
-                          navigate("/generate-teams");
+                          if (clubId) {
+                            navigate(`/new-game/${clubId}`);
+                          } else {
+                            navigate('/new-game');
+                          }
                         }}
                       >
                         Create Game
