@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -6,19 +5,32 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { Check } from "lucide-react";
 
-const resetPasswordSchema = z.object({
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(6, { message: "Password must be at least 6 characters" }),
+    confirmPassword: z
+      .string()
+      .min(6, { message: "Password must be at least 6 characters" }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
@@ -41,13 +53,13 @@ const ResetPassword = () => {
     // Check if we have access to the reset token
     const checkSession = async () => {
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error || !data.session) {
         setIsValidLink(false);
         toast({
           title: "Invalid or expired link",
           description: "Please request a new password reset link.",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     };
@@ -57,32 +69,33 @@ const ResetPassword = () => {
 
   const onSubmit = async (data: ResetPasswordFormValues) => {
     if (!isValidLink) return;
-    
+
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({
-        password: data.password
+        password: data.password,
       });
 
       if (error) throw error;
 
       setIsSuccess(true);
-      
+
       toast({
         title: "Password updated",
         description: "Your password has been successfully updated.",
       });
-      
+
       // Redirect to login after 3 seconds
       setTimeout(() => {
         navigate("/login");
       }, 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Password reset error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to reset password.",
-        variant: "destructive"
+        description:
+          error instanceof Error ? error.message : "Failed to reset password.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -112,7 +125,7 @@ const ResetPassword = () => {
         <p className="text-gray-600 mb-6">
           Enter a new password for your account.
         </p>
-        
+
         {isSuccess ? (
           <div className="text-center py-8">
             <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
@@ -120,7 +133,8 @@ const ResetPassword = () => {
             </div>
             <h3 className="text-lg font-medium mb-2">Password Updated!</h3>
             <p className="text-gray-600 mb-6">
-              Your password has been successfully reset. You will be redirected to the login page shortly.
+              Your password has been successfully reset. You will be redirected
+              to the login page shortly.
             </p>
             <Button asChild>
               <Link to="/login">Back to login</Link>
@@ -136,7 +150,11 @@ const ResetPassword = () => {
                   <FormItem>
                     <FormLabel>New Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Enter new password" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="Enter new password"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -149,17 +167,17 @@ const ResetPassword = () => {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Confirm new password" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="Confirm new password"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Resetting..." : "Reset Password"}
               </Button>
             </form>

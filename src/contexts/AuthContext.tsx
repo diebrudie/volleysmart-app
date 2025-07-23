@@ -169,12 +169,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       return Promise.resolve();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
       toast({
         title: "Error",
         description:
-          error.message || "Failed to log in. Please check your credentials.",
+          error instanceof Error
+            ? error.message
+            : "Failed to log in. Please check your credentials.",
         variant: "destructive",
       });
       throw error;
@@ -209,12 +211,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description:
           "Account created successfully. You'll be redirected to complete your profile.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Signup error:", error);
       toast({
         title: "Error",
         description:
-          error.message || "Failed to create account. Please try again.",
+          error instanceof Error
+            ? error.message
+            : "Failed to create account. Please try again.",
         variant: "destructive",
       });
       throw error;
@@ -235,11 +239,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: "Success",
         description: "Password reset email sent. Please check your inbox.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Reset password error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to send password reset email.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to send password reset email.",
         variant: "destructive",
       });
       throw error;
@@ -258,11 +265,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: "Success",
         description: "Your password has been updated successfully.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Update password error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update password.",
+        description:
+          error instanceof Error ? error.message : "Failed to update password.",
         variant: "destructive",
       });
       throw error;

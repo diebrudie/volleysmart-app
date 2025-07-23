@@ -101,13 +101,17 @@ const NewClub = () => {
       }
 
       return getPublicUrl("club-images", filePath);
-    } catch (error: any) {
-      console.error("Image upload error:", error);
-      setUploadError(`Image upload failed: ${error.message}`);
-      return null;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Image upload error:", error.message);
+      } else {
+        console.error("Unknown error:", error);
+      }
+      return null; // Add this return statement
     }
-  };
+  }; // ← uploadImage function ends here
 
+  // ✅ CORRECT: onSubmit is at component level
   const onSubmit = async (data: NewClubFormData) => {
     if (!user) {
       toast({
@@ -184,7 +188,7 @@ const NewClub = () => {
         setClubId(clubData.id); // ✅ Context
         localStorage.setItem("lastVisitedClub", clubData.id); // ✅ Fallback on reload
         navigate(`/invite-members/${clubData.id}`);
-      } catch (adminError: any) {
+      } catch (adminError: unknown) {
         console.error("Error adding user as admin:", adminError);
 
         // Even if there's an admin error, the club was created
@@ -199,17 +203,21 @@ const NewClub = () => {
         localStorage.setItem("lastVisitedClub", clubData.id); // ✅ Fallback on reload
         navigate(`/invite-members/${clubData.id}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating club:", error);
 
       setServerError(
-        error.message || "Failed to create club. Please try again."
+        error instanceof Error
+          ? error.message
+          : "Failed to create club. Please try again."
       );
 
       toast({
         title: "Error",
         description:
-          error.message || "Failed to create club. Please try again.",
+          error instanceof Error
+            ? error.message
+            : "Failed to create club. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { Plus, X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { Spinner } from '@/components/ui/spinner';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Spinner } from "@/components/ui/spinner";
 import { useClub } from "@/contexts/ClubContext";
 
 interface MemberInvite {
@@ -14,18 +14,20 @@ interface MemberInvite {
 }
 
 const InviteMembers = () => {
-  const [invites, setInvites] = useState<MemberInvite[]>([{ name: '', email: '' }]);
-  const [isSubmitting, setIsSubmitting] = useState(false);  
+  const [invites, setInvites] = useState<MemberInvite[]>([
+    { name: "", email: "" },
+  ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { clubId, setClubId } = useClub();
   const navigate = useNavigate();
   const handleAddInvite = () => {
     if (invites.length < 6) {
-      setInvites([...invites, { name: '', email: '' }]);
+      setInvites([...invites, { name: "", email: "" }]);
     } else {
       toast({
         title: "Maximum reached",
-        description: "You can invite up to 6 members at once"
+        description: "You can invite up to 6 members at once",
       });
     }
   };
@@ -38,7 +40,11 @@ const InviteMembers = () => {
     }
   };
 
-  const handleInputChange = (index: number, field: keyof MemberInvite, value: string) => {
+  const handleInputChange = (
+    index: number,
+    field: keyof MemberInvite,
+    value: string
+  ) => {
     const newInvites = [...invites];
     newInvites[index][field] = value;
     setInvites(newInvites);
@@ -48,80 +54,93 @@ const InviteMembers = () => {
     if (clubId) {
       navigate(`/dashboard/${clubId}`);
     } else {
-      navigate('/clubs'); // fallback
+      navigate("/clubs"); // fallback
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Filter out empty invites
-    const validInvites = invites.filter(invite => invite.name.trim() && invite.email.trim());
-    
+    const validInvites = invites.filter(
+      (invite) => invite.name.trim() && invite.email.trim()
+    );
+
     if (validInvites.length === 0) {
       // If no valid invites, just skip
       handleSkip();
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Get club information to include in the invitation
       const { data: clubData, error: clubError } = await supabase
-        .from('clubs')
-        .select('name, slug')
-        .eq('id', clubId)
+        .from("clubs")
+        .select("name, slug")
+        .eq("id", clubId)
         .single();
-      
+
       if (clubError) throw clubError;
-      
+
       // Call our edge function to send invitation emails
-      const response = await fetch(`https://hdorkmnfwpegvlxygfwv.supabase.co/functions/v1/send-club-invitations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({
-          invites: validInvites,
-          clubInfo: {
-            id: clubId,
-            name: clubData.name,
-            joinCode: clubData.slug
-          }
-        })
-      });
-      
+      const response = await fetch(
+        `https://hdorkmnfwpegvlxygfwv.supabase.co/functions/v1/send-club-invitations`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${
+              (
+                await supabase.auth.getSession()
+              ).data.session?.access_token
+            }`,
+          },
+          body: JSON.stringify({
+            invites: validInvites,
+            clubInfo: {
+              id: clubId,
+              name: clubData.name,
+              joinCode: clubData.slug,
+            },
+          }),
+        }
+      );
+
       if (!response.ok) {
         // Handle non-JSON responses
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to send invitations');
+          throw new Error(errorData.error || "Failed to send invitations");
         } else {
-          throw new Error(`Failed to send invitations: ${response.status} ${response.statusText}`);
+          throw new Error(
+            `Failed to send invitations: ${response.status} ${response.statusText}`
+          );
         }
       }
-      
+
       toast({
         title: "Invitations sent!",
-        description: `Invitations have been sent to ${validInvites.length} members.`
+        description: `Invitations have been sent to ${validInvites.length} members.`,
       });
-      
+
       // Navigate to dashboard
       if (clubId) {
         navigate(`/dashboard/${clubId}`);
       } else {
-        navigate('/clubs'); // fallback
+        navigate("/clubs"); // fallback
       }
-      
-    } catch (error: any) {
-      console.error('Error sending invitations:', error);
+    } catch (error: unknown) {
+      console.error("Error sending invitations:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to send invitations. Please try again.",
-        variant: "destructive"
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to send invitations. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -131,24 +150,28 @@ const InviteMembers = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-2xl bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-semibold text-center mb-2">Great! Now Invite your club members</h1>
+        <h1 className="text-2xl font-semibold text-center mb-2">
+          Great! Now Invite your club members
+        </h1>
         <p className="text-center text-gray-600 mb-6">
           You can skip this step and invite your members later
         </p>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-[2fr_3fr_auto] gap-3 mb-4">
             <div className="font-medium">Name</div>
             <div className="font-medium">Email</div>
             <div></div>
-            
+
             {invites.map((invite, index) => (
               <div key={index} className="contents">
                 <div>
                   <Input
                     placeholder="Member name"
                     value={invite.name}
-                    onChange={(e) => handleInputChange(index, 'name', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(index, "name", e.target.value)
+                    }
                   />
                 </div>
                 <div>
@@ -156,7 +179,9 @@ const InviteMembers = () => {
                     type="email"
                     placeholder="member@email.com"
                     value={invite.email}
-                    onChange={(e) => handleInputChange(index, 'email', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(index, "email", e.target.value)
+                    }
                   />
                 </div>
                 <div className="flex items-center">
@@ -183,27 +208,20 @@ const InviteMembers = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="flex justify-between mt-8">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSkip}
-            >
+            <Button type="button" variant="outline" onClick={handleSkip}>
               Skip for now
             </Button>
-            
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-            >
+
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Spinner className="mr-2 h-4 w-4" />
                   Sending Invitations...
                 </>
               ) : (
-                'Invite Members'
+                "Invite Members"
               )}
             </Button>
           </div>
