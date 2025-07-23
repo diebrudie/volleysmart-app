@@ -1,4 +1,3 @@
-
 import { Navigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -15,13 +14,13 @@ const Home = () => {
 
   // Redirect authenticated users to dashboard
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/clubs" replace />;
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
+
       <HeroSection />
       <FeaturesSection />
       <HowItWorksSection />

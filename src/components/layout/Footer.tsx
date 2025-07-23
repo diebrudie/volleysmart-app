@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import Logo from "@/components/common/Logo";
 
@@ -19,50 +18,78 @@ const Footer = () => {
           <div className="mt-12 grid grid-cols-2 gap-8 xl:mt-0 xl:col-span-2">
             <div className="md:grid md:grid-cols-2 md:gap-8">
               <div>
-                <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Navigation</h3>
+                <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">
+                  Navigation
+                </h3>
                 <ul className="mt-4 space-y-4">
                   <li>
-                    <Link to="/" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      to="/"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Home
                     </Link>
                   </li>
                   <li>
-                    <Link to="/dashboard" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      to="/clubs"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Dashboard
                     </Link>
                   </li>
                   <li>
-                    <Link to="/matches" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      to="/matches"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Match Days
                     </Link>
                   </li>
                   <li>
-                    <Link to="/players" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      to="/players"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Players
                     </Link>
                   </li>
                 </ul>
               </div>
               <div className="mt-12 md:mt-0">
-                <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Support</h3>
+                <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">
+                  Support
+                </h3>
                 <ul className="mt-4 space-y-4">
                   <li>
-                    <Link to="#" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      to="#"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Help Center
                     </Link>
                   </li>
                   <li>
-                    <Link to="#" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      to="#"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Contact Us
                     </Link>
                   </li>
                   <li>
-                    <Link to="#" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      to="#"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Privacy
                     </Link>
                   </li>
                   <li>
-                    <Link to="#" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      to="#"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Terms
                     </Link>
                   </li>

@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,19 +15,26 @@ const CtaSection = () => {
               Ready to transform your volleyball matches?
             </h2>
             <p className="mt-3 max-w-3xl text-lg text-blue-100">
-              Join other volleyball enthusiasts who are already using our platform to organize fair and fun matches.
+              Join other volleyball enthusiasts who are already using our
+              platform to organize fair and fun matches.
             </p>
             <div className="mt-8">
               <div className="inline-flex rounded-md shadow">
                 {isAuthenticated ? (
-                  <Link to="/dashboard">
-                    <Button size="lg" className="bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90">
+                  <Link to="/login">
+                    <Button
+                      size="lg"
+                      className="bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90"
+                    >
                       Go to Dashboard
                     </Button>
                   </Link>
                 ) : (
                   <Link to="/signup">
-                    <Button size="lg" className="bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90">
+                    <Button
+                      size="lg"
+                      className="bg-volleyball-secondary text-volleyball-primary hover:bg-volleyball-secondary/90"
+                    >
                       Get Started for Free
                     </Button>
                   </Link>
