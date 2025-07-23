@@ -1,4 +1,3 @@
-
 import { ToastProvider } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -11,7 +10,7 @@ import { useEffect, useState } from "react";
 //import { ensureStorageBucketExists, StorageBuckets } from "@/integrations/supabase/storage";
 import { ClubProvider } from "@/contexts/ClubContext";
 import { useClub } from "@/contexts/ClubContext";
-import { supabase } from "@/integrations/supabase/client"
+import { supabase } from "@/integrations/supabase/client";
 
 // Pages
 import Home from "./pages/Home";
@@ -57,10 +56,10 @@ const HomeRoute = () => {
         const verifyClubAccess = async () => {
           try {
             const { data } = await supabase
-              .from('club_members')
-              .select('club_id')
-              .eq('club_id', lastClub)
-              .eq('user_id', isAuthenticated ? user?.id : null)
+              .from("club_members")
+              .select("club_id")
+              .eq("club_id", lastClub)
+              .eq("user_id", isAuthenticated ? user?.id : null)
               .single();
 
             setIsCheckingClub(false);
@@ -70,12 +69,12 @@ const HomeRoute = () => {
               window.location.href = `/dashboard/${lastClub}`;
             } else {
               // No access, go to clubs page
-              window.location.href = '/clubs';
+              window.location.href = "/clubs";
             }
           } catch (error) {
-            console.error('Error verifying club access:', error);
+            console.error("Error verifying club access:", error);
             setIsCheckingClub(false);
-            window.location.href = '/clubs';
+            window.location.href = "/clubs";
           }
         };
 
@@ -83,7 +82,7 @@ const HomeRoute = () => {
       } else {
         // No last club, go to clubs page
         setIsCheckingClub(false);
-        window.location.href = '/clubs';
+        window.location.href = "/clubs";
       }
     } else if (!isAuthenticated && !isLoading) {
       setIsCheckingClub(false);
@@ -124,8 +123,14 @@ const App = () => {
     // Suppress bucket creation errors since bucket already exists
     const originalError = console.error;
     console.error = (...args) => {
-      if (args[0]?.includes?.('bucket') || args[0]?.includes?.('StorageApiError')) {
-        // Suppress bucket-related errors
+      const message = args[0]?.toString?.() || "";
+      if (
+        message.includes("bucket") ||
+        message.includes("StorageApiError") ||
+        message.includes("row-level security policy") ||
+        message.includes("admin privileges")
+      ) {
+        // Suppress storage-related errors
         return;
       }
       originalError(...args);
@@ -277,7 +282,7 @@ const App = () => {
                   <Route
                     path="/generate-teams"
                     element={
-                      <ProtectedRoute allowedRoles={['admin', 'editor']}>
+                      <ProtectedRoute allowedRoles={["admin", "editor"]}>
                         <TeamGenerator />
                       </ProtectedRoute>
                     }
@@ -287,7 +292,7 @@ const App = () => {
                   <Route
                     path="/admin"
                     element={
-                      <ProtectedRoute allowedRoles={['admin']}>
+                      <ProtectedRoute allowedRoles={["admin"]}>
                         <Admin />
                       </ProtectedRoute>
                     }

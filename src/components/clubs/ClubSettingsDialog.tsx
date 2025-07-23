@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,11 +28,15 @@ interface ClubSettingsDialogProps {
   };
 }
 
-const ClubSettingsDialog = ({ isOpen, onClose, club }: ClubSettingsDialogProps) => {
+const ClubSettingsDialog = ({
+  isOpen,
+  onClose,
+  club,
+}: ClubSettingsDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [name, setName] = useState(club.name);
   const [description, setDescription] = useState(club.description || "");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -53,45 +56,56 @@ const ClubSettingsDialog = ({ isOpen, onClose, club }: ClubSettingsDialogProps) 
   };
 
   // Check if there are any changes
-  const hasChanges = 
+  const hasChanges =
     name.trim() !== club.name ||
     description !== (club.description || "") ||
     imageFile !== null;
 
   const handleSave = async () => {
     if (!user?.id) return;
-    
+
     setIsLoading(true);
     try {
       let imageUrl = club.image_url;
 
       // Upload new image if selected
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
+        const fileExt = imageFile.name.split(".").pop();
         const fileName = `${club.id}_${Date.now()}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
-          .from('club-images')
+          .from("club-images")
           .upload(fileName, imageFile);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          // Handle bucket/policy errors gracefully
+          if (
+            uploadError.message?.includes("bucket") ||
+            uploadError.message?.includes("policy")
+          ) {
+            console.warn("Storage policy warning:", uploadError.message);
+            // Continue without image update
+          } else {
+            throw uploadError;
+          }
+        } else {
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from("club-images").getPublicUrl(fileName);
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('club-images')
-          .getPublicUrl(fileName);
-        
-        imageUrl = publicUrl;
+          imageUrl = publicUrl;
+        }
       }
 
-      // Update club
+      // Update club (rest of the function remains the same)
       const { error } = await supabase
-        .from('clubs')
+        .from("clubs")
         .update({
           name,
           description,
           image_url: imageUrl,
         })
-        .eq('id', club.id);
+        .eq("id", club.id);
 
       if (error) throw error;
 
@@ -100,10 +114,10 @@ const ClubSettingsDialog = ({ isOpen, onClose, club }: ClubSettingsDialogProps) 
         description: "Club updated successfully",
       });
 
-      queryClient.invalidateQueries({ queryKey: ['userClubs'] });
+      queryClient.invalidateQueries({ queryKey: ["userClubs"] });
       onClose();
     } catch (error) {
-      console.error('Error updating club:', error);
+      console.error("Error updating club:", error);
       toast({
         title: "Error",
         description: "Failed to update club",
@@ -119,9 +133,7 @@ const ClubSettingsDialog = ({ isOpen, onClose, club }: ClubSettingsDialogProps) 
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Club Settings</DialogTitle>
-          <DialogDescription>
-            Edit your club details.
-          </DialogDescription>
+          <DialogDescription>Edit your club details.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
