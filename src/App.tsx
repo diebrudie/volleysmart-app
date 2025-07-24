@@ -107,6 +107,9 @@ const HomeRoute = () => {
 };
 
 const App = () => {
+  console.log("🚨 APP COMPONENT RENDERING");
+  console.log("🚨 CURRENT URL:", window.location.pathname);
+
   useEffect(() => {
     // Intercept and suppress bucket creation attempts
     const originalFetch = window.fetch;
