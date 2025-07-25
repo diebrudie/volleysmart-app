@@ -19,17 +19,14 @@ const ProtectedRoute = ({
   requiresOnboarding = true,
   requiresCompletedOnboarding = false,
 }: ProtectedRouteProps) => {
-  console.log("🔒 PROTECTED ROUTE RENDERING FOR MEMBERS");
-  console.log("🔒 Location pathname:", useLocation().pathname);
-
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
-  console.log("🔒 PROTECTED ROUTE RENDERING");
-  console.log("🔒 Location pathname:", location.pathname);
-  console.log("🔒 isAuthenticated:", isAuthenticated);
-  console.log("🔒 isLoading:", isLoading);
-  console.log("🔒 user:", user);
+  // console.log("🔒 PROTECTED ROUTE RENDERING");
+  // console.log("🔒 Location pathname:", location.pathname);
+  // console.log("🔒 isAuthenticated:", isAuthenticated);
+  // console.log("🔒 isLoading:", isLoading);
+  // console.log("🔒 user:", user);
 
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<
     boolean | null
@@ -38,14 +35,11 @@ const ProtectedRoute = ({
 
   // Check if user has completed onboarding (has a player profile)
   useEffect(() => {
-    console.log("🔍 ProtectedRoute - Starting onboarding check");
-    console.log("🔍 ProtectedRoute - User:", user);
-    console.log("🔍 ProtectedRoute - Location:", location.pathname);
-    console.log("🔍 ProtectedRoute - requiresOnboarding:", requiresOnboarding);
-    console.log(
-      "🔍 ProtectedRoute - requiresCompletedOnboarding:",
-      requiresCompletedOnboarding
-    );
+    // console.log("🔍 ProtectedRoute - Starting onboarding check");
+    // console.log("🔍 ProtectedRoute - User:", user);
+    // console.log("🔍 ProtectedRoute - Location:", location.pathname);
+    // console.log("🔍 ProtectedRoute - requiresOnboarding:", requiresOnboarding);
+    // console.log("🔍 ProtectedRoute - requiresCompletedOnboarding:",requiresCompletedOnboarding);
 
     if (
       isAuthenticated &&

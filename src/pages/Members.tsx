@@ -23,6 +23,7 @@ interface Player {
   last_name: string;
   image_url: string | null;
   user_id: string;
+  member_association: boolean;
   player_positions: Array<{
     is_primary: boolean | null;
     positions: {
@@ -46,30 +47,20 @@ const Members = () => {
   // Use URL clubId first, fallback to context
   const clubId = urlClubId || contextClubId;
 
-  // Enhanced debugging
-  console.log("🔍 Members component render - clubId:", clubId);
-  console.log("🔍 Current URL:", window.location.pathname);
-
-  // Set context from URL if available (FIRST useEffect)
+  // Set context from URL if available
   useEffect(() => {
     if (urlClubId && urlClubId !== contextClubId) {
       setClubId(urlClubId);
     }
   }, [urlClubId, contextClubId, setClubId]);
 
-  // Check if clubId exists and redirect if not (SECOND useEffect)
+  // Check if clubId exists and redirect if not
   useEffect(() => {
     if (!clubId) {
       console.warn("❌ No clubId provided to members query.");
       navigate("/clubs");
     }
   }, [clubId, navigate]);
-
-  // Enhanced debugging
-  console.log("🔍 Members component render - urlClubId:", urlClubId);
-  console.log("🔍 Members component render - contextClubId:", contextClubId);
-  console.log("🔍 Members component render - final clubId:", clubId);
-  console.log("🔍 Current URL:", window.location.pathname);
 
   // Query to fetch club members
   const {
@@ -87,34 +78,6 @@ const Members = () => {
       console.log("🚀 Starting query for clubId:", clubId);
 
       try {
-        // DEBUGGING: First, let's test if we can see ANY club_members records
-        const { data: allMembers, error: allMembersError } = await supabase
-          .from("club_members")
-          .select("*")
-          .limit(5);
-
-        console.log("🔍 DEBUG: All club_members (first 5):", allMembers);
-        console.log("🔍 DEBUG: All members error:", allMembersError);
-
-        // DEBUGGING: Check current user's auth status
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-        console.log("🔍 DEBUG: Current user:", user?.id);
-        console.log("🔍 DEBUG: User error:", userError);
-
-        // DEBUGGING: Check if current user is member of this specific club
-        const { data: userMembership, error: membershipError } = await supabase
-          .from("club_members")
-          .select("*")
-          .eq("club_id", clubId)
-          .eq("user_id", user?.id || "")
-          .single();
-
-        console.log("🔍 DEBUG: User membership for this club:", userMembership);
-        console.log("🔍 DEBUG: Membership error:", membershipError);
-
         // Step 1: Get club members for the specific club
         const { data: clubMembersRaw, error: membersError } = await supabase
           .from("club_members")
@@ -143,31 +106,23 @@ const Members = () => {
           .filter(Boolean);
         console.log("📋 User IDs to lookup:", userIds);
 
-        // Test if we can fetch players at all
-        const { data: allPlayers, error: allPlayersError } = await supabase
-          .from("players")
-          .select("id, first_name, last_name, user_id")
-          .limit(5);
-
-        console.log("🔍 DEBUG: All players (first 5):", allPlayers);
-        console.log("🔍 DEBUG: All players error:", allPlayersError);
-
         const { data: playersRaw, error: playersError } = await supabase
           .from("players")
           .select(
             `
-          id,
-          first_name,
-          last_name,
-          image_url,
-          user_id,
-          player_positions (
-            is_primary,
-            positions (
-              name
-            )
-          )
-        `
+              id,
+              first_name,
+              last_name,
+              image_url,
+              user_id,
+              member_association,
+              player_positions (
+                is_primary,
+                positions (
+                  name
+                )
+              )
+            `
           )
           .in("user_id", userIds);
 
@@ -211,25 +166,6 @@ const Members = () => {
     console.error("❌ Query error:", error);
   }
 
-  {
-    /* Member count and game creation status */
-  }
-  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
-    <p className="font-semibold text-blue-800">Member Count Status:</p>
-    <p className="text-blue-700">
-      Current members: {members?.length || 0} / 4 minimum required
-    </p>
-    <p
-      className={`text-sm ${
-        (members?.length || 0) >= 4 ? "text-green-600" : "text-red-600"
-      }`}
-    >
-      {(members?.length || 0) >= 4
-        ? "✅ You can create games!"
-        : `❌ Need ${4 - (members?.length || 0)} more members to create games`}
-    </p>
-  </div>;
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -240,14 +176,6 @@ const Members = () => {
       </div>
     );
   }
-
-  // Add this right before the return statement
-  console.log("🚨 FINAL RENDER DEBUG:");
-  console.log("- clubId:", clubId);
-  console.log("- members data:", members);
-  console.log("- isLoading:", isLoading);
-  console.log("- error:", error);
-  console.log("- query enabled:", !!clubId);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -262,26 +190,8 @@ const Members = () => {
               on any to check their profile.
             </p>
 
-            {/* Debug info */}
-            <div className="mt-4 p-4 bg-gray-100 rounded text-sm">
-              <p>
-                <strong>Debug Info:</strong>
-              </p>
-              <p>Club ID: {clubId}</p>
-              <p>Total members found: {members?.length || 0}</p>
-              <p>
-                Members with player profiles:{" "}
-                {members?.filter((m) => m.player !== null).length || 0}
-              </p>
-              <p>
-                Members without player profiles:{" "}
-                {members?.filter((m) => m.player === null).length || 0}
-              </p>
-              <p>Is loading: {isLoading.toString()}</p>
-            </div>
-
-            {/* Member count and game creation status - MOVED INSIDE RETURN */}
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
+            {/* Member count and game creation status */
+            /* <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
               <p className="font-semibold text-blue-800">
                 Member Count Status:
               </p>
@@ -301,12 +211,43 @@ const Members = () => {
                       4 - (members?.length || 0)
                     } more members to create games`}
               </p>
-            </div>
+            </div> */}
           </div>
 
-          {/* Rest of your component... */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* ... existing members grid code ... */}
+          {/* Members Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {members
+              ?.filter((memberData) => memberData.player) // Only members with player data
+              ?.sort((a, b) => {
+                // Sort alphabetically by first name
+                const firstNameA = a.player?.first_name?.toLowerCase() || "";
+                const firstNameB = b.player?.first_name?.toLowerCase() || "";
+                return firstNameA.localeCompare(firstNameB);
+              })
+              ?.map((memberData) => (
+                <MemberCard
+                  key={memberData.member.user_id}
+                  member={memberData.player!} // Non-null assertion since we filtered above
+                />
+              ))}
+
+            {/* Show members without player profiles at the end */}
+            {members
+              ?.filter((memberData) => !memberData.player)
+              ?.map((memberData) => (
+                <div
+                  key={memberData.member.user_id}
+                  className="p-4 border rounded-lg bg-gray-50"
+                >
+                  <p className="font-medium">Member (No Profile)</p>
+                  <p className="text-sm text-gray-600">
+                    Role: {memberData.member.role}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    This member hasn't completed their player profile yet.
+                  </p>
+                </div>
+              ))}
           </div>
 
           {/* Empty state */}
