@@ -30,34 +30,40 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-const matchDetails = {
-  id: 1,
-  date: "2025-04-10T18:00:00.000Z",
-  location: "Main Gym",
-  duration: "2 hours",
-  teamA: [
-    { id: 1, name: "Alex Johnson", position: "Setter" },
-    { id: 2, name: "Maya Rivera", position: "Outside Hitter" },
-    { id: 3, name: "Jordan Smith", position: "Middle Blocker" },
-    { id: 4, name: "Taylor Lee", position: "Opposite Hitter" },
-    { id: 5, name: "Casey Jones", position: "Libero" },
-    { id: 6, name: "Sam Washington", position: "Outside Hitter" },
-  ],
-  teamB: [
-    { id: 7, name: "Jamie Chen", position: "Setter" },
-    { id: 8, name: "Riley Kim", position: "Outside Hitter" },
-    { id: 9, name: "Morgan Patel", position: "Middle Blocker" },
-    { id: 10, name: "Drew Garcia", position: "Opposite Hitter" },
-    { id: 11, name: "Quinn Brown", position: "Libero" },
-    { id: 12, name: "Avery Williams", position: "Outside Hitter" },
-  ],
-  games: [
-    { gameNumber: 1, teamA: 25, teamB: 22 },
-    { gameNumber: 2, teamA: 18, teamB: 25 },
-    { gameNumber: 3, teamA: 25, teamB: 19 },
-    { gameNumber: 4, teamA: 25, teamB: 21 },
-  ],
-  notes: "Great match with excellent rallies. Team A's blocking was exceptional."
+// Generate match details based on ID
+const generateMatchDetails = (matchId: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() - (matchId - 1) * 7); // One match per week, based on ID
+  
+  return {
+    id: matchId,
+    date: date.toISOString(),
+    location: matchId % 2 === 0 ? "Main Gym" : "Community Center",
+    duration: "2 hours",
+    teamA: [
+      { id: 1, name: "Alex Johnson", position: "Setter" },
+      { id: 2, name: "Maya Rivera", position: "Outside Hitter" },
+      { id: 3, name: "Jordan Smith", position: "Middle Blocker" },
+      { id: 4, name: "Taylor Lee", position: "Opposite Hitter" },
+      { id: 5, name: "Casey Jones", position: "Libero" },
+      { id: 6, name: "Sam Washington", position: "Outside Hitter" },
+    ],
+    teamB: [
+      { id: 7, name: "Jamie Chen", position: "Setter" },
+      { id: 8, name: "Riley Kim", position: "Outside Hitter" },
+      { id: 9, name: "Morgan Patel", position: "Middle Blocker" },
+      { id: 10, name: "Drew Garcia", position: "Opposite Hitter" },
+      { id: 11, name: "Quinn Brown", position: "Libero" },
+      { id: 12, name: "Avery Williams", position: "Outside Hitter" },
+    ],
+    games: [
+      { gameNumber: 1, teamA: 25, teamB: 22 },
+      { gameNumber: 2, teamA: 18, teamB: 25 },
+      { gameNumber: 3, teamA: 25, teamB: 19 },
+      { gameNumber: 4, teamA: 25, teamB: 21 },
+    ],
+    notes: `Great match with excellent rallies. Match ${matchId} was particularly competitive.`
+  };
 };
 
 const MatchDetail = () => {
@@ -65,6 +71,9 @@ const MatchDetail = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  
+  // Generate match details based on the ID from URL params
+  const matchDetails = generateMatchDetails(parseInt(id || "1"));
   
   const [editing, setEditing] = useState(false);
   const [editedMatch, setEditedMatch] = useState(matchDetails);
