@@ -27,13 +27,26 @@ const matchesData = Array.from({ length: 20 }, (_, i) => {
   const date = new Date();
   date.setDate(date.getDate() - i * 7); // One match per week
   
+  const teamAScore = Math.floor(Math.random() * 3) + 1;
+  const teamBScore = Math.floor(Math.random() * 3) + 1;
+  
+  // Determine winner based on scores
+  let winner: string;
+  if (teamAScore > teamBScore) {
+    winner = "Team A";
+  } else if (teamBScore > teamAScore) {
+    winner = "Team B";
+  } else {
+    winner = "Draw";
+  }
+  
   return {
     id: i + 1,
     date: date.toISOString(),
-    teamAScore: Math.floor(Math.random() * 3) + 1,
-    teamBScore: Math.floor(Math.random() * 3) + 1,
+    teamAScore,
+    teamBScore,
     location: i % 2 === 0 ? "Main Gym" : "Community Center",
-    winner: Math.random() > 0.5 ? "Team A" : "Team B",
+    winner,
   };
 });
 
@@ -150,6 +163,7 @@ const Matches = () => {
                       <SelectItem value="all">All Winners</SelectItem>
                       <SelectItem value="Team A">Team A</SelectItem>
                       <SelectItem value="Team B">Team B</SelectItem>
+                      <SelectItem value="Draw">Draw</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -200,17 +214,19 @@ const Matches = () => {
                           <TableCell className="text-center font-semibold">
                             {match.teamAScore} - {match.teamBScore}
                           </TableCell>
-                          <TableCell>
-                            <span 
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                match.winner === 'Team A' 
-                                  ? 'bg-volleyball-primary/10 text-volleyball-primary' 
-                                  : 'bg-volleyball-accent/10 text-volleyball-accent'
-                              }`}
-                            >
-                              {match.winner}
-                            </span>
-                          </TableCell>
+                           <TableCell>
+                             <span 
+                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                 match.winner === 'Team A' 
+                                   ? 'bg-volleyball-primary/10 text-volleyball-primary' 
+                                   : match.winner === 'Team B'
+                                   ? 'bg-volleyball-accent/10 text-volleyball-accent'
+                                   : 'bg-gray-100 text-gray-600'
+                               }`}
+                             >
+                               {match.winner}
+                             </span>
+                           </TableCell>
                           <TableCell className="text-right">
                             <Link to={`/matches/${match.id}`}>
                               <Button variant="outline" size="sm">
