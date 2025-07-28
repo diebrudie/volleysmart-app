@@ -73,6 +73,15 @@ const MatchDetail = () => {
   
   const isAdminOrEditor = user?.role === 'admin' || user?.role === 'editor';
   
+  // Check if the game date is today
+  const isToday = () => {
+    const gameDate = new Date(matchDetails.date);
+    const today = new Date();
+    return gameDate.toDateString() === today.toDateString();
+  };
+  
+  const canEdit = isAdminOrEditor && isToday();
+  
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
       weekday: 'long', 
@@ -144,61 +153,77 @@ const MatchDetail = () => {
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">Match Day Details</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Archived Game</h1>
             </div>
-            {isAdminOrEditor && (
-              <div className="flex gap-2">
-                {editing ? (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setEditing(false)}
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveChanges}>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setEditing(true)}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit Match
-                    </Button>
-                    <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="destructive">
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Are you sure you want to delete?</DialogTitle>
-                          <DialogDescription>
-                            This action cannot be undone. This will permanently delete the match and all associated data.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
-                            Cancel
-                          </Button>
-                          <Button variant="destructive" onClick={handleDeleteMatch}>
+            <div className="flex gap-2">
+              {canEdit ? (
+                <>
+                  {editing ? (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setEditing(false)}
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveChanges}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setEditing(true)}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Match
+                      </Button>
+                      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="destructive">
+                            <Trash className="mr-2 h-4 w-4" />
                             Delete
                           </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </>
-                )}
-              </div>
-            )}
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Are you sure you want to delete?</DialogTitle>
+                            <DialogDescription>
+                              This action cannot be undone. This will permanently delete the match and all associated data.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button variant="destructive" onClick={handleDeleteMatch}>
+                              Delete
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                  )}
+                </>
+              ) : (
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    // Navigate to dashboard with same teams
+                    navigate('/dashboard');
+                    toast({
+                      title: "New game created",
+                      description: "A new game has been created with the same teams for today.",
+                    });
+                  }}
+                >
+                  Create Game w. same Teams
+                </Button>
+              )}
+            </div>
           </div>
           
           <Card className="mb-8">
