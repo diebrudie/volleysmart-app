@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, ChevronDown, ChevronUp, Search, Filter } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 
 // Mock match data
 const matchesData = Array.from({ length: 20 }, (_, i) => {
@@ -40,12 +39,11 @@ const matchesData = Array.from({ length: 20 }, (_, i) => {
 
 const Matches = () => {
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("all");
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' } | null>(
     { key: 'date', direction: 'descending' }
   );
   const [filters, setFilters] = useState({
-    location: "all",
     winner: "all",
   });
 
@@ -71,18 +69,15 @@ const Matches = () => {
 
   // Filter matches
   const filteredMatches = sortedMatches.filter(match => {
-    // Filter by search term (search in date and location)
-    const matchesSearch = 
-      new Date(match.date).toLocaleDateString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-      match.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Filter by location
-    const matchesLocation = filters.location === "all" || match.location === filters.location;
+    // Filter by month
+    const matchDate = new Date(match.date);
+    const matchesMonth = selectedMonth === "all" || 
+      matchDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) === selectedMonth;
     
     // Filter by winner
     const matchesWinner = filters.winner === "all" || match.winner === filters.winner;
     
-    return matchesSearch && matchesLocation && matchesWinner;
+    return matchesMonth && matchesWinner;
   });
 
   const requestSort = (key: string) => {
@@ -119,57 +114,44 @@ const Matches = () => {
       
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Match Days</h1>
-          
           <Card>
             <CardHeader className="border-b">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <CardTitle className="flex items-center">
-                  <Calendar className="mr-2 h-5 w-5" />
-                  All Match Days
+                <CardTitle>
+                  All Games Archive
                 </CardTitle>
                 
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search matches..."
-                      className="pl-9"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
+                  <Select 
+                    value={selectedMonth} 
+                    onValueChange={(value) => setSelectedMonth(value)}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Filter by Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Months</SelectItem>
+                      {Array.from(new Set(matchesData.map(match => 
+                        new Date(match.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+                      ))).sort().map(month => (
+                        <SelectItem key={month} value={month}>{month}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   
-                  <div className="flex gap-2">
-                    <Select 
-                      value={filters.location} 
-                      onValueChange={(value) => setFilters({...filters, location: value})}
-                    >
-                      <SelectTrigger className="w-36">
-                        <SelectValue placeholder="Location" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Locations</SelectItem>
-                        {locations.map(location => (
-                          <SelectItem key={location} value={location}>{location}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    <Select 
-                      value={filters.winner} 
-                      onValueChange={(value) => setFilters({...filters, winner: value})}
-                    >
-                      <SelectTrigger className="w-36">
-                        <SelectValue placeholder="Winner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Winners</SelectItem>
-                        <SelectItem value="Team A">Team A</SelectItem>
-                        <SelectItem value="Team B">Team B</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select 
+                    value={filters.winner} 
+                    onValueChange={(value) => setFilters({...filters, winner: value})}
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="Winner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Winners</SelectItem>
+                      <SelectItem value="Team A">Team A</SelectItem>
+                      <SelectItem value="Team B">Team B</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>
@@ -186,14 +168,6 @@ const Matches = () => {
                           Date {getSortIcon('date')}
                         </button>
                       </TableHead>
-                      <TableHead>
-                        <button 
-                          className="flex items-center hover:text-volleyball-primary transition-colors"
-                          onClick={() => requestSort('location')}
-                        >
-                          Location {getSortIcon('location')}
-                        </button>
-                      </TableHead>
                       <TableHead className="text-center">
                         <span className="flex items-center justify-center">
                           Score
@@ -207,13 +181,13 @@ const Matches = () => {
                           Winner {getSortIcon('winner')}
                         </button>
                       </TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-right">View Details</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredMatches.length === 0 ? (
+                     {filteredMatches.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
                           No matches found. Try adjusting your filters.
                         </TableCell>
                       </TableRow>
@@ -223,7 +197,6 @@ const Matches = () => {
                           <TableCell className="font-medium">
                             {formatDate(match.date)}
                           </TableCell>
-                          <TableCell>{match.location}</TableCell>
                           <TableCell className="text-center font-semibold">
                             {match.teamAScore} - {match.teamBScore}
                           </TableCell>
@@ -255,8 +228,6 @@ const Matches = () => {
           </Card>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 };
