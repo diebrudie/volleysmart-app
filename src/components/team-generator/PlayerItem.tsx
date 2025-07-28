@@ -1,56 +1,57 @@
-
 import { Checkbox } from "@/components/ui/checkbox";
 import { Star } from "./Star";
-import { Player } from "@/types/supabase";
+import { PlayerWithPositions } from "./types"; // Import our custom type
 
 interface PlayerItemProps {
-  player: Player;
+  player: PlayerWithPositions; // Use PlayerWithPositions instead of Player
   isSelected: boolean;
-  onSelect: (playerId: number) => void;
+  onSelect: (playerId: string) => void;
 }
 
-export const PlayerItem = ({ player, isSelected, onSelect }: PlayerItemProps) => {
+export const PlayerItem = ({
+  player,
+  isSelected,
+  onSelect,
+}: PlayerItemProps) => {
   return (
-    <div 
+    <div
       className={`flex items-center p-4 hover:bg-gray-50 transition-colors ${
-        !player.availability ? 'opacity-50' : ''
+        !player.availability ? "opacity-50" : ""
       }`}
     >
-      <Checkbox 
+      <Checkbox
         id={`player-${player.id}`}
         checked={isSelected}
-        onCheckedChange={() => onSelect(player.id)}
+        onCheckedChange={() => onSelect(player.id)} // player.id is already a string
         disabled={!player.availability}
       />
       <div className="ml-3 flex-grow">
-        <label 
+        <label
           htmlFor={`player-${player.id}`}
           className="font-medium text-gray-900 cursor-pointer"
         >
-          {player.name} <span className="text-xs ml-1 text-gray-500">({player.gender})</span>
+          {player.name}{" "}
+          <span className="text-xs ml-1 text-gray-500">({player.gender})</span>
         </label>
         <div className="flex flex-wrap gap-1 mt-1">
-          {player.positions.map(position => (
-            <span 
-              key={position} 
+          {(player.positions || []).map((position) => (
+            <span
+              key={position}
               className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                 position === player.preferredPosition
-                  ? 'bg-volleyball-primary/10 text-volleyball-primary'
-                  : 'bg-gray-100 text-gray-800'
+                  ? "bg-volleyball-primary/10 text-volleyball-primary"
+                  : "bg-gray-100 text-gray-800"
               }`}
             >
               {position}
-              {position === player.preferredPosition && '*'}
+              {position === player.preferredPosition && "*"}
             </span>
           ))}
         </div>
       </div>
       <div className="flex items-center">
-        {[1, 2, 3, 4, 5].map(star => (
-          <Star 
-            key={star} 
-            filled={star <= player.skillRating} 
-          />
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star key={star} filled={star <= player.skillRating} />
         ))}
       </div>
     </div>

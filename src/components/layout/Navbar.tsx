@@ -53,13 +53,6 @@ const Navbar = () => {
     }
   }, [setClubId, clubId]);
 
-  // Get current club ID from localStorage for members link
-  /*
-  const getCurrentClubId = () => {
-    return localStorage.getItem('lastVisitedClub') || '';
-  };
-  */
-
   const navItems = clubId
     ? [
         {

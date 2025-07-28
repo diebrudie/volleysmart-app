@@ -7,7 +7,7 @@ interface MemberCardProps {
     first_name: string;
     last_name: string;
     image_url?: string | null;
-    member_association?: boolean; // Add this property
+    member_association?: boolean;
     player_positions: Array<{
       is_primary: boolean | null;
       positions: {
@@ -31,8 +31,8 @@ export const MemberCard = ({ member }: MemberCardProps) => {
   return (
     <Link to={`/players/${member.id}`}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full overflow-hidden">
-        {/* Image Section - Full width with relative positioning for badge */}
-        <div className="aspect-[4/3] w-full bg-gray-200 overflow-hidden relative">
+        {/* Image Section - Full width (no badge here anymore) */}
+        <div className="aspect-[4/3] w-full bg-gray-200 overflow-hidden">
           {member.image_url ? (
             <img
               src={member.image_url}
@@ -58,10 +58,22 @@ export const MemberCard = ({ member }: MemberCardProps) => {
               }}
             />
           )}
+        </div>
 
-          {/* Volleyball Badge - only show if member_association is true */}
+        {/* Content Section - Left aligned with relative positioning for badge */}
+        <CardContent className="p-4 relative">
+          <div className="text-left space-y-1">
+            <h3 className="font-semibold text-lg">
+              {member.first_name} {lastNameInitial}.
+            </h3>
+            <p className="text-gray-600 text-sm font-medium">
+              {primaryPosition}
+            </p>
+          </div>
+
+          {/* Volleyball Badge - moved to bottom right of content area */}
           {member.member_association && (
-            <div className="absolute top-2 right-2 w-5 h-5">
+            <div className="absolute bottom-4 right-4 w-5 h-5">
               <img
                 src="/volleyball.svg"
                 alt="Club member"
@@ -79,18 +91,6 @@ export const MemberCard = ({ member }: MemberCardProps) => {
               />
             </div>
           )}
-        </div>
-
-        {/* Content Section - Left aligned */}
-        <CardContent className="p-4">
-          <div className="text-left space-y-1">
-            <h3 className="font-semibold text-lg">
-              {member.first_name} {lastNameInitial}.
-            </h3>
-            <p className="text-gray-600 text-sm font-medium">
-              {primaryPosition}
-            </p>
-          </div>
         </CardContent>
       </Card>
     </Link>
