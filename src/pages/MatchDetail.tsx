@@ -30,34 +30,40 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-const matchDetails = {
-  id: 1,
-  date: "2025-04-10T18:00:00.000Z",
-  location: "Main Gym",
-  duration: "2 hours",
-  teamA: [
-    { id: 1, name: "Alex Johnson", position: "Setter" },
-    { id: 2, name: "Maya Rivera", position: "Outside Hitter" },
-    { id: 3, name: "Jordan Smith", position: "Middle Blocker" },
-    { id: 4, name: "Taylor Lee", position: "Opposite Hitter" },
-    { id: 5, name: "Casey Jones", position: "Libero" },
-    { id: 6, name: "Sam Washington", position: "Outside Hitter" },
-  ],
-  teamB: [
-    { id: 7, name: "Jamie Chen", position: "Setter" },
-    { id: 8, name: "Riley Kim", position: "Outside Hitter" },
-    { id: 9, name: "Morgan Patel", position: "Middle Blocker" },
-    { id: 10, name: "Drew Garcia", position: "Opposite Hitter" },
-    { id: 11, name: "Quinn Brown", position: "Libero" },
-    { id: 12, name: "Avery Williams", position: "Outside Hitter" },
-  ],
-  games: [
-    { gameNumber: 1, teamA: 25, teamB: 22 },
-    { gameNumber: 2, teamA: 18, teamB: 25 },
-    { gameNumber: 3, teamA: 25, teamB: 19 },
-    { gameNumber: 4, teamA: 25, teamB: 21 },
-  ],
-  notes: "Great match with excellent rallies. Team A's blocking was exceptional."
+// Generate match details based on ID
+const generateMatchDetails = (matchId: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() - (matchId - 1) * 7); // One match per week, based on ID
+  
+  return {
+    id: matchId,
+    date: date.toISOString(),
+    location: matchId % 2 === 0 ? "Main Gym" : "Community Center",
+    duration: "2 hours",
+    teamA: [
+      { id: 1, name: "Alex Johnson", position: "Setter" },
+      { id: 2, name: "Maya Rivera", position: "Outside Hitter" },
+      { id: 3, name: "Jordan Smith", position: "Middle Blocker" },
+      { id: 4, name: "Taylor Lee", position: "Opposite Hitter" },
+      { id: 5, name: "Casey Jones", position: "Libero" },
+      { id: 6, name: "Sam Washington", position: "Outside Hitter" },
+    ],
+    teamB: [
+      { id: 7, name: "Jamie Chen", position: "Setter" },
+      { id: 8, name: "Riley Kim", position: "Outside Hitter" },
+      { id: 9, name: "Morgan Patel", position: "Middle Blocker" },
+      { id: 10, name: "Drew Garcia", position: "Opposite Hitter" },
+      { id: 11, name: "Quinn Brown", position: "Libero" },
+      { id: 12, name: "Avery Williams", position: "Outside Hitter" },
+    ],
+    games: [
+      { gameNumber: 1, teamA: 25, teamB: 22 },
+      { gameNumber: 2, teamA: 18, teamB: 25 },
+      { gameNumber: 3, teamA: 25, teamB: 19 },
+      { gameNumber: 4, teamA: 25, teamB: 21 },
+    ],
+    notes: `Great match with excellent rallies. Match ${matchId} was particularly competitive.`
+  };
 };
 
 const MatchDetail = () => {
@@ -66,12 +72,24 @@ const MatchDetail = () => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   
+  // Generate match details based on the ID from URL params
+  const matchDetails = generateMatchDetails(parseInt(id || "1"));
+  
   const [editing, setEditing] = useState(false);
   const [editedMatch, setEditedMatch] = useState(matchDetails);
   const [editedGames, setEditedGames] = useState(matchDetails.games);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   
   const isAdminOrEditor = user?.role === 'admin' || user?.role === 'editor';
+  
+  // Check if the game date is today
+  const isToday = () => {
+    const gameDate = new Date(matchDetails.date);
+    const today = new Date();
+    return gameDate.toDateString() === today.toDateString();
+  };
+  
+  const canEdit = isAdminOrEditor && isToday();
   
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -144,61 +162,77 @@ const MatchDetail = () => {
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">Match Day Details</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Archived Game</h1>
             </div>
-            {isAdminOrEditor && (
-              <div className="flex gap-2">
-                {editing ? (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setEditing(false)}
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveChanges}>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setEditing(true)}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit Match
-                    </Button>
-                    <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="destructive">
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Are you sure you want to delete?</DialogTitle>
-                          <DialogDescription>
-                            This action cannot be undone. This will permanently delete the match and all associated data.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
-                            Cancel
-                          </Button>
-                          <Button variant="destructive" onClick={handleDeleteMatch}>
+            <div className="flex gap-2">
+              {canEdit ? (
+                <>
+                  {editing ? (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setEditing(false)}
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveChanges}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setEditing(true)}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Match
+                      </Button>
+                      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="destructive">
+                            <Trash className="mr-2 h-4 w-4" />
                             Delete
                           </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </>
-                )}
-              </div>
-            )}
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Are you sure you want to delete?</DialogTitle>
+                            <DialogDescription>
+                              This action cannot be undone. This will permanently delete the match and all associated data.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button variant="destructive" onClick={handleDeleteMatch}>
+                              Delete
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                  )}
+                </>
+              ) : (
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    // Navigate to dashboard with same teams
+                    navigate('/dashboard');
+                    toast({
+                      title: "New game created",
+                      description: "A new game has been created with the same teams for today.",
+                    });
+                  }}
+                >
+                  Create Game w. same Teams
+                </Button>
+              )}
+            </div>
           </div>
           
           <Card className="mb-8">
