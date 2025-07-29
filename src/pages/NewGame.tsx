@@ -48,6 +48,14 @@ const NewGame = () => {
     }
   }, [urlClubId, setClubId]);
 
+  useEffect(() => {
+    console.log("=== DEBUG INFO ===");
+    console.log("Current user:", user);
+    console.log("Current clubId:", clubId);
+    console.log("URL clubId:", urlClubId);
+    console.log("================");
+  }, [user, clubId, urlClubId]);
+
   // Fetch club members/players
   const { data: players, isLoading: isLoadingPlayers } = useQuery({
     queryKey: ["clubPlayers", clubId],
@@ -93,6 +101,27 @@ const NewGame = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  const { data: membershipCheck } = useQuery({
+    queryKey: ["membershipCheck", clubId, user?.id],
+    queryFn: async () => {
+      if (!clubId || !user?.id) return null;
+
+      console.log("Checking membership for:", { clubId, userId: user.id });
+
+      const { data, error } = await supabase
+        .from("club_members")
+        .select("*")
+        .eq("club_id", clubId)
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .single();
+
+      console.log("Membership check result:", { data, error });
+      return data;
+    },
+    enabled: !!clubId && !!user?.id,
   });
 
   // Filter and sort players
@@ -195,19 +224,25 @@ const NewGame = () => {
       const teamB = shuffledPlayers.slice(midpoint);
 
       // 4. Create match_players records for both teams
-      const matchPlayers = [
+      const matchPlayers: Array<{
+        match_id: string;
+        player_id: string;
+        team_name: "team_a" | "team_b";
+        original_team_name: "team_a" | "team_b";
+        manually_adjusted: boolean;
+      }> = [
         ...teamA.map((playerId) => ({
           match_id: match.id,
           player_id: playerId,
-          team_name: "team_a",
-          original_team_name: "team_a",
+          team_name: "team_a" as const,
+          original_team_name: "team_a" as const,
           manually_adjusted: false,
         })),
         ...teamB.map((playerId) => ({
           match_id: match.id,
           player_id: playerId,
-          team_name: "team_b",
-          original_team_name: "team_b",
+          team_name: "team_b" as const,
+          original_team_name: "team_b" as const,
           manually_adjusted: false,
         })),
       ];
