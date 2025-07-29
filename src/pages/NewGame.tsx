@@ -26,6 +26,9 @@ interface ClubMember {
   id: string;
   first_name: string;
   last_name: string;
+  user_id: string;
+  primary_position_id?: string | null;
+  primary_position_name?: string;
 }
 
 const NewGame = () => {
@@ -56,7 +59,7 @@ const NewGame = () => {
     console.log("================");
   }, [user, clubId, urlClubId]);
 
-  // Fetch club members/players
+  // Fetch club members/players with their primary positions
   const { data: players, isLoading: isLoadingPlayers } = useQuery({
     queryKey: ["clubPlayers", clubId],
     queryFn: async () => {
@@ -75,32 +78,48 @@ const NewGame = () => {
 
       const userIds = clubMembers.map((member) => member.user_id);
 
-      // Get players for these users
+      // Get players for these users with their primary position
       const { data: playersData, error: playersError } = await supabase
         .from("players")
-        .select("id, first_name, last_name, user_id")
+        .select(
+          `
+          id, 
+          first_name, 
+          last_name, 
+          user_id,
+          player_positions!inner (
+            position_id,
+            is_primary,
+            positions (
+              id,
+              name
+            )
+          )
+        `
+        )
         .in("user_id", userIds);
 
       if (playersError) throw playersError;
 
-      return (playersData || []) as ClubMember[];
+      // Process players to get their primary position
+      const processedPlayers = (playersData || []).map((player) => {
+        const primaryPosition = player.player_positions?.find(
+          (pp) => pp.is_primary
+        );
+        return {
+          id: player.id,
+          first_name: player.first_name,
+          last_name: player.last_name,
+          user_id: player.user_id,
+          primary_position_id: primaryPosition?.position_id || null,
+          primary_position_name:
+            primaryPosition?.positions?.name || "No Position",
+        };
+      });
+
+      return processedPlayers as ClubMember[];
     },
     enabled: !!clubId,
-  });
-
-  // Fetch a default position ID to use
-  const { data: defaultPosition } = useQuery({
-    queryKey: ["defaultPosition"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("positions")
-        .select("id")
-        .limit(1)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
   });
 
   const { data: membershipCheck } = useQuery({
@@ -143,6 +162,31 @@ const NewGame = () => {
     );
   };
 
+  const handleSelectAll = () => {
+    const allPlayerIds = filteredAndSortedPlayers.map((player) => player.id);
+    const allSelected = allPlayerIds.every((id) =>
+      selectedPlayers.includes(id)
+    );
+
+    if (allSelected) {
+      // Deselect all filtered players
+      setSelectedPlayers((current) =>
+        current.filter((id) => !allPlayerIds.includes(id))
+      );
+    } else {
+      // Select all filtered players (merge with existing selection)
+      setSelectedPlayers((current) => {
+        const newSelection = [...current];
+        allPlayerIds.forEach((id) => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id);
+          }
+        });
+        return newSelection;
+      });
+    }
+  };
+
   const handleSearchClick = () => {
     setIsSearchExpanded(true);
   };
@@ -180,6 +224,10 @@ const NewGame = () => {
     setIsSubmitting(true);
 
     try {
+      console.log("=== CREATING GAME ===");
+      console.log("Selected players:", selectedPlayers);
+      console.log("Players data:", players);
+
       // 1. Create a new match day
       const { data: matchDay, error: matchDayError } = await supabase
         .from("match_days")
@@ -197,64 +245,107 @@ const NewGame = () => {
         throw matchDayError;
       }
 
-      // 2. Create a single match record
-      const { data: match, error: matchError } = await supabase
-        .from("matches")
-        .insert({
-          match_day_id: matchDay.id,
-          game_number: 1,
-          team_a_score: 0,
-          team_b_score: 0,
-          added_by_user_id: user.id,
-        })
-        .select()
-        .single();
+      console.log("Created match day:", matchDay);
 
-      if (matchError) {
-        console.error("Match error:", matchError);
-        throw matchError;
-      }
-
-      // 3. Shuffle players and split into two teams
+      // 2. Shuffle players and split into two teams
       const shuffledPlayers = [...selectedPlayers].sort(
         () => Math.random() - 0.5
       );
       const midpoint = Math.ceil(shuffledPlayers.length / 2);
-      const teamA = shuffledPlayers.slice(0, midpoint);
-      const teamB = shuffledPlayers.slice(midpoint);
+      const teamAPlayerIds = shuffledPlayers.slice(0, midpoint);
+      const teamBPlayerIds = shuffledPlayers.slice(midpoint);
 
-      // 4. Create match_players records for both teams
-      const matchPlayers: Array<{
-        match_id: string;
-        player_id: string;
-        team_name: "team_a" | "team_b";
-        original_team_name: "team_a" | "team_b";
-        manually_adjusted: boolean;
-      }> = [
-        ...teamA.map((playerId) => ({
-          match_id: match.id,
-          player_id: playerId,
-          team_name: "team_a" as const,
-          original_team_name: "team_a" as const,
-          manually_adjusted: false,
-        })),
-        ...teamB.map((playerId) => ({
-          match_id: match.id,
-          player_id: playerId,
-          team_name: "team_b" as const,
-          original_team_name: "team_b" as const,
-          manually_adjusted: false,
-        })),
-      ];
+      console.log("Team A player IDs:", teamAPlayerIds);
+      console.log("Team B player IDs:", teamBPlayerIds);
 
-      const { error: matchPlayersError } = await supabase
-        .from("match_players")
-        .insert(matchPlayers);
+      // 3. Create match teams
+      const { data: teamAData, error: teamAError } = await supabase
+        .from("match_teams")
+        .insert({
+          match_day_id: matchDay.id,
+          team_name: "Team A",
+        })
+        .select()
+        .single();
 
-      if (matchPlayersError) {
-        console.error("Match players error:", matchPlayersError);
-        throw matchPlayersError;
+      if (teamAError) {
+        console.error("Team A error:", teamAError);
+        throw teamAError;
       }
+
+      const { data: teamBData, error: teamBError } = await supabase
+        .from("match_teams")
+        .insert({
+          match_day_id: matchDay.id,
+          team_name: "Team B",
+        })
+        .select()
+        .single();
+
+      if (teamBError) {
+        console.error("Team B error:", teamBError);
+        throw teamBError;
+      }
+
+      console.log("Created teams:", { teamA: teamAData, teamB: teamBData });
+
+      // 4. Create team_players records for Team A
+      const teamAPlayers = teamAPlayerIds.map((playerId) => {
+        const player = players?.find((p) => p.id === playerId);
+        return {
+          match_team_id: teamAData.id,
+          player_id: playerId,
+          position_id: player?.primary_position_id || null, // Use primary position
+        };
+      });
+
+      const { error: teamAPlayersError } = await supabase
+        .from("team_players")
+        .insert(teamAPlayers);
+
+      if (teamAPlayersError) {
+        console.error("Team A players error:", teamAPlayersError);
+        throw teamAPlayersError;
+      }
+
+      // 5. Create team_players records for Team B
+      const teamBPlayers = teamBPlayerIds.map((playerId) => {
+        const player = players?.find((p) => p.id === playerId);
+        return {
+          match_team_id: teamBData.id,
+          player_id: playerId,
+          position_id: player?.primary_position_id || null, // Use primary position
+        };
+      });
+
+      const { error: teamBPlayersError } = await supabase
+        .from("team_players")
+        .insert(teamBPlayers);
+
+      if (teamBPlayersError) {
+        console.error("Team B players error:", teamBPlayersError);
+        throw teamBPlayersError;
+      }
+
+      // 6. Create 5 matches for the 5 sets
+      const matches = Array.from({ length: 5 }, (_, index) => ({
+        match_day_id: matchDay.id,
+        game_number: index + 1,
+        team_a_score: 0,
+        team_b_score: 0,
+        added_by_user_id: user.id,
+      }));
+
+      const { error: matchesError } = await supabase
+        .from("matches")
+        .insert(matches);
+
+      if (matchesError) {
+        console.error("Matches error:", matchesError);
+        throw matchesError;
+      }
+
+      console.log("=== GAME CREATED SUCCESSFULLY ===");
 
       toast({
         title: "Game created!",
@@ -282,6 +373,13 @@ const NewGame = () => {
     return `${player.first_name} ${player.last_name.charAt(0)}.`;
   };
 
+  // Check if all filtered players are selected
+  const allFilteredSelected =
+    filteredAndSortedPlayers.length > 0 &&
+    filteredAndSortedPlayers.every((player) =>
+      selectedPlayers.includes(player.id)
+    );
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -295,7 +393,7 @@ const NewGame = () => {
               <Spinner className="h-8 w-8" />
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+            <div className="space-y-6 max-w-2xl pb-24">
               {/* Date Picker */}
               <div className="bg-white p-4 rounded-lg">
                 <Popover>
@@ -333,7 +431,8 @@ const NewGame = () => {
                   <h2 className="text-lg font-semibold text-black">
                     Select Players
                   </h2>
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-3">
+                    {/* Search */}
                     {isSearchExpanded ? (
                       <Input
                         type="text"
@@ -357,10 +456,21 @@ const NewGame = () => {
                         <Search className="h-4 w-4" />
                       </Button>
                     )}
+                    {/* Select All checkbox */}
+                    {filteredAndSortedPlayers.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={allFilteredSelected}
+                          onCheckedChange={handleSelectAll}
+                          className="bg-white border-gray-400"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="max-h-96 overflow-y-auto">
+                {/* Players list - removed max-height and overflow */}
+                <div>
                   {filteredAndSortedPlayers.length > 0 ? (
                     <div className="divide-y divide-gray-200">
                       {filteredAndSortedPlayers.map((player) => (
@@ -368,9 +478,14 @@ const NewGame = () => {
                           key={player.id}
                           className="flex items-center justify-between p-4 hover:bg-gray-50"
                         >
-                          <span className="font-medium">
-                            {formatPlayerName(player)}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {formatPlayerName(player)}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {player.primary_position_name || "No Position"}
+                            </span>
+                          </div>
                           <Checkbox
                             checked={selectedPlayers.includes(player.id)}
                             onCheckedChange={() =>
@@ -390,10 +505,11 @@ const NewGame = () => {
                 </div>
               </div>
 
-              {/* Button - right aligned with the form content */}
-              <div className="flex justify-end">
+              {/* Button - right aligned with proper spacing */}
+              <div className="flex justify-end pt-4">
                 <Button
                   type="submit"
+                  onClick={handleSubmit}
                   className="py-3 px-8"
                   disabled={isSubmitting || selectedPlayers.length < 4 || !date}
                 >
@@ -407,7 +523,7 @@ const NewGame = () => {
                   )}
                 </Button>
               </div>
-            </form>
+            </div>
           )}
         </div>
       </main>

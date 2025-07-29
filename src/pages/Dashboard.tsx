@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -42,16 +41,17 @@ const Dashboard = () => {
 
       try {
         // If clubId is provided in URL, use that
-        if (userClubId) { // ✅ Changed from clubId to userClubId
+        if (userClubId) {
+          // ✅ Changed from clubId to userClubId
           // Store the visited club in localStorage for future logins
-          localStorage.setItem('lastVisitedClub', userClubId); // ✅ Changed from clubId
+          localStorage.setItem("lastVisitedClub", userClubId); // ✅ Changed from clubId
 
           // Verify user has access to this club
           const { data: memberCheck } = await supabase
-            .from('club_members')
-            .select('role')
-            .eq('club_id', userClubId) // ✅ Changed from clubId
-            .eq('user_id', user.id)
+            .from("club_members")
+            .select("role")
+            .eq("club_id", userClubId) // ✅ Changed from clubId
+            .eq("user_id", user.id)
             .maybeSingle();
 
           if (memberCheck) {
@@ -62,29 +62,29 @@ const Dashboard = () => {
 
           // Check if user is the creator
           const { data: creatorCheck } = await supabase
-            .from('clubs')
-            .select('id')
-            .eq('id', userClubId) // ✅ Changed from clubId
-            .eq('created_by', user.id)
+            .from("clubs")
+            .select("id")
+            .eq("id", userClubId) // ✅ Changed from clubId
+            .eq("created_by", user.id)
             .maybeSingle();
 
           if (creatorCheck) {
-            setUserRole('admin');
+            setUserRole("admin");
             setIsCheckingClub(false);
             return;
           }
 
           // User doesn't have access to this club
-          navigate('/clubs');
+          navigate("/clubs");
           return;
         }
 
         // User doesn't belong to any club and hasn't created one
-        navigate('/start');
+        navigate("/start");
       } catch (error) {
-        console.error('Error checking user club:', error);
+        console.error("Error checking user club:", error);
         // On error, safely redirect to start
-        navigate('/start');
+        navigate("/start");
       } finally {
         setIsCheckingClub(false);
       }
@@ -95,14 +95,14 @@ const Dashboard = () => {
 
   // Query to fetch club details including name
   const { data: clubDetails } = useQuery({
-    queryKey: ['clubDetails', userClubId],
+    queryKey: ["clubDetails", userClubId],
     queryFn: async () => {
       if (!userClubId) return null;
 
       const { data, error } = await supabase
-        .from('clubs')
-        .select('id, name, slug')
-        .eq('id', userClubId)
+        .from("clubs")
+        .select("id, name, slug")
+        .eq("id", userClubId)
         .single();
 
       if (error) throw error;
@@ -113,14 +113,14 @@ const Dashboard = () => {
 
   // Query to fetch club member count
   const { data: memberCount } = useQuery({
-    queryKey: ['clubMemberCount', userClubId],
+    queryKey: ["clubMemberCount", userClubId],
     queryFn: async () => {
       if (!userClubId) return 0;
 
       const { count } = await supabase
-        .from('club_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('club_id', userClubId);
+        .from("club_members")
+        .select("*", { count: "exact", head: true })
+        .eq("club_id", userClubId);
 
       return count || 0;
     },
@@ -135,42 +135,59 @@ const Dashboard = () => {
   }, [memberCount]);
 
   // Query to fetch the latest game
+  // Update the latestGame query in Dashboard.tsx
   const { data: latestGame, isLoading } = useQuery({
-    queryKey: ['latestGame', userClubId],
+    queryKey: ["latestGame", userClubId],
     queryFn: async () => {
       if (!userClubId) return null;
 
+      console.log("=== FETCHING LATEST GAME ===");
+      console.log("Club ID:", userClubId);
+
       // Get the latest match day for that club
-      const { data: matchDay } = await supabase
-        .from('match_days')
-        .select(`
+      const { data: matchDay, error: matchDayError } = await supabase
+        .from("match_days")
+        .select(
+          `
+        id,
+        date,
+        notes,
+        match_teams (
           id,
-          date,
-          notes,
-          match_teams (
-            id,
-            team_name,
-            team_players (
-              player_id,
-              players (
-                id,
-                first_name,
-                last_name
-              )
+          team_name,
+          team_players (
+            player_id,
+            position_id,
+            players (
+              id,
+              first_name,
+              last_name
+            ),
+            positions (
+              id,
+              name
             )
-          ),
-          matches (
-            id,
-            game_number,
-            team_a_score,
-            team_b_score
           )
-        `)
-        .eq('club_id', userClubId)
-        .order('date', { ascending: false })
+        ),
+        matches (
+          id,
+          game_number,
+          team_a_score,
+          team_b_score
+        )
+      `
+        )
+        .eq("club_id", userClubId)
+        .order("date", { ascending: false })
         .limit(1)
         .maybeSingle();
 
+      if (matchDayError) {
+        console.error("Match day error:", matchDayError);
+        throw matchDayError;
+      }
+
+      console.log("Match day result:", matchDay);
       return matchDay;
     },
     enabled: !!userClubId && !isCheckingClub,
@@ -215,7 +232,7 @@ const Dashboard = () => {
   // If no games exist yet, show the empty state
   if (!latestGame) {
     const canGenerateTeams = clubMemberCount >= 4;
-    const canInviteMembers = userRole === 'admin';
+    const canInviteMembers = userRole === "admin";
 
     return (
       <div className="min-h-screen flex flex-col">
@@ -224,15 +241,17 @@ const Dashboard = () => {
           <div className="max-w-lg w-full text-center">
             {clubDetails && (
               <p className="text-lg text-gray-700 mb-4">
-                Welcome to <span className="font-semibold">{clubDetails.name}</span>!
+                Welcome to{" "}
+                <span className="font-semibold">{clubDetails.name}</span>!
               </p>
             )}
-            <h1 className="text-3xl font-bold mb-2">You haven't played any games yet.</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              You haven't played any games yet.
+            </h1>
             <p className="text-gray-600 mb-8">
               {canInviteMembers
                 ? "Proceed with inviting other members to your club or creating a game:"
-                : "Wait for the club admin to invite more members or create a game:"
-              }
+                : "Wait for the club admin to invite more members or create a game:"}
             </p>
             <EmptyTeamsState
               canGenerateTeams={canGenerateTeams}
@@ -246,59 +265,89 @@ const Dashboard = () => {
     );
   }
 
-  // Format and prepare match data
-  const teamA = latestGame.match_teams?.find(team => team.team_name === 'Team A');
-  const teamB = latestGame.match_teams?.find(team => team.team_name === 'Team B');
+  // Process the match data to extract teams
+  let teamAPlayers: Array<{ id: string; name: string; position: string }> = [];
+  let teamBPlayers: Array<{ id: string; name: string; position: string }> = [];
 
-  const teamAPlayers = teamA?.team_players.map(tp => ({
-    id: tp.player_id,
-    name: `${tp.players.first_name} ${tp.players.last_name}`,
-    position: '',
-  })) || [];
+  if (latestGame?.match_teams) {
+    const teamA = latestGame.match_teams.find(
+      (team) => team.team_name === "Team A"
+    );
+    const teamB = latestGame.match_teams.find(
+      (team) => team.team_name === "Team B"
+    );
 
-  const teamBPlayers = teamB?.team_players.map(tp => ({
-    id: tp.player_id,
-    name: `${tp.players.first_name} ${tp.players.last_name}`,
-    position: '',
-  })) || [];
+    teamAPlayers =
+      teamA?.team_players.map((tp) => ({
+        id: tp.player_id,
+        name: `${tp.players.first_name} ${tp.players.last_name}`,
+        position: tp.positions?.name || "",
+      })) || [];
+
+    teamBPlayers =
+      teamB?.team_players.map((tp) => ({
+        id: tp.player_id,
+        name: `${tp.players.first_name} ${tp.players.last_name}`,
+        position: tp.positions?.name || "",
+      })) || [];
+
+    console.log("=== TEAMS DEBUG ===");
+    console.log("Team A players:", teamAPlayers);
+    console.log("Team B players:", teamBPlayers);
+  }
 
   // Organize match scores
-  const scores = latestGame.matches.map(match => ({
+  const scores = latestGame.matches.map((match) => ({
     gameNumber: match.game_number,
     teamA: match.team_a_score,
     teamB: match.team_b_score,
   }));
 
   // Calculate the match result
-  const teamAWins = scores.filter(game =>
-    game.teamA !== null && game.teamB !== null && game.teamA > game.teamB
+  const teamAWins = scores.filter(
+    (game) =>
+      game.teamA !== null && game.teamB !== null && game.teamA > game.teamB
   ).length;
 
-  const teamBWins = scores.filter(game =>
-    game.teamA !== null && game.teamB !== null && game.teamB > game.teamA
+  const teamBWins = scores.filter(
+    (game) =>
+      game.teamA !== null && game.teamB !== null && game.teamB > game.teamA
   ).length;
 
   // Winner team
-  const hasPlayedAnySet = scores.some(game =>
-    game.teamA !== null && game.teamB !== null && (game.teamA > 0 || game.teamB > 0)
+  const hasPlayedAnySet = scores.some(
+    (game) =>
+      game.teamA !== null &&
+      game.teamB !== null &&
+      (game.teamA > 0 || game.teamB > 0)
   );
 
   const winner = hasPlayedAnySet
-    ? (teamAWins > teamBWins ? "Team A" : (teamBWins > teamAWins ? "Team B" : "Tie"))
+    ? teamAWins > teamBWins
+      ? "Team A"
+      : teamBWins > teamAWins
+      ? "Team B"
+      : "Tie"
     : "TBD";
 
-  const handleSetScoreUpdate = async (setNumber: number, teamAScore: number, teamBScore: number) => {
+  const handleSetScoreUpdate = async (
+    setNumber: number,
+    teamAScore: number,
+    teamBScore: number
+  ) => {
     // Update score in the database
-    const matchToUpdate = latestGame.matches.find(m => m.game_number === setNumber);
+    const matchToUpdate = latestGame.matches.find(
+      (m) => m.game_number === setNumber
+    );
 
     if (matchToUpdate) {
       await supabase
-        .from('matches')
+        .from("matches")
         .update({
           team_a_score: teamAScore,
-          team_b_score: teamBScore
+          team_b_score: teamBScore,
         })
-        .eq('id', matchToUpdate.id);
+        .eq("id", matchToUpdate.id);
     }
   };
 
@@ -306,12 +355,12 @@ const Dashboard = () => {
   const matchDate = latestGame.date ? new Date(latestGame.date) : new Date();
   const formatDate = (date: Date) => {
     const options: Intl.DateTimeFormatOptions = {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     };
-    return date.toLocaleDateString('en-US', options);
+    return date.toLocaleDateString("en-US", options);
   };
 
   // Determine if the match is from today and if today is Wednesday
@@ -320,7 +369,10 @@ const Dashboard = () => {
   const isTodayWednesday = isWednesday(today);
 
   // Determine which heading to display
-  const headingText = (isMatchToday && isTodayWednesday) ? "Today's Game Overview" : "Last Game Overview";
+  const headingText =
+    isMatchToday && isTodayWednesday
+      ? "Today's Game Overview"
+      : "Last Game Overview";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -352,7 +404,8 @@ const Dashboard = () => {
                     {hasPlayedAnySet ? winner : "TBD"}
                   </h3>
                   <div className="text-5xl font-bold">
-                    <span className="text-red-500">{teamAWins}</span> - <span className="text-emerald-500">{teamBWins}</span>
+                    <span className="text-red-500">{teamAWins}</span> -{" "}
+                    <span className="text-emerald-500">{teamBWins}</span>
                   </div>
                 </div>
               </div>
@@ -363,12 +416,21 @@ const Dashboard = () => {
               <div className="flex h-full rounded-lg overflow-hidden border border-gray-200">
                 {/* Team A Card */}
                 <div className="w-1/2 bg-white p-0">
-                  <h3 className="bg-red-500 text-white py-1 px-2 text-center">Team A</h3>
+                  <h3 className="bg-red-500 text-white py-1 px-2 text-center">
+                    Team A
+                  </h3>
                   <ul className="space-y-0.5 p-4">
                     {teamAPlayers.map((player, index) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium">{index + 1}. {player.name}</span>
-                        {player.position && <span className="text-gray-600"> - {player.position}</span>}
+                        <span className="font-medium">
+                          {index + 1}. {player.name}
+                        </span>
+                        {player.position && (
+                          <span className="text-gray-600">
+                            {" "}
+                            - {player.position}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -376,12 +438,21 @@ const Dashboard = () => {
 
                 {/* Team B Card */}
                 <div className="w-1/2 bg-white p-0">
-                  <h3 className="bg-emerald-500 text-white py-1 px-2 text-center">Team B</h3>
+                  <h3 className="bg-emerald-500 text-white py-1 px-2 text-center">
+                    Team B
+                  </h3>
                   <ul className="space-y-0.5 p-4">
                     {teamBPlayers.map((player, index) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium">{index + 1}. {player.name}</span>
-                        {player.position && <span className="text-gray-600"> - {player.position}</span>}
+                        <span className="font-medium">
+                          {index + 1}. {player.name}
+                        </span>
+                        {player.position && (
+                          <span className="text-gray-600">
+                            {" "}
+                            - {player.position}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -397,8 +468,12 @@ const Dashboard = () => {
               <SetBox
                 key={1}
                 setNumber={1}
-                teamAScore={scores.find(score => score.gameNumber === 1)?.teamA}
-                teamBScore={scores.find(score => score.gameNumber === 1)?.teamB}
+                teamAScore={
+                  scores.find((score) => score.gameNumber === 1)?.teamA
+                }
+                teamBScore={
+                  scores.find((score) => score.gameNumber === 1)?.teamB
+                }
                 onScoreUpdate={handleSetScoreUpdate}
                 isLarge={true}
               />
@@ -409,8 +484,12 @@ const Dashboard = () => {
               <SetBox
                 key={2}
                 setNumber={2}
-                teamAScore={scores.find(score => score.gameNumber === 2)?.teamA}
-                teamBScore={scores.find(score => score.gameNumber === 2)?.teamB}
+                teamAScore={
+                  scores.find((score) => score.gameNumber === 2)?.teamA
+                }
+                teamBScore={
+                  scores.find((score) => score.gameNumber === 2)?.teamB
+                }
                 onScoreUpdate={handleSetScoreUpdate}
               />
             </div>
@@ -420,8 +499,12 @@ const Dashboard = () => {
               <SetBox
                 key={4}
                 setNumber={4}
-                teamAScore={scores.find(score => score.gameNumber === 4)?.teamA}
-                teamBScore={scores.find(score => score.gameNumber === 4)?.teamB}
+                teamAScore={
+                  scores.find((score) => score.gameNumber === 4)?.teamA
+                }
+                teamBScore={
+                  scores.find((score) => score.gameNumber === 4)?.teamB
+                }
                 onScoreUpdate={handleSetScoreUpdate}
               />
             </div>
@@ -431,8 +514,12 @@ const Dashboard = () => {
               <SetBox
                 key={3}
                 setNumber={3}
-                teamAScore={scores.find(score => score.gameNumber === 3)?.teamA}
-                teamBScore={scores.find(score => score.gameNumber === 3)?.teamB}
+                teamAScore={
+                  scores.find((score) => score.gameNumber === 3)?.teamA
+                }
+                teamBScore={
+                  scores.find((score) => score.gameNumber === 3)?.teamB
+                }
                 onScoreUpdate={handleSetScoreUpdate}
               />
             </div>
@@ -442,8 +529,12 @@ const Dashboard = () => {
               <SetBox
                 key={5}
                 setNumber={5}
-                teamAScore={scores.find(score => score.gameNumber === 5)?.teamA}
-                teamBScore={scores.find(score => score.gameNumber === 5)?.teamB}
+                teamAScore={
+                  scores.find((score) => score.gameNumber === 5)?.teamA
+                }
+                teamBScore={
+                  scores.find((score) => score.gameNumber === 5)?.teamB
+                }
                 onScoreUpdate={handleSetScoreUpdate}
               />
             </div>

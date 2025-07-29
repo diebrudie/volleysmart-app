@@ -536,9 +536,6 @@ const PlayerOnboarding = () => {
               <Label className="text-lg font-medium">
                 7. When's your birthday?
               </Label>
-              <p className="text-sm text-gray-500 mb-3">
-                This helps us understand your age group. Optional.
-              </p>
               <Input
                 type="date"
                 value={answers.birthday}
@@ -555,7 +552,7 @@ const PlayerOnboarding = () => {
                 8. What's your gender?
               </Label>
               <p className="text-sm text-gray-500 mb-3">
-                This helps us create balanced teams. Optional.
+                This helps us create balanced teams.
               </p>
               <RadioGroup
                 value={answers.gender}
@@ -574,10 +571,6 @@ const PlayerOnboarding = () => {
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="diverse" id="diverse" />
                   <Label htmlFor="diverse">Diverse</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="other" id="other" />
-                  <Label htmlFor="other">Prefer not to say</Label>
                 </div>
               </RadioGroup>
             </div>
