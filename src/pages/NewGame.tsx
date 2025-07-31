@@ -247,7 +247,28 @@ const NewGame = () => {
 
       console.log("Created match day:", matchDay);
 
-      // 2. Shuffle players and split into two teams
+      // 2. Create 5 matches for the 5 sets
+      const matches = Array.from({ length: 5 }, (_, index) => ({
+        match_day_id: matchDay.id,
+        game_number: index + 1,
+        team_a_score: 0,
+        team_b_score: 0,
+        added_by_user_id: user.id,
+      }));
+
+      const { data: matchesData, error: matchesError } = await supabase
+        .from("matches")
+        .insert(matches)
+        .select();
+
+      if (matchesError) {
+        console.error("Matches error:", matchesError);
+        throw matchesError;
+      }
+
+      console.log("Created matches:", matchesData);
+
+      // 3. Shuffle players and split into two teams
       const shuffledPlayers = [...selectedPlayers].sort(
         () => Math.random() - 0.5
       );
@@ -258,91 +279,52 @@ const NewGame = () => {
       console.log("Team A player IDs:", teamAPlayerIds);
       console.log("Team B player IDs:", teamBPlayerIds);
 
-      // 3. Create match teams
-      const { data: teamAData, error: teamAError } = await supabase
-        .from("match_teams")
-        .insert({
-          match_day_id: matchDay.id,
-          team_name: "Team A",
-        })
-        .select()
-        .single();
+      // 4. Create match_players records for all matches (same teams for all 5 sets)
+      console.log("Step 4: Creating match players...");
+      const allMatchPlayers: Array<{
+        match_id: string;
+        player_id: string;
+        team_name: "team_a" | "team_b";
+        original_team_name: "team_a" | "team_b";
+        manually_adjusted: boolean;
+      }> = [];
 
-      if (teamAError) {
-        console.error("Team A error:", teamAError);
-        throw teamAError;
-      }
+      // For each match, add all players
+      matchesData.forEach((match) => {
+        // Add Team A players
+        teamAPlayerIds.forEach((playerId) => {
+          allMatchPlayers.push({
+            match_id: match.id,
+            player_id: playerId,
+            team_name: "team_a",
+            original_team_name: "team_a",
+            manually_adjusted: false,
+          });
+        });
 
-      const { data: teamBData, error: teamBError } = await supabase
-        .from("match_teams")
-        .insert({
-          match_day_id: matchDay.id,
-          team_name: "Team B",
-        })
-        .select()
-        .single();
-
-      if (teamBError) {
-        console.error("Team B error:", teamBError);
-        throw teamBError;
-      }
-
-      console.log("Created teams:", { teamA: teamAData, teamB: teamBData });
-
-      // 4. Create team_players records for Team A
-      const teamAPlayers = teamAPlayerIds.map((playerId) => {
-        const player = players?.find((p) => p.id === playerId);
-        return {
-          match_team_id: teamAData.id,
-          player_id: playerId,
-          position_id: player?.primary_position_id || null, // Use primary position
-        };
+        // Add Team B players
+        teamBPlayerIds.forEach((playerId) => {
+          allMatchPlayers.push({
+            match_id: match.id,
+            player_id: playerId,
+            team_name: "team_b",
+            original_team_name: "team_b",
+            manually_adjusted: false,
+          });
+        });
       });
 
-      const { error: teamAPlayersError } = await supabase
-        .from("team_players")
-        .insert(teamAPlayers);
+      console.log("About to insert match players:", allMatchPlayers);
 
-      if (teamAPlayersError) {
-        console.error("Team A players error:", teamAPlayersError);
-        throw teamAPlayersError;
-      }
+      const { error: matchPlayersError } = await supabase
+        .from("match_players")
+        .insert(allMatchPlayers);
 
-      // 5. Create team_players records for Team B
-      const teamBPlayers = teamBPlayerIds.map((playerId) => {
-        const player = players?.find((p) => p.id === playerId);
-        return {
-          match_team_id: teamBData.id,
-          player_id: playerId,
-          position_id: player?.primary_position_id || null, // Use primary position
-        };
-      });
-
-      const { error: teamBPlayersError } = await supabase
-        .from("team_players")
-        .insert(teamBPlayers);
-
-      if (teamBPlayersError) {
-        console.error("Team B players error:", teamBPlayersError);
-        throw teamBPlayersError;
-      }
-
-      // 6. Create 5 matches for the 5 sets
-      const matches = Array.from({ length: 5 }, (_, index) => ({
-        match_day_id: matchDay.id,
-        game_number: index + 1,
-        team_a_score: 0,
-        team_b_score: 0,
-        added_by_user_id: user.id,
-      }));
-
-      const { error: matchesError } = await supabase
-        .from("matches")
-        .insert(matches);
-
-      if (matchesError) {
-        console.error("Matches error:", matchesError);
-        throw matchesError;
+      if (matchPlayersError) {
+        console.error("Match players error:", matchPlayersError);
+        throw new Error(
+          `Failed to create match players: ${matchPlayersError.message}`
+        );
       }
 
       console.log("=== GAME CREATED SUCCESSFULLY ===");

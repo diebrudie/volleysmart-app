@@ -15,6 +15,32 @@ import { format, isWednesday } from "date-fns";
 import { useClub } from "@/contexts/ClubContext";
 import { useParams } from "react-router-dom";
 
+// Define proper interfaces
+interface MatchPlayerData {
+  player_id: string;
+  team_name: string;
+  players: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
+}
+
+interface MatchData {
+  id: string;
+  game_number: number;
+  team_a_score: number | null;
+  team_b_score: number | null;
+  match_players?: MatchPlayerData[];
+}
+
+interface MatchDayData {
+  id: string;
+  date: string;
+  notes: string | null;
+  matches: (MatchData & { match_players?: MatchPlayerData[] })[]; // Intersection type
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -42,15 +68,14 @@ const Dashboard = () => {
       try {
         // If clubId is provided in URL, use that
         if (userClubId) {
-          // ✅ Changed from clubId to userClubId
           // Store the visited club in localStorage for future logins
-          localStorage.setItem("lastVisitedClub", userClubId); // ✅ Changed from clubId
+          localStorage.setItem("lastVisitedClub", userClubId);
 
           // Verify user has access to this club
           const { data: memberCheck } = await supabase
             .from("club_members")
             .select("role")
-            .eq("club_id", userClubId) // ✅ Changed from clubId
+            .eq("club_id", userClubId)
             .eq("user_id", user.id)
             .maybeSingle();
 
@@ -64,7 +89,7 @@ const Dashboard = () => {
           const { data: creatorCheck } = await supabase
             .from("clubs")
             .select("id")
-            .eq("id", userClubId) // ✅ Changed from clubId
+            .eq("id", userClubId)
             .eq("created_by", user.id)
             .maybeSingle();
 
@@ -135,8 +160,7 @@ const Dashboard = () => {
   }, [memberCount]);
 
   // Query to fetch the latest game
-  // Update the latestGame query in Dashboard.tsx
-  const { data: latestGame, isLoading } = useQuery({
+  const { data: latestGame, isLoading } = useQuery<MatchDayData | null>({
     queryKey: ["latestGame", userClubId],
     queryFn: async () => {
       if (!userClubId) return null;
@@ -152,23 +176,6 @@ const Dashboard = () => {
         id,
         date,
         notes,
-        match_teams (
-          id,
-          team_name,
-          team_players (
-            player_id,
-            position_id,
-            players (
-              id,
-              first_name,
-              last_name
-            ),
-            positions (
-              id,
-              name
-            )
-          )
-        ),
         matches (
           id,
           game_number,
@@ -187,7 +194,42 @@ const Dashboard = () => {
         throw matchDayError;
       }
 
+      if (!matchDay) {
+        console.log("No match day found");
+        return null;
+      }
+
       console.log("Match day result:", matchDay);
+
+      // Now get match players separately to avoid RLS issues
+      if (matchDay.matches && matchDay.matches.length > 0) {
+        const firstMatchId = matchDay.matches[0].id;
+        console.log("Fetching match players for match:", firstMatchId);
+
+        const { data: matchPlayers, error: playersError } = await supabase
+          .from("match_players")
+          .select(
+            `
+          player_id,
+          team_name,
+          players (
+            id,
+            first_name,
+            last_name
+          )
+        `
+          )
+          .eq("match_id", firstMatchId);
+
+        if (playersError) {
+          console.error("Match players error:", playersError);
+        } else {
+          console.log("Fetched match players:", matchPlayers);
+          // Add the match players to the first match
+          (matchDay.matches[0] as MatchData).match_players = matchPlayers || [];
+        }
+      }
+
       return matchDay;
     },
     enabled: !!userClubId && !isCheckingClub,
@@ -269,29 +311,29 @@ const Dashboard = () => {
   let teamAPlayers: Array<{ id: string; name: string; position: string }> = [];
   let teamBPlayers: Array<{ id: string; name: string; position: string }> = [];
 
-  if (latestGame?.match_teams) {
-    const teamA = latestGame.match_teams.find(
-      (team) => team.team_name === "Team A"
-    );
-    const teamB = latestGame.match_teams.find(
-      (team) => team.team_name === "Team B"
-    );
+  if (latestGame?.matches && latestGame.matches.length > 0) {
+    // Get all match players from the first match (they should all have the same teams)
+    const matchPlayers = latestGame.matches[0].match_players || [];
 
-    teamAPlayers =
-      teamA?.team_players.map((tp) => ({
-        id: tp.player_id,
-        name: `${tp.players.first_name} ${tp.players.last_name}`,
-        position: tp.positions?.name || "",
-      })) || [];
+    console.log("=== MATCH PLAYERS DEBUG ===");
+    console.log("Match players:", matchPlayers);
 
-    teamBPlayers =
-      teamB?.team_players.map((tp) => ({
-        id: tp.player_id,
-        name: `${tp.players.first_name} ${tp.players.last_name}`,
-        position: tp.positions?.name || "",
-      })) || [];
+    teamAPlayers = matchPlayers
+      .filter((mp) => mp.team_name === "team_a")
+      .map((mp) => ({
+        id: mp.player_id,
+        name: `${mp.players.first_name} ${mp.players.last_name}`,
+        position: "",
+      }));
 
-    console.log("=== TEAMS DEBUG ===");
+    teamBPlayers = matchPlayers
+      .filter((mp) => mp.team_name === "team_b")
+      .map((mp) => ({
+        id: mp.player_id,
+        name: `${mp.players.first_name} ${mp.players.last_name}`,
+        position: "",
+      }));
+
     console.log("Team A players:", teamAPlayers);
     console.log("Team B players:", teamBPlayers);
   }
@@ -386,7 +428,7 @@ const Dashboard = () => {
               <h1 className="text-4xl font-serif mb-2">{headingText}</h1>
               <p className="text-gray-600">{formatDate(matchDate)}</p>
             </div>
-            <button className="flex items-center gap-1 text-sm font-medium">
+            <button className="flex items-center gap-1 text-sm font-medium border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-50">
               <Pencil className="h-4 w-4" /> Edit Teams
             </button>
           </div>
