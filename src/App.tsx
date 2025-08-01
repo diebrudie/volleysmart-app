@@ -26,6 +26,7 @@ import Players from "./pages/Players";
 import Members from "./pages/Members";
 import PlayerDetail from "./pages/PlayerDetail";
 import TeamGenerator from "./pages/TeamGenerator";
+import EditTeams from "./pages/EditTeams";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Start from "./pages/Start";
@@ -309,6 +310,14 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["admin", "editor"]}>
                         <TeamGenerator />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/edit-teams/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                        <EditTeams />
                       </ProtectedRoute>
                     }
                   />

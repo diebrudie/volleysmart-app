@@ -8,8 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PlayersSelection } from '@/components/team-generator/PlayersSelection';
 import { GeneratedTeams } from '@/components/team-generator/GeneratedTeams';
 import { EmptyTeamsState } from '@/components/team-generator/EmptyTeamsState';
-import { allPlayers } from '@/components/team-generator/mockData';
-import { Player } from '@/types/supabase';
+import { PlayerWithPositions } from '@/components/team-generator/types';
 
 // Define player types for team generation logic
 type PlayerPosition = 'Setter' | 'Outside Hitter' | 'Middle Blocker' | 'Opposite Hitter' | 'Libero';
@@ -18,12 +17,13 @@ const TeamGenerator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [selectedPlayers, setSelectedPlayers] = useState<number[]>([]);
-  const [generatedTeams, setGeneratedTeams] = useState<{ teamA: Player[]; teamB: Player[] } | null>(null);
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const [generatedTeams, setGeneratedTeams] = useState<{ teamA: PlayerWithPositions[]; teamB: PlayerWithPositions[] } | null>(null);
+  const [allPlayers, setAllPlayers] = useState<PlayerWithPositions[]>([]);
   
   const canGenerateTeams = selectedPlayers.length >= 6;
   
-  const handlePlayerSelection = (playerId: number) => {
+  const handlePlayerSelection = (playerId: string) => {
     if (selectedPlayers.includes(playerId)) {
       setSelectedPlayers(selectedPlayers.filter(id => id !== playerId));
     } else {
@@ -32,8 +32,8 @@ const TeamGenerator = () => {
   };
 
   // Helper function to group players by position
-  const groupPlayersByPosition = (players: Player[]) => {
-    const groups: Record<string, Player[]> = {
+  const groupPlayersByPosition = (players: PlayerWithPositions[]) => {
+    const groups: Record<string, PlayerWithPositions[]> = {
       'Setter': [],
       'Outside Hitter': [],
       'Middle Blocker': [],
@@ -56,12 +56,12 @@ const TeamGenerator = () => {
   };
 
   // Helper to sort players by skill within a position group
-  const sortPlayersBySkill = (players: Player[]) => {
-    return [...players].sort((a, b) => b.skillRating - a.skillRating);
+  const sortPlayersBySkill = (players: PlayerWithPositions[]) => {
+    return [...players].sort((a, b) => b.skill_rating - a.skill_rating);
   };
 
   // This function will attempt to balance gender distribution
-  const balanceGenderDistribution = (teamA: Player[], teamB: Player[]) => {
+  const balanceGenderDistribution = (teamA: PlayerWithPositions[], teamB: PlayerWithPositions[]) => {
     let malesTeamA = teamA.filter(p => p.gender === 'male').length;
     let femalesTeamA = teamA.filter(p => p.gender === 'female').length;
     let malesTeamB = teamB.filter(p => p.gender === 'male').length;
@@ -128,7 +128,7 @@ const TeamGenerator = () => {
     // Get the selected player objects with explicit typing
     const players = selectedPlayers.map(id => 
       allPlayers.find(p => p.id === id)
-    ).filter(p => p !== undefined) as Player[];
+    ).filter(p => p !== undefined) as PlayerWithPositions[];
     
     // Group players by their preferred positions
     const positionGroups = groupPlayersByPosition(players);
@@ -139,8 +139,8 @@ const TeamGenerator = () => {
     });
     
     // Initialize teams
-    const teamA: Player[] = [];
-    const teamB: Player[] = [];
+    const teamA: PlayerWithPositions[] = [];
+    const teamB: PlayerWithPositions[] = [];
     
     // Start by distributing the key positions based on skill
     // We'll assign players in alternating fashion to balance skill
@@ -219,7 +219,7 @@ const TeamGenerator = () => {
     });
   };
 
-  const updateTeams = (newTeams: { teamA: any[]; teamB: any[] }) => {
+  const updateTeams = (newTeams: { teamA: PlayerWithPositions[]; teamB: PlayerWithPositions[] }) => {
     setGeneratedTeams(newTeams);
     toast({
       title: "Teams updated",
@@ -255,12 +255,12 @@ const TeamGenerator = () => {
             {/* Player Selection Section */}
             <div className="lg:col-span-1">
               <PlayersSelection
-                allPlayers={allPlayers}
                 selectedPlayers={selectedPlayers}
                 onPlayerSelection={handlePlayerSelection}
                 onGenerateTeams={generateTeams}
                 canGenerateTeams={canGenerateTeams}
                 onClearSelection={handleClearSelection}
+                onPlayersLoaded={setAllPlayers}
               />
             </div>
             
@@ -268,9 +268,41 @@ const TeamGenerator = () => {
             <div className="lg:col-span-2">
               {generatedTeams ? (
                 <GeneratedTeams
-                  teams={generatedTeams}
+                  teams={{
+                    teamA: generatedTeams.teamA.map(p => ({
+                      id: Number(p.id.split('-')[0]) || 1,
+                      name: p.name,
+                      email: p.email || '',
+                      positions: [p.preferredPosition],
+                      preferredPosition: p.preferredPosition,
+                      availability: true,
+                      matchesPlayed: 0,
+                      skillRating: p.skill_rating,
+                      isPublic: true,
+                      gender: p.gender,
+                    })),
+                    teamB: generatedTeams.teamB.map(p => ({
+                      id: Number(p.id.split('-')[0]) || 1,
+                      name: p.name,
+                      email: p.email || '',
+                      positions: [p.preferredPosition],
+                      preferredPosition: p.preferredPosition,
+                      availability: true,
+                      matchesPlayed: 0,
+                      skillRating: p.skill_rating,
+                      isPublic: true,
+                      gender: p.gender,
+                    }))
+                  }}
                   onRegenerateTeams={regenerateTeams}
-                  onUpdateTeams={updateTeams}
+                  onUpdateTeams={(newTeams) => {
+                    // Convert back to PlayerWithPositions format
+                    const convertedTeams = {
+                      teamA: newTeams.teamA.map(p => allPlayers.find(ap => ap.name === p.name) || allPlayers[0]),
+                      teamB: newTeams.teamB.map(p => allPlayers.find(ap => ap.name === p.name) || allPlayers[0])
+                    };
+                    updateTeams(convertedTeams);
+                  }}
                   onSaveMatch={handleSaveMatch}
                 />
               ) : (
