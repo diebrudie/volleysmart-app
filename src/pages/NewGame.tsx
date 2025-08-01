@@ -290,11 +290,18 @@ const NewGame = () => {
         team_name: "team_a" | "team_b";
         original_team_name: "team_a" | "team_b";
         manually_adjusted: boolean;
+        position_played: string | null;
       };
 
       const allGamePlayers: GamePlayerInsert[] = [];
 
-      // Add Team A players
+      // Helper function to get player's primary position name
+      const getPlayerPrimaryPositionName = (playerId: string) => {
+        const player = players?.find((p) => p.id === playerId);
+        return player?.primary_position_name || "No Position";
+      };
+
+      // Add Team A players with their positions
       teamAPlayerIds.forEach((playerId) => {
         allGamePlayers.push({
           match_day_id: matchDay.id,
@@ -302,10 +309,11 @@ const NewGame = () => {
           team_name: "team_a",
           original_team_name: "team_a",
           manually_adjusted: false,
+          position_played: getPlayerPrimaryPositionName(playerId),
         });
       });
 
-      // Add Team B players
+      // Add Team B players with their positions
       teamBPlayerIds.forEach((playerId) => {
         allGamePlayers.push({
           match_day_id: matchDay.id,
@@ -313,10 +321,14 @@ const NewGame = () => {
           team_name: "team_b",
           original_team_name: "team_b",
           manually_adjusted: false,
+          position_played: getPlayerPrimaryPositionName(playerId),
         });
       });
 
-      console.log("About to insert game players:", allGamePlayers);
+      console.log(
+        "About to insert game players with positions:",
+        allGamePlayers
+      );
 
       const { error: gamePlayersError } = await supabase
         .from("game_players")

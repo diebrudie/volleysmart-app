@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ import { useParams } from "react-router-dom";
 interface GamePlayerData {
   player_id: string;
   team_name: string;
+  position_name: string;
   players: {
     id: string;
     first_name: string;
@@ -50,6 +51,7 @@ const Dashboard = () => {
   const [clubMemberCount, setClubMemberCount] = useState(0);
   const { setClubId } = useClub();
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (urlClubId) {
@@ -227,7 +229,7 @@ const Dashboard = () => {
       // First get the game players
       const { data: gamePlayersRaw, error: gamePlayersError } = await supabase
         .from("game_players")
-        .select("player_id, team_name")
+        .select("player_id, team_name, position_played")
         .eq("match_day_id", matchDay.id);
 
       console.log("Raw game players:", gamePlayersRaw);
@@ -263,6 +265,7 @@ const Dashboard = () => {
             return {
               player_id: gp.player_id,
               team_name: gp.team_name,
+              position_name: gp.position_played || "No Position",
               players: player || {
                 id: gp.player_id,
                 first_name: "Unknown",
@@ -272,7 +275,6 @@ const Dashboard = () => {
           });
         }
       }
-
       console.log("Final combined game players:", gamePlayers);
 
       // Combine the data
@@ -370,16 +372,16 @@ const Dashboard = () => {
       .filter((gp) => gp.team_name === "team_a")
       .map((gp) => ({
         id: gp.player_id,
-        name: `${gp.players.first_name} ${gp.players.last_name}`,
-        position: "",
+        name: `${gp.players.first_name} ${gp.players.last_name.charAt(0)}.`,
+        position: gp.position_name || "No Position",
       }));
 
     teamBPlayers = latestGame.game_players
       .filter((gp) => gp.team_name === "team_b")
       .map((gp) => ({
         id: gp.player_id,
-        name: `${gp.players.first_name} ${gp.players.last_name}`,
-        position: "",
+        name: `${gp.players.first_name} ${gp.players.last_name.charAt(0)}.`,
+        position: gp.position_name || "No Position",
       }));
 
     console.log("Team A players:", teamAPlayers);
@@ -425,19 +427,56 @@ const Dashboard = () => {
     teamAScore: number,
     teamBScore: number
   ) => {
-    // Update score in the database
-    const matchToUpdate = latestGame.matches.find(
-      (m) => m.game_number === setNumber
-    );
+    console.log("=== SCORE UPDATE DEBUG ===");
+    console.log("Set Number:", setNumber);
+    console.log("Team A Score:", teamAScore);
+    console.log("Team B Score:", teamBScore);
+    console.log("Latest Game:", latestGame);
+    console.log("All Matches:", latestGame?.matches);
 
-    if (matchToUpdate) {
-      await supabase
+    try {
+      // Find the match to update
+      const matchToUpdate = latestGame?.matches?.find(
+        (m) => m.game_number === setNumber
+      );
+
+      console.log("Match to update:", matchToUpdate);
+
+      if (!matchToUpdate) {
+        console.error("No match found for set number:", setNumber);
+        return;
+      }
+
+      console.log("Updating match with ID:", matchToUpdate.id);
+
+      // Update score in the database
+      const { data, error } = await supabase
         .from("matches")
         .update({
           team_a_score: teamAScore,
           team_b_score: teamBScore,
         })
-        .eq("id", matchToUpdate.id);
+        .eq("id", matchToUpdate.id)
+        .select(); // Add select() to see what was updated
+
+      console.log("Supabase update result:", { data, error });
+
+      if (error) {
+        console.error("Error updating match score:", error);
+        return;
+      }
+
+      console.log("Successfully updated match:", data);
+
+      // Invalidate and refetch the latest game query
+      console.log("Invalidating queries for userClubId:", userClubId);
+      await queryClient.invalidateQueries({
+        queryKey: ["latestGame", userClubId],
+      });
+
+      console.log("Queries invalidated successfully");
+    } catch (error) {
+      console.error("Error in handleSetScoreUpdate:", error);
     }
   };
 
