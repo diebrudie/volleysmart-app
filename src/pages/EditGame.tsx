@@ -63,8 +63,8 @@ const mockTeamData = {
   ] as EditPlayer[]
 };
 
-const EditTeams = () => {
-  const { id } = useParams();
+const EditGame = () => {
+  const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -376,4 +376,4 @@ const EditTeams = () => {
   );
 };
 
-export default EditTeams;
+export default EditGame;
