@@ -38,8 +38,8 @@ interface MemberWithPlayer {
 }
 
 const Members = () => {
-  console.log("🚨 MEMBERS COMPONENT IS RENDERING!");
-  console.log("🚨 Members URL:", window.location.pathname);
+  //console. log("🚨 MEMBERS COMPONENT IS RENDERING!");
+  //console. log("🚨 Members URL:", window.location.pathname);
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const { clubId: contextClubId, setClubId } = useClub();
   const navigate = useNavigate();
@@ -75,7 +75,7 @@ const Members = () => {
         return [];
       }
 
-      console.log("🚀 Starting query for clubId:", clubId);
+      //console. log("🚀 Starting query for clubId:", clubId);
 
       try {
         // Step 1: Get club members for the specific club
@@ -90,7 +90,7 @@ const Members = () => {
           throw membersError;
         }
 
-        console.log("📊 Found club members:", clubMembersRaw);
+        //console. log("📊 Found club members:", clubMembersRaw);
 
         if (!clubMembersRaw || clubMembersRaw.length === 0) {
           console.log("⚠️ No members found for club:", clubId);
@@ -104,7 +104,7 @@ const Members = () => {
         const userIds = clubMembers
           .map((member) => member.user_id)
           .filter(Boolean);
-        console.log("📋 User IDs to lookup:", userIds);
+        //console. log("📋 User IDs to lookup:", userIds);
 
         const { data: playersRaw, error: playersError } = await supabase
           .from("players")
@@ -128,10 +128,10 @@ const Members = () => {
 
         if (playersError) {
           console.error("❌ Error fetching players:", playersError);
-          console.log("Will continue without player data");
+          //console. log("Will continue without player data");
         }
 
-        console.log("📊 Found players:", playersRaw);
+        //console. log("📊 Found players:", playersRaw);
 
         // Cast to our simple type
         const players = (playersRaw || []) as Player[];
@@ -143,15 +143,9 @@ const Members = () => {
             players.find((player) => player.user_id === member.user_id) || null,
         }));
 
-        console.log("✅ Final combined result:", result);
-        console.log(
-          "✅ Members with player data:",
-          result.filter((m) => m.player !== null).length
-        );
-        console.log(
-          "✅ Members without player data:",
-          result.filter((m) => m.player === null).length
-        );
+        //console. log("✅ Final combined result:", result);
+        //console. log("✅ Members with player data:", result.filter((m) => m.player !== null).length);
+        //console. log("✅ Members without player data:", result.filter((m) => m.player === null).length);
 
         return result;
       } catch (error) {

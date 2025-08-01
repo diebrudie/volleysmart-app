@@ -172,7 +172,7 @@ const PlayerOnboarding = () => {
       return;
     }
 
-    console.log("🔍 Starting player creation for user:", user.id);
+    //console. log("🔍 Starting player creation for user:", user.id);
 
     // Get user metadata for first and last names
     const {
@@ -200,7 +200,7 @@ const PlayerOnboarding = () => {
         .single();
 
       if (existingPlayer) {
-        console.log("🔍 Player already exists, redirecting to /start");
+        //console. log("🔍 Player already exists, redirecting to /start");
         toast({
           title: "Success",
           description: "Player profile already exists!",
@@ -211,12 +211,7 @@ const PlayerOnboarding = () => {
 
       // Calculate skill level based on answers
       const calculatedSkillLevel = calculateSkillLevel(answers);
-      console.log(
-        "🎯 Calculated skill level:",
-        calculatedSkillLevel,
-        "from answers:",
-        answers
-      );
+      //console. log( "🎯 Calculated skill level:", calculatedSkillLevel, "from answers:", answers);
 
       // Create player with assessment data
       const { data: newPlayer, error: playerError } = await supabase
@@ -243,7 +238,7 @@ const PlayerOnboarding = () => {
         throw playerError;
       }
 
-      console.log("✅ Player created successfully:", newPlayer);
+      //console. log("✅ Player created successfully:", newPlayer);
 
       // Now create position relationships in player_positions table
       const positionInserts = [];
@@ -277,7 +272,7 @@ const PlayerOnboarding = () => {
             variant: "destructive",
           });
         } else {
-          console.log("✅ Player positions created successfully");
+          //console. log("✅ Player positions created successfully");
         }
       }
 

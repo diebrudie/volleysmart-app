@@ -49,7 +49,7 @@ const HomeRoute = () => {
     if (isAuthenticated && !isLoading && user) {
       // Check localStorage for last visited club
       const lastClub = localStorage.getItem("lastVisitedClub");
-      // console.log("Last visited club:", lastClub);
+      //console. log("Last visited club:", lastClub);
 
       if (lastClub) {
         // Verify user still has access to this club
@@ -108,8 +108,8 @@ const HomeRoute = () => {
 };
 
 const App = () => {
-  // console.log("🚨 APP COMPONENT RENDERING");
-  // console.log("🚨 CURRENT URL:", window.location.pathname);
+  //console. log("🚨 APP COMPONENT RENDERING");
+  //console. log("🚨 CURRENT URL:", window.location.pathname);
 
   useEffect(() => {
     // Intercept and suppress bucket creation attempts
@@ -127,7 +127,7 @@ const App = () => {
 
       // Block POST requests to bucket endpoints
       if (url.includes("/storage/v1/bucket") && init?.method === "POST") {
-        // console.log("Blocked bucket creation request for:", url);
+        //console. log("Blocked bucket creation request for:", url);
         // Return fake success to prevent errors
         return new Response(
           JSON.stringify({
@@ -314,9 +314,11 @@ const App = () => {
                     }
                   />
                   <Route
-                    path="/edit-game/:gameId"
+                    path="/edit-game/:clubId/:gameId"
                     element={
-                      <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                      <ProtectedRoute
+                        allowedRoles={["admin", "editor", "member", "user"]}
+                      >
                         <EditGame />
                       </ProtectedRoute>
                     }

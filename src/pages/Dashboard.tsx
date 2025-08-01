@@ -161,6 +161,13 @@ const Dashboard = () => {
     }
   }, [memberCount]);
 
+  useEffect(() => {
+    console.log("=== USER OBJECT DEBUG ===");
+    console.log("Full user object:", user);
+    console.log("user.role:", user?.role);
+    console.log("typeof user.role:", typeof user?.role);
+  }, [user]);
+
   // Query to fetch the latest game with separate queries to avoid relation issues
   const { data: latestGame, isLoading } = useQuery({
     queryKey: ["latestGame", userClubId],
@@ -196,7 +203,7 @@ const Dashboard = () => {
         throw matchDayError;
       }
 
-      console.log("All match days:", allMatchDays);
+      // console. log("All match days:", allMatchDays);
 
       // Find the latest match day that has game players
       let matchDay = null;
@@ -211,9 +218,7 @@ const Dashboard = () => {
             .eq("match_day_id", md.id)
             .limit(1);
 
-          console.log(
-            `Match day ${md.id} has ${playerCheck?.length || 0} players`
-          );
+          //console. log(`Match day ${md.id} has ${playerCheck?.length || 0} players`);
 
           if (playerCheck && playerCheck.length > 0) {
             matchDay = md;
@@ -224,7 +229,7 @@ const Dashboard = () => {
       }
 
       // Alternative query approach - fetch game_players and players separately
-      console.log("About to query game_players for match_day_id:", matchDay.id);
+      // console. log("About to query game_players for match_day_id:", matchDay.id);
 
       // First get the game players
       const { data: gamePlayersRaw, error: gamePlayersError } = await supabase
@@ -275,7 +280,7 @@ const Dashboard = () => {
           });
         }
       }
-      console.log("Final combined game players:", gamePlayers);
+      // console. log("Final combined game players:", gamePlayers);
 
       // Combine the data
       const result: MatchDayData = {
@@ -501,6 +506,30 @@ const Dashboard = () => {
     ? "Today's Game Overview"
     : "Last Game Overview";
 
+  const handleEditTeamsClick = () => {
+    console.log("=== EDIT TEAMS BUTTON CLICKED ===");
+    console.log("userClubId:", userClubId);
+    console.log("latestGame:", latestGame);
+    console.log("latestGame.id:", latestGame?.id);
+    console.log("userRole:", userRole);
+    console.log("clubDetails:", clubDetails);
+
+    if (!userClubId) {
+      console.error("❌ No userClubId found!");
+      return;
+    }
+
+    if (!latestGame?.id) {
+      console.error("❌ No latestGame.id found!");
+      return;
+    }
+
+    const targetPath = `/edit-game/${userClubId}/${latestGame.id}`;
+    console.log("🚀 Navigating to:", targetPath);
+
+    navigate(targetPath);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -513,9 +542,9 @@ const Dashboard = () => {
               <h1 className="text-4xl font-serif mb-2">{headingText}</h1>
               <p className="text-gray-600">{formatDate(matchDate)}</p>
             </div>
-            <button 
+            <button
               className="flex items-center gap-1 text-sm font-medium border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-50"
-              onClick={() => navigate(`/edit-game/${latestGame.id}`)}
+              onClick={handleEditTeamsClick}
             >
               <Pencil className="h-4 w-4" /> Edit Teams
             </button>

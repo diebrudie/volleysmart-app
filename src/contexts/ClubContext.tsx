@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 interface ClubContextType {
   clubId: string | null;
@@ -27,13 +33,13 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
   }, [clubId]);
 
   const setClubId = (id: string) => {
-    console.log('Setting clubId:', id);
+    //console. log('Setting clubId:', id);
     localStorage.setItem("lastVisitedClub", id);
     setClubIdState(id);
   };
 
   const clearClubId = () => {
-    console.log('Clearing clubId');
+    //console. log('Clearing clubId');
     localStorage.removeItem("lastVisitedClub");
     setClubIdState(null);
   };

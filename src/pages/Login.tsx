@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -6,7 +5,14 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
@@ -15,7 +21,9 @@ import { Spinner } from "@/components/ui/spinner";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters" }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -34,77 +42,82 @@ const Login = () => {
   // Redirect if already authenticated, check if user needs onboarding first
   useEffect(() => {
     if (isAuthenticated && !authLoading && user) {
-      console.log('User is authenticated, checking profile for redirect:', user);
+      //console. log('User is authenticated, checking profile for redirect:', user);
       setIsCheckingProfile(true);
-      
+
       // Check if user has completed player profile (onboarding)
       const checkUserProfile = async () => {
         try {
           const { data: player, error } = await supabase
-            .from('players')
-            .select('id')
-            .eq('user_id', user.id)
+            .from("players")
+            .select("id")
+            .eq("user_id", user.id)
             .single();
 
-          console.log('Player profile check result:', { player, error });
+          //console. log('Player profile check result:', { player, error });
 
           if (error || !player) {
             // User hasn't completed onboarding, redirect to onboarding
-            console.log('Redirecting to onboarding');
-            navigate('/players/onboarding', { replace: true });
+            //console. log('Redirecting to onboarding');
+            navigate("/players/onboarding", { replace: true });
           } else {
             // User has completed onboarding, check club membership count
             const { data: clubMembers, error: clubError } = await supabase
-              .from('club_members')
-              .select('club_id')
-              .eq('user_id', user.id);
+              .from("club_members")
+              .select("club_id")
+              .eq("user_id", user.id);
 
-            console.log('Club membership check result:', { clubMembers, clubError });
+            //console. log('Club membership check result:', { clubMembers, clubError });
 
             if (clubError) {
-              console.error('Error checking club membership:', clubError);
+              console.error("Error checking club membership:", clubError);
               // Default to start page on error
-              navigate('/start', { replace: true });
+              navigate("/start", { replace: true });
               return;
             }
 
             if (!clubMembers || clubMembers.length === 0) {
               // User doesn't belong to any club, redirect to start page
-              console.log('No club membership, redirecting to start');
-              navigate('/start', { replace: true });
+              //console. log('No club membership, redirecting to start');
+              navigate("/start", { replace: true });
             } else if (clubMembers.length === 1) {
               // User belongs to exactly one club, redirect to that club's dashboard
-              console.log('Single club membership, redirecting to dashboard:', clubMembers[0].club_id);
-              navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
+              //console. log('Single club membership, redirecting to dashboard:', clubMembers[0].club_id);
+              navigate(`/dashboard/${clubMembers[0].club_id}`, {
+                replace: true,
+              });
             } else {
               // User belongs to multiple clubs, check for last visited club
-              const lastVisitedClubId = localStorage.getItem('lastVisitedClub');
-              console.log('Multiple clubs, last visited:', lastVisitedClubId);
-              
+              const lastVisitedClubId = localStorage.getItem("lastVisitedClub");
+              //console. log('Multiple clubs, last visited:', lastVisitedClubId);
+
               // Verify the last visited club is still in user's club list
-              const isLastClubValid = lastVisitedClubId && 
-                clubMembers.some(member => member.club_id === lastVisitedClubId);
-              
+              const isLastClubValid =
+                lastVisitedClubId &&
+                clubMembers.some(
+                  (member) => member.club_id === lastVisitedClubId
+                );
+
               if (isLastClubValid) {
                 // Redirect to last visited club dashboard
-                console.log('Redirecting to last visited club:', lastVisitedClubId);
+                //console. log('Redirecting to last visited club:', lastVisitedClubId);
                 navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
               } else {
                 // No valid last visited club, redirect to clubs overview page
-                console.log('No valid last club, redirecting to clubs overview');
-                navigate('/clubs', { replace: true });
+                //console. log('No valid last club, redirecting to clubs overview');
+                navigate("/clubs", { replace: true });
               }
             }
           }
         } catch (error) {
-          console.error('Error checking user profile:', error);
+          console.error("Error checking user profile:", error);
           // Default to onboarding on error to be safe
-          navigate('/players/onboarding', { replace: true });
+          navigate("/players/onboarding", { replace: true });
         } finally {
           setIsCheckingProfile(false);
         }
       };
-      
+
       checkUserProfile();
     }
   }, [isAuthenticated, authLoading, navigate, from, user]);
@@ -120,9 +133,9 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      console.log('Attempting login for:', data.email);
+      //console. log('Attempting login for:', data.email);
       await login(data.email, data.password);
-      console.log('Login successful, redirection will happen in useEffect');
+      //console. log('Login successful, redirection will happen in useEffect');
       // The redirection will happen automatically in the useEffect hook
     } catch (error) {
       console.error("Login error:", error);
@@ -177,25 +190,24 @@ const Login = () => {
               )}
             />
             <div className="flex justify-end">
-              <Link 
-                to="/forgot-password" 
+              <Link
+                to="/forgot-password"
                 className="text-sm text-volleyball-primary hover:underline"
               >
                 Forgot your password?
               </Link>
             </div>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </Form>
         <p className="mt-4 text-sm text-gray-600 text-center">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-volleyball-primary hover:underline">
+          <Link
+            to="/signup"
+            className="text-volleyball-primary hover:underline"
+          >
             Sign up
           </Link>
         </p>

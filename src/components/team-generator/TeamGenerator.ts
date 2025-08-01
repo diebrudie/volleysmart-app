@@ -20,7 +20,7 @@ export class TeamGenerator {
       throw new Error("Need at least 4 players to generate teams");
     }
 
-    console.log("Generating teams for", availablePlayers.length, "players");
+    //console. log("Generating teams for", availablePlayers.length, "players");
 
     // Generate multiple team combinations
     const combinations = this.generateTeamCombinations(

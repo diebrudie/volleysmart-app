@@ -38,8 +38,8 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { clubId, setClubId } = useClub();
 
-  // console.log("🔍 Navbar - clubId:", clubId);
-  // console.log("🔍 Navbar - localStorage club:", localStorage.getItem("lastVisitedClub"));
+  //console. log("🔍 Navbar - clubId:", clubId);
+  //console. log("🔍 Navbar - localStorage club:", localStorage.getItem("lastVisitedClub"));
 
   const handleLogout = async () => {
     await logout();
@@ -74,8 +74,8 @@ const Navbar = () => {
     : []; // ⬅️ Hide nav links until a club is selected
 
   // Navigation items
-  // console.log("🔍 Navbar navItems - clubId:", clubId);
-  // console.log("🔍 Navbar navItems - navItems:", navItems);
+  //console. log("🔍 Navbar navItems - clubId:", clubId);
+  //console. log("🔍 Navbar navItems - navItems:", navItems);
 
   // Account dropdown items
   const accountItems = [

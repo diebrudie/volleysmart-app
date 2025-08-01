@@ -58,11 +58,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // console.log("Auth state changed:", event, session);
+      //console. log("Auth state changed:", event, session);
 
       // Handle token refresh errors
       if (event === "TOKEN_REFRESHED" && !session) {
-        // console.log("Token refresh failed, signing out");
+        //console. log("Token refresh failed, signing out");
         await supabase.auth.signOut();
         setSession(null);
         setUser(null);
@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // console.log("Initial session check:", session);
+      //console. log("Initial session check:", session);
       setSession(session);
       if (session?.user && !hasFetchedProfile.current) {
         hasFetchedProfile.current = true;
@@ -135,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: (profile?.role as UserRole) || "user",
       };
 
-      // console.log("Setting user profile:", userWithProfile);
+      //console. log("Setting user profile:", userWithProfile);
       setUser(userWithProfile);
     } catch (error) {
       console.error("Error getting user profile:", error);
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name: authUser.email?.split("@")[0] || "User",
         role: "user",
       };
-      // console.log("Setting fallback user:", fallbackUser);
+      //console. log("Setting fallback user:", fallbackUser);
       setUser(fallbackUser);
     } finally {
       setIsLoading(false);

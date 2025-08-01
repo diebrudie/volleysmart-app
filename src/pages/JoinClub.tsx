@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,11 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useClub } from "@/contexts/ClubContext";
 
 interface Club {
-    id: string;
-    name: string;
-    slug: string;
-    created_at: string;
-  }
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+}
 
 const JoinClub = () => {
   const { user } = useAuth();
@@ -32,22 +31,22 @@ const JoinClub = () => {
     const fetchUserCreatedClubs = async () => {
       if (!user?.id) return;
 
-      console.log('Current user ID:', user.id);
+      //console. log('Current user ID:', user.id);
 
       try {
         const { data: clubs, error } = await supabase
-          .from('clubs')
-          .select('id, name, slug, created_at')
-          .eq('created_by', user.id);
+          .from("clubs")
+          .select("id, name, slug, created_at")
+          .eq("created_by", user.id);
 
         if (error) {
-          console.error('Error fetching user created clubs:', error);
+          console.error("Error fetching user created clubs:", error);
         } else {
-          console.log('Clubs created by user:', clubs);
+          //console. log('Clubs created by user:', clubs);
           setUserCreatedClubs(clubs || []);
         }
       } catch (error) {
-        console.error('Unexpected error fetching clubs:', error);
+        console.error("Unexpected error fetching clubs:", error);
       }
     };
 
@@ -67,47 +66,49 @@ const JoinClub = () => {
 
     try {
       const trimmedClubId = clubIdInput.trim();
-      console.log('Searching for club with slug:', trimmedClubId);
+      //console. log('Searching for club with slug:', trimmedClubId);
 
       // First try exact match
       let { data: club, error: clubError } = await supabase
-        .from('clubs')
-        .select('id, name, slug')
-        .eq('slug', trimmedClubId)
+        .from("clubs")
+        .select("id, name, slug")
+        .eq("slug", trimmedClubId)
         .maybeSingle();
 
-      console.log('Exact match result:', club);
-      console.log('Exact match error:', clubError);
+      //console. log('Exact match result:', club);
+      //console. log('Exact match error:', clubError);
 
       // If no exact match, try case-insensitive
       if (!club && !clubError) {
-        console.log('No exact match found, trying case-insensitive search...');
-        const { data: clubCaseInsensitive, error: clubCaseError } = await supabase
-          .from('clubs')
-          .select('id, name, slug')
-          .ilike('slug', trimmedClubId)
-          .maybeSingle();
+        //console. log('No exact match found, trying case-insensitive search...');
+        const { data: clubCaseInsensitive, error: clubCaseError } =
+          await supabase
+            .from("clubs")
+            .select("id, name, slug")
+            .ilike("slug", trimmedClubId)
+            .maybeSingle();
 
         club = clubCaseInsensitive;
         clubError = clubCaseError;
-        console.log('Case-insensitive result:', club);
-        console.log('Case-insensitive error:', clubError);
+        //console. log('Case-insensitive result:', club);
+        //console. log('Case-insensitive error:', clubError);
       }
 
       // Debug: Let's also check all clubs to see what's in the database
       const { data: allClubs, error: allClubsError } = await supabase
-        .from('clubs')
-        .select('id, name, slug')
+        .from("clubs")
+        .select("id, name, slug")
         .limit(10);
 
-      console.log('All clubs in database (first 10):', allClubs);
-      console.log('All clubs query error:', allClubsError);
+      //console. log('All clubs in database (first 10):', allClubs);
+      //console. log('All clubs query error:', allClubsError);
 
       if (clubError) {
-        console.error('Database error when searching for club:', clubError);
+        console.error("Database error when searching for club:", clubError);
         toast({
           title: "Database error",
-          description: "There was an error searching for the club. Please try again.",
+          description:
+            "There was an error searching for the club. Please try again.",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -115,7 +116,7 @@ const JoinClub = () => {
       }
 
       if (!club) {
-        console.log('No club found with slug:', trimmedClubId);
+        //console. log('No club found with slug:', trimmedClubId);
         toast({
           title: "Club not found",
           description: "Please check the Club ID and try again.",
@@ -125,20 +126,20 @@ const JoinClub = () => {
         return;
       }
 
-      console.log('Found club:', club.name, 'with ID:', club.id);
+      //console. log('Found club:', club.name, 'with ID:', club.id);
 
       // Check if user is already a member
       const { data: existingMember, error: memberError } = await supabase
-        .from('club_members')
-        .select('id')
-        .eq('club_id', club.id)
-        .eq('user_id', user.id)
+        .from("club_members")
+        .select("id")
+        .eq("club_id", club.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
-      console.log('Existing member check:', existingMember);
+      //console. log('Existing member check:', existingMember);
 
       if (memberError) {
-        console.error('Error checking membership:', memberError);
+        console.error("Error checking membership:", memberError);
         toast({
           title: "Error checking membership",
           description: "Something went wrong. Please try again.",
@@ -159,17 +160,17 @@ const JoinClub = () => {
       }
 
       // Add user as a member
-      console.log('Adding user as member to club:', club.id);
+      //console. log('Adding user as member to club:', club.id);
       const { error: insertError } = await supabase
-        .from('club_members')
+        .from("club_members")
         .insert({
           club_id: club.id,
           user_id: user.id,
-          role: 'member'
+          role: "member",
         });
 
       if (insertError) {
-        console.error('Error joining club:', insertError);
+        console.error("Error joining club:", insertError);
         toast({
           title: "Error joining club",
           description: "Something went wrong. Please try again.",
@@ -179,9 +180,9 @@ const JoinClub = () => {
         return;
       }
 
-      console.log('Successfully joined club:', club.name);
+      //console. log('Successfully joined club:', club.name);
       setGlobalClubId(club.id);
-      localStorage.setItem('lastVisitedClub', club.id);
+      localStorage.setItem("lastVisitedClub", club.id);
 
       toast({
         title: "Successfully joined club!",
@@ -190,9 +191,8 @@ const JoinClub = () => {
 
       // Redirect to dashboardg
       navigate(`/dashboard/${club.id}`);
-
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error("Unexpected error:", error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
@@ -222,15 +222,20 @@ const JoinClub = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
-              <p><strong>Current User ID:</strong> {user?.id || 'Not logged in'}</p>
-              <p><strong>User Email:</strong> {user?.email || 'N/A'}</p>
+              <p>
+                <strong>Current User ID:</strong> {user?.id || "Not logged in"}
+              </p>
+              <p>
+                <strong>User Email:</strong> {user?.email || "N/A"}
+              </p>
               <div>
                 <strong>Clubs created by this user:</strong>
                 {userCreatedClubs.length > 0 ? (
                   <ul className="mt-1 list-disc list-inside">
                     {userCreatedClubs.map((club) => (
                       <li key={club.id} className="text-xs">
-                        <strong>ID:</strong> {club.id} | <strong>Name:</strong> {club.name} | <strong>Slug:</strong> {club.slug}
+                        <strong>ID:</strong> {club.id} | <strong>Name:</strong>{" "}
+                        {club.name} | <strong>Slug:</strong> {club.slug}
                       </li>
                     ))}
                   </ul>
@@ -259,11 +264,7 @@ const JoinClub = () => {
                   required
                 />
               </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Joining..." : "Join Club"}
               </Button>
             </form>

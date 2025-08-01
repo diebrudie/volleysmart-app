@@ -4,7 +4,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-type UserRole = "admin" | "editor" | "user";
+type UserRole = "admin" | "editor" | "user" | "member";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -22,12 +22,6 @@ const ProtectedRoute = ({
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
-  // console.log("🔒 PROTECTED ROUTE RENDERING");
-  // console.log("🔒 Location pathname:", location.pathname);
-  // console.log("🔒 isAuthenticated:", isAuthenticated);
-  // console.log("🔒 isLoading:", isLoading);
-  // console.log("🔒 user:", user);
-
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<
     boolean | null
   >(null);
@@ -35,12 +29,6 @@ const ProtectedRoute = ({
 
   // Check if user has completed onboarding (has a player profile)
   useEffect(() => {
-    // console.log("🔍 ProtectedRoute - Starting onboarding check");
-    // console.log("🔍 ProtectedRoute - User:", user);
-    // console.log("🔍 ProtectedRoute - Location:", location.pathname);
-    // console.log("🔍 ProtectedRoute - requiresOnboarding:", requiresOnboarding);
-    // console.log("🔍 ProtectedRoute - requiresCompletedOnboarding:",requiresCompletedOnboarding);
-
     if (
       isAuthenticated &&
       user &&
@@ -114,7 +102,7 @@ const ProtectedRoute = ({
     const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
 
     if (!hasRequiredRole) {
-      // Redirect to dashboard if user doesn't have required role
+      // Redirect to clubs if user doesn't have required role
       return <Navigate to="/clubs" replace />;
     }
   }

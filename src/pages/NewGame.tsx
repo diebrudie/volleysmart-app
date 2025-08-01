@@ -53,11 +53,11 @@ const NewGame = () => {
   }, [urlClubId, setClubId]);
 
   useEffect(() => {
-    console.log("=== DEBUG INFO ===");
-    console.log("Current user:", user);
-    console.log("Current clubId:", clubId);
-    console.log("URL clubId:", urlClubId);
-    console.log("================");
+    //console. log("=== DEBUG INFO ===");
+    //console. log("Current user:", user);
+    //console. log("Current clubId:", clubId);
+    //console. log("URL clubId:", urlClubId);
+    //console. log("================");
   }, [user, clubId, urlClubId]);
 
   // Fetch club members/players with their primary positions
@@ -128,7 +128,7 @@ const NewGame = () => {
     queryFn: async () => {
       if (!clubId || !user?.id) return null;
 
-      console.log("Checking membership for:", { clubId, userId: user.id });
+      //console. log("Checking membership for:", { clubId, userId: user.id });
 
       const { data, error } = await supabase
         .from("club_members")
@@ -138,7 +138,7 @@ const NewGame = () => {
         .eq("is_active", true)
         .single();
 
-      console.log("Membership check result:", { data, error });
+      //console. log("Membership check result:", { data, error });
       return data;
     },
     enabled: !!clubId && !!user?.id,
@@ -225,9 +225,9 @@ const NewGame = () => {
     setIsSubmitting(true);
 
     try {
-      console.log("=== CREATING GAME ===");
-      console.log("Selected players:", selectedPlayers);
-      console.log("Players data:", players);
+      //console. log("=== CREATING GAME ===");
+      //console. log("Selected players:", selectedPlayers);
+      //console. log("Players data:", players);
 
       // 1. Create a new match day
       const { data: matchDay, error: matchDayError } = await supabase
@@ -246,7 +246,7 @@ const NewGame = () => {
         throw matchDayError;
       }
 
-      console.log("Created match day:", matchDay);
+      //console. log("Created match day:", matchDay);
 
       // 2. Create 5 matches for the 5 sets
       const matches = Array.from({ length: 5 }, (_, index) => ({
@@ -267,7 +267,7 @@ const NewGame = () => {
         throw matchesError;
       }
 
-      console.log("Created matches:", matchesData);
+      //console. log("Created matches:", matchesData);
 
       // 3. Shuffle players and split into two teams
       const shuffledPlayers = [...selectedPlayers].sort(
@@ -277,11 +277,11 @@ const NewGame = () => {
       const teamAPlayerIds = shuffledPlayers.slice(0, midpoint);
       const teamBPlayerIds = shuffledPlayers.slice(midpoint);
 
-      console.log("Team A player IDs:", teamAPlayerIds);
-      console.log("Team B player IDs:", teamBPlayerIds);
+      //console. log("Team A player IDs:", teamAPlayerIds);
+      //console. log("Team B player IDs:", teamBPlayerIds);
 
       // 4. Create game_players records (simplified - one set per match day, not per match)
-      console.log("Step 4: Creating game players...");
+      //console. log("Step 4: Creating game players...");
 
       // Type that matches what we're actually inserting
       type GamePlayerInsert = {
@@ -325,10 +325,7 @@ const NewGame = () => {
         });
       });
 
-      console.log(
-        "About to insert game players with positions:",
-        allGamePlayers
-      );
+      //console. log("About to insert game players with positions:", allGamePlayers);
 
       const { error: gamePlayersError } = await supabase
         .from("game_players")
@@ -340,7 +337,7 @@ const NewGame = () => {
           `Failed to create game players: ${gamePlayersError.message}`
         );
       }
-      console.log("=== GAME CREATED SUCCESSFULLY ===");
+      //console. log("=== GAME CREATED SUCCESSFULLY ===");
 
       // Invalidate the latest game query so Dashboard refetches
       queryClient.invalidateQueries({ queryKey: ["latestGame", clubId] });
