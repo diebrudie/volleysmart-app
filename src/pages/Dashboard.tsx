@@ -513,7 +513,10 @@ const Dashboard = () => {
               <h1 className="text-4xl font-serif mb-2">{headingText}</h1>
               <p className="text-gray-600">{formatDate(matchDate)}</p>
             </div>
-            <button className="flex items-center gap-1 text-sm font-medium border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-50">
+            <button 
+              className="flex items-center gap-1 text-sm font-medium border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-50"
+              onClick={() => navigate(`/edit-game/${latestGame.id}`)}
+            >
               <Pencil className="h-4 w-4" /> Edit Teams
             </button>
           </div>
