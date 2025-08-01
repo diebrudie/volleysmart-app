@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Shuffle, Save, Edit2 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -370,9 +369,9 @@ const EditGame = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {/* Team A */}
               <Card>
-                <CardHeader className="bg-volleyball-primary text-white">
+                <CardHeader className="bg-red-600 text-white">
                   <CardTitle className="flex items-center">
-                    <div className="h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-volleyball-primary text-sm font-bold">
+                    <div className="h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-red-600 text-sm font-bold">
                       A
                     </div>
                     Team A
@@ -394,7 +393,7 @@ const EditGame = () => {
                             preferredPosition: player.preferredPosition,
                             skillRating: player.skillRating,
                           }}
-                          teamColor="volleyball-primary"
+                          teamColor="red-600"
                         />
                       ))}
                     </div>
@@ -404,9 +403,9 @@ const EditGame = () => {
 
               {/* Team B */}
               <Card>
-                <CardHeader className="bg-volleyball-accent text-white">
+                <CardHeader className="bg-green-600 text-white">
                   <CardTitle className="flex items-center">
-                    <div className="h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-volleyball-accent text-sm font-bold">
+                    <div className="h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-green-600 text-sm font-bold">
                       B
                     </div>
                     Team B
@@ -428,7 +427,7 @@ const EditGame = () => {
                             preferredPosition: player.preferredPosition,
                             skillRating: player.skillRating,
                           }}
-                          teamColor="volleyball-accent"
+                          teamColor="green-600"
                         />
                       ))}
                     </div>
@@ -441,13 +440,12 @@ const EditGame = () => {
           {/* Save Button */}
           <div className="flex justify-end">
             <Button onClick={handleSave} size="lg">
-              <Save className="mr-2 h-4 w-4" />
               Save
+              <Save className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

@@ -55,9 +55,9 @@ export const SortablePlayer = ({ id, player, teamColor }: SortablePlayerProps) =
         {" - "}
         <span className={cn(
           "text-xs rounded px-1.5 py-0.5",
-          teamColor === "volleyball-primary" 
-            ? "bg-volleyball-primary/10 text-volleyball-primary" 
-            : "bg-volleyball-accent/10 text-volleyball-accent"
+          teamColor === "red-600" 
+            ? "bg-red-100 text-red-600" 
+            : "bg-green-100 text-green-600"
         )}>
           {player.preferredPosition}
         </span>
