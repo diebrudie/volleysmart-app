@@ -16,7 +16,7 @@ import { useClub } from "@/contexts/ClubContext";
 import { useParams } from "react-router-dom";
 
 // Define proper interfaces
-interface MatchPlayerData {
+interface GamePlayerData {
   player_id: string;
   team_name: string;
   players: {
@@ -31,14 +31,14 @@ interface MatchData {
   game_number: number;
   team_a_score: number | null;
   team_b_score: number | null;
-  match_players?: MatchPlayerData[];
 }
 
 interface MatchDayData {
   id: string;
   date: string;
   notes: string | null;
-  matches: (MatchData & { match_players?: MatchPlayerData[] })[]; // Intersection type
+  matches: MatchData[];
+  game_players: GamePlayerData[];
 }
 
 const Dashboard = () => {
@@ -159,78 +159,129 @@ const Dashboard = () => {
     }
   }, [memberCount]);
 
-  // Query to fetch the latest game
-  const { data: latestGame, isLoading } = useQuery<MatchDayData | null>({
+  // Query to fetch the latest game with separate queries to avoid relation issues
+  const { data: latestGame, isLoading } = useQuery({
     queryKey: ["latestGame", userClubId],
-    queryFn: async () => {
+    queryFn: async (): Promise<MatchDayData | null> => {
       if (!userClubId) return null;
 
       console.log("=== FETCHING LATEST GAME ===");
       console.log("Club ID:", userClubId);
 
-      // Get the latest match day for that club
-      const { data: matchDay, error: matchDayError } = await supabase
+      // First, get the latest match day
+      // Get the latest match day that actually has players
+      const { data: allMatchDays, error: matchDayError } = await supabase
         .from("match_days")
         .select(
           `
-        id,
-        date,
-        notes,
-        matches (
-          id,
-          game_number,
-          team_a_score,
-          team_b_score
-        )
-      `
+    id,
+    date,
+    notes,
+    created_at,
+    matches (
+      id,
+      game_number,
+      team_a_score,
+      team_b_score
+    )
+  `
         )
         .eq("club_id", userClubId)
-        .order("date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
 
       if (matchDayError) {
         console.error("Match day error:", matchDayError);
         throw matchDayError;
       }
 
-      if (!matchDay) {
-        console.log("No match day found");
-        return null;
-      }
+      console.log("All match days:", allMatchDays);
 
-      console.log("Match day result:", matchDay);
+      // Find the latest match day that has game players
+      let matchDay = null;
+      if (allMatchDays && allMatchDays.length > 0) {
+        for (const md of allMatchDays) {
+          console.log("Checking match day:", md.id);
 
-      // Now get match players separately to avoid RLS issues
-      if (matchDay.matches && matchDay.matches.length > 0) {
-        const firstMatchId = matchDay.matches[0].id;
-        console.log("Fetching match players for match:", firstMatchId);
+          // Quick check if this match day has game players
+          const { data: playerCheck } = await supabase
+            .from("game_players")
+            .select("id")
+            .eq("match_day_id", md.id)
+            .limit(1);
 
-        const { data: matchPlayers, error: playersError } = await supabase
-          .from("match_players")
-          .select(
-            `
-          player_id,
-          team_name,
-          players (
-            id,
-            first_name,
-            last_name
-          )
-        `
-          )
-          .eq("match_id", firstMatchId);
+          console.log(
+            `Match day ${md.id} has ${playerCheck?.length || 0} players`
+          );
 
-        if (playersError) {
-          console.error("Match players error:", playersError);
-        } else {
-          console.log("Fetched match players:", matchPlayers);
-          // Add the match players to the first match
-          (matchDay.matches[0] as MatchData).match_players = matchPlayers || [];
+          if (playerCheck && playerCheck.length > 0) {
+            matchDay = md;
+            console.log("Using match day:", matchDay.id);
+            break;
+          }
         }
       }
 
-      return matchDay;
+      // Alternative query approach - fetch game_players and players separately
+      console.log("About to query game_players for match_day_id:", matchDay.id);
+
+      // First get the game players
+      const { data: gamePlayersRaw, error: gamePlayersError } = await supabase
+        .from("game_players")
+        .select("player_id, team_name")
+        .eq("match_day_id", matchDay.id);
+
+      console.log("Raw game players:", gamePlayersRaw);
+
+      if (gamePlayersError) {
+        console.error("Game players error:", gamePlayersError);
+      }
+
+      let gamePlayers = [];
+
+      if (gamePlayersRaw && gamePlayersRaw.length > 0) {
+        // Get player IDs
+        const playerIds = gamePlayersRaw.map((gp) => gp.player_id);
+
+        console.log("Player IDs to fetch:", playerIds);
+
+        // Then get the player details
+        const { data: playersData, error: playersError } = await supabase
+          .from("players")
+          .select("id, first_name, last_name")
+          .in("id", playerIds);
+
+        console.log("Players data:", playersData);
+
+        if (playersError) {
+          console.error("Players error:", playersError);
+        }
+
+        // Combine the data
+        if (playersData) {
+          gamePlayers = gamePlayersRaw.map((gp) => {
+            const player = playersData.find((p) => p.id === gp.player_id);
+            return {
+              player_id: gp.player_id,
+              team_name: gp.team_name,
+              players: player || {
+                id: gp.player_id,
+                first_name: "Unknown",
+                last_name: "Player",
+              },
+            };
+          });
+        }
+      }
+
+      console.log("Final combined game players:", gamePlayers);
+
+      // Combine the data
+      const result: MatchDayData = {
+        ...matchDay,
+        game_players: gamePlayers || [],
+      };
+
+      return result;
     },
     enabled: !!userClubId && !isCheckingClub,
   });
@@ -307,30 +358,27 @@ const Dashboard = () => {
     );
   }
 
-  // Process the match data to extract teams
+  // Process the game players to extract teams
   let teamAPlayers: Array<{ id: string; name: string; position: string }> = [];
   let teamBPlayers: Array<{ id: string; name: string; position: string }> = [];
 
-  if (latestGame?.matches && latestGame.matches.length > 0) {
-    // Get all match players from the first match (they should all have the same teams)
-    const matchPlayers = latestGame.matches[0].match_players || [];
+  if (latestGame?.game_players) {
+    console.log("=== GAME PLAYERS DEBUG ===");
+    console.log("Game players:", latestGame.game_players);
 
-    console.log("=== MATCH PLAYERS DEBUG ===");
-    console.log("Match players:", matchPlayers);
-
-    teamAPlayers = matchPlayers
-      .filter((mp) => mp.team_name === "team_a")
-      .map((mp) => ({
-        id: mp.player_id,
-        name: `${mp.players.first_name} ${mp.players.last_name}`,
+    teamAPlayers = latestGame.game_players
+      .filter((gp) => gp.team_name === "team_a")
+      .map((gp) => ({
+        id: gp.player_id,
+        name: `${gp.players.first_name} ${gp.players.last_name}`,
         position: "",
       }));
 
-    teamBPlayers = matchPlayers
-      .filter((mp) => mp.team_name === "team_b")
-      .map((mp) => ({
-        id: mp.player_id,
-        name: `${mp.players.first_name} ${mp.players.last_name}`,
+    teamBPlayers = latestGame.game_players
+      .filter((gp) => gp.team_name === "team_b")
+      .map((gp) => ({
+        id: gp.player_id,
+        name: `${gp.players.first_name} ${gp.players.last_name}`,
         position: "",
       }));
 
@@ -405,16 +453,14 @@ const Dashboard = () => {
     return date.toLocaleDateString("en-US", options);
   };
 
-  // Determine if the match is from today and if today is Wednesday
+  // Determine if the match is from today
   const today = new Date();
   const isMatchToday = matchDate.toDateString() === today.toDateString();
-  const isTodayWednesday = isWednesday(today);
 
   // Determine which heading to display
-  const headingText =
-    isMatchToday && isTodayWednesday
-      ? "Today's Game Overview"
-      : "Last Game Overview";
+  const headingText = isMatchToday
+    ? "Today's Game Overview"
+    : "Last Game Overview";
 
   return (
     <div className="min-h-screen flex flex-col">

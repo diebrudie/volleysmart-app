@@ -112,38 +112,59 @@ export type Database = {
           }
         ];
       };
-      match_players: {
+      game_players: {
         Row: {
           id: string;
-          match_id: string;
-          player_id: string;
+          match_day_id: string | null;
+          player_id: string | null;
           team_name: string;
+          position_played: string | null;
+          original_team_name: string | null;
+          manually_adjusted: boolean | null;
+          adjusted_by: string | null;
+          adjusted_at: string | null;
+          adjustment_reason: string | null;
           created_at: string | null;
+          updated_at: string | null;
         };
         Insert: {
           id?: string;
-          match_id: string;
-          player_id: string;
+          match_day_id?: string | null;
+          player_id?: string | null;
           team_name: string;
+          position_played?: string | null;
+          original_team_name?: string | null;
+          manually_adjusted?: boolean | null;
+          adjusted_by?: string | null;
+          adjusted_at?: string | null;
+          adjustment_reason?: string | null;
           created_at?: string | null;
+          updated_at?: string | null;
         };
         Update: {
           id?: string;
-          match_id?: string;
-          player_id?: string;
+          match_day_id?: string | null;
+          player_id?: string | null;
           team_name?: string;
+          position_played?: string | null;
+          original_team_name?: string | null;
+          manually_adjusted?: boolean | null;
+          adjusted_by?: string | null;
+          adjusted_at?: string | null;
+          adjustment_reason?: string | null;
           created_at?: string | null;
+          updated_at?: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: "match_players_match_id_fkey";
-            columns: ["match_id"];
+            foreignKeyName: "fk_game_players_match_day";
+            columns: ["match_day_id"];
             isOneToOne: false;
-            referencedRelation: "matches";
+            referencedRelation: "match_days";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "match_players_player_id_fkey";
+            foreignKeyName: "game_players_player_id_fkey";
             columns: ["player_id"];
             isOneToOne: false;
             referencedRelation: "players";

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { CalendarIcon, Search } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +32,7 @@ interface ClubMember {
 }
 
 const NewGame = () => {
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const clubId = urlClubId;
@@ -279,60 +280,66 @@ const NewGame = () => {
       console.log("Team A player IDs:", teamAPlayerIds);
       console.log("Team B player IDs:", teamBPlayerIds);
 
-      // 4. Create match_players records for all matches (same teams for all 5 sets)
-      console.log("Step 4: Creating match players...");
-      const allMatchPlayers: Array<{
-        match_id: string;
+      // 4. Create game_players records (simplified - one set per match day, not per match)
+      console.log("Step 4: Creating game players...");
+
+      // Type that matches what we're actually inserting
+      type GamePlayerInsert = {
+        match_day_id: string;
         player_id: string;
         team_name: "team_a" | "team_b";
         original_team_name: "team_a" | "team_b";
         manually_adjusted: boolean;
-      }> = [];
+      };
 
-      // For each match, add all players
-      matchesData.forEach((match) => {
-        // Add Team A players
-        teamAPlayerIds.forEach((playerId) => {
-          allMatchPlayers.push({
-            match_id: match.id,
-            player_id: playerId,
-            team_name: "team_a",
-            original_team_name: "team_a",
-            manually_adjusted: false,
-          });
-        });
+      const allGamePlayers: GamePlayerInsert[] = [];
 
-        // Add Team B players
-        teamBPlayerIds.forEach((playerId) => {
-          allMatchPlayers.push({
-            match_id: match.id,
-            player_id: playerId,
-            team_name: "team_b",
-            original_team_name: "team_b",
-            manually_adjusted: false,
-          });
+      // Add Team A players
+      teamAPlayerIds.forEach((playerId) => {
+        allGamePlayers.push({
+          match_day_id: matchDay.id,
+          player_id: playerId,
+          team_name: "team_a",
+          original_team_name: "team_a",
+          manually_adjusted: false,
         });
       });
 
-      console.log("About to insert match players:", allMatchPlayers);
+      // Add Team B players
+      teamBPlayerIds.forEach((playerId) => {
+        allGamePlayers.push({
+          match_day_id: matchDay.id,
+          player_id: playerId,
+          team_name: "team_b",
+          original_team_name: "team_b",
+          manually_adjusted: false,
+        });
+      });
 
-      const { error: matchPlayersError } = await supabase
-        .from("match_players")
-        .insert(allMatchPlayers);
+      console.log("About to insert game players:", allGamePlayers);
 
-      if (matchPlayersError) {
-        console.error("Match players error:", matchPlayersError);
+      const { error: gamePlayersError } = await supabase
+        .from("game_players")
+        .insert(allGamePlayers);
+
+      if (gamePlayersError) {
+        console.error("Game players error:", gamePlayersError);
         throw new Error(
-          `Failed to create match players: ${matchPlayersError.message}`
+          `Failed to create game players: ${gamePlayersError.message}`
         );
       }
-
       console.log("=== GAME CREATED SUCCESSFULLY ===");
+
+      // Invalidate the latest game query so Dashboard refetches
+      queryClient.invalidateQueries({ queryKey: ["latestGame", clubId] });
 
       toast({
         title: "Game created!",
         description: "Your game has been created and teams have been generated",
       });
+
+      // Navigate to the dashboard to see the game
+      navigate(`/dashboard/${clubId}`);
 
       // Navigate to the dashboard to see the game
       navigate(`/dashboard/${clubId}`);
