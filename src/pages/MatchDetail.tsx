@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import {
   ChevronLeft,
   Calendar,
@@ -68,6 +69,7 @@ const MatchDetail = () => {
   const { user } = useAuth();
   const { clubId, setClubId } = useClub();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [editing, setEditing] = useState(false);
   const [editedGames, setEditedGames] = useState<Match[]>([]);
@@ -302,16 +304,98 @@ const MatchDetail = () => {
   };
 
   const handleCreateSameTeams = async () => {
-    if (!matchData) return;
+    if (!matchData || !user?.id) return;
 
     try {
-      navigate(`/new-game/${matchData.club_id}?copyFrom=${matchData.id}`);
-      toast({
-        title: "Creating new game",
-        description: "Redirecting to create a new game with the same teams.",
+      console.log("=== CREATING GAME WITH SAME TEAMS ===");
+      console.log("Original match data:", matchData);
+
+      // 1. Create a new match day for today
+      const { data: matchDay, error: matchDayError } = await supabase
+        .from("match_days")
+        .insert({
+          date: format(new Date(), "yyyy-MM-dd"), // Today's date
+          created_by: user.id,
+          club_id: matchData.club_id,
+          team_generated: true,
+        })
+        .select()
+        .single();
+
+      if (matchDayError) {
+        console.error("Match day error:", matchDayError);
+        throw matchDayError;
+      }
+
+      console.log("Created new match day:", matchDay);
+
+      // 2. Create 5 matches for the 5 sets (all starting at 0-0)
+      const matches = Array.from({ length: 5 }, (_, index) => ({
+        match_day_id: matchDay.id,
+        game_number: index + 1,
+        team_a_score: 0,
+        team_b_score: 0,
+        added_by_user_id: user.id,
+      }));
+
+      const { data: matchesData, error: matchesError } = await supabase
+        .from("matches")
+        .insert(matches)
+        .select();
+
+      if (matchesError) {
+        console.error("Matches error:", matchesError);
+        throw matchesError;
+      }
+
+      console.log("Created matches:", matchesData);
+
+      // 3. Copy the exact same team composition from the original game
+      const gamePlayersToInsert = matchData.game_players.map(
+        (originalPlayer) => ({
+          match_day_id: matchDay.id,
+          player_id: originalPlayer.player_id,
+          team_name: originalPlayer.team_name,
+          original_team_name: originalPlayer.team_name,
+          manually_adjusted: false,
+          position_played: originalPlayer.position_played,
+        })
+      );
+
+      console.log("Game players to insert:", gamePlayersToInsert);
+
+      const { error: gamePlayersError } = await supabase
+        .from("game_players")
+        .insert(gamePlayersToInsert);
+
+      if (gamePlayersError) {
+        console.error("Game players error:", gamePlayersError);
+        throw new Error(
+          `Failed to create game players: ${gamePlayersError.message}`
+        );
+      }
+
+      console.log("=== GAME CREATED SUCCESSFULLY ===");
+
+      // 4. Invalidate queries to refresh the dashboard
+      await queryClient.invalidateQueries({
+        queryKey: ["latestGame", matchData.club_id],
       });
+
+      toast({
+        title: "Game created!",
+        description: "New game created with the same teams",
+      });
+
+      // 5. Navigate to dashboard
+      navigate(`/dashboard/${matchData.club_id}`);
     } catch (error) {
       console.error("Error creating new game:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create new game. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
