@@ -1,4 +1,3 @@
-
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
@@ -17,7 +16,11 @@ interface SortablePlayerProps {
   teamColor: string;
 }
 
-export const SortablePlayer = ({ id, player, teamColor }: SortablePlayerProps) => {
+export const SortablePlayer = ({
+  id,
+  player,
+  teamColor,
+}: SortablePlayerProps) => {
   const {
     attributes,
     listeners,
@@ -43,22 +46,14 @@ export const SortablePlayer = ({ id, player, teamColor }: SortablePlayerProps) =
       )}
       {...attributes}
     >
-      <div
-        className="cursor-grab px-1"
-        {...listeners}
-      >
+      <div className="cursor-grab px-1" {...listeners}>
         <GripVertical className="h-4 w-4 text-gray-400" />
       </div>
-      
+
       <div className="ml-2 flex-grow">
         <span className="font-medium">{player.name}</span>
         {" - "}
-        <span className={cn(
-          "text-xs rounded px-1.5 py-0.5",
-          teamColor === "red-600" 
-            ? "bg-red-100 text-red-600" 
-            : "bg-green-100 text-green-600"
-        )}>
+        <span className="text-xs rounded px-1.5 py-0.5 bg-gray-200 text-black">
           {player.preferredPosition}
         </span>
       </div>

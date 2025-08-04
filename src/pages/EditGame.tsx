@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Shuffle, Save, Edit2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +41,7 @@ import {
 } from "@dnd-kit/sortable";
 import { SortablePlayer } from "@/components/team-generator/SortablePlayer";
 
-// Mock data - replace with actual data from the match
+// Mock positions data
 const mockPositions = [
   { id: "1", name: "Setter" },
   { id: "2", name: "Outside Hitter" },
@@ -54,74 +57,144 @@ interface EditPlayer {
   skillRating: number;
 }
 
-const mockTeamData = {
-  teamA: [
-    {
-      id: "1",
-      name: "Isabel",
-      preferredPosition: "Outside Hitter",
-      skillRating: 8,
-    },
-    { id: "2", name: "Eduardo", preferredPosition: "Setter", skillRating: 7 },
-    {
-      id: "3",
-      name: "Carlotta",
-      preferredPosition: "Opposite Hitter",
-      skillRating: 6,
-    },
-    { id: "4", name: "Juan", preferredPosition: "Libero", skillRating: 7 },
-    { id: "5", name: "Nacho", preferredPosition: "Libero", skillRating: 8 },
-    { id: "6", name: "Paco", preferredPosition: "Setter", skillRating: 9 },
-  ] as EditPlayer[],
-  teamB: [
-    {
-      id: "7",
-      name: "Ana",
-      preferredPosition: "Middle Blocker",
-      skillRating: 8,
-    },
-    {
-      id: "8",
-      name: "Maria",
-      preferredPosition: "Outside Hitter",
-      skillRating: 7,
-    },
-    {
-      id: "9",
-      name: "Pepito",
-      preferredPosition: "Opposite Hitter",
-      skillRating: 6,
-    },
-    {
-      id: "10",
-      name: "Carlos",
-      preferredPosition: "Outside Hitter",
-      skillRating: 7,
-    },
-    { id: "11", name: "Maria", preferredPosition: "Setter", skillRating: 8 },
-    {
-      id: "12",
-      name: "Ana Isabel",
-      preferredPosition: "Libero",
-      skillRating: 9,
-    },
-  ] as EditPlayer[],
-};
+interface GamePlayerData {
+  player_id: string;
+  team_name: string;
+  position_played: string | null;
+  players: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
+}
+
+interface MatchDayData {
+  id: string;
+  date: string;
+  notes: string | null;
+  game_players: GamePlayerData[];
+}
 
 const EditGame = () => {
-  const { clubId, gameId } = useParams();
+  const { clubId, gameId } = useParams(); // gameId is actually match_day_id
   const navigate = useNavigate();
   const { toast } = useToast();
   const { setClubId } = useClub();
+  const { user } = useAuth();
 
   const [date, setDate] = useState<Date>(new Date());
-  const [teamAPlayers, setTeamAPlayers] = useState<EditPlayer[]>(
-    mockTeamData.teamA
-  );
-  const [teamBPlayers, setTeamBPlayers] = useState<EditPlayer[]>(
-    mockTeamData.teamB
-  );
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
+  const [teamAPlayers, setTeamAPlayers] = useState<EditPlayer[]>([]);
+  const [teamBPlayers, setTeamBPlayers] = useState<EditPlayer[]>([]);
+
+  // Fetch real game data
+  const { data: gameData, isLoading } = useQuery({
+    queryKey: ["gameData", gameId],
+    queryFn: async (): Promise<MatchDayData | null> => {
+      if (!gameId) return null;
+
+      console.log("=== FETCHING GAME DATA FOR EDIT ===");
+      console.log("Game ID (match_day_id):", gameId);
+
+      // Get the match day
+      const { data: matchDay, error: matchDayError } = await supabase
+        .from("match_days")
+        .select("id, date, notes")
+        .eq("id", gameId)
+        .single();
+
+      if (matchDayError) {
+        console.error("Match day error:", matchDayError);
+        throw matchDayError;
+      }
+
+      // Get game players with player details
+      const { data: gamePlayersRaw, error: gamePlayersError } = await supabase
+        .from("game_players")
+        .select("player_id, team_name, position_played")
+        .eq("match_day_id", gameId);
+
+      if (gamePlayersError) {
+        console.error("Game players error:", gamePlayersError);
+        throw gamePlayersError;
+      }
+
+      let gamePlayers = [];
+
+      if (gamePlayersRaw && gamePlayersRaw.length > 0) {
+        const playerIds = gamePlayersRaw.map((gp) => gp.player_id);
+
+        const { data: playersData, error: playersError } = await supabase
+          .from("players")
+          .select("id, first_name, last_name")
+          .in("id", playerIds);
+
+        if (playersError) {
+          console.error("Players error:", playersError);
+          throw playersError;
+        }
+
+        if (playersData) {
+          gamePlayers = gamePlayersRaw.map((gp) => {
+            const player = playersData.find((p) => p.id === gp.player_id);
+            return {
+              player_id: gp.player_id,
+              team_name: gp.team_name,
+              position_played: gp.position_played,
+              players: player || {
+                id: gp.player_id,
+                first_name: "Unknown",
+                last_name: "Player",
+              },
+            };
+          });
+        }
+      }
+
+      return {
+        ...matchDay,
+        game_players: gamePlayers || [],
+      };
+    },
+    enabled: !!gameId,
+  });
+
+  // Update teams when game data loads
+  useEffect(() => {
+    if (gameData?.game_players) {
+      console.log("=== CONVERTING GAME DATA TO TEAMS ===");
+      console.log("Game players:", gameData.game_players);
+
+      const teamA = gameData.game_players
+        .filter((gp) => gp.team_name === "team_a")
+        .map((gp) => ({
+          id: gp.player_id,
+          name: `${gp.players.first_name} ${gp.players.last_name}`,
+          preferredPosition: gp.position_played || "No Position",
+          skillRating: 7, // Default skill rating
+        }));
+
+      const teamB = gameData.game_players
+        .filter((gp) => gp.team_name === "team_b")
+        .map((gp) => ({
+          id: gp.player_id,
+          name: `${gp.players.first_name} ${gp.players.last_name}`,
+          preferredPosition: gp.position_played || "No Position",
+          skillRating: 7, // Default skill rating
+        }));
+
+      setTeamAPlayers(teamA);
+      setTeamBPlayers(teamB);
+
+      // Set the date from game data
+      if (gameData.date) {
+        setDate(new Date(gameData.date));
+      }
+
+      console.log("Team A players:", teamA);
+      console.log("Team B players:", teamB);
+    }
+  }, [gameData]);
 
   useEffect(() => {
     if (clubId) {
@@ -135,6 +208,41 @@ const EditGame = () => {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading game data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no game data
+  if (!gameData) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-600">Game not found</p>
+            <Button
+              onClick={() => navigate(`/dashboard/${clubId}`)}
+              className="mt-4"
+            >
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -247,74 +355,89 @@ const EditGame = () => {
     });
   };
 
-  const handleSave = () => {
-    // Here you would save the changes to the database
-    toast({
-      title: "Teams saved",
-      description: "All changes have been saved successfully.",
-    });
-    navigate(`/dashboard/${clubId}`); // Navigate back to club-specific dashboard
-  };
+  const handleSave = async () => {
+    if (!gameId) return;
 
-  const PlayerRow = ({
-    player,
-    teamColor,
-    teamId,
-  }: {
-    player: EditPlayer;
-    teamColor: string;
-    teamId: string;
-  }) => {
-    const isEditing = editingPlayer === player.id;
+    try {
+      console.log("=== SAVING TEAM CHANGES ===");
+      console.log("Team A players:", teamAPlayers);
+      console.log("Team B players:", teamBPlayers);
 
-    return (
-      <div className="flex items-center p-2 rounded-md border">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex-grow">
-            <span className="font-medium">{player.name}</span>
-            {" - "}
-            {isEditing ? (
-              <Select
-                value={player.preferredPosition}
-                onValueChange={(value) =>
-                  handlePositionChange(player.id, value)
-                }
-              >
-                <SelectTrigger className="inline-flex w-auto border-0 p-0 h-auto">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockPositions.map((position) => (
-                    <SelectItem key={position.id} value={position.name}>
-                      {position.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <span
-                className={cn(
-                  "text-xs rounded px-1.5 py-0.5",
-                  teamColor === "volleyball-primary"
-                    ? "bg-volleyball-primary/10 text-volleyball-primary"
-                    : "bg-volleyball-accent/10 text-volleyball-accent"
-                )}
-              >
-                {player.preferredPosition}
-              </span>
-            )}
-          </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setEditingPlayer(isEditing ? null : player.id)}
-            className="ml-2"
-          >
-            <Edit2 className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-    );
+      // Delete existing game players for this match day
+      const { error: deleteError } = await supabase
+        .from("game_players")
+        .delete()
+        .eq("match_day_id", gameId);
+
+      if (deleteError) {
+        console.error("Error deleting existing players:", deleteError);
+        throw deleteError;
+      }
+
+      // Insert updated team assignments
+      const allPlayers = [
+        ...teamAPlayers.map((player) => ({
+          match_day_id: gameId,
+          player_id: player.id,
+          team_name: "team_a",
+          position_played:
+            player.preferredPosition === "No Position"
+              ? null
+              : player.preferredPosition,
+          manually_adjusted: true,
+          adjusted_by: user?.id,
+          adjusted_at: new Date().toISOString(),
+          adjustment_reason: "Manual team edit",
+        })),
+        ...teamBPlayers.map((player) => ({
+          match_day_id: gameId,
+          player_id: player.id,
+          team_name: "team_b",
+          position_played:
+            player.preferredPosition === "No Position"
+              ? null
+              : player.preferredPosition,
+          manually_adjusted: true,
+          adjusted_by: user?.id,
+          adjusted_at: new Date().toISOString(),
+          adjustment_reason: "Manual team edit",
+        })),
+      ];
+
+      const { error: insertError } = await supabase
+        .from("game_players")
+        .insert(allPlayers);
+
+      if (insertError) {
+        console.error("Error inserting updated players:", insertError);
+        throw insertError;
+      }
+
+      // Update match day date if changed
+      const { error: dateError } = await supabase
+        .from("match_days")
+        .update({ date: date.toISOString() })
+        .eq("id", gameId);
+
+      if (dateError) {
+        console.error("Error updating date:", dateError);
+        throw dateError;
+      }
+
+      toast({
+        title: "Teams saved",
+        description: "All changes have been saved successfully.",
+      });
+
+      navigate(`/dashboard/${clubId}`);
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -369,7 +492,7 @@ const EditGame = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {/* Team A */}
               <Card>
-                <CardHeader className="bg-red-600 text-white">
+                <CardHeader className="bg-red-500 text-white">
                   <CardTitle className="flex items-center">
                     <div className="h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-red-600 text-sm font-bold">
                       A
@@ -403,7 +526,7 @@ const EditGame = () => {
 
               {/* Team B */}
               <Card>
-                <CardHeader className="bg-green-600 text-white">
+                <CardHeader className="bg-emerald-500 text-white">
                   <CardTitle className="flex items-center">
                     <div className="h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-green-600 text-sm font-bold">
                       B
