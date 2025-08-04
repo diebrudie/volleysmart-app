@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp, Filter } from "lucide-react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,84 +19,226 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useClub } from "@/contexts/ClubContext";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
+import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
 
-// Mock match data
-const matchesData = Array.from({ length: 20 }, (_, i) => {
-  const date = new Date();
-  date.setDate(date.getDate() - i * 7); // One match per week
-  
-  const teamAScore = Math.floor(Math.random() * 3) + 1;
-  const teamBScore = Math.floor(Math.random() * 3) + 1;
-  
-  // Determine winner based on scores
-  let winner: string;
-  if (teamAScore > teamBScore) {
-    winner = "Team A";
-  } else if (teamBScore > teamAScore) {
-    winner = "Team B";
-  } else {
-    winner = "Draw";
-  }
-  
-  return {
-    id: i + 1,
-    date: date.toISOString(),
-    teamAScore,
-    teamBScore,
-    location: i % 2 === 0 ? "Main Gym" : "Community Center",
-    winner,
-  };
-});
+interface MatchData {
+  id: string;
+  date: string;
+  team_a_wins: number;
+  team_b_wins: number;
+  total_games: number;
+  winner: string;
+  match_day_id: string;
+}
 
 const Matches = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { clubId: contextClubId, setClubId } = useClub();
+  const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const [selectedMonth, setSelectedMonth] = useState("all");
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' } | null>(
-    { key: 'date', direction: 'descending' }
-  );
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "ascending" | "descending";
+  } | null>({ key: "date", direction: "descending" });
   const [filters, setFilters] = useState({
     winner: "all",
+  });
+
+  // Use URL clubId if available, otherwise use context
+  const clubId = urlClubId || contextClubId;
+
+  // Set clubId in context if it comes from URL
+  if (urlClubId && urlClubId !== contextClubId) {
+    setClubId(urlClubId);
+  }
+
+  // Query to fetch all matches for the club
+  const {
+    data: matchesData = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["clubMatches", clubId],
+    queryFn: async (): Promise<MatchData[]> => {
+      if (!clubId) return [];
+
+      console.log("=== FETCHING CLUB MATCHES ===");
+      console.log("Club ID:", clubId);
+
+      // Get all match days for this club with their matches
+      const { data: matchDays, error: matchDayError } = await supabase
+        .from("match_days")
+        .select(
+          `
+          id,
+          date,
+          notes,
+          matches (
+            id,
+            game_number,
+            team_a_score,
+            team_b_score
+          )
+        `
+        )
+        .eq("club_id", clubId)
+        .order("date", { ascending: false });
+
+      if (matchDayError) {
+        console.error("Error fetching match days:", matchDayError);
+        throw matchDayError;
+      }
+
+      console.log("Raw match days:", matchDays);
+
+      // Process match days to calculate winners and game totals
+      const processedMatches: MatchData[] = [];
+
+      for (const matchDay of matchDays || []) {
+        if (!matchDay.matches || matchDay.matches.length === 0) {
+          continue; // Skip match days with no matches
+        }
+
+        // Calculate wins for each team
+        let teamAWins = 0;
+        let teamBWins = 0;
+        let totalGames = 0;
+
+        matchDay.matches.forEach((match) => {
+          if (match.team_a_score !== null && match.team_b_score !== null) {
+            totalGames++;
+            if (match.team_a_score > match.team_b_score) {
+              teamAWins++;
+            } else if (match.team_b_score > match.team_a_score) {
+              teamBWins++;
+            }
+          }
+        });
+
+        // Determine winner
+        let winner: string;
+        if (teamAWins > teamBWins) {
+          winner = "Team A";
+        } else if (teamBWins > teamAWins) {
+          winner = "Team B";
+        } else if (totalGames > 0) {
+          winner = "Draw";
+        } else {
+          winner = "No games played";
+        }
+
+        processedMatches.push({
+          id: matchDay.id,
+          date: matchDay.date,
+          team_a_wins: teamAWins,
+          team_b_wins: teamBWins,
+          total_games: totalGames,
+          winner,
+          match_day_id: matchDay.id,
+        });
+      }
+
+      console.log("Processed matches:", processedMatches);
+      return processedMatches;
+    },
+    enabled: !!clubId && !!user?.id,
+  });
+
+  // Query to check club member count and user role for empty state
+  const { data: clubInfo } = useQuery({
+    queryKey: ["clubInfo", clubId],
+    queryFn: async () => {
+      if (!clubId || !user?.id) return null;
+
+      // Get member count
+      const { count: memberCount } = await supabase
+        .from("club_members")
+        .select("*", { count: "exact", head: true })
+        .eq("club_id", clubId);
+
+      // Get user role
+      const { data: memberData } = await supabase
+        .from("club_members")
+        .select("role")
+        .eq("club_id", clubId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // Check if user is club creator
+      const { data: clubData } = await supabase
+        .from("clubs")
+        .select("created_by, name")
+        .eq("id", clubId)
+        .single();
+
+      const userRole =
+        memberData?.role || (clubData?.created_by === user.id ? "admin" : null);
+
+      return {
+        memberCount: memberCount || 0,
+        userRole,
+        clubName: clubData?.name,
+      };
+    },
+    enabled: !!clubId && !!user?.id,
   });
 
   // Sort matches
   const sortedMatches = [...matchesData].sort((a, b) => {
     if (!sortConfig) return 0;
-    
-    if (sortConfig.key === 'date') {
-      return sortConfig.direction === 'ascending'
+
+    if (sortConfig.key === "date") {
+      return sortConfig.direction === "ascending"
         ? new Date(a.date).getTime() - new Date(b.date).getTime()
         : new Date(b.date).getTime() - new Date(a.date).getTime();
     }
-    
+
     // For other string fields
-    if (a[sortConfig.key as keyof typeof a] < b[sortConfig.key as keyof typeof b]) {
-      return sortConfig.direction === 'ascending' ? -1 : 1;
+    if (
+      a[sortConfig.key as keyof typeof a] < b[sortConfig.key as keyof typeof b]
+    ) {
+      return sortConfig.direction === "ascending" ? -1 : 1;
     }
-    if (a[sortConfig.key as keyof typeof a] > b[sortConfig.key as keyof typeof b]) {
-      return sortConfig.direction === 'ascending' ? 1 : -1;
+    if (
+      a[sortConfig.key as keyof typeof a] > b[sortConfig.key as keyof typeof b]
+    ) {
+      return sortConfig.direction === "ascending" ? 1 : -1;
     }
     return 0;
   });
 
   // Filter matches
-  const filteredMatches = sortedMatches.filter(match => {
+  const filteredMatches = sortedMatches.filter((match) => {
     // Filter by month
     const matchDate = new Date(match.date);
-    const matchesMonth = selectedMonth === "all" || 
-      matchDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) === selectedMonth;
-    
+    const matchesMonth =
+      selectedMonth === "all" ||
+      matchDate.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+      }) === selectedMonth;
+
     // Filter by winner
-    const matchesWinner = filters.winner === "all" || match.winner === filters.winner;
-    
+    const matchesWinner =
+      filters.winner === "all" || match.winner === filters.winner;
+
     return matchesMonth && matchesWinner;
   });
 
   const requestSort = (key: string) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
+    let direction: "ascending" | "descending" = "ascending";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "ascending"
+    ) {
+      direction = "descending";
     }
     setSortConfig({ key, direction });
   };
@@ -105,38 +247,118 @@ const Matches = () => {
     if (sortConfig?.key !== columnName) {
       return <ChevronDown className="h-4 w-4 ml-1 text-gray-400" />;
     }
-    return sortConfig.direction === 'ascending' 
-      ? <ChevronUp className="h-4 w-4 ml-1" /> 
-      : <ChevronDown className="h-4 w-4 ml-1" />;
+    return sortConfig.direction === "ascending" ? (
+      <ChevronUp className="h-4 w-4 ml-1" />
+    ) : (
+      <ChevronDown className="h-4 w-4 ml-1" />
+    );
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
-  // Get unique locations for filter
-  const locations = Array.from(new Set(matchesData.map(match => match.location)));
+  const handleInviteMembers = () => {
+    if (clubId) {
+      navigate(`/invite-members/${clubId}`);
+    }
+  };
+
+  const handleCreateGame = () => {
+    if (clubId) {
+      navigate(`/new-game/${clubId}`);
+    }
+  };
+
+  // Redirect to clubs page if no club context
+  if (!clubId) {
+    navigate("/clubs");
+    return null;
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <Spinner className="h-8 w-8" />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">
+              Error loading matches
+            </h2>
+            <p className="text-gray-600">Please try refreshing the page.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state - no matches played yet
+  if (matchesData.length === 0) {
+    const canGenerateTeams = (clubInfo?.memberCount || 0) >= 4;
+    const canInviteMembers = clubInfo?.userRole === "admin";
+
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex flex-col items-center justify-center p-4">
+          <div className="max-w-lg w-full text-center">
+            {clubInfo?.clubName && (
+              <p className="text-lg text-gray-700 mb-4">
+                Welcome to{" "}
+                <span className="font-semibold">{clubInfo.clubName}</span>!
+              </p>
+            )}
+            <h1 className="text-3xl font-bold mb-2">
+              No games have been played yet.
+            </h1>
+            <p className="text-gray-600 mb-8">
+              {canInviteMembers
+                ? "Start by creating your first game or inviting more members:"
+                : "Wait for the club admin to create a game or invite more members:"}
+            </p>
+            <EmptyTeamsState
+              canGenerateTeams={canGenerateTeams}
+              onGenerateTeams={handleCreateGame}
+              onInviteMembers={handleInviteMembers}
+              canInviteMembers={canInviteMembers}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
+
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card>
             <CardHeader className="border-b">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <CardTitle>
-                  All Games Archive
-                </CardTitle>
-                
+                <CardTitle>All Games Archive</CardTitle>
+
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Select 
-                    value={selectedMonth} 
+                  <Select
+                    value={selectedMonth}
                     onValueChange={(value) => setSelectedMonth(value)}
                   >
                     <SelectTrigger className="w-40">
@@ -144,17 +366,30 @@ const Matches = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Months</SelectItem>
-                      {Array.from(new Set(matchesData.map(match => 
-                        new Date(match.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-                      ))).sort().map(month => (
-                        <SelectItem key={month} value={month}>{month}</SelectItem>
-                      ))}
+                      {Array.from(
+                        new Set(
+                          matchesData.map((match) =>
+                            new Date(match.date).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                            })
+                          )
+                        )
+                      )
+                        .sort()
+                        .map((month) => (
+                          <SelectItem key={month} value={month}>
+                            {month}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
-                  
-                  <Select 
-                    value={filters.winner} 
-                    onValueChange={(value) => setFilters({...filters, winner: value})}
+
+                  <Select
+                    value={filters.winner}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, winner: value })
+                    }
                   >
                     <SelectTrigger className="w-36">
                       <SelectValue placeholder="Winner" />
@@ -175,11 +410,11 @@ const Matches = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[180px]">
-                        <button 
+                        <button
                           className="flex items-center hover:text-volleyball-primary transition-colors"
-                          onClick={() => requestSort('date')}
+                          onClick={() => requestSort("date")}
                         >
-                          Date {getSortIcon('date')}
+                          Date {getSortIcon("date")}
                         </button>
                       </TableHead>
                       <TableHead className="text-center">
@@ -188,20 +423,23 @@ const Matches = () => {
                         </span>
                       </TableHead>
                       <TableHead>
-                        <button 
+                        <button
                           className="flex items-center hover:text-volleyball-primary transition-colors"
-                          onClick={() => requestSort('winner')}
+                          onClick={() => requestSort("winner")}
                         >
-                          Winner {getSortIcon('winner')}
+                          Winner {getSortIcon("winner")}
                         </button>
                       </TableHead>
                       <TableHead className="text-right">View Details</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                     {filteredMatches.length === 0 ? (
+                    {filteredMatches.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                        <TableCell
+                          colSpan={4}
+                          className="text-center py-8 text-gray-500"
+                        >
                           No matches found. Try adjusting your filters.
                         </TableCell>
                       </TableRow>
@@ -212,23 +450,25 @@ const Matches = () => {
                             {formatDate(match.date)}
                           </TableCell>
                           <TableCell className="text-center font-semibold">
-                            {match.teamAScore} - {match.teamBScore}
+                            {match.team_a_wins} - {match.team_b_wins}
                           </TableCell>
-                           <TableCell>
-                             <span 
-                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                 match.winner === 'Team A' 
-                                   ? 'bg-volleyball-primary/10 text-volleyball-primary' 
-                                   : match.winner === 'Team B'
-                                   ? 'bg-volleyball-accent/10 text-volleyball-accent'
-                                   : 'bg-gray-100 text-gray-600'
-                               }`}
-                             >
-                               {match.winner}
-                             </span>
-                           </TableCell>
+                          <TableCell>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                match.winner === "Team A"
+                                  ? "bg-volleyball-primary/10 text-volleyball-primary"
+                                  : match.winner === "Team B"
+                                  ? "bg-volleyball-accent/10 text-volleyball-accent"
+                                  : "bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              {match.winner}
+                            </span>
+                          </TableCell>
                           <TableCell className="text-right">
-                            <Link to={`/matches/${match.id}`}>
+                            <Link
+                              to={`/matches/${clubId}/${match.match_day_id}`}
+                            >
                               <Button variant="outline" size="sm">
                                 View Details
                               </Button>
