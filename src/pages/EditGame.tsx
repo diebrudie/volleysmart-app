@@ -32,6 +32,9 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+  DragStartEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -39,6 +42,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
 import { SortablePlayer } from "@/components/team-generator/SortablePlayer";
 
 // Mock positions data
@@ -75,6 +79,50 @@ interface MatchDayData {
   game_players: GamePlayerData[];
 }
 
+// Droppable Team Container Component
+const DroppableTeam = ({
+  teamId,
+  children,
+  title,
+  headerColor,
+}: {
+  teamId: string;
+  children: React.ReactNode;
+  title: string;
+  headerColor: string;
+}) => {
+  const { isOver, setNodeRef } = useDroppable({
+    id: teamId,
+  });
+
+  return (
+    <Card>
+      <CardHeader className={cn("text-white", headerColor)}>
+        <CardTitle className="flex items-center">
+          <div
+            className={cn(
+              "h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-sm font-bold",
+              teamId === "team-a" ? "text-red-600" : "text-green-600"
+            )}
+          >
+            {teamId === "team-a" ? "A" : "B"}
+          </div>
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent
+        ref={setNodeRef}
+        className={cn(
+          "p-0 min-h-[200px] transition-colors",
+          isOver && "bg-blue-50"
+        )}
+      >
+        {children}
+      </CardContent>
+    </Card>
+  );
+};
+
 const EditGame = () => {
   const { clubId, gameId } = useParams(); // gameId is actually match_day_id
   const navigate = useNavigate();
@@ -86,6 +134,7 @@ const EditGame = () => {
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
   const [teamAPlayers, setTeamAPlayers] = useState<EditPlayer[]>([]);
   const [teamBPlayers, setTeamBPlayers] = useState<EditPlayer[]>([]);
+  const [activePlayer, setActivePlayer] = useState<EditPlayer | null>(null);
 
   // Fetch real game data
   const { data: gameData, isLoading } = useQuery({
@@ -244,8 +293,93 @@ const EditGame = () => {
     );
   }
 
+  const findPlayerAndTeam = (playerId: string) => {
+    const teamAIndex = teamAPlayers.findIndex((p) => p.id === playerId);
+    if (teamAIndex !== -1) {
+      return { player: teamAPlayers[teamAIndex], team: "A", index: teamAIndex };
+    }
+
+    const teamBIndex = teamBPlayers.findIndex((p) => p.id === playerId);
+    if (teamBIndex !== -1) {
+      return { player: teamBPlayers[teamBIndex], team: "B", index: teamBIndex };
+    }
+
+    return null;
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const playerId = String(active.id).replace(/^(A|B)-/, "");
+    const playerInfo = findPlayerAndTeam(playerId);
+
+    if (playerInfo) {
+      setActivePlayer(playerInfo.player);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+
+    if (!over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // Extract player ID from the draggable item
+    const playerId = activeId.replace(/^(A|B)-/, "");
+    const playerInfo = findPlayerAndTeam(playerId);
+
+    if (!playerInfo) return;
+
+    // Handle dropping on team containers
+    if (overId === "team-a" || overId === "team-b") {
+      const targetTeam = overId === "team-a" ? "A" : "B";
+
+      if (playerInfo.team !== targetTeam) {
+        // Move player between teams
+        if (playerInfo.team === "A") {
+          setTeamAPlayers((prev) => prev.filter((p) => p.id !== playerId));
+          setTeamBPlayers((prev) => [...prev, playerInfo.player]);
+        } else {
+          setTeamBPlayers((prev) => prev.filter((p) => p.id !== playerId));
+          setTeamAPlayers((prev) => [...prev, playerInfo.player]);
+        }
+      }
+      return;
+    }
+
+    // Handle dropping on other players (for reordering)
+    if (activeId === overId) return;
+
+    const overPlayerId = overId.replace(/^(A|B)-/, "");
+    const overPlayerInfo = findPlayerAndTeam(overPlayerId);
+
+    if (!overPlayerInfo) return;
+
+    // If dropping on a player from different team, move to that team
+    if (playerInfo.team !== overPlayerInfo.team) {
+      if (playerInfo.team === "A") {
+        setTeamAPlayers((prev) => prev.filter((p) => p.id !== playerId));
+        setTeamBPlayers((prev) => {
+          const newTeam = [...prev];
+          newTeam.splice(overPlayerInfo.index, 0, playerInfo.player);
+          return newTeam;
+        });
+      } else {
+        setTeamBPlayers((prev) => prev.filter((p) => p.id !== playerId));
+        setTeamAPlayers((prev) => {
+          const newTeam = [...prev];
+          newTeam.splice(overPlayerInfo.index, 0, playerInfo.player);
+          return newTeam;
+        });
+      }
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+
+    setActivePlayer(null);
 
     if (!over) return;
 
@@ -254,66 +388,25 @@ const EditGame = () => {
 
     if (activeId === overId) return;
 
-    const [sourceTeam, sourceId] = activeId.split("-");
-    const [targetTeam, targetId] = overId.split("-");
+    // Extract player IDs
+    const activePlayerId = activeId.replace(/^(A|B)-/, "");
+    const overPlayerId = overId.replace(/^(A|B)-/, "");
 
-    if (sourceTeam === targetTeam) {
-      // Moving within same team
-      if (sourceTeam === "A") {
-        setTeamAPlayers((currentPlayers) => {
-          const oldIndex = currentPlayers.findIndex(
-            (p) => String(p.id) === sourceId
-          );
-          const newIndex = currentPlayers.findIndex(
-            (p) => String(p.id) === targetId
-          );
-          return arrayMove(currentPlayers, oldIndex, newIndex);
-        });
-      } else {
-        setTeamBPlayers((currentPlayers) => {
-          const oldIndex = currentPlayers.findIndex(
-            (p) => String(p.id) === sourceId
-          );
-          const newIndex = currentPlayers.findIndex(
-            (p) => String(p.id) === targetId
-          );
-          return arrayMove(currentPlayers, oldIndex, newIndex);
-        });
-      }
-    } else {
-      // Moving between teams
-      let playerToMove;
+    const activePlayerInfo = findPlayerAndTeam(activePlayerId);
+    const overPlayerInfo = findPlayerAndTeam(overPlayerId);
 
-      if (sourceTeam === "A") {
-        playerToMove = teamAPlayers.find((p) => String(p.id) === sourceId);
-        if (playerToMove) {
-          setTeamAPlayers((currentPlayers) =>
-            currentPlayers.filter((p) => String(p.id) !== sourceId)
-          );
-          setTeamBPlayers((currentPlayers) => {
-            const targetIndex = currentPlayers.findIndex(
-              (p) => String(p.id) === targetId
-            );
-            const newPlayers = [...currentPlayers];
-            newPlayers.splice(targetIndex, 0, playerToMove!);
-            return newPlayers;
-          });
-        }
+    if (!activePlayerInfo || !overPlayerInfo) return;
+
+    // If both players are in the same team, reorder within team
+    if (activePlayerInfo.team === overPlayerInfo.team) {
+      if (activePlayerInfo.team === "A") {
+        setTeamAPlayers((prev) =>
+          arrayMove(prev, activePlayerInfo.index, overPlayerInfo.index)
+        );
       } else {
-        playerToMove = teamBPlayers.find((p) => String(p.id) === sourceId);
-        if (playerToMove) {
-          setTeamBPlayers((currentPlayers) =>
-            currentPlayers.filter((p) => String(p.id) !== sourceId)
-          );
-          setTeamAPlayers((currentPlayers) => {
-            const targetIndex = currentPlayers.findIndex(
-              (p) => String(p.id) === targetId
-            );
-            const newPlayers = [...currentPlayers];
-            newPlayers.splice(targetIndex, 0, playerToMove!);
-            return newPlayers;
-          });
-        }
+        setTeamBPlayers((prev) =>
+          arrayMove(prev, activePlayerInfo.index, overPlayerInfo.index)
+        );
       }
     }
   };
@@ -329,7 +422,8 @@ const EditGame = () => {
 
     toast({
       title: "Teams shuffled",
-      description: "Teams have been randomly reorganized.",
+      description:
+        "Teams have been randomly reorganized. Click Save to apply changes.",
     });
   };
 
@@ -351,7 +445,8 @@ const EditGame = () => {
     setEditingPlayer(null);
     toast({
       title: "Position updated",
-      description: "Player position has been changed.",
+      description:
+        "Player position has been changed. Click Save to apply changes.",
     });
   };
 
@@ -487,77 +582,80 @@ const EditGame = () => {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {/* Team A */}
-              <Card>
-                <CardHeader className="bg-red-500 text-white">
-                  <CardTitle className="flex items-center">
-                    <div className="h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-red-600 text-sm font-bold">
-                      A
-                    </div>
-                    Team A
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <SortableContext
-                    items={teamAPlayers.map((p) => `A-${p.id}`)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="divide-y">
-                      {teamAPlayers.map((player) => (
-                        <SortablePlayer
-                          key={`A-${player.id}`}
-                          id={`A-${player.id}`}
-                          player={{
-                            id: Number(player.id),
-                            name: player.name,
-                            preferredPosition: player.preferredPosition,
-                            skillRating: player.skillRating,
-                          }}
-                          teamColor="red-600"
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </CardContent>
-              </Card>
+              <DroppableTeam
+                teamId="team-a"
+                title="Team A"
+                headerColor="bg-red-500"
+              >
+                <SortableContext
+                  items={teamAPlayers.map((p) => `A-${p.id}`)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="divide-y">
+                    {teamAPlayers.map((player) => (
+                      <SortablePlayer
+                        key={`A-${player.id}`}
+                        id={`A-${player.id}`}
+                        player={{
+                          id: Number(player.id),
+                          name: player.name,
+                          preferredPosition: player.preferredPosition,
+                          skillRating: player.skillRating,
+                        }}
+                        teamColor="red-600"
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DroppableTeam>
 
               {/* Team B */}
-              <Card>
-                <CardHeader className="bg-emerald-500 text-white">
-                  <CardTitle className="flex items-center">
-                    <div className="h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-green-600 text-sm font-bold">
-                      B
-                    </div>
-                    Team B
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <SortableContext
-                    items={teamBPlayers.map((p) => `B-${p.id}`)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="divide-y">
-                      {teamBPlayers.map((player) => (
-                        <SortablePlayer
-                          key={`B-${player.id}`}
-                          id={`B-${player.id}`}
-                          player={{
-                            id: Number(player.id),
-                            name: player.name,
-                            preferredPosition: player.preferredPosition,
-                            skillRating: player.skillRating,
-                          }}
-                          teamColor="green-600"
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </CardContent>
-              </Card>
+              <DroppableTeam
+                teamId="team-b"
+                title="Team B"
+                headerColor="bg-emerald-500"
+              >
+                <SortableContext
+                  items={teamBPlayers.map((p) => `B-${p.id}`)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="divide-y">
+                    {teamBPlayers.map((player) => (
+                      <SortablePlayer
+                        key={`B-${player.id}`}
+                        id={`B-${player.id}`}
+                        player={{
+                          id: Number(player.id),
+                          name: player.name,
+                          preferredPosition: player.preferredPosition,
+                          skillRating: player.skillRating,
+                        }}
+                        teamColor="green-600"
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DroppableTeam>
             </div>
+
+            {/* Drag Overlay */}
+            <DragOverlay>
+              {activePlayer ? (
+                <div className="bg-white border-2 border-blue-500 rounded-md p-2 shadow-lg opacity-95">
+                  <span className="font-medium">{activePlayer.name}</span>
+                  {" - "}
+                  <span className="text-xs rounded px-1.5 py-0.5 bg-gray-200 text-black">
+                    {activePlayer.preferredPosition}
+                  </span>
+                </div>
+              ) : null}
+            </DragOverlay>
           </DndContext>
 
           {/* Save Button */}
