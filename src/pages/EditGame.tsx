@@ -428,26 +428,47 @@ const EditGame = () => {
   };
 
   const handlePositionChange = (playerId: string, newPosition: string) => {
+    console.log("=== HANDLE POSITION CHANGE ===");
+    console.log("Player ID:", playerId);
+    console.log("New Position:", newPosition);
+    console.log(
+      "Team A Players:",
+      teamAPlayers.map((p) => ({ id: p.id, name: p.name }))
+    );
+    console.log(
+      "Team B Players:",
+      teamBPlayers.map((p) => ({ id: p.id, name: p.name }))
+    );
+
     const updatePlayerPosition = (players: typeof teamAPlayers) =>
-      players.map((player) =>
-        player.id === playerId
+      players.map((player) => {
+        console.log(
+          `Comparing ${player.id} === ${playerId}:`,
+          player.id === playerId
+        );
+        return player.id === playerId
           ? { ...player, preferredPosition: newPosition }
-          : player
-      );
+          : player;
+      });
 
     // Check which team the player is in
-    if (teamAPlayers.some((p) => p.id === playerId)) {
+    const isInTeamA = teamAPlayers.some((p) => p.id === playerId);
+    const isInTeamB = teamBPlayers.some((p) => p.id === playerId);
+
+    console.log("Is in Team A:", isInTeamA);
+    console.log("Is in Team B:", isInTeamB);
+
+    if (isInTeamA) {
+      console.log("Updating Team A");
       setTeamAPlayers(updatePlayerPosition);
-    } else {
+    } else if (isInTeamB) {
+      console.log("Updating Team B");
       setTeamBPlayers(updatePlayerPosition);
+    } else {
+      console.error("Player not found in either team!");
     }
 
-    setEditingPlayer(null);
-    toast({
-      title: "Position updated",
-      description:
-        "Player position has been changed. Click Save to apply changes.",
-    });
+    console.log(`Position updated for player ${playerId}: ${newPosition}`);
   };
 
   const handleSave = async () => {
@@ -609,6 +630,8 @@ const EditGame = () => {
                           skillRating: player.skillRating,
                         }}
                         teamColor="red-600"
+                        onPositionChange={handlePositionChange}
+                        availablePositions={mockPositions}
                       />
                     ))}
                   </div>
@@ -637,6 +660,8 @@ const EditGame = () => {
                           skillRating: player.skillRating,
                         }}
                         teamColor="green-600"
+                        onPositionChange={handlePositionChange}
+                        availablePositions={mockPositions}
                       />
                     ))}
                   </div>
