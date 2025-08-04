@@ -1,18 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-  ChevronLeft, 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  Trophy, 
-  Edit, 
-  Save, 
-  X, 
-  Trash
+import { useQuery } from "@tanstack/react-query";
+import {
+  ChevronLeft,
+  Calendar,
+  Trophy,
+  Edit,
+  Save,
+  X,
+  Trash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -24,108 +23,273 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useClub } from "@/contexts/ClubContext";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 
-// Generate match details based on ID
-const generateMatchDetails = (matchId: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() - (matchId - 1) * 7); // One match per week, based on ID
-  
-  return {
-    id: matchId,
-    date: date.toISOString(),
-    location: matchId % 2 === 0 ? "Main Gym" : "Community Center",
-    duration: "2 hours",
-    teamA: [
-      { id: 1, name: "Alex Johnson", position: "Setter" },
-      { id: 2, name: "Maya Rivera", position: "Outside Hitter" },
-      { id: 3, name: "Jordan Smith", position: "Middle Blocker" },
-      { id: 4, name: "Taylor Lee", position: "Opposite Hitter" },
-      { id: 5, name: "Casey Jones", position: "Libero" },
-      { id: 6, name: "Sam Washington", position: "Outside Hitter" },
-    ],
-    teamB: [
-      { id: 7, name: "Jamie Chen", position: "Setter" },
-      { id: 8, name: "Riley Kim", position: "Outside Hitter" },
-      { id: 9, name: "Morgan Patel", position: "Middle Blocker" },
-      { id: 10, name: "Drew Garcia", position: "Opposite Hitter" },
-      { id: 11, name: "Quinn Brown", position: "Libero" },
-      { id: 12, name: "Avery Williams", position: "Outside Hitter" },
-    ],
-    games: [
-      { gameNumber: 1, teamA: 25, teamB: 22 },
-      { gameNumber: 2, teamA: 18, teamB: 25 },
-      { gameNumber: 3, teamA: 25, teamB: 19 },
-      { gameNumber: 4, teamA: 25, teamB: 21 },
-    ],
-    notes: `Great match with excellent rallies. Match ${matchId} was particularly competitive.`
+interface Player {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
+interface GamePlayer {
+  player_id: string;
+  team_name: string;
+  position_played: string | null;
+  players: Player;
+}
+
+interface Match {
+  id: string;
+  game_number: number;
+  team_a_score: number;
+  team_b_score: number;
+}
+
+interface MatchDayData {
+  id: string;
+  date: string;
+  notes: string | null;
+  club_id: string;
+  matches: Match[];
+  game_players: GamePlayer[];
+  clubs: {
+    name: string;
   };
-};
+}
 
 const MatchDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { matchDayId } = useParams<{ matchDayId: string }>();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { clubId, setClubId } = useClub();
   const { toast } = useToast();
-  
-  // Generate match details based on the ID from URL params
-  const matchDetails = generateMatchDetails(parseInt(id || "1"));
-  
+
   const [editing, setEditing] = useState(false);
-  const [editedMatch, setEditedMatch] = useState(matchDetails);
-  const [editedGames, setEditedGames] = useState(matchDetails.games);
+  const [editedGames, setEditedGames] = useState<Match[]>([]);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  
-  const isAdminOrEditor = user?.role === 'admin' || user?.role === 'editor';
-  
+
+  // Fetch match day data
+  const {
+    data: matchData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["matchDay", matchDayId],
+    queryFn: async (): Promise<MatchDayData> => {
+      if (!matchDayId) throw new Error("Match day ID is required");
+
+      console.log("=== FETCHING MATCH DAY DETAILS ===");
+      console.log("Match Day ID:", matchDayId);
+
+      // Get match day with matches and club info
+      const { data: matchDay, error: matchDayError } = await supabase
+        .from("match_days")
+        .select(
+          `
+          id,
+          date,
+          notes,
+          club_id,
+          matches (
+            id,
+            game_number,
+            team_a_score,
+            team_b_score
+          ),
+          clubs (
+            name
+          )
+        `
+        )
+        .eq("id", matchDayId)
+        .single();
+
+      if (matchDayError) {
+        console.error("Error fetching match day:", matchDayError);
+        throw matchDayError;
+      }
+
+      // Get game players separately to avoid relation issues
+      const { data: gamePlayersRaw, error: gamePlayersError } = await supabase
+        .from("game_players")
+        .select("player_id, team_name, position_played")
+        .eq("match_day_id", matchDayId);
+
+      if (gamePlayersError) {
+        console.error("Error fetching game players:", gamePlayersError);
+      }
+
+      let gamePlayers: GamePlayer[] = [];
+
+      if (gamePlayersRaw && gamePlayersRaw.length > 0) {
+        // Get player details
+        const playerIds = gamePlayersRaw.map((gp) => gp.player_id);
+        const { data: playersData, error: playersError } = await supabase
+          .from("players")
+          .select("id, first_name, last_name")
+          .in("id", playerIds);
+
+        if (playersError) {
+          console.error("Error fetching players:", playersError);
+        }
+
+        // Combine the data
+        if (playersData) {
+          gamePlayers = gamePlayersRaw.map((gp) => {
+            const player = playersData.find((p) => p.id === gp.player_id);
+            return {
+              player_id: gp.player_id,
+              team_name: gp.team_name,
+              position_played: gp.position_played,
+              players: player || {
+                id: gp.player_id,
+                first_name: "Unknown",
+                last_name: "Player",
+              },
+            };
+          });
+        }
+      }
+
+      const result: MatchDayData = {
+        ...matchDay,
+        game_players: gamePlayers,
+      };
+
+      console.log("Match day data:", result);
+      return result;
+    },
+    enabled: !!matchDayId,
+  });
+
+  // Set club ID from match data
+  useEffect(() => {
+    if (matchData?.club_id && matchData.club_id !== clubId) {
+      setClubId(matchData.club_id);
+    }
+  }, [matchData, clubId, setClubId]);
+
+  // Initialize editing state when data loads
+  useEffect(() => {
+    if (matchData) {
+      setEditedGames([...matchData.matches]);
+    }
+  }, [matchData]);
+
+  // Check user permissions
+  const { data: userPermissions } = useQuery({
+    queryKey: ["userPermissions", matchData?.club_id, user?.id],
+    queryFn: async () => {
+      if (!matchData?.club_id || !user?.id) return null;
+
+      const { data } = await supabase
+        .from("club_members")
+        .select("role")
+        .eq("club_id", matchData.club_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      return data?.role || null;
+    },
+    enabled: !!matchData?.club_id && !!user?.id,
+  });
+
+  const isAdminOrEditor =
+    userPermissions === "admin" || userPermissions === "editor";
+
   // Check if the game date is today
   const isToday = () => {
-    const gameDate = new Date(matchDetails.date);
+    if (!matchData) return false;
+    const gameDate = new Date(matchData.date);
     const today = new Date();
     return gameDate.toDateString() === today.toDateString();
   };
-  
+
   const canEdit = isAdminOrEditor && isToday();
-  
+
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric'
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-  };
-  
-  const formatTime = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      hour: 'numeric', 
-      minute: 'numeric'
-    };
-    return new Date(dateString).toLocaleTimeString('en-US', options);
+    return new Date(dateString).toLocaleDateString("en-US", options);
   };
 
-  const handleSaveChanges = () => {
-    toast({
-      title: "Changes saved",
-      description: "The match details have been updated.",
-    });
-    setEditing(false);
+  const handleSaveChanges = async () => {
+    if (!matchData) return;
+
+    try {
+      // Update match scores
+      for (const game of editedGames) {
+        const { error: gameError } = await supabase
+          .from("matches")
+          .update({
+            team_a_score: game.team_a_score,
+            team_b_score: game.team_b_score,
+          })
+          .eq("id", game.id);
+
+        if (gameError) throw gameError;
+      }
+
+      toast({
+        title: "Changes saved",
+        description: "The match details have been updated.",
+      });
+
+      setEditing(false);
+      refetch(); // Refresh the data
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteMatch = () => {
-    toast({
-      title: "Match deleted",
-      description: "The match has been deleted.",
-    });
-    navigate("/matches");
+  const handleDeleteMatch = async () => {
+    if (!matchData) return;
+
+    try {
+      // Delete the match day (this should cascade delete matches and game_players)
+      const { error } = await supabase
+        .from("match_days")
+        .delete()
+        .eq("id", matchData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Match deleted",
+        description: "The match has been deleted.",
+      });
+
+      navigate(`/matches/${matchData.club_id}`);
+    } catch (error) {
+      console.error("Error deleting match:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete match. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleScoreChange = (gameIndex: number, team: 'teamA' | 'teamB', value: string) => {
+  const handleScoreChange = (
+    gameIndex: number,
+    team: "team_a_score" | "team_b_score",
+    value: string
+  ) => {
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue >= 0) {
       const newGames = [...editedGames];
@@ -137,41 +301,123 @@ const MatchDetail = () => {
     }
   };
 
-  const totalScore = {
-    teamA: matchDetails.games.reduce((sum, game) => sum + game.teamA, 0),
-    teamB: matchDetails.games.reduce((sum, game) => sum + game.teamB, 0),
+  const handleCreateSameTeams = async () => {
+    if (!matchData) return;
+
+    try {
+      navigate(`/new-game/${matchData.club_id}?copyFrom=${matchData.id}`);
+      toast({
+        title: "Creating new game",
+        description: "Redirecting to create a new game with the same teams.",
+      });
+    } catch (error) {
+      console.error("Error creating new game:", error);
+    }
   };
 
-  const matchWinner = matchDetails.games.filter(g => g.teamA > g.teamB).length > 
-                     matchDetails.games.filter(g => g.teamB > g.teamA).length 
-                     ? "Team A" : "Team B";
-  
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <Spinner className="h-8 w-8" />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !matchData) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Match not found</h2>
+            <p className="text-gray-600 mb-4">
+              The match you're looking for doesn't exist or you don't have
+              access to it.
+            </p>
+            <Button onClick={() => navigate(-1)}>Go Back</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Process teams
+  const teamAPlayers = matchData.game_players
+    .filter((gp) => gp.team_name === "team_a")
+    .map((gp) => ({
+      id: gp.player_id,
+      name: `${gp.players.first_name} ${gp.players.last_name}`,
+      position: gp.position_played || "No Position",
+    }));
+
+  const teamBPlayers = matchData.game_players
+    .filter((gp) => gp.team_name === "team_b")
+    .map((gp) => ({
+      id: gp.player_id,
+      name: `${gp.players.first_name} ${gp.players.last_name}`,
+      position: gp.position_played || "No Position",
+    }));
+
+  // Calculate match statistics
+  const gamesPlayed = matchData.matches.filter(
+    (match) => match.team_a_score + match.team_b_score > 0
+  );
+
+  const teamAWins = gamesPlayed.filter(
+    (match) => match.team_a_score > match.team_b_score
+  ).length;
+
+  const teamBWins = gamesPlayed.filter(
+    (match) => match.team_b_score > match.team_a_score
+  ).length;
+
+  const matchWinner =
+    teamAWins > teamBWins
+      ? "Team A"
+      : teamBWins > teamAWins
+      ? "Team B"
+      : "Draw";
+
+  const totalScore = {
+    teamA: matchData.matches.reduce((sum, game) => sum + game.team_a_score, 0),
+    teamB: matchData.matches.reduce((sum, game) => sum + game.team_b_score, 0),
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
+
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header Section */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="mr-4" 
-                onClick={() => navigate('/matches')}
+              <Button
+                variant="outline"
+                size="icon"
+                className="mr-4"
+                onClick={() => navigate(`/matches/${matchData.club_id}`)}
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">Archived Game</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Game Details</h1>
             </div>
             <div className="flex gap-2">
               {canEdit ? (
                 <>
                   {editing ? (
                     <>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setEditing(false)}
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditing(false);
+                          setEditedGames([...matchData.matches]);
+                        }}
                       >
                         <X className="mr-2 h-4 w-4" />
                         Cancel
@@ -183,14 +429,17 @@ const MatchDetail = () => {
                     </>
                   ) : (
                     <>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => setEditing(true)}
                       >
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Match
                       </Button>
-                      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+                      <Dialog
+                        open={confirmDeleteOpen}
+                        onOpenChange={setConfirmDeleteOpen}
+                      >
                         <DialogTrigger asChild>
                           <Button variant="destructive">
                             <Trash className="mr-2 h-4 w-4" />
@@ -199,16 +448,26 @@ const MatchDetail = () => {
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>Are you sure you want to delete?</DialogTitle>
+                            <DialogTitle>
+                              Are you sure you want to delete?
+                            </DialogTitle>
                             <DialogDescription>
-                              This action cannot be undone. This will permanently delete the match and all associated data.
+                              This action cannot be undone. This will
+                              permanently delete the match and all associated
+                              data.
                             </DialogDescription>
                           </DialogHeader>
                           <DialogFooter>
-                            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+                            <Button
+                              variant="outline"
+                              onClick={() => setConfirmDeleteOpen(false)}
+                            >
                               Cancel
                             </Button>
-                            <Button variant="destructive" onClick={handleDeleteMatch}>
+                            <Button
+                              variant="destructive"
+                              onClick={handleDeleteMatch}
+                            >
                               Delete
                             </Button>
                           </DialogFooter>
@@ -218,126 +477,114 @@ const MatchDetail = () => {
                   )}
                 </>
               ) : (
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    // Navigate to dashboard with same teams
-                    navigate('/dashboard');
-                    toast({
-                      title: "New game created",
-                      description: "A new game has been created with the same teams for today.",
-                    });
-                  }}
-                >
+                <Button variant="outline" onClick={handleCreateSameTeams}>
                   Create Game w. same Teams
                 </Button>
               )}
             </div>
           </div>
-          
+
+          {/* Main Match Card */}
           <Card className="mb-8">
-            <CardHeader className="bg-volleyball-primary text-white">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Calendar className="mr-2 h-5 w-5" />
-                  Match on {formatDate(matchDetails.date)}
-                </div>
-                <div className="text-2xl font-bold">
-                  <span className={matchWinner === "Team A" ? "text-white" : "text-white/70"}>
-                    {matchDetails.games.filter(g => g.teamA > g.teamB).length}
-                  </span>
-                  {" - "}
-                  <span className={matchWinner === "Team B" ? "text-white" : "text-white/70"}>
-                    {matchDetails.games.filter(g => g.teamB > g.teamA).length}
-                  </span>
-                </div>
-              </CardTitle>
-            </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                <div className="flex items-center">
-                  <MapPin className="h-5 w-5 text-volleyball-primary mr-2" />
+              {/* Match Info Row - Now includes Date, Final Score, and Winner */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="flex items-top">
+                  <Calendar className="h-5 w-5 mt-1 text-volleyball-primary mr-2" />
                   <div>
-                    <p className="text-sm text-gray-500">Location</p>
-                    <p className="font-medium">{matchDetails.location}</p>
+                    <p className="text-sm text-gray-500">Date</p>
+                    <p className="font-medium">{formatDate(matchData.date)}</p>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <Clock className="h-5 w-5 text-volleyball-primary mr-2" />
+                <div className="flex items-top">
+                  <Trophy className="h-5 w-5 mt-1 text-volleyball-primary mr-2" />
                   <div>
-                    <p className="text-sm text-gray-500">Time</p>
-                    <p className="font-medium">{formatTime(matchDetails.date)}</p>
+                    <p className="text-sm text-gray-500">Final Score</p>
+                    <p className="font-medium text-lg">
+                      <span
+                        className={teamAWins > teamBWins ? "font-bold" : ""}
+                      >
+                        {teamAWins}
+                      </span>
+                      <span className="mx-2">-</span>
+                      <span
+                        className={teamBWins > teamAWins ? "font-bold" : ""}
+                      >
+                        {teamBWins}
+                      </span>
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <Trophy className="h-5 w-5 text-volleyball-primary mr-2" />
+                <div className="flex items-top">
+                  <Trophy className="h-5 w-5 mt-1 text-volleyball-primary mr-2" />
                   <div>
                     <p className="text-sm text-gray-500">Winner</p>
                     <p className="font-medium">{matchWinner}</p>
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-gray-50 p-4 rounded-md mb-6">
-                <h3 className="font-medium mb-2">Match Notes</h3>
-                {editing ? (
-                  <textarea
-                    className="w-full p-2 border rounded-md"
-                    rows={3}
-                    value={editedMatch.notes}
-                    onChange={(e) => setEditedMatch({...editedMatch, notes: e.target.value})}
-                  />
-                ) : (
-                  <p className="text-gray-700">{matchDetails.notes}</p>
-                )}
-              </div>
 
+              {/* Tabs */}
               <Tabs defaultValue="teams">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="teams">Teams</TabsTrigger>
-                  <TabsTrigger value="games">Game Scores</TabsTrigger>
+                  <TabsTrigger value="games">Match Scores</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="teams">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <div>
                       <h3 className="text-lg font-semibold mb-3 flex items-center">
-                        <div className="h-6 w-6 rounded-full bg-volleyball-primary flex items-center justify-center text-white text-xs mr-2">
+                        <div className="h-6 w-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs mr-2">
                           A
                         </div>
                         Team A
                       </h3>
                       <ul className="space-y-2">
-                        {matchDetails.teamA.map(player => (
-                          <li key={player.id} className="flex items-center p-2 bg-gray-50 rounded-md">
-                            <div className="w-8 h-8 bg-volleyball-primary rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        {teamAPlayers.map((player, index) => (
+                          <li
+                            key={player.id}
+                            className="flex items-center p-2 bg-gray-50 rounded-md"
+                          >
+                            <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                               {player.name.charAt(0)}
                             </div>
                             <div className="ml-3">
-                              <p className="text-sm font-medium">{player.name}</p>
-                              <p className="text-xs text-gray-500">{player.position}</p>
+                              <p className="text-sm font-medium">
+                                {player.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {player.position}
+                              </p>
                             </div>
                           </li>
                         ))}
                       </ul>
                     </div>
-                    
+
                     <div>
                       <h3 className="text-lg font-semibold mb-3 flex items-center">
-                        <div className="h-6 w-6 rounded-full bg-volleyball-accent flex items-center justify-center text-white text-xs mr-2">
+                        <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs mr-2">
                           B
                         </div>
                         Team B
                       </h3>
                       <ul className="space-y-2">
-                        {matchDetails.teamB.map(player => (
-                          <li key={player.id} className="flex items-center p-2 bg-gray-50 rounded-md">
-                            <div className="w-8 h-8 bg-volleyball-accent rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        {teamBPlayers.map((player, index) => (
+                          <li
+                            key={player.id}
+                            className="flex items-center p-2 bg-gray-50 rounded-md"
+                          >
+                            <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                               {player.name.charAt(0)}
                             </div>
                             <div className="ml-3">
-                              <p className="text-sm font-medium">{player.name}</p>
-                              <p className="text-xs text-gray-500">{player.position}</p>
+                              <p className="text-sm font-medium">
+                                {player.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {player.position}
+                              </p>
                             </div>
                           </li>
                         ))}
@@ -345,7 +592,7 @@ const MatchDetail = () => {
                     </div>
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="games">
                   <div className="mt-6">
                     <div className="rounded-md border overflow-hidden">
@@ -367,52 +614,93 @@ const MatchDetail = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {(editing ? editedGames : matchDetails.games).map((game, index) => (
-                            <tr key={game.gameNumber}>
-                              <td className="px-6 py-4 whitespace-nowrap font-medium">
-                                Game {game.gameNumber}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right">
-                                {editing ? (
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={game.teamA}
-                                    onChange={(e) => handleScoreChange(index, 'teamA', e.target.value)}
-                                    className="w-16 inline-block text-right"
-                                  />
-                                ) : (
-                                  <span className={game.teamA > game.teamB ? "font-bold text-volleyball-primary" : ""}>
-                                    {game.teamA}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right">
-                                {editing ? (
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={game.teamB}
-                                    onChange={(e) => handleScoreChange(index, 'teamB', e.target.value)}
-                                    className="w-16 inline-block text-right"
-                                  />
-                                ) : (
-                                  <span className={game.teamB > game.teamA ? "font-bold text-volleyball-accent" : ""}>
-                                    {game.teamB}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  game.teamA > game.teamB 
-                                    ? 'bg-volleyball-primary/10 text-volleyball-primary' 
-                                    : 'bg-volleyball-accent/10 text-volleyball-accent'
-                                }`}>
-                                  {game.teamA > game.teamB ? "Team A" : "Team B"}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
+                          {(editing ? editedGames : matchData.matches)
+                            .sort((a, b) => a.game_number - b.game_number)
+                            .map((game, index) => (
+                              <tr key={game.id}>
+                                <td className="px-6 py-4 whitespace-nowrap font-medium">
+                                  Match {game.game_number}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                  {editing ? (
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={game.team_a_score}
+                                      onChange={(e) =>
+                                        handleScoreChange(
+                                          index,
+                                          "team_a_score",
+                                          e.target.value
+                                        )
+                                      }
+                                      className="w-16 inline-block text-right"
+                                    />
+                                  ) : (
+                                    <span
+                                      className={
+                                        game.team_a_score > game.team_b_score
+                                          ? "font-bold text-red-600"
+                                          : ""
+                                      }
+                                    >
+                                      {game.team_a_score}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                  {editing ? (
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={game.team_b_score}
+                                      onChange={(e) =>
+                                        handleScoreChange(
+                                          index,
+                                          "team_b_score",
+                                          e.target.value
+                                        )
+                                      }
+                                      className="w-16 inline-block text-right"
+                                    />
+                                  ) : (
+                                    <span
+                                      className={
+                                        game.team_b_score > game.team_a_score
+                                          ? "font-bold text-emerald-600"
+                                          : ""
+                                      }
+                                    >
+                                      {game.team_b_score}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {game.team_a_score + game.team_b_score > 0 ? (
+                                    <span
+                                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        game.team_a_score > game.team_b_score
+                                          ? "bg-red-500/10 text-red-600"
+                                          : game.team_b_score >
+                                            game.team_a_score
+                                          ? "bg-emerald-500/10 text-emerald-600"
+                                          : "bg-gray-100 text-gray-600"
+                                      }`}
+                                    >
+                                      {game.team_a_score > game.team_b_score
+                                        ? "Team A"
+                                        : game.team_b_score > game.team_a_score
+                                        ? "Team B"
+                                        : "Tie"}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 text-xs">
+                                      Not played
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
                           <tr className="bg-gray-50 font-semibold">
                             <td className="px-6 py-4 whitespace-nowrap">
                               Total Points
@@ -424,12 +712,16 @@ const MatchDetail = () => {
                               {totalScore.teamB}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                matchWinner === 'Team A' 
-                                  ? 'bg-volleyball-primary/10 text-volleyball-primary' 
-                                  : 'bg-volleyball-accent/10 text-volleyball-accent'
-                              }`}>
-                                {totalScore.teamA > totalScore.teamB ? "Team A" : "Team B"} (by points)
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  matchWinner === "Team A"
+                                    ? "bg-red-500/10 text-red-600"
+                                    : matchWinner === "Team B"
+                                    ? "bg-emerald-500/10 text-emerald-600"
+                                    : "bg-gray-100 text-gray-600"
+                                }`}
+                              >
+                                {matchWinner}
                               </span>
                             </td>
                           </tr>
@@ -443,8 +735,6 @@ const MatchDetail = () => {
           </Card>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 };

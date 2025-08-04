@@ -272,7 +272,7 @@ const App = () => {
                     }
                   />
                   <Route
-                    path="/matches/:id"
+                    path="/match-details/:matchDayId"
                     element={
                       <ProtectedRoute>
                         <MatchDetail />

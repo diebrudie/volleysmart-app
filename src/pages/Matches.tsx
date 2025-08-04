@@ -478,7 +478,7 @@ const Matches = () => {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Link to={`/dashboard/${clubId}`}>
+                            <Link to={`/match-details/${match.match_day_id}`}>
                               <Button variant="outline" size="sm">
                                 View Details
                               </Button>
