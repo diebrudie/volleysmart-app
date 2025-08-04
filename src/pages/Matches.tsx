@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -31,7 +31,7 @@ interface MatchData {
   date: string;
   team_a_wins: number;
   team_b_wins: number;
-  total_games: number;
+  total_games_played: number;
   winner: string;
   match_day_id: string;
 }
@@ -54,9 +54,11 @@ const Matches = () => {
   const clubId = urlClubId || contextClubId;
 
   // Set clubId in context if it comes from URL
-  if (urlClubId && urlClubId !== contextClubId) {
-    setClubId(urlClubId);
-  }
+  useEffect(() => {
+    if (urlClubId && urlClubId !== contextClubId) {
+      setClubId(urlClubId);
+    }
+  }, [urlClubId, contextClubId, setClubId]);
 
   // Query to fetch all matches for the club
   const {
@@ -108,37 +110,47 @@ const Matches = () => {
         // Calculate wins for each team
         let teamAWins = 0;
         let teamBWins = 0;
-        let totalGames = 0;
+        let totalGamesPlayed = 0;
 
         matchDay.matches.forEach((match) => {
-          if (match.team_a_score !== null && match.team_b_score !== null) {
-            totalGames++;
+          // A game is considered "played" if BOTH scores are greater than 0
+          // OR if one team has scored and the other hasn't (meaning the game has started)
+          // But since volleyball games can end 25-0, we need to be more nuanced
+          // Let's consider a game "played" if the total score is > 0 (at least one point scored)
+          const totalScore = match.team_a_score + match.team_b_score;
+          const gameWasPlayed = totalScore > 0;
+
+          if (gameWasPlayed) {
+            totalGamesPlayed++;
             if (match.team_a_score > match.team_b_score) {
               teamAWins++;
             } else if (match.team_b_score > match.team_a_score) {
               teamBWins++;
             }
+            // If scores are equal and > 0, it's a tie for that individual game
           }
         });
 
-        // Determine winner
+        // Determine overall match winner
         let winner: string;
-        if (teamAWins > teamBWins) {
+        if (totalGamesPlayed === 0) {
+          // Skip match days where no games have been played yet
+          continue;
+        } else if (teamAWins > teamBWins) {
           winner = "Team A";
         } else if (teamBWins > teamAWins) {
           winner = "Team B";
-        } else if (totalGames > 0) {
-          winner = "Draw";
         } else {
-          winner = "No games played";
+          winner = "Draw";
         }
 
+        // Only include match days that have been played (have at least one game with scores > 0)
         processedMatches.push({
           id: matchDay.id,
           date: matchDay.date,
           team_a_wins: teamAWins,
           team_b_wins: teamBWins,
-          total_games: totalGames,
+          total_games_played: totalGamesPlayed,
           winner,
           match_day_id: matchDay.id,
         });
@@ -456,9 +468,9 @@ const Matches = () => {
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 match.winner === "Team A"
-                                  ? "bg-volleyball-primary/10 text-volleyball-primary"
+                                  ? "bg-red-500/10 text-red-600"
                                   : match.winner === "Team B"
-                                  ? "bg-volleyball-accent/10 text-volleyball-accent"
+                                  ? "bg-emerald-500/10 text-emerald-600"
                                   : "bg-gray-100 text-gray-600"
                               }`}
                             >
@@ -466,9 +478,7 @@ const Matches = () => {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Link
-                              to={`/matches/${clubId}/${match.match_day_id}`}
-                            >
+                            <Link to={`/dashboard/${clubId}`}>
                               <Button variant="outline" size="sm">
                                 View Details
                               </Button>
