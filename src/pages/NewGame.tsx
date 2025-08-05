@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarIcon, Search } from "lucide-react";
+import { CalendarIcon, Search, Plus, Minus, X, Edit2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
@@ -29,7 +29,24 @@ interface ClubMember {
   user_id: string;
   primary_position_id?: string | null;
   primary_position_name?: string;
+  isExtraPlayer: false;
 }
+
+interface ExtraPlayer {
+  id: string;
+  name: string;
+  skill_rating: number;
+  position: string;
+  isExtraPlayer: true;
+}
+
+const VOLLEYBALL_POSITIONS = [
+  "Setter",
+  "Outside Hitter",
+  "Middle Blocker",
+  "Opposite",
+  "Libero",
+];
 
 const NewGame = () => {
   const queryClient = useQueryClient();
@@ -39,9 +56,14 @@ const NewGame = () => {
   const { setClubId } = useClub();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const [extraPlayersCount, setExtraPlayersCount] = useState(0);
+  const [extraPlayers, setExtraPlayers] = useState<ExtraPlayer[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [editingExtraPlayer, setEditingExtraPlayer] = useState<string | null>(
+    null
+  );
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -51,14 +73,6 @@ const NewGame = () => {
       setClubId(urlClubId);
     }
   }, [urlClubId, setClubId]);
-
-  useEffect(() => {
-    //console. log("=== DEBUG INFO ===");
-    //console. log("Current user:", user);
-    //console. log("Current clubId:", clubId);
-    //console. log("URL clubId:", urlClubId);
-    //console. log("================");
-  }, [user, clubId, urlClubId]);
 
   // Fetch club members/players with their primary positions
   const { data: players, isLoading: isLoadingPlayers } = useQuery({
@@ -115,6 +129,7 @@ const NewGame = () => {
           primary_position_id: primaryPosition?.position_id || null,
           primary_position_name:
             primaryPosition?.positions?.name || "No Position",
+          isExtraPlayer: false,
         };
       });
 
@@ -128,8 +143,6 @@ const NewGame = () => {
     queryFn: async () => {
       if (!clubId || !user?.id) return null;
 
-      //console. log("Checking membership for:", { clubId, userId: user.id });
-
       const { data, error } = await supabase
         .from("club_members")
         .select("*")
@@ -138,22 +151,127 @@ const NewGame = () => {
         .eq("is_active", true)
         .single();
 
-      //console. log("Membership check result:", { data, error });
       return data;
     },
     enabled: !!clubId && !!user?.id,
   });
 
+  // Handle extra players count change
+  // Handle extra players count change
+  const handleExtraPlayersChange = (increment: boolean) => {
+    const newCount = increment
+      ? extraPlayersCount + 1
+      : Math.max(0, extraPlayersCount - 1);
+
+    if (increment) {
+      // Add new extra player
+      const newExtraPlayer: ExtraPlayer = {
+        id: `extra-${Date.now()}-${Math.random()}`,
+        name: "Extra Player", // Default display name
+        skill_rating: 5,
+        position: "Any", // Will be auto-assigned during team generation
+        isExtraPlayer: true,
+      };
+      setExtraPlayers([...extraPlayers, newExtraPlayer]);
+      setSelectedPlayers([...selectedPlayers, newExtraPlayer.id]);
+    } else {
+      // Remove last extra player
+      if (extraPlayers.length > 0) {
+        const lastExtraPlayer = extraPlayers[extraPlayers.length - 1];
+        setExtraPlayers(extraPlayers.slice(0, -1));
+        setSelectedPlayers(
+          selectedPlayers.filter((id) => id !== lastExtraPlayer.id)
+        );
+      }
+    }
+
+    setExtraPlayersCount(newCount);
+  };
+
+  // Auto-assign positions to extra players based on team needs
+  const autoAssignPositionsToExtraPlayers = () => {
+    if (!players) return extraPlayers;
+
+    // Count existing positions from selected regular players
+    const selectedRegularPlayers = players.filter((p) =>
+      selectedPlayers.includes(p.id)
+    );
+    const positionCounts: Record<string, number> = {};
+
+    selectedRegularPlayers.forEach((player) => {
+      const pos = player.primary_position_name || "Unknown";
+      positionCounts[pos] = (positionCounts[pos] || 0) + 1;
+    });
+
+    // Ideal distribution for volleyball (can be adjusted)
+    const idealPositions = {
+      Setter: 2,
+      "Outside Hitter": 4,
+      "Middle Blocker": 4,
+      Opposite: 2,
+      Libero: 2,
+    };
+
+    // Find positions that need more players
+    const neededPositions: string[] = [];
+    Object.entries(idealPositions).forEach(([position, ideal]) => {
+      const current = positionCounts[position] || 0;
+      const needed = Math.max(0, ideal - current);
+      for (let i = 0; i < needed; i++) {
+        neededPositions.push(position);
+      }
+    });
+
+    // Assign positions to extra players
+    return extraPlayers.map((extraPlayer, index) => ({
+      ...extraPlayer,
+      position: neededPositions[index] || "Outside Hitter", // Default fallback
+    }));
+  };
+
+  // Update extra player name
+  const updateExtraPlayerName = (id: string, newName: string) => {
+    setExtraPlayers(
+      extraPlayers.map((player) =>
+        player.id === id ? { ...player, name: newName } : player
+      )
+    );
+  };
+
+  // Combine regular players and extra players for display
+  const allDisplayPlayers = [...(players || []), ...extraPlayers];
+
   // Filter and sort players
-  const filteredAndSortedPlayers = players
-    ? players
-        .filter((player) =>
-          `${player.first_name} ${player.last_name}`
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-        )
-        .sort((a, b) => a.first_name.localeCompare(b.first_name))
-    : [];
+  const filteredAndSortedPlayers = allDisplayPlayers
+    .filter((player) => {
+      if (player.isExtraPlayer) {
+        // ExtraPlayer only has 'name' property
+        return (player as ExtraPlayer).name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+      } else {
+        // ClubMember has first_name and last_name
+        const clubMember = player as ClubMember;
+        return `${clubMember.first_name} ${clubMember.last_name}`
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+      }
+    })
+    .sort((a, b) => {
+      // Extra players come after regular players
+      if (a.isExtraPlayer && !b.isExtraPlayer) return 1;
+      if (!a.isExtraPlayer && b.isExtraPlayer) return -1;
+
+      // Both are extra players - compare by name
+      if (a.isExtraPlayer && b.isExtraPlayer) {
+        return (a as ExtraPlayer).name.localeCompare((b as ExtraPlayer).name);
+      }
+
+      // Both are regular players - compare by first_name
+      const clubA = a as ClubMember;
+      const clubB = b as ClubMember;
+      return clubA.first_name.localeCompare(clubB.first_name);
+    });
 
   const handlePlayerToggle = (playerId: string) => {
     setSelectedPlayers((current) =>
@@ -225,9 +343,9 @@ const NewGame = () => {
     setIsSubmitting(true);
 
     try {
-      //console. log("=== CREATING GAME ===");
-      //console. log("Selected players:", selectedPlayers);
-      //console. log("Players data:", players);
+      // Auto-assign positions to extra players
+      const updatedExtraPlayers = autoAssignPositionsToExtraPlayers();
+      setExtraPlayers(updatedExtraPlayers);
 
       // 1. Create a new match day
       const { data: matchDay, error: matchDayError } = await supabase
@@ -245,8 +363,6 @@ const NewGame = () => {
         console.error("Match day error:", matchDayError);
         throw matchDayError;
       }
-
-      //console. log("Created match day:", matchDay);
 
       // 2. Create 5 matches for the 5 sets
       const matches = Array.from({ length: 5 }, (_, index) => ({
@@ -267,23 +383,79 @@ const NewGame = () => {
         throw matchesError;
       }
 
-      //console. log("Created matches:", matchesData);
-
-      // 3. Shuffle players and split into two teams
-      const shuffledPlayers = [...selectedPlayers].sort(
-        () => Math.random() - 0.5
+      // 3. Handle regular players and extra players separately
+      const regularPlayerIds = selectedPlayers.filter(
+        (id) => !id.startsWith("extra-")
       );
+      const extraPlayerIds = selectedPlayers.filter((id) =>
+        id.startsWith("extra-")
+      );
+
+      console.log("=== PROCESSING PLAYERS ===");
+      console.log("Regular player IDs:", regularPlayerIds);
+      console.log("Extra player IDs:", extraPlayerIds);
+
+      // 4. Create temporary player records for extra players
+      const extraPlayerRecords = [];
+      for (const extraId of extraPlayerIds) {
+        const extraPlayer = updatedExtraPlayers.find((ep) => ep.id === extraId);
+        if (extraPlayer) {
+          // Split the custom name intelligently
+          const nameParts = extraPlayer.name.trim().split(" ");
+          const firstName = nameParts[0] || "Extra";
+          const lastName =
+            nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Player";
+
+          console.log(
+            `Creating temp player: ${firstName} ${lastName} from "${extraPlayer.name}"`
+          );
+
+          // Create a temporary player record in the players table
+          const { data: tempPlayer, error: tempPlayerError } = await supabase
+            .from("players")
+            .insert({
+              first_name: firstName,
+              last_name: lastName,
+              user_id: null, // Now nullable
+              skill_rating: extraPlayer.skill_rating,
+              is_temporary: true,
+              is_active: true,
+              member_association: false,
+              gender: "other",
+            })
+            .select()
+            .single();
+
+          if (tempPlayerError) {
+            console.error("Error creating temp player:", tempPlayerError);
+            throw tempPlayerError;
+          }
+
+          console.log(
+            "Successfully created temp player with ID:",
+            tempPlayer.id
+          );
+
+          extraPlayerRecords.push({
+            tempPlayerId: tempPlayer.id,
+            originalExtraId: extraId,
+            position: extraPlayer.position,
+          });
+        }
+      }
+
+      // 5. Shuffle all players (regular + temp extra players) and split into teams
+      const allPlayerIds = [
+        ...regularPlayerIds,
+        ...extraPlayerRecords.map((ep) => ep.tempPlayerId),
+      ];
+
+      const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5);
       const midpoint = Math.ceil(shuffledPlayers.length / 2);
       const teamAPlayerIds = shuffledPlayers.slice(0, midpoint);
       const teamBPlayerIds = shuffledPlayers.slice(midpoint);
 
-      //console. log("Team A player IDs:", teamAPlayerIds);
-      //console. log("Team B player IDs:", teamBPlayerIds);
-
-      // 4. Create game_players records (simplified - one set per match day, not per match)
-      //console. log("Step 4: Creating game players...");
-
-      // Type that matches what we're actually inserting
+      // 6. Create game_players records
       type GamePlayerInsert = {
         match_day_id: string;
         player_id: string;
@@ -295,10 +467,23 @@ const NewGame = () => {
 
       const allGamePlayers: GamePlayerInsert[] = [];
 
-      // Helper function to get player's primary position name
-      const getPlayerPrimaryPositionName = (playerId: string) => {
-        const player = players?.find((p) => p.id === playerId);
-        return player?.primary_position_name || "No Position";
+      // Helper function to get player's position
+      const getPlayerPosition = (playerId: string) => {
+        // Check if it's a regular player
+        const regularPlayer = players?.find((p) => p.id === playerId);
+        if (regularPlayer) {
+          return regularPlayer.primary_position_name || "No Position";
+        }
+
+        // Check if it's a temporary player
+        const extraPlayerRecord = extraPlayerRecords.find(
+          (ep) => ep.tempPlayerId === playerId
+        );
+        if (extraPlayerRecord) {
+          return extraPlayerRecord.position;
+        }
+
+        return "No Position";
       };
 
       // Add Team A players with their positions
@@ -309,7 +494,7 @@ const NewGame = () => {
           team_name: "team_a",
           original_team_name: "team_a",
           manually_adjusted: false,
-          position_played: getPlayerPrimaryPositionName(playerId),
+          position_played: getPlayerPosition(playerId),
         });
       });
 
@@ -321,11 +506,9 @@ const NewGame = () => {
           team_name: "team_b",
           original_team_name: "team_b",
           manually_adjusted: false,
-          position_played: getPlayerPrimaryPositionName(playerId),
+          position_played: getPlayerPosition(playerId),
         });
       });
-
-      //console. log("About to insert game players with positions:", allGamePlayers);
 
       const { error: gamePlayersError } = await supabase
         .from("game_players")
@@ -337,18 +520,18 @@ const NewGame = () => {
           `Failed to create game players: ${gamePlayersError.message}`
         );
       }
-      //console. log("=== GAME CREATED SUCCESSFULLY ===");
 
       // Invalidate the latest game query so Dashboard refetches
       queryClient.invalidateQueries({ queryKey: ["latestGame", clubId] });
 
       toast({
         title: "Game created!",
-        description: "Your game has been created and teams have been generated",
+        description: `Your game has been created${
+          extraPlayersCount > 0
+            ? ` with ${extraPlayersCount} extra players`
+            : ""
+        }`,
       });
-
-      // Navigate to the dashboard to see the game
-      navigate(`/dashboard/${clubId}`);
 
       // Navigate to the dashboard to see the game
       navigate(`/dashboard/${clubId}`);
@@ -367,8 +550,21 @@ const NewGame = () => {
     }
   };
 
-  const formatPlayerName = (player: ClubMember) => {
-    return `${player.first_name} ${player.last_name.charAt(0)}.`;
+  const formatPlayerName = (player: ClubMember | ExtraPlayer) => {
+    if (player.isExtraPlayer) {
+      return (player as ExtraPlayer).name;
+    }
+    const regularPlayer = player as ClubMember;
+    return `${regularPlayer.first_name} ${regularPlayer.last_name.charAt(0)}.`;
+  };
+
+  const getPlayerPosition = (player: ClubMember | ExtraPlayer) => {
+    if (player.isExtraPlayer) {
+      return `${(player as ExtraPlayer).position} (Level ${
+        (player as ExtraPlayer).skill_rating
+      })`;
+    }
+    return (player as ClubMember).primary_position_name || "No Position";
   };
 
   // Check if all filtered players are selected
@@ -423,6 +619,39 @@ const NewGame = () => {
                 </Popover>
               </div>
 
+              {/* Add Extra Players */}
+              <div className="bg-white p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">
+                    Add extra players
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleExtraPlayersChange(false)}
+                      disabled={extraPlayersCount === 0}
+                      className="h-8 w-8"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="font-medium text-gray-900 min-w-[2rem] text-center">
+                      {extraPlayersCount}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleExtraPlayersChange(true)}
+                      className="h-8 w-8"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               {/* Players Selection */}
               <div className="bg-white rounded-lg overflow-hidden">
                 <div className="bg-amber-400 p-4 flex items-center justify-between">
@@ -467,21 +696,75 @@ const NewGame = () => {
                   </div>
                 </div>
 
-                {/* Players list - removed max-height and overflow */}
+                {/* Players list */}
                 <div>
                   {filteredAndSortedPlayers.length > 0 ? (
                     <div className="divide-y divide-gray-200">
                       {filteredAndSortedPlayers.map((player) => (
                         <div
                           key={player.id}
-                          className="flex items-center justify-between p-4 hover:bg-gray-50"
+                          className={cn(
+                            "flex items-center justify-between p-4 hover:bg-gray-50",
+                            player.isExtraPlayer &&
+                              "bg-blue-50 border-l-4 border-l-blue-400"
+                          )}
                         >
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {formatPlayerName(player)}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              {player.primary_position_name || "No Position"}
+                          <div className="flex flex-col flex-grow">
+                            <div className="flex items-center gap-2">
+                              {player.isExtraPlayer &&
+                              editingExtraPlayer === player.id ? (
+                                <Input
+                                  value={(player as ExtraPlayer).name}
+                                  onChange={(e) =>
+                                    updateExtraPlayerName(
+                                      player.id,
+                                      e.target.value
+                                    )
+                                  }
+                                  onBlur={() => setEditingExtraPlayer(null)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      setEditingExtraPlayer(null);
+                                    }
+                                  }}
+                                  className="text-sm font-medium"
+                                  autoFocus
+                                />
+                              ) : (
+                                <>
+                                  <span
+                                    className={cn(
+                                      "font-medium",
+                                      player.isExtraPlayer && "text-blue-700"
+                                    )}
+                                  >
+                                    {formatPlayerName(player)}
+                                  </span>
+                                  {player.isExtraPlayer && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-4 w-4 text-gray-400 hover:text-gray-600"
+                                      onClick={() =>
+                                        setEditingExtraPlayer(player.id)
+                                      }
+                                    >
+                                      <Edit2 className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                            <span
+                              className={cn(
+                                "text-sm",
+                                player.isExtraPlayer
+                                  ? "text-blue-600"
+                                  : "text-gray-500"
+                              )}
+                            >
+                              {getPlayerPosition(player)}
+                              {player.isExtraPlayer && " • Extra Player"}
                             </span>
                           </div>
                           <Checkbox
@@ -502,6 +785,21 @@ const NewGame = () => {
                   )}
                 </div>
               </div>
+
+              {/* Summary */}
+              {selectedPlayers.length > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>{selectedPlayers.length} players selected</strong>
+                    {extraPlayersCount > 0 && (
+                      <span>
+                        {" "}
+                        (including {extraPlayersCount} extra players)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
 
               {/* Button - right aligned with proper spacing */}
               <div className="flex justify-end pt-4">
