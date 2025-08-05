@@ -215,7 +215,7 @@ const JoinClub = () => {
           Back
         </Button>
 
-        {/* Debug Information */}
+        {/* Debug Information
         <Card className="mb-4 bg-blue-50 border-blue-200">
           <CardHeader>
             <h2 className="text-lg font-semibold">Debug Information</h2>
@@ -245,7 +245,7 @@ const JoinClub = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Card>
           <CardHeader>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, ChevronUp, X, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -20,11 +20,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
+import { toast } from "sonner";
 
 interface MatchData {
   id: string;
@@ -39,6 +51,7 @@ interface MatchData {
 const Matches = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { clubId: contextClubId, setClubId } = useClub();
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const [selectedMonth, setSelectedMonth] = useState("all");
@@ -49,6 +62,11 @@ const Matches = () => {
   const [filters, setFilters] = useState({
     winner: "all",
   });
+
+  // New state for delete functionality
+  const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Use URL clubId if available, otherwise use context
   const clubId = urlClubId || contextClubId;
@@ -113,10 +131,6 @@ const Matches = () => {
         let totalGamesPlayed = 0;
 
         matchDay.matches.forEach((match) => {
-          // A game is considered "played" if BOTH scores are greater than 0
-          // OR if one team has scored and the other hasn't (meaning the game has started)
-          // But since volleyball games can end 25-0, we need to be more nuanced
-          // Let's consider a game "played" if the total score is > 0 (at least one point scored)
           const totalScore = match.team_a_score + match.team_b_score;
           const gameWasPlayed = totalScore > 0;
 
@@ -127,14 +141,12 @@ const Matches = () => {
             } else if (match.team_b_score > match.team_a_score) {
               teamBWins++;
             }
-            // If scores are equal and > 0, it's a tie for that individual game
           }
         });
 
         // Determine overall match winner
         let winner: string;
         if (totalGamesPlayed === 0) {
-          // Skip match days where no games have been played yet
           continue;
         } else if (teamAWins > teamBWins) {
           winner = "Team A";
@@ -144,7 +156,6 @@ const Matches = () => {
           winner = "Draw";
         }
 
-        // Only include match days that have been played (have at least one game with scores > 0)
         processedMatches.push({
           id: matchDay.id,
           date: matchDay.date,
@@ -201,6 +212,63 @@ const Matches = () => {
     enabled: !!clubId && !!user?.id,
   });
 
+  // Check if current user is admin
+  const isAdmin = clubInfo?.userRole === "admin";
+
+  // Handle match selection for deletion
+  const handleMatchSelection = (matchId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedMatch(matchId);
+    } else {
+      setSelectedMatch(null);
+    }
+  };
+
+  // Handle delete confirmation
+  const handleDeleteClick = () => {
+    if (selectedMatch) {
+      setShowDeleteDialog(true);
+    }
+  };
+
+  // Delete match function
+  // Delete match function
+  const deleteMatch = async () => {
+    if (!selectedMatch) return;
+
+    setIsDeleting(true);
+
+    try {
+      console.log("=== DELETING MATCH ===");
+      console.log("Match Day ID:", selectedMatch);
+
+      // Delete in a transaction to ensure consistency
+      const { error } = await supabase.rpc("delete_match_day_with_matches", {
+        match_day_id: selectedMatch,
+      });
+
+      if (error) {
+        console.error("Error deleting match day and matches:", error);
+        throw error;
+      }
+
+      // Invalidate and refetch the matches query
+      await queryClient.invalidateQueries({
+        queryKey: ["clubMatches", clubId],
+      });
+
+      toast.success("Game deleted successfully");
+
+      // Reset selection
+      setSelectedMatch(null);
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error("Failed to delete match:", error);
+      toast.error("Failed to delete game. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   // Sort matches
   const sortedMatches = [...matchesData].sort((a, b) => {
     if (!sortConfig) return 0;
@@ -421,6 +489,11 @@ const Matches = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {isAdmin && (
+                        <TableHead className="w-[50px]">
+                          <span className="sr-only">Select</span>
+                        </TableHead>
+                      )}
                       <TableHead className="w-[180px]">
                         <button
                           className="flex items-center hover:text-volleyball-primary transition-colors"
@@ -442,14 +515,14 @@ const Matches = () => {
                           Winner {getSortIcon("winner")}
                         </button>
                       </TableHead>
-                      <TableHead className="text-right">View Details</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredMatches.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={4}
+                          colSpan={isAdmin ? 5 : 4}
                           className="text-center py-8 text-gray-500"
                         >
                           No matches found. Try adjusting your filters.
@@ -458,6 +531,19 @@ const Matches = () => {
                     ) : (
                       filteredMatches.map((match) => (
                         <TableRow key={match.id}>
+                          {isAdmin && (
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedMatch === match.id}
+                                onCheckedChange={(checked) =>
+                                  handleMatchSelection(
+                                    match.id,
+                                    checked as boolean
+                                  )
+                                }
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="font-medium">
                             {formatDate(match.date)}
                           </TableCell>
@@ -478,11 +564,23 @@ const Matches = () => {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Link to={`/match-details/${match.match_day_id}`}>
-                              <Button variant="outline" size="sm">
-                                View Details
-                              </Button>
-                            </Link>
+                            <div className="flex items-center justify-end gap-2">
+                              <Link to={`/match-details/${match.match_day_id}`}>
+                                <Button variant="outline" size="sm">
+                                  View Details
+                                </Button>
+                              </Link>
+                              {isAdmin && selectedMatch === match.id && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleDeleteClick}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -494,6 +592,41 @@ const Matches = () => {
           </Card>
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Game</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this game? This action cannot be
+              undone. All match data and scores will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedMatch(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteMatch}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Spinner className="h-4 w-4 mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Game
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -391,9 +391,9 @@ const NewGame = () => {
         id.startsWith("extra-")
       );
 
-      console.log("=== PROCESSING PLAYERS ===");
-      console.log("Regular player IDs:", regularPlayerIds);
-      console.log("Extra player IDs:", extraPlayerIds);
+      // console. log("=== PROCESSING PLAYERS ===");
+      // console. log("Regular player IDs:", regularPlayerIds);
+      // console. log("Extra player IDs:", extraPlayerIds);
 
       // 4. Create temporary player records for extra players
       const extraPlayerRecords = [];
@@ -406,9 +406,7 @@ const NewGame = () => {
           const lastName =
             nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Player";
 
-          console.log(
-            `Creating temp player: ${firstName} ${lastName} from "${extraPlayer.name}"`
-          );
+          // console. log(`Creating temp player: ${firstName} ${lastName} from "${extraPlayer.name}"`);
 
           // Create a temporary player record in the players table
           const { data: tempPlayer, error: tempPlayerError } = await supabase
@@ -431,10 +429,7 @@ const NewGame = () => {
             throw tempPlayerError;
           }
 
-          console.log(
-            "Successfully created temp player with ID:",
-            tempPlayer.id
-          );
+          // console. log("Successfully created temp player with ID:",tempPlayer.id);
 
           extraPlayerRecords.push({
             tempPlayerId: tempPlayer.id,
