@@ -88,8 +88,8 @@ const Games = () => {
     queryFn: async (): Promise<MatchData[]> => {
       if (!clubId) return [];
 
-      console.log("=== FETCHING CLUB MATCHES ===");
-      console.log("Club ID:", clubId);
+      // console. log(("=== FETCHING CLUB MATCHES ===");
+      // console. log(("Club ID:", clubId);
 
       // Get all match days for this club with their matches
       const { data: matchDays, error: matchDayError } = await supabase
@@ -115,7 +115,7 @@ const Games = () => {
         throw matchDayError;
       }
 
-      console.log("Raw match days:", matchDays);
+      // console. log(("Raw match days:", matchDays);
 
       // Process match days to calculate winners and game totals
       const processedMatches: MatchData[] = [];
@@ -167,7 +167,7 @@ const Games = () => {
         });
       }
 
-      console.log("Processed matches:", processedMatches);
+      // console. log(("Processed matches:", processedMatches);
       return processedMatches;
     },
     enabled: !!clubId && !!user?.id,
@@ -239,8 +239,8 @@ const Games = () => {
     setIsDeleting(true);
 
     try {
-      console.log("=== DELETING MATCH ===");
-      console.log("Match Day ID:", selectedMatch);
+      // console. log(("=== DELETING MATCH ===");
+      // console. log(("Match Day ID:", selectedMatch);
 
       // Delete the match day - this should cascade delete matches and game_players
       // if your database is set up with proper foreign key constraints

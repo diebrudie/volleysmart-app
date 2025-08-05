@@ -157,7 +157,6 @@ const NewGame = () => {
   });
 
   // Handle extra players count change
-  // Handle extra players count change
   const handleExtraPlayersChange = (increment: boolean) => {
     const newCount = increment
       ? extraPlayersCount + 1
@@ -582,71 +581,75 @@ const NewGame = () => {
               <Spinner className="h-8 w-8" />
             </div>
           ) : (
-            <div className="space-y-6 max-w-2xl pb-24">
-              {/* Date Picker */}
-              <div className="bg-white p-4 rounded-lg">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal border-gray-300",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? (
-                        format(date, "EEEE, do MMMM yyyy")
-                      ) : (
-                        <span>Select Game's Date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+            <div className="space-y-6 max-w-4xl pb-24">
+              {" "}
+              {/* Increased max-width for 2-column layout */}
+              {/* Date Picker and Extra Players Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Date Picker */}
+                <div className="bg-white p-4 rounded-lg">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal border-gray-300",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? (
+                          format(date, "EEEE, do MMMM yyyy")
+                        ) : (
+                          <span>Select Game's Date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
-              {/* Add Extra Players */}
-              <div className="bg-white p-4 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-700">
-                    Add extra players
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleExtraPlayersChange(false)}
-                      disabled={extraPlayersCount === 0}
-                      className="h-8 w-8"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="font-medium text-gray-900 min-w-[2rem] text-center">
-                      {extraPlayersCount}
+                {/* Add Extra Players */}
+                <div className="bg-white p-4 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">
+                      Add guests or temp. players
                     </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleExtraPlayersChange(true)}
-                      className="h-8 w-8"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleExtraPlayersChange(false)}
+                        disabled={extraPlayersCount === 0}
+                        className="h-8 w-8"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="font-medium text-gray-900 min-w-[2rem] text-center">
+                        {extraPlayersCount}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleExtraPlayersChange(true)}
+                        className="h-8 w-8"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-
               {/* Players Selection */}
               <div className="bg-white rounded-lg overflow-hidden">
                 <div className="bg-amber-400 p-4 flex items-center justify-between">
@@ -780,7 +783,6 @@ const NewGame = () => {
                   )}
                 </div>
               </div>
-
               {/* Summary */}
               {selectedPlayers.length > 0 && (
                 <div className="bg-blue-50 p-4 rounded-lg">
@@ -795,7 +797,6 @@ const NewGame = () => {
                   </p>
                 </div>
               )}
-
               {/* Button - right aligned with proper spacing */}
               <div className="flex justify-end pt-4">
                 <Button
