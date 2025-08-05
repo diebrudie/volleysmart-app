@@ -1,338 +1,306 @@
-# API Design
-
-## 1. API Endpoints
-
-### Auth & User Management
-
-- ID: API-01
-  Title: User Signup
-  Method: POST
-  Path: /api/auth/signup
-
-  RequiredRoles:
-
-  - All
-    RequestBody:
-  - email: string, required
-  - password: string, required
-    Redirect to:
-  - /players/onboarding view  
-    Responses:
-  - 201: User created
-  - 400: Validation error
-
-- ID: API-02
-  Title: User Login
-  Method: POST
-  Path: /api/auth/login
-
-  RequiredRoles:
-
-  - All
-    RequestBody:
-  - email: string, required
-  - password: string, required
-    Responses:
-  - 200: Authenticated
-  - 401: Unauthorized
-
-- ID: API-03
-  Title: Me User Retrieval
-  Method: GET
-  Path: /api/auth/me
-
-  RequiredRoles:
-
-  - All
-    Responses:
-  - 200: User object
-  - 401: Unauthorized
-
-- ID: API-04
-  Title: Password Reset
-  Method: POST
-  Path: /api/auth/password/reset
-
-  RequiredRoles:
-
-  - All
-    RequestBody:
-  - email: string, required
-    Responses:
-  - 200: Reset email sent
-  - 400: Invalid email
-
-- ID: API-05
-  Title: Password Update
-  Method: PATCH
-  Path: /api/auth/password/update
-
-  RequiredRoles:
-
-  - All
-    RequestBody:
-  - current_password: string, required
-  - new_password: string, required
-    Responses:
-  - 200: Password updated
-  - 403: Incorrect current password
-
-### Players
-
-- ID: API-05
-  Title: Get Player by ID
-  Method: GET
-  Path: /api/players/:id
-
-  RequiredRoles:
-
-  - All
-    Description: Retrieves a specific player's public information if active.
-    Parameters:
-  - id: UUID, required
-    Responses:
-  - 200: Player data
-  - 404: Not found or inactive
-
-- ID: API-07
-  Title: Player Onboarding (Signed-up User)
-  Method: POST
-  Path: /api/players/onboarding
-
-  RequiredRoles:
-
-  - User
-    Description: After signup, user completes onboarding to create their player profile.
-    RequestBody:
-  - first_name: string (required)
-  - last_name: string (required)
-  - positions: array of position_ids (required)
-  - skill_rating: integer (1–10, required)
-    Behavior:
-  - Links player to current Supabase user_id
-  - Stores skill_rating privately (invisible to user after)
-    Responses:
-  - 201: Player created and linked to user
-  - 400: Validation error
-
-- ID: API-08
-  Title: Delete Player
-  Method: DELETE
-  Path: /api/players/:id
-
-  RequiredRoles:
-
-  - Admin
-  - Editor (if user_id is NULL)
-  - Player themselves (if user_id matches and verified)
-    Parameters:
-  - id: UUID, required
-    Responses:
-  - 204: Player deleted
-  - 403: Not authorized
-
-- ID: API-09
-  Title: Update Player
-  Method: PATCH
-  Path: /api/players/:id
-
-  RequiredRoles:
-
-  - Admin/Editor (can update score & positions)
-  - Player themselves (can update personal info only)
-    RequestBody:
-  - fields like: first_name, last_name, bio, image_url, positions, skill_rating
-    Field Rules:
-  - first_name, last_name, bio, image → editable by self
-  - positions → editable by self and admin/editor
-  - skill_rating → editable ONLY by admin/editor (never shown to user after onboarding)
-    Responses:
-  - 200: Updated
-  - 403: Not authorized
-
-- ID: API-10
-  Title: Retrieve All Players
-  Method: GET
-  Path: /api/players
-
-  RequiredRoles:
-
-  - All
-    Description: Only returns players with is_active = true
-    Responses:
-  - 200: List of active players
-
-- ID: API-11
-  Title: Reactivate Player
-  Method: PATCH
-  Path: /api/players/:id/reactivate
-
-  RequiredRoles:
-
-  - Admin
-  - Editor
-    Description: Reactivates a player previously deactivated.
-    RequestBody: None
-    Responses:
-  - 200: Player reactivated
-  - 403: Unauthorized
-
-- ID: API-12
-  Title: Deactivate Player
-  Method: PATCH
-  Path: /api/players/:id/deactivate
-
-  RequiredRoles:
-
-  - Admin
-  - Editor
-    Description: Soft-deactivate a player (set is_active = false)
-    RequestBody: None
-    Responses:
-  - 200: Player deactivated
-  - 403: Unauthorized
-
-### Team Management
-
-- ID: API-13
-  Title: Generate Teams
-  Method: POST
-  Path: /api/teams/generate
-  RequiredRoles:
-
-  - Admin
-  - Editor
-
-  RequestBody:
-
-  - player_ids: array of UUIDs
-  - fixed_assignments: object (optional map of player_id to position_id)
-    Responses:
-  - 200: Generated teams
-
-- ID: API-14
-  Title: Update Teams
-  Method: PATCH
-  Path: /api/teams/:match_day_id
-  RequiredRoles:
-
-  - Admin
-  - Editor
-
-  Description: Allows manual editing of team members and their roles
-  RequestBody:
-
-  - updated_players: array of objects with player_id, team_id, position_id
-    Responses:
-  - 200: Teams updated
-
-### Match Days
-
-- ID: API-15
-  Title: Retrieve All Match Days
-  Method: GET
-  Path: /api/match-days
-
-  RequiredRoles:
-
-  - All
-    Description: Retrieves all match day entries. Public view can be filtered.
-    Responses:
-  - 200: List of match days
-
-- ID: API-16
-  Title: Create Match Day
-  Method: POST
-  Path: /api/match-days
-
-  RequiredRoles:
-
-  - All
-    RequestBody:
-  - date: string (ISO)
-  - notes: string (optional)
-    Responses:
-  - 201: Match Day created
-
-- ID: API-17
-  Title: Update Match Day
-  Method: PATCH
-  Path: /api/match-days/:id
-
-  RequiredRoles:
-
-  - Admin
-  - Editor
-  - MatchDayCreator
-    Responses:
-  - 200: Match day updated
-  - 403: Not authorized
-
-### Matches
-
-- ID: API-18
-  Title: Create Match
-  Method: POST
-  Path: /api/matches
-
-  RequiredRoles:
-
-  - All
-    RequestBody:
-  - match_day_id: UUID
-  - game_number: integer
-  - team_a_score: integer
-  - team_b_score: integer
-    Responses:
-  - 201: Match created
-
-- ID: API-19
-  Title: Update Match
-  Method: PATCH
-  Path: /api/matches/:id
-
-  RequiredRoles:
-
-  - Admin
-  - Editor
-  - MatchCreator
-    Responses:
-  - 200: Match updated
-  - 403: Not authorized
-
-- ID: API-20
-  Title: Delete Match
-  Method: DELETE
-  Path: /api/matches/:id
-
-  RequiredRoles:
-
-  - Admin
-  - Editor
-  - MatchCreator
-    Responses:
-  - 204: Match deleted
-
-- ID: API-21
-  Title: Retrieve All Matches
-  Method: GET
-  Path: /api/matches
-
-  RequiredRoles:
-
-  - Admin
-    Responses:
-  - 200: List of all matches
-
-## 2. Schema Review
-
-All endpoints are mapped to the corresponding tables and cover CRUD functionality, complex access rules, and edge cases like user-owned entities and anonymous players.
-
-## 3. Technical Considerations
-
-- 403 = when user is unauthorized by role or ownership
-- All endpoints must follow Supabase RLS policies
-- Empty data responses should return 200 OK with []
-- MatchCreator: refers to the user who originally created the match record
-- MatchDayCreator: refers to the user who created the match day entry
-- Ownership is resolved via Supabase user_id comparison in RLS
+# Data Access Design
+
+## 1. Architecture Overview
+
+VolleyMatch uses **direct Supabase client queries** instead of traditional REST API endpoints. This provides type-safe database operations, real-time subscriptions, and automatic Row Level Security enforcement.
+
+### 1.1 Data Access Pattern
+
+```typescript
+// Direct Supabase queries with TypeScript types
+const { data, error } = await supabase
+  .from("players")
+  .select("*, player_positions(*, positions(*))")
+  .eq("club_id", clubId)
+  .eq("is_active", true);
+```
+
+### 1.2 Key Benefits
+
+Type Safety: Auto-generated TypeScript types from database schema
+Real-time: Built-in subscriptions for live data updates
+Security: Row Level Security policies enforce data access rules
+Performance: Optimized queries with built-in caching
+Simplicity: No API layer to maintain or debug
+
+## 2. Data Access Modules
+
+These are the actual functions in your codebase that handle database operations:
+
+### 2.1 Authentication (src/integrations/supabase/profiles.ts)
+
+```
+typescript// User profile management functions you already have
+createUserProfile(user: User, role: UserRole) → UserProfile
+getUserProfile(userId: string) → UserProfile
+updateUserRole(userId: string, role: UserRole) → UserProfile
+```
+
+### 2.2 Club Management (src/integrations/supabase/club.ts)
+
+```
+typescript// Club administration functions you already have
+addClubAdmin(clubId: string, userId: string) → void
+```
+
+### 2.3 Player Management (src/integrations/supabase/players.ts)
+
+```
+typescript// Player lifecycle operations you already have
+createPlayer(userId: string, playerData: PlayerData) → Player
+getPlayerByUserId(userId: string) → Player
+getAllPlayers() → Player[]
+updatePlayer(playerId: string, playerData: Partial<PlayerData>) → Player
+updatePlayerPositions(playerId: string, primaryId: string, secondaryIds: string[]) → boolean
+```
+
+### 2.4 Position Management (src/integrations/supabase/positions.ts)
+
+```
+typescript// Volleyball position operations you already have
+getAllPositions() → Position[]
+getPositionById(id: string) → Position
+getPositionByName(name: string) → Position | null
+ensurePositionsExist() → boolean
+```
+
+### 2.5 Storage Management (src/integrations/supabase/storage.ts)
+
+```
+typescript// File upload utilities you already have
+getPublicUrl(bucketName: string, filePath: string) → string
+```
+
+## 3. Database Functions
+
+### 3.1 Security Functions
+
+Supabase database functions handle complex authorization logic:
+
+```
+-- Club membership verification
+is_club_member(club_uuid: string, user_uuid: string) → boolean
+is_club_admin(club_uuid: string, user_uuid: string) → boolean
+is_club_admin_or_editor(club_uuid: string, user_uuid: string) → boolean
+
+-- Profile access
+can_view_profile(viewed_user_id: string) → boolean
+user_can_view_club_members(target_club_id: string) → boolean
+
+-- Data integrity
+club_has_members(club_uuid: string) → boolean
+delete_match_day_with_matches(match_day_id: string) → void
+```
+
+### 3.2 Admin Functions
+
+```
+-- Security definer functions for admin operations
+is_club_admin_safe(club_uuid: string, user_uuid: string) → boolean
+is_club_admin_secure(club_uuid: string, user_uuid: string) → boolean
+is_club_creator(input_club_id: string, input_user_id: string) → boolean
+```
+
+## 4. Row Level Security Policies
+
+### 4.1 Club-Scoped Data Access
+
+All club-related data is protected by RLS policies that verify club membership:
+
+```
+-- Example: Players table policy
+CREATE POLICY "Members can view club players" ON players
+FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM club_members
+    WHERE club_id = players.club_id
+    AND user_id = auth.uid()
+    AND is_active = true
+  )
+);
+```
+
+### 4.2 Role-Based Operations
+
+```
+-- Example: Admin-only operations
+CREATE POLICY "Admins can manage players" ON players
+FOR ALL USING (
+  is_club_admin(club_id::text, auth.uid()::text)
+);
+```
+
+## 5. Real-Time Subscriptions
+
+### 5.1 Live Data Updates
+
+```
+// Real-time match score updates
+const subscription = supabase
+  .from('matches')
+  .on('*', (payload) => {
+    // Handle real-time changes
+    updateMatchScores(payload.new);
+  })
+  .subscribe();
+```
+
+### 5.2 Club Context Updates
+
+```
+// Listen for club member changes
+const membershipSubscription = supabase
+  .from('club_members')
+  .on('*', (payload) => {
+    // Refresh user's club list
+    refreshClubMemberships();
+  })
+  .subscribe();
+```
+
+## 6. Error Handling
+
+### 6.1 Common Error Patterns
+
+```
+// Standardized error handling (like in your players.ts)
+try {
+  const { data, error } = await supabase
+    .from('players')
+    .insert(playerData);
+
+  if (error) {
+    console.error('Database error:', error);
+    throw error;
+  }
+
+  return data;
+} catch (error) {
+  // Handle specific error types
+  if (error.code === '23505') {
+    throw new Error('Player already exists');
+  }
+  throw error;
+}
+```
+
+### 6.2 RLS Policy Violations
+
+```
+// Handle insufficient permissions
+if (error?.code === '42501') {
+  throw new Error('Insufficient permissions for this operation');
+}
+```
+
+## 7. Performance Optimizations
+
+### 7.1 Query Optimization
+
+```
+// Use select() to fetch only needed fields (like you do in players.ts)
+const { data } = await supabase
+  .from('players')
+  .select('id, first_name, last_name, skill_rating')
+  .eq('is_active', true);
+
+// Use single() for unique results (like you do in players.ts)
+const { data } = await supabase
+  .from('clubs')
+  .select('*')
+  .eq('id', clubId)
+  .single();
+```
+
+### 7.2 Batch Operations
+
+```
+// Bulk insert for efficiency
+const { error } = await supabase
+  .from('game_players')
+  .insert(teamAssignments);
+```
+
+## 8. Type Safety
+
+### 8.1 Generated Types
+
+```
+// Auto-generated from database schema (your types.ts file)
+export type Database = {
+  public: {
+    Tables: {
+      players: {
+        Row: { /* ... */ }
+        Insert: { /* ... */ }
+        Update: { /* ... */ }
+      }
+      // ... other tables
+    }
+  }
+}
+```
+
+### 8.2 Helper Types
+
+```
+// Convenient type aliases (like in your supabase.ts)
+export type Player = Database['public']['Tables']['players']['Row'];
+export type PlayerInsert = Database['public']['Tables']['players']['Insert'];
+export type PlayerUpdate = Database['public']['Tables']['players']['Update'];
+```
+
+## 9. Development Workflow
+
+### 9.1 Schema Changes
+
+1. Update database schema in Supabase Dashboard
+2. Run npx supabase gen types typescript to regenerate types
+3. Update application code to use new schema
+4. Test RLS policies with different user roles
+
+### 9.2 Local Development
+
+```
+# Generate types after schema changes (what you just did)
+npx supabase gen types typescript --project-id PROJECT_ID > src/integrations/supabase/types.ts
+
+# Test database functions
+npx supabase db functions serve --env-file .env.local
+```
+
+## 10. Security Best Practices
+
+### 10.1 Data Access Rules
+
+- All queries automatically respect RLS policies
+- Club membership verified before data access
+- User identity checked via auth.uid() in policies
+- Sensitive data (skill_rating) hidden from players
+
+### 10.2 Input Validation
+
+- TypeScript types prevent invalid data shapes
+- Database constraints ensure data integrity
+- Client-side validation for user experience
+- Server-side validation via RLS and functions
+
+## 11. Current Implementation Files
+
+### 11.1 Core Data Access Files
+
+- `src/integrations/supabase/client.ts` - Supabase client configuration
+- `src/integrations/supabase/types.ts` - Auto-generated database types
+- `src/integrations/supabase/players.ts` - Player CRUD operations
+- `src/integrations/supabase/positions.ts` - Position management
+- `src/integrations/supabase/profiles.ts` - User profile operations
+- `src/integrations/supabase/club.ts` - Club administration
+- `src/integrations/supabase/storage.ts` - File upload utilities
+- `src/integrations/supabase/schemas.sql` - Additional schema setup
+
+### 11.2 React Integration
+
+- `src/contexts/AuthContext.tsx` - Authentication state management
+- `src/contexts/ClubContext.tsx` - Club context switching
+- `src/hooks/use-toast.tsx` - Toast notifications
+- Components use direct Supabase queries with React Query for caching

@@ -1,180 +1,169 @@
-You are a senior database architect tasked with designing a comprehensive and accurate database schema based on the provided Software Requirements Specification (SRS). Your schema should precisely represent all entities, attributes, and relationships outlined in the SRS and ensure direct traceability.
+<details>
+<summary>Click to expand: New supabase-schema.md</summary>
+markdown# Supabase Database Schema
 
-<srs_document>
-Problem:
-Every week I play volleyball with a team. We are between 20–25 people in total. Each week only 12 of us go to play so we can have a 6vs6 match. Each person plays one or more positions: Setter, Outside Hitter, Opposite Hitter, Middle Blocker, Libero. Some players always play the same position; others vary.
+## Overview
 
-Creating fair, balanced teams every week is time-consuming and sometimes unfair due to skill differences and position mismatches.
+VolleyMatch is a **club-centric** volleyball management application where users can belong to multiple clubs, and each club manages its own players, match days, and games independently.
 
-Solution:
-Develop a web application with the following features:
+## Core Architecture
 
-- Player Management:
-  - Add/remove players
-  - Profile includes name, image, bio, positions, skill rating (1–10, hidden)
-- Authentication:
-  - Login with email and password
-  - Roles: Admin, Editor, User
-- Match Management:
-  - Select who’s playing
-  - Generate 2 fair, random teams based on position and role balance
-  - Assign fixed positions to specific players when needed
-  - Record matches (5 per day), track scores and wins
-  - Anyone can submit match scores, only Admin/Editor can edit
-- Team History:
-  - Homepage shows all match days with win/loss summary
-  - Each match day view shows team rosters, match scores, positions played
-- Profiles:
-  - View other player profiles
-  - Only users can edit their own profile
-- Public Access:
-  - Match day overview accessible via public link
-- Optional Stats:
-  - Track win ratios, attendance, most active player etc. in future
+Users ──┐
+├─► Club Members ──► Clubs ──┬─► Players
+│ ├─► Match Days ──┬─► Game Players (Team Assignments)
+└─► User Profiles │ └─► Matches (Scores)
+└─► Club Settings
 
-Tech Stack:
-- Frontend: Lovable (low-code, GitHub connected)
-- Backend: Supabase (PostgreSQL, Auth, RLS)
-</srs_document>
+## Database Tables
 
-## Database Schema
+### 1. Authentication & User Management
 
-### 1. Data Design & Schema
+#### **user_profiles**
 
-#### 1.1 Entities
+- **Purpose**: Extends Supabase Auth users with application-specific metadata
+- **Fields**:
+  - `id` UUID PRIMARY KEY (references auth.users)
+  - `created_at` TIMESTAMP
+  - `email` STRING (nullable)
+  - `role` STRING ('admin', 'editor', 'user')
 
-**users**
-- id UUID PRIMARY KEY
-- email VARCHAR(255), UNIQUE, NOT NULL
-- role VARCHAR(50), CHECK (role IN ('admin', 'editor', 'user'))
+#### **club_members**
 
-**players**
-- id UUID PRIMARY KEY
-- user_id UUID, FK to users(id)
-- first_name VARCHAR(100)
-- last_name VARCHAR(100)
-- image_url TEXT
-- bio TEXT
-- skill_rating INTEGER CHECK (skill_rating BETWEEN 1 AND 10)
-- is_active BOOL
-- member_association BOOL
+- **Purpose**: Links users to clubs with role-based permissions
+- **Fields**:
+  - `id` UUID PRIMARY KEY
+  - `club_id` UUID → clubs(id)
+  - `user_id` UUID → auth.users(id)
+  - `role` STRING ('admin', 'editor', 'member')
+  - `is_active` BOOLEAN
+  - `joined_at` TIMESTAMP
 
-**positions**
-- id UUID PRIMARY KEY
-- name VARCHAR(50) UNIQUE NOT NULL
+### 2. Club Management
 
-**player_positions**
-- id UUID PRIMARY KEY
-- player_id UUID, FK to players(id)
-- position_id UUID, FK to positions(id)
+#### **clubs**
 
-**match_days**
-- id UUID PRIMARY KEY
-- date DATE NOT NULL
-- created_by UUID, FK to users(id)
-- created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-- team_generated BOOLEAN DEFAULT FALSE
-- notes TEXT
+- **Purpose**: Core club entities that contain all volleyball activities
+- **Fields**:
+  - `id` UUID PRIMARY KEY
+  - `name` STRING (required)
+  - `description` STRING (optional)
+  - `image_url` STRING (optional)
+  - `slug` STRING (optional, for friendly URLs)
+  - `created_by` UUID → auth.users(id)
+  - `created_at` TIMESTAMP
 
-**match_teams**
-- id UUID PRIMARY KEY
-- match_day_id UUID, FK to match_days(id)
-- team_name VARCHAR(100)
+### 3. Player Management
 
-**team_players**
-- id UUID PRIMARY KEY
-- match_team_id UUID, FK to match_teams(id)
-- player_id UUID, FK to players(id)
-- position_id UUID, FK to positions(id)
+#### **players**
 
-**matches**
-- id UUID PRIMARY KEY
-- match_day_id UUID, FK to match_days(id)
-- game_number INTEGER CHECK (game_number BETWEEN 1 AND 5)
-- team_a_score INTEGER
-- team_b_score INTEGER
-- added_by UUID, FK to users(id)
+- **Purpose**: Player profiles within specific clubs
+- **Fields**:
+  - `id` UUID PRIMARY KEY
+  - `user_id` UUID → auth.users(id) (nullable for temporary players)
+  - `club_id` UUID → clubs(id) (nullable in schema, but logically required)
+  - `first_name` STRING (required)
+  - `last_name` STRING (required)
+  - `bio` STRING (optional)
+  - `birthday` DATE (optional)
+  - `gender` STRING (required: male/female/other/diverse)
+  - `image_url` STRING (optional)
+  - `skill_rating` INTEGER (1-10, hidden from players)
+  - `height_cm` INTEGER (optional)
+  - `is_active` BOOLEAN (soft delete)
+  - `is_temporary` BOOLEAN (for guest players)
+  - `member_association` BOOLEAN
+  - `profile_completed` BOOLEAN
+  - `competition_level`, `general_skill_level`, `training_status`, `game_performance` STRING (optional metadata)
 
-#### 1.2 SQL Schema (Migration Script)
-```sql
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email VARCHAR(255) UNIQUE NOT NULL,
-  role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'editor', 'user'))
-);
+#### **positions**
 
-CREATE TABLE players (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id),
-  first_name VARCHAR(100),
-  last_name VARCHAR(100),
-  image_url TEXT,
-  bio TEXT,
-  skill_rating INTEGER CHECK (skill_rating BETWEEN 1 AND 10)
-);
+- **Purpose**: Standard volleyball positions (Setter, Outside Hitter, etc.)
+- **Fields**:
+  - `id` UUID PRIMARY KEY
+  - `name` STRING (required, unique)
 
-CREATE TABLE positions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(50) UNIQUE NOT NULL
-);
+#### **player_positions**
 
-CREATE TABLE player_positions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  player_id UUID REFERENCES players(id),
-  position_id UUID REFERENCES positions(id)
-);
+- **Purpose**: Many-to-many relationship between players and positions
+- **Fields**:
+  - `id` UUID PRIMARY KEY
+  - `player_id` UUID → players(id)
+  - `position_id` UUID → positions(id)
+  - `is_primary` BOOLEAN (indicates primary position)
 
-CREATE TABLE match_days (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  date DATE NOT NULL,
-  created_by UUID REFERENCES users(id),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  team_generated BOOLEAN DEFAULT FALSE,
-  notes TEXT
-);
+### 4. Match Management
 
-CREATE TABLE match_teams (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  match_day_id UUID REFERENCES match_days(id),
-  team_name VARCHAR(100)
-);
+#### **match_days**
 
-CREATE TABLE team_players (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  match_team_id UUID REFERENCES match_teams(id),
-  player_id UUID REFERENCES players(id),
-  position_id UUID REFERENCES positions(id)
-);
+- **Purpose**: Events representing a day of volleyball matches
+- **Fields**:
+  - `id` UUID PRIMARY KEY
+  - `club_id` UUID → clubs(id)
+  - `date` DATE (required)
+  - `created_by` UUID → auth.users(id)
+  - `created_at` TIMESTAMP
+  - `notes` STRING (optional)
+  - `team_generated` BOOLEAN (indicates if teams were auto-generated)
 
-CREATE TABLE matches (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  match_day_id UUID REFERENCES match_days(id),
-  game_number INTEGER CHECK (game_number BETWEEN 1 AND 5),
-  team_a_score INTEGER,
-  team_b_score INTEGER,
-  added_by_user_id UUID REFERENCES users(id)
-);
-```
+#### **game_players**
 
-### 2. Minimal Test Data
-```sql
-INSERT INTO users (email, role) VALUES
-('admin@volleyapp.com', 'admin'),
-('editor@volleyapp.com', 'editor'),
-('user1@volleyapp.com', 'user');
+- **Purpose**: Team assignments for players on specific match days
+- **Fields**:
+  - `id` UUID PRIMARY KEY
+  - `match_day_id` UUID → match_days(id)
+  - `player_id` UUID → players(id)
+  - `team_name` STRING (e.g., "Team A", "Team B")
+  - `position_played` STRING (optional, position for this game)
+  - `original_team_name` STRING (for tracking changes)
+  - `manually_adjusted` BOOLEAN
+  - `adjusted_by` UUID → auth.users(id)
+  - `adjusted_at` TIMESTAMP
+  - `adjustment_reason` STRING
+  - `created_at`, `updated_at` TIMESTAMP
 
-INSERT INTO positions (name) VALUES
-('Setter'), ('Outside Hitter'), ('Opposite Hitter'), ('Middle Blocker'), ('Libero');
-```
+#### **matches**
 
-### 3. Schema Review
-- All required entities and attributes from the SRS are covered.
-- Each player can play multiple positions using `player_positions` (SRS: Flexible player roles).
-- `match_days`, `match_teams`, `team_players`, and `matches` support fair team generation and tracking of 5-match days.
-- Role-Based Access can be enforced with Supabase RLS.
-- Schema extensible for future player stats, public pages, and RSVPs.
+- **Purpose**: Individual game scores within a match day (typically 5 games per day)
+- **Fields**:
+  - `id` UUID PRIMARY KEY
+  - `match_day_id` UUID → match_days(id)
+  - `game_number` INTEGER (1-5)
+  - `team_a_score` INTEGER
+  - `team_b_score` INTEGER
+  - `added_by_user_id` UUID → auth.users(id)
 
-### 4. Formatting Guidelines
-- Markdown headers used for readability.
-- SQL blocks are formatted and grouped logically.
-- Comments removed for deployment-readiness.
+## Key Relationships
+
+1. **Users → Clubs**: Many-to-many via `club_members`
+2. **Clubs → Players**: One-to-many (club scope)
+3. **Players → Positions**: Many-to-many via `player_positions`
+4. **Clubs → Match Days**: One-to-many
+5. **Match Days → Game Players**: One-to-many (team assignments)
+6. **Match Days → Matches**: One-to-many (individual game scores)
+
+## Row Level Security (RLS)
+
+- **Club Scope**: All data is scoped to clubs via club membership
+- **Visibility Rule**: Users can only see data from clubs they're members of
+- **Admin Functions**: Several security definer functions handle admin operations
+- **Key Functions**: `is_club_admin`, `is_club_member`, `user_can_view_club_members`
+
+## Default Positions
+
+Standard volleyball positions are seeded:
+
+- Setter
+- Outside Hitter
+- Opposite Hitter
+- Middle Blocker
+- Libero
+
+## Schema Notes
+
+- **Multi-club Support**: Core architectural decision
+- **Temporary Players**: Supported via `is_temporary` flag and nullable `user_id`
+- **Skill Ratings**: Hidden from players after onboarding
+- **Team Generation**: Uses `game_players` table for assignments
+- **Match Scoring**: Supports multiple games per match day
+- **Audit Trail**: Tracks team adjustments and match creation
+</details>
