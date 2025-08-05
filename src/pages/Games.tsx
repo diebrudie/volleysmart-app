@@ -48,7 +48,7 @@ interface MatchData {
   match_day_id: string;
 }
 
-const Matches = () => {
+const Games = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -242,13 +242,15 @@ const Matches = () => {
       console.log("=== DELETING MATCH ===");
       console.log("Match Day ID:", selectedMatch);
 
-      // Delete in a transaction to ensure consistency
-      const { error } = await supabase.rpc("delete_match_day_with_matches", {
-        match_day_id: selectedMatch,
-      });
+      // Delete the match day - this should cascade delete matches and game_players
+      // if your database is set up with proper foreign key constraints
+      const { error } = await supabase
+        .from("match_days")
+        .delete()
+        .eq("id", selectedMatch);
 
       if (error) {
-        console.error("Error deleting match day and matches:", error);
+        console.error("Error deleting match day:", error);
         throw error;
       }
 
@@ -269,6 +271,7 @@ const Matches = () => {
       setIsDeleting(false);
     }
   };
+
   // Sort matches
   const sortedMatches = [...matchesData].sort((a, b) => {
     if (!sortConfig) return 0;
@@ -565,7 +568,7 @@ const Matches = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Link to={`/match-details/${match.match_day_id}`}>
+                              <Link to={`/game-details/${match.match_day_id}`}>
                                 <Button variant="outline" size="sm">
                                   View Details
                                 </Button>
@@ -631,4 +634,4 @@ const Matches = () => {
   );
 };
 
-export default Matches;
+export default Games;

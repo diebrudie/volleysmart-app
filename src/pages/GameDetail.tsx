@@ -63,7 +63,7 @@ interface MatchDayData {
   };
 }
 
-const MatchDetail = () => {
+const GameDetail = () => {
   const { matchDayId } = useParams<{ matchDayId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -276,7 +276,7 @@ const MatchDetail = () => {
         description: "The match has been deleted.",
       });
 
-      navigate(`/matches/${matchData.club_id}`);
+      navigate(`/games/${matchData.club_id}`);
     } catch (error) {
       console.error("Error deleting match:", error);
       toast({
@@ -485,7 +485,7 @@ const MatchDetail = () => {
                 variant="outline"
                 size="icon"
                 className="mr-4"
-                onClick={() => navigate(`/matches/${matchData.club_id}`)}
+                onClick={() => navigate(`/games/${matchData.club_id}`)}
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
@@ -823,4 +823,4 @@ const MatchDetail = () => {
   );
 };
 
-export default MatchDetail;
+export default GameDetail;

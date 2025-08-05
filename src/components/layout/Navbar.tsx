@@ -62,7 +62,7 @@ const Navbar = () => {
         },
         {
           label: "Archive",
-          path: `/matches/${clubId}`,
+          path: `/games/${clubId}`,
           visible: isAuthenticated,
         },
         {

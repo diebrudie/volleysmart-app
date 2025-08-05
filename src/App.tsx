@@ -20,8 +20,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PlayerOnboarding from "./pages/PlayerOnboarding";
 import Dashboard from "./pages/Dashboard";
-import Matches from "./pages/Matches";
-import MatchDetail from "./pages/MatchDetail";
+import Games from "./pages/Games";
+import GameDetail from "./pages/GameDetail";
 import Players from "./pages/Players";
 import Members from "./pages/Members";
 import PlayerDetail from "./pages/PlayerDetail";
@@ -264,18 +264,18 @@ const App = () => {
                     }
                   />
                   <Route
-                    path="/matches/:clubId"
+                    path="/games/:clubId"
                     element={
                       <ProtectedRoute>
-                        <Matches />
+                        <Games />
                       </ProtectedRoute>
                     }
                   />
                   <Route
-                    path="/match-details/:matchDayId"
+                    path="/game-details/:matchDayId"
                     element={
                       <ProtectedRoute>
-                        <MatchDetail />
+                        <GameDetail />
                       </ProtectedRoute>
                     }
                   />
