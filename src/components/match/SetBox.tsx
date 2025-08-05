@@ -21,6 +21,7 @@ interface SetBoxProps {
     teamBScore: number
   ) => void;
   isLarge?: boolean;
+  isEditingAllowed?: boolean;
 }
 
 const SetBox: React.FC<SetBoxProps> = ({
@@ -29,6 +30,7 @@ const SetBox: React.FC<SetBoxProps> = ({
   teamBScore = null,
   onScoreUpdate,
   isLarge = false,
+  isEditingAllowed = true,
 }) => {
   const [localTeamAScore, setLocalTeamAScore] = useState<number>(
     teamAScore || 0
@@ -133,61 +135,65 @@ const SetBox: React.FC<SetBoxProps> = ({
 
       <p className="text-sm text-center">Team A vs. Team B</p>
 
-      <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
-        <DialogTrigger asChild>
-          <button className="absolute top-2 right-2 p-1 hover:bg-black/10 rounded-md transition-colors">
-            <Pencil className="h-5 w-5" />
-          </button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center">
-              Update Set {setNumber} Score
-            </DialogTitle>
-          </DialogHeader>
+      {isEditingAllowed && (
+        <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
+          <DialogTrigger asChild>
+            <button className="absolute top-2 right-2 p-1 hover:bg-black/10 rounded-md transition-colors">
+              <Pencil className="h-5 w-5" />
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-center">
+                Update Set {setNumber} Score
+              </DialogTitle>
+            </DialogHeader>
 
-          <div className="py-6">
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="text-center">
-                <p className="text-sm font-medium mb-2 text-red-500">Team A</p>
-                <input
-                  ref={teamAInputRef}
-                  type="number"
-                  min="0"
-                  value={localTeamAScore}
-                  onChange={(e) =>
-                    setLocalTeamAScore(parseInt(e.target.value) || 0)
-                  }
-                  onKeyDown={handleKeyDown}
-                  className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500"
-                />
+            <div className="py-6">
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <div className="text-center">
+                  <p className="text-sm font-medium mb-2 text-red-500">
+                    Team A
+                  </p>
+                  <input
+                    ref={teamAInputRef}
+                    type="number"
+                    min="0"
+                    value={localTeamAScore}
+                    onChange={(e) =>
+                      setLocalTeamAScore(parseInt(e.target.value) || 0)
+                    }
+                    onKeyDown={handleKeyDown}
+                    className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500"
+                  />
+                </div>
+
+                <div className="text-2xl font-medium self-end">vs.</div>
+
+                <div className="text-center">
+                  <p className="text-sm font-medium mb-2 text-emerald-500">
+                    Team B
+                  </p>
+                  <input
+                    type="number"
+                    min="0"
+                    value={localTeamBScore}
+                    onChange={(e) =>
+                      setLocalTeamBScore(parseInt(e.target.value) || 0)
+                    }
+                    onKeyDown={handleKeyDown}
+                    className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500"
+                  />
+                </div>
               </div>
 
-              <div className="text-2xl font-medium self-end">vs.</div>
-
-              <div className="text-center">
-                <p className="text-sm font-medium mb-2 text-emerald-500">
-                  Team B
-                </p>
-                <input
-                  type="number"
-                  min="0"
-                  value={localTeamBScore}
-                  onChange={(e) =>
-                    setLocalTeamBScore(parseInt(e.target.value) || 0)
-                  }
-                  onKeyDown={handleKeyDown}
-                  className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500"
-                />
+              <div className="flex justify-center">
+                <Button onClick={handleSubmit}>Submit</Button>
               </div>
             </div>
-
-            <div className="flex justify-center">
-              <Button onClick={handleSubmit}>Submit</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

@@ -42,6 +42,21 @@ interface MatchDayData {
   game_players: GamePlayerData[];
 }
 
+// Helper function to check if game can still be edited (within 1 day)
+const canEditGame = (gameDate: string | Date): boolean => {
+  const game = new Date(gameDate);
+  const now = new Date();
+
+  // Calculate the difference in milliseconds
+  const timeDiff = now.getTime() - game.getTime();
+
+  // Convert to days (24 hours = 86400000 milliseconds)
+  const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+
+  // Allow editing for 1 full day after the game (so < 1 day means still editable)
+  return daysDiff < 1;
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -162,10 +177,10 @@ const Dashboard = () => {
   }, [memberCount]);
 
   useEffect(() => {
-    console.log("=== USER OBJECT DEBUG ===");
-    console.log("Full user object:", user);
-    console.log("user.role:", user?.role);
-    console.log("typeof user.role:", typeof user?.role);
+    // console. log(("=== USER OBJECT DEBUG ===");
+    // console. log(("Full user object:", user);
+    // console. log(("user.role:", user?.role);
+    // console. log(("typeof user.role:", typeof user?.role);
   }, [user]);
 
   // Query to fetch the latest game with separate queries to avoid relation issues
@@ -174,8 +189,8 @@ const Dashboard = () => {
     queryFn: async (): Promise<MatchDayData | null> => {
       if (!userClubId) return null;
 
-      console.log("=== FETCHING LATEST GAME ===");
-      console.log("Club ID:", userClubId);
+      // console. log(("=== FETCHING LATEST GAME ===");
+      // console. log(("Club ID:", userClubId);
 
       // First, get the latest match day
       // Get the latest match day that actually has players
@@ -209,7 +224,7 @@ const Dashboard = () => {
       let matchDay = null;
       if (allMatchDays && allMatchDays.length > 0) {
         for (const md of allMatchDays) {
-          console.log("Checking match day:", md.id);
+          // console. log(("Checking match day:", md.id);
 
           // Quick check if this match day has game players
           const { data: playerCheck } = await supabase
@@ -222,7 +237,7 @@ const Dashboard = () => {
 
           if (playerCheck && playerCheck.length > 0) {
             matchDay = md;
-            console.log("Using match day:", matchDay.id);
+            // console. log(("Using match day:", matchDay.id);
             break;
           }
         }
@@ -237,7 +252,7 @@ const Dashboard = () => {
         .select("player_id, team_name, position_played")
         .eq("match_day_id", matchDay.id);
 
-      console.log("Raw game players:", gamePlayersRaw);
+      // console. log(("Raw game players:", gamePlayersRaw);
 
       if (gamePlayersError) {
         console.error("Game players error:", gamePlayersError);
@@ -249,7 +264,7 @@ const Dashboard = () => {
         // Get player IDs
         const playerIds = gamePlayersRaw.map((gp) => gp.player_id);
 
-        console.log("Player IDs to fetch:", playerIds);
+        // console. log(("Player IDs to fetch:", playerIds);
 
         // Then get the player details
         const { data: playersData, error: playersError } = await supabase
@@ -257,7 +272,7 @@ const Dashboard = () => {
           .select("id, first_name, last_name")
           .in("id", playerIds);
 
-        console.log("Players data:", playersData);
+        // console. log(("Players data:", playersData);
 
         if (playersError) {
           console.error("Players error:", playersError);
@@ -370,8 +385,8 @@ const Dashboard = () => {
   let teamBPlayers: Array<{ id: string; name: string; position: string }> = [];
 
   if (latestGame?.game_players) {
-    console.log("=== GAME PLAYERS DEBUG ===");
-    console.log("Game players:", latestGame.game_players);
+    // console. log(("=== GAME PLAYERS DEBUG ===");
+    // console. log(("Game players:", latestGame.game_players);
 
     teamAPlayers = latestGame.game_players
       .filter((gp) => gp.team_name === "team_a")
@@ -389,9 +404,14 @@ const Dashboard = () => {
         position: gp.position_name || "No Position",
       }));
 
-    console.log("Team A players:", teamAPlayers);
-    console.log("Team B players:", teamBPlayers);
+    // console. log(("Team A players:", teamAPlayers);
+    // console. log(("Team B players:", teamBPlayers);
   }
+
+  // Check if editing is still allowed (within 1 day of game date)
+  const isEditingAllowed = latestGame?.date
+    ? canEditGame(latestGame.date)
+    : false;
 
   // Organize match scores
   const scores = latestGame.matches.map((match) => ({
@@ -432,12 +452,12 @@ const Dashboard = () => {
     teamAScore: number,
     teamBScore: number
   ) => {
-    console.log("=== SCORE UPDATE DEBUG ===");
-    console.log("Set Number:", setNumber);
-    console.log("Team A Score:", teamAScore);
-    console.log("Team B Score:", teamBScore);
-    console.log("Latest Game:", latestGame);
-    console.log("All Matches:", latestGame?.matches);
+    // console. log(("=== SCORE UPDATE DEBUG ===");
+    // console. log(("Set Number:", setNumber);
+    // console. log(("Team A Score:", teamAScore);
+    // console. log(("Team B Score:", teamBScore);
+    // console. log(("Latest Game:", latestGame);
+    // console. log(("All Matches:", latestGame?.matches);
 
     try {
       // Find the match to update
@@ -445,14 +465,14 @@ const Dashboard = () => {
         (m) => m.game_number === setNumber
       );
 
-      console.log("Match to update:", matchToUpdate);
+      // console. log(("Match to update:", matchToUpdate);
 
       if (!matchToUpdate) {
         console.error("No match found for set number:", setNumber);
         return;
       }
 
-      console.log("Updating match with ID:", matchToUpdate.id);
+      // console. log(("Updating match with ID:", matchToUpdate.id);
 
       // Update score in the database
       const { data, error } = await supabase
@@ -464,22 +484,22 @@ const Dashboard = () => {
         .eq("id", matchToUpdate.id)
         .select(); // Add select() to see what was updated
 
-      console.log("Supabase update result:", { data, error });
+      // console. log(("Supabase update result:", { data, error });
 
       if (error) {
         console.error("Error updating match score:", error);
         return;
       }
 
-      console.log("Successfully updated match:", data);
+      // console. log(("Successfully updated match:", data);
 
       // Invalidate and refetch the latest game query
-      console.log("Invalidating queries for userClubId:", userClubId);
+      // console. log(("Invalidating queries for userClubId:", userClubId);
       await queryClient.invalidateQueries({
         queryKey: ["latestGame", userClubId],
       });
 
-      console.log("Queries invalidated successfully");
+      // console. log(("Queries invalidated successfully");
     } catch (error) {
       console.error("Error in handleSetScoreUpdate:", error);
     }
@@ -507,12 +527,12 @@ const Dashboard = () => {
     : "Last Game Overview";
 
   const handleEditTeamsClick = () => {
-    console.log("=== EDIT TEAMS BUTTON CLICKED ===");
-    console.log("userClubId:", userClubId);
-    console.log("latestGame:", latestGame);
-    console.log("latestGame.id:", latestGame?.id);
-    console.log("userRole:", userRole);
-    console.log("clubDetails:", clubDetails);
+    // console. log(("=== EDIT TEAMS BUTTON CLICKED ===");
+    // console. log(("userClubId:", userClubId);
+    // console. log(("latestGame:", latestGame);
+    // console. log(("latestGame.id:", latestGame?.id);
+    // console. log(("userRole:", userRole);
+    // console. log(("clubDetails:", clubDetails);
 
     if (!userClubId) {
       console.error("❌ No userClubId found!");
@@ -525,7 +545,7 @@ const Dashboard = () => {
     }
 
     const targetPath = `/edit-game/${userClubId}/${latestGame.id}`;
-    console.log("🚀 Navigating to:", targetPath);
+    // console. log(("🚀 Navigating to:", targetPath);
 
     navigate(targetPath);
   };
@@ -542,12 +562,14 @@ const Dashboard = () => {
               <h1 className="text-4xl font-serif mb-2">{headingText}</h1>
               <p className="text-gray-600">{formatDate(matchDate)}</p>
             </div>
-            <button
-              className="flex items-center gap-1 text-sm font-medium border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-50"
-              onClick={handleEditTeamsClick}
-            >
-              <Pencil className="h-4 w-4" /> Edit Teams
-            </button>
+            {isEditingAllowed && (
+              <button
+                className="flex items-center gap-1 text-sm font-medium border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-50"
+                onClick={handleEditTeamsClick}
+              >
+                <Pencil className="h-4 w-4" /> Edit Teams
+              </button>
+            )}
           </div>
 
           {/* Main Content */}
@@ -635,6 +657,7 @@ const Dashboard = () => {
                 }
                 onScoreUpdate={handleSetScoreUpdate}
                 isLarge={true}
+                isEditingAllowed={isEditingAllowed}
               />
             </div>
 
@@ -650,6 +673,7 @@ const Dashboard = () => {
                   scores.find((score) => score.gameNumber === 2)?.teamB
                 }
                 onScoreUpdate={handleSetScoreUpdate}
+                isEditingAllowed={isEditingAllowed}
               />
             </div>
 
@@ -665,6 +689,7 @@ const Dashboard = () => {
                   scores.find((score) => score.gameNumber === 3)?.teamB
                 }
                 onScoreUpdate={handleSetScoreUpdate}
+                isEditingAllowed={isEditingAllowed}
               />
             </div>
 
@@ -680,6 +705,7 @@ const Dashboard = () => {
                   scores.find((score) => score.gameNumber === 4)?.teamB
                 }
                 onScoreUpdate={handleSetScoreUpdate}
+                isEditingAllowed={isEditingAllowed}
               />
             </div>
 
@@ -695,6 +721,7 @@ const Dashboard = () => {
                   scores.find((score) => score.gameNumber === 5)?.teamB
                 }
                 onScoreUpdate={handleSetScoreUpdate}
+                isEditingAllowed={isEditingAllowed}
               />
             </div>
           </div>
