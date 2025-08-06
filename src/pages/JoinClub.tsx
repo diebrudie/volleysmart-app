@@ -253,7 +253,7 @@ const JoinClub = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="clubId">Please insert a Club ID</Label>
                 <Input
                   id="clubId"

@@ -68,7 +68,7 @@ const ProtectedRoute = ({
     location.pathname,
   ]);
 
-  // Show loading spinner while checking auth state
+  // Show loading while checking auth state OR onboarding
   if (isLoading || isCheckingOnboarding) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -78,8 +78,8 @@ const ProtectedRoute = ({
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
+  // Redirect to login ONLY if definitely not authenticated and not loading
+  if (!isLoading && !isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

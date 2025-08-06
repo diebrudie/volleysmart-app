@@ -40,6 +40,11 @@ interface MemberWithPlayer {
 const Members = () => {
   //console. log("🚨 MEMBERS COMPONENT IS RENDERING!");
   //console. log("🚨 Members URL:", window.location.pathname);
+  console.log(
+    "👥 Members component rendering, current URL:",
+    window.location.pathname
+  );
+
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const { clubId: contextClubId, setClubId } = useClub();
   const navigate = useNavigate();
@@ -53,14 +58,6 @@ const Members = () => {
       setClubId(urlClubId);
     }
   }, [urlClubId, contextClubId, setClubId]);
-
-  // Check if clubId exists and redirect if not
-  useEffect(() => {
-    if (!clubId) {
-      console.warn("❌ No clubId provided to members query.");
-      navigate("/clubs");
-    }
-  }, [clubId, navigate]);
 
   // Query to fetch club members
   const {

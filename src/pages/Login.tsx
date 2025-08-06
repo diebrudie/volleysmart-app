@@ -39,10 +39,14 @@ const Login = () => {
   // Get the intended destination from location state, or default to dashboard
   const from = location.state?.from?.pathname || "/dashboard";
 
-  // Redirect if already authenticated, check if user needs onboarding first
+  // Only redirect if we're actually ON the login page and user becomes authenticated
   useEffect(() => {
-    if (isAuthenticated && !authLoading && user) {
-      //console. log('User is authenticated, checking profile for redirect:', user);
+    if (
+      isAuthenticated &&
+      !authLoading &&
+      user &&
+      location.pathname === "/login"
+    ) {
       setIsCheckingProfile(true);
 
       // Check if user has completed player profile (onboarding)
@@ -54,11 +58,8 @@ const Login = () => {
             .eq("user_id", user.id)
             .single();
 
-          //console. log('Player profile check result:', { player, error });
-
           if (error || !player) {
             // User hasn't completed onboarding, redirect to onboarding
-            //console. log('Redirecting to onboarding');
             navigate("/players/onboarding", { replace: true });
           } else {
             // User has completed onboarding, check club membership count
@@ -67,31 +68,21 @@ const Login = () => {
               .select("club_id")
               .eq("user_id", user.id);
 
-            //console. log('Club membership check result:', { clubMembers, clubError });
-
             if (clubError) {
               console.error("Error checking club membership:", clubError);
-              // Default to start page on error
               navigate("/start", { replace: true });
               return;
             }
 
             if (!clubMembers || clubMembers.length === 0) {
-              // User doesn't belong to any club, redirect to start page
-              //console. log('No club membership, redirecting to start');
               navigate("/start", { replace: true });
             } else if (clubMembers.length === 1) {
-              // User belongs to exactly one club, redirect to that club's dashboard
-              //console. log('Single club membership, redirecting to dashboard:', clubMembers[0].club_id);
               navigate(`/dashboard/${clubMembers[0].club_id}`, {
                 replace: true,
               });
             } else {
-              // User belongs to multiple clubs, check for last visited club
+              // Multiple clubs - check last visited
               const lastVisitedClubId = localStorage.getItem("lastVisitedClub");
-              //console. log('Multiple clubs, last visited:', lastVisitedClubId);
-
-              // Verify the last visited club is still in user's club list
               const isLastClubValid =
                 lastVisitedClubId &&
                 clubMembers.some(
@@ -99,19 +90,14 @@ const Login = () => {
                 );
 
               if (isLastClubValid) {
-                // Redirect to last visited club dashboard
-                //console. log('Redirecting to last visited club:', lastVisitedClubId);
                 navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
               } else {
-                // No valid last visited club, redirect to clubs overview page
-                //console. log('No valid last club, redirecting to clubs overview');
                 navigate("/clubs", { replace: true });
               }
             }
           }
         } catch (error) {
           console.error("Error checking user profile:", error);
-          // Default to onboarding on error to be safe
           navigate("/players/onboarding", { replace: true });
         } finally {
           setIsCheckingProfile(false);
@@ -120,7 +106,7 @@ const Login = () => {
 
       checkUserProfile();
     }
-  }, [isAuthenticated, authLoading, navigate, from, user]);
+  }, [isAuthenticated, authLoading, navigate, user, location.pathname]); // Added location.pathname
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

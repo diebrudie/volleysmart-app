@@ -86,8 +86,8 @@ const GameDetail = () => {
     queryFn: async (): Promise<MatchDayData> => {
       if (!matchDayId) throw new Error("Match day ID is required");
 
-      console.log("=== FETCHING MATCH DAY DETAILS ===");
-      console.log("Match Day ID:", matchDayId);
+      // console. log("=== FETCHING MATCH DAY DETAILS ===");
+      // console. log("Match Day ID:", matchDayId);
 
       // Get match day with matches and club info
       const { data: matchDay, error: matchDayError } = await supabase
@@ -164,7 +164,7 @@ const GameDetail = () => {
         game_players: gamePlayers,
       };
 
-      console.log("Match day data:", result);
+      // console. log("Match day data:", result);
       return result;
     },
     enabled: !!matchDayId,
@@ -307,8 +307,8 @@ const GameDetail = () => {
     if (!matchData || !user?.id) return;
 
     try {
-      console.log("=== CREATING GAME WITH SAME TEAMS ===");
-      console.log("Original match data:", matchData);
+      // console. log("=== CREATING GAME WITH SAME TEAMS ===");
+      // console. log("Original match data:", matchData);
 
       // 1. Create a new match day for today
       const { data: matchDay, error: matchDayError } = await supabase
@@ -327,7 +327,7 @@ const GameDetail = () => {
         throw matchDayError;
       }
 
-      console.log("Created new match day:", matchDay);
+      // console. log("Created new match day:", matchDay);
 
       // 2. Create 5 matches for the 5 sets (all starting at 0-0)
       const matches = Array.from({ length: 5 }, (_, index) => ({
@@ -348,7 +348,7 @@ const GameDetail = () => {
         throw matchesError;
       }
 
-      console.log("Created matches:", matchesData);
+      // console. log("Created matches:", matchesData);
 
       // 3. Copy the exact same team composition from the original game
       const gamePlayersToInsert = matchData.game_players.map(
@@ -362,7 +362,7 @@ const GameDetail = () => {
         })
       );
 
-      console.log("Game players to insert:", gamePlayersToInsert);
+      // console. log("Game players to insert:", gamePlayersToInsert);
 
       const { error: gamePlayersError } = await supabase
         .from("game_players")
@@ -375,7 +375,7 @@ const GameDetail = () => {
         );
       }
 
-      console.log("=== GAME CREATED SUCCESSFULLY ===");
+      // console. log("=== GAME CREATED SUCCESSFULLY ===");
 
       // 4. Invalidate queries to refresh the dashboard
       await queryClient.invalidateQueries({

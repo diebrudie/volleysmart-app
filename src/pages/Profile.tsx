@@ -33,6 +33,7 @@ interface PlayerProfile {
   last_name: string;
   birthday: string | null;
   gender: string;
+  height_cm: number | null;
   bio: string | null;
   image_url: string | null;
   skill_rating: number | null;
@@ -76,6 +77,7 @@ const Profile = () => {
       profile.last_name !== originalProfile.last_name ||
       profile.birthday !== originalProfile.birthday ||
       profile.gender !== originalProfile.gender ||
+      profile.height_cm !== originalProfile.height_cm ||
       profile.bio !== originalProfile.bio ||
       imageFile !== null
     );
@@ -242,6 +244,7 @@ const Profile = () => {
           last_name: profile.last_name,
           birthday: profile.birthday,
           gender: profile.gender,
+          height_cm: profile.height_cm,
           bio: profile.bio,
           image_url: imageUrl,
         })
@@ -505,7 +508,7 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="birthday">Birthday</Label>
                     <Input
@@ -515,6 +518,26 @@ const Profile = () => {
                       onChange={(e) =>
                         setProfile({ ...profile, birthday: e.target.value })
                       }
+                      disabled={!isOwnProfile}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="height">Height (cm)</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      min="100"
+                      max="250"
+                      value={profile.height_cm || ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          height_cm: e.target.value
+                            ? parseInt(e.target.value)
+                            : null,
+                        })
+                      }
+                      placeholder="e.g. 175"
                       disabled={!isOwnProfile}
                     />
                   </div>

@@ -52,6 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  console.log("🏐 AuthContext rendering, user:", user);
+
   // Initialize auth state
   useEffect(() => {
     // Set up auth state listener FIRST

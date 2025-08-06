@@ -39,77 +39,21 @@ import Clubs from "./pages/Clubs";
 
 const queryClient = new QueryClient();
 
-// Home route with authentication check
 const HomeRoute = () => {
-  const { isAuthenticated, isLoading, user } = useAuth();
-  const { clubId } = useClub();
-  const [isCheckingClub, setIsCheckingClub] = useState(true);
+  const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (isAuthenticated && !isLoading && user) {
-      // Check localStorage for last visited club
-      const lastClub = localStorage.getItem("lastVisitedClub");
-      //console. log("Last visited club:", lastClub);
-
-      if (lastClub) {
-        // Verify user still has access to this club
-        const verifyClubAccess = async () => {
-          try {
-            const { data } = await supabase
-              .from("club_members")
-              .select("club_id")
-              .eq("club_id", lastClub)
-              .eq("user_id", isAuthenticated ? user?.id : null)
-              .single();
-
-            setIsCheckingClub(false);
-
-            if (data) {
-              // User has access, redirect to dashboard
-              window.location.href = `/dashboard/${lastClub}`;
-            } else {
-              // No access, go to clubs page
-              window.location.href = "/clubs";
-            }
-          } catch (error) {
-            console.error("Error verifying club access:", error);
-            setIsCheckingClub(false);
-            window.location.href = "/clubs";
-          }
-        };
-
-        verifyClubAccess();
-      } else {
-        // No last club, go to clubs page
-        setIsCheckingClub(false);
-        window.location.href = "/clubs";
-      }
-    } else if (!isAuthenticated && !isLoading) {
-      setIsCheckingClub(false);
-    }
-  }, [isAuthenticated, isLoading, user]);
-
-  // Show loading while checking
-  if (isLoading || (isAuthenticated && isCheckingClub)) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Redirecting...</div>
-      </div>
-    );
+  // Simple: just show Home page or redirect to clubs if authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/clubs" replace />;
   }
 
-  // Show home page for non-authenticated users
-  if (!isAuthenticated) {
-    return <Home />;
-  }
-
-  // Fallback (shouldn't reach here)
   return <Home />;
 };
 
 const App = () => {
   //console. log("🚨 APP COMPONENT RENDERING");
   //console. log("🚨 CURRENT URL:", window.location.pathname);
+  console.log("🔄 App rendering, current URL:", window.location.pathname);
 
   useEffect(() => {
     // Intercept and suppress bucket creation attempts
