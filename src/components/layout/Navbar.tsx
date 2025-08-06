@@ -30,16 +30,19 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const { clubId, setClubId } = useClub();
-
-  //console. log("🔍 Navbar - clubId:", clubId);
-  //console. log("🔍 Navbar - localStorage club:", localStorage.getItem("lastVisitedClub"));
 
   const handleLogout = async () => {
     await logout();
@@ -71,11 +74,7 @@ const Navbar = () => {
           visible: isAuthenticated,
         },
       ]
-    : []; // ⬅️ Hide nav links until a club is selected
-
-  // Navigation items
-  //console. log("🔍 Navbar navItems - clubId:", clubId);
-  //console. log("🔍 Navbar navItems - navItems:", navItems);
+    : [];
 
   // Account dropdown items
   const accountItems = [
@@ -85,7 +84,7 @@ const Navbar = () => {
     user?.role === "admin" && { label: "Users", path: "/admin", icon: Users },
   ].filter(Boolean);
 
-  // Desktop navbar
+  // Desktop navbar (unchanged)
   const DesktopNav = () => (
     <header className="bg-white shadow-sm">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
@@ -174,12 +173,12 @@ const Navbar = () => {
     </header>
   );
 
-  // Mobile navbar
+  // Mobile navbar - Account dropdown REMOVED
   const MobileNav = () => (
     <header className="bg-white shadow-sm">
       <nav className="px-4 py-3 flex items-center justify-between">
         <Logo
-          size="md"
+          size="sm"
           linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"}
         />
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -188,32 +187,29 @@ const Navbar = () => {
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0">
+          <SheetContent side="top" className="w-full h-full p-0">
             <div className="flex flex-col h-full">
               <SheetHeader className="p-4 border-b">
-                <div className="flex justify-between items-center">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <div className="flex justify-start items-center">
                   <Logo
-                    size="md"
+                    size="sm"
                     linkTo={
                       isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"
                     }
                   />
-                  <SheetClose asChild>
-                    <Button variant="ghost" size="icon">
-                      <X className="h-6 w-6" />
-                    </Button>
-                  </SheetClose>
                 </div>
               </SheetHeader>
 
               <div className="flex flex-col flex-1 overflow-auto">
+                {/* Main Navigation Items */}
                 {navItems
                   .filter((item) => item.visible)
                   .map((item) => (
                     <SheetClose asChild key={item.path}>
                       <Link
                         to={item.path}
-                        className="px-4 py-3 text-base font-medium hover:bg-gray-50 text-center"
+                        className="px-4 py-4 text-lg font-medium hover:bg-gray-50 text-center border-b border-gray-100"
                         onClick={() => setIsOpen(false)}
                       >
                         {item.label}
@@ -221,41 +217,28 @@ const Navbar = () => {
                     </SheetClose>
                   ))}
 
-                {isAuthenticated && (
-                  <div className="mt-2">
-                    <div className="px-4 py-2 flex items-center">
-                      <span className="text-sm font-semibold">Account</span>
-                      <ChevronDown className="ml-1 h-4 w-4" />
-                    </div>
-                    {accountItems.map((item, index) => (
-                      <SheetClose asChild key={index}>
-                        <Link
-                          to={item.path}
-                          className="px-8 py-2 text-base flex items-center hover:bg-gray-50"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SheetClose>
-                    ))}
-                  </div>
-                )}
+                {/* Account Items - Now as regular menu items */}
+                {isAuthenticated &&
+                  accountItems.map((item, index) => (
+                    <SheetClose asChild key={`account-${index}`}>
+                      <Link
+                        to={item.path}
+                        className="px-4 py-4 text-lg font-medium hover:bg-gray-50 text-center border-b border-gray-100 flex items-center justify-center"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SheetClose>
+                  ))}
               </div>
 
               <div className="p-4 border-t mt-auto">
                 {isAuthenticated ? (
                   <>
-                    <Button
-                      variant="outline"
-                      className="w-full mb-3"
-                      onClick={handleLogout}
-                    >
-                      Log Out
-                    </Button>
                     <SheetClose asChild>
                       <Button
-                        className="w-full bg-[#243F8D]"
+                        className="w-full mb-3 bg-[#243F8D]"
                         onClick={() => {
                           setIsOpen(false);
                           if (clubId) {
@@ -268,6 +251,16 @@ const Navbar = () => {
                         Create Game
                       </Button>
                     </SheetClose>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setIsOpen(false);
+                        handleLogout();
+                      }}
+                    >
+                      Log Out
+                    </Button>
                   </>
                 ) : (
                   <div className="space-y-3">

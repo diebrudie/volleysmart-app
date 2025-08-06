@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -73,7 +72,7 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 225 80% 33%; /* Match primary */
-    
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 225 80% 33%; /* Match primary */
@@ -99,26 +98,38 @@
   .volleyball-gradient {
     @apply bg-gradient-to-br from-volleyball-primary to-volleyball-secondary;
   }
-  
+
   .section-container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12;
   }
-  
+
   /* Add hover effect for navbar links with the specified color */
   .navbar-link {
     @apply border-b border-transparent hover:border-[#243F8D] transition-colors;
   }
-  
+
   /* Set box styles */
   .set-box {
     @apply rounded-md p-6 flex flex-col items-center relative;
   }
-  
+
   .set-box--grey {
     @apply bg-[#D8D6D3];
   }
-  
+
   .set-box--yellow {
     @apply bg-[#FBBE24];
   }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
