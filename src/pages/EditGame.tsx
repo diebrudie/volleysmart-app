@@ -79,6 +79,15 @@ interface MatchDayData {
   game_players: GamePlayerData[];
 }
 
+interface PlayerWithPosition {
+  id: string;
+  skill_rating: number;
+  gender: string;
+  position: string;
+  isExtraPlayer: boolean;
+  name?: string;
+}
+
 // Droppable Team Container Component
 const DroppableTeam = ({
   teamId,
@@ -412,18 +421,122 @@ const EditGame = () => {
   };
 
   const handleShuffleTeams = () => {
-    // Combine all players and shuffle them randomly into teams
+    // Combine all players from both teams
     const allPlayers = [...teamAPlayers, ...teamBPlayers];
-    const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
 
-    const midPoint = Math.ceil(shuffled.length / 2);
-    setTeamAPlayers(shuffled.slice(0, midPoint));
-    setTeamBPlayers(shuffled.slice(midPoint));
+    // Generate balanced teams using the same smart algorithm as NewGame
+    const generateBalancedTeams = () => {
+      // Prepare all players with their positions and skills
+      const allPlayersWithPositions = allPlayers.map((player) => ({
+        id: player.id,
+        skill_rating: player.skillRating,
+        gender: "unknown", // We don't have gender data in EditGame, so treat as neutral
+        position:
+          player.preferredPosition === "No Position"
+            ? "Outside Hitter"
+            : player.preferredPosition,
+        isExtraPlayer: false,
+        name: player.name,
+      }));
+
+      // Group players by position
+      const playersByPosition: Record<string, typeof allPlayersWithPositions> =
+        {};
+      allPlayersWithPositions.forEach((player) => {
+        if (!playersByPosition[player.position]) {
+          playersByPosition[player.position] = [];
+        }
+        playersByPosition[player.position].push(player);
+      });
+
+      // Sort players within each position by skill (highest first)
+      Object.keys(playersByPosition).forEach((position) => {
+        playersByPosition[position].sort(
+          (a, b) => b.skill_rating - a.skill_rating
+        );
+      });
+
+      // Distribute positions using snake draft method
+      const teamA: typeof allPlayersWithPositions = [];
+      const teamB: typeof allPlayersWithPositions = [];
+
+      Object.entries(playersByPosition).forEach(
+        ([position, positionPlayers]) => {
+          positionPlayers.forEach((player, index) => {
+            // Snake draft: alternate high-skill players between teams
+            const teamACount = teamA.filter(
+              (p) => p.position === position
+            ).length;
+            const teamBCount = teamB.filter(
+              (p) => p.position === position
+            ).length;
+
+            if (index % 2 === 0) {
+              if (teamACount <= teamBCount) {
+                teamA.push(player);
+              } else {
+                teamB.push(player);
+              }
+            } else {
+              if (teamBCount <= teamACount) {
+                teamB.push(player);
+              } else {
+                teamA.push(player);
+              }
+            }
+          });
+        }
+      );
+
+      // Balance teams by size if needed
+      while (Math.abs(teamA.length - teamB.length) > 1) {
+        if (teamA.length > teamB.length) {
+          const playerToMove = teamA.pop();
+          if (playerToMove) teamB.push(playerToMove);
+        } else {
+          const playerToMove = teamB.pop();
+          if (playerToMove) teamA.push(playerToMove);
+        }
+      }
+
+      // Convert back to EditPlayer format
+      const newTeamA = teamA.map((player) => {
+        const originalPlayer = allPlayers.find((p) => p.id === player.id);
+        return (
+          originalPlayer || {
+            id: player.id,
+            name: player.name || "Unknown Player",
+            preferredPosition: player.position,
+            skillRating: player.skill_rating,
+          }
+        );
+      });
+
+      const newTeamB = teamB.map((player) => {
+        const originalPlayer = allPlayers.find((p) => p.id === player.id);
+        return (
+          originalPlayer || {
+            id: player.id,
+            name: player.name || "Unknown Player",
+            preferredPosition: player.position,
+            skillRating: player.skill_rating,
+          }
+        );
+      });
+
+      return { newTeamA, newTeamB };
+    };
+
+    const { newTeamA, newTeamB } = generateBalancedTeams();
+
+    setTeamAPlayers(newTeamA);
+    setTeamBPlayers(newTeamB);
 
     toast({
-      title: "Teams shuffled",
+      title: "Teams balanced",
       description:
-        "Teams have been randomly reorganized. Click Save to apply changes.",
+        "Teams have been reorganized for optimal balance. Click Save to apply changes.",
+      duration: 1000,
     });
   };
 
