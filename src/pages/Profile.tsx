@@ -424,7 +424,7 @@ const Profile = () => {
         <Tabs defaultValue="personal" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="personal">Personal Info</TabsTrigger>
-            <TabsTrigger value="skills">Volleyball Skills</TabsTrigger>
+            <TabsTrigger value="skills">Volleyball Info</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal">
@@ -593,16 +593,32 @@ const Profile = () => {
           <TabsContent value="skills">
             <Card>
               <CardHeader>
-                <CardTitle>Volleyball Skills</CardTitle>
+                <CardTitle>Volleyball Information</CardTitle>
                 <CardDescription>
                   {isOwnProfile
                     ? "Update your volleyball skills and preferences"
-                    : "Volleyball skills"}
+                    : "Volleyball skills and preferences"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
-                  <Label>Main Position</Label>
+                {profile.skill_rating && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="text-center">
+                      <Label className="text-sm font-medium text-gray-600">
+                        Overall Skill Level
+                      </Label>
+                      <div className="text-3xl font-bold text-blue-600 mt-1">
+                        {profile.skill_rating}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        out of 100
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label className="text-base font-medium">Main Position</Label>
                   <Select
                     value={
                       getPrimaryPosition()
@@ -613,7 +629,8 @@ const Profile = () => {
                     onValueChange={updatePrimaryPosition}
                     disabled={!isOwnProfile}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12">
+                      {" "}
                       <SelectValue placeholder="Select your main position" />
                     </SelectTrigger>
                     <SelectContent>
@@ -626,9 +643,12 @@ const Profile = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <Label>Secondary Positions</Label>
-                  <div className="mt-2 space-y-2">
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">
+                    Secondary Positions
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {" "}
                     {positions.map((position) => {
                       const isPrimary = playerPositions.some(
                         (p) => p.position_id === position.id && p.is_primary
@@ -640,7 +660,13 @@ const Profile = () => {
                       return (
                         <div
                           key={position.id}
-                          className="flex items-center space-x-2"
+                          className={`flex items-center space-x-3 p-3 border rounded-lg transition-colors ${
+                            isPrimary
+                              ? "bg-gray-50 border-gray-200"
+                              : isSecondary
+                              ? "bg-blue-50 border-blue-200"
+                              : "bg-white border-gray-200 hover:border-gray-300"
+                          }`} /* ✅ Better styling with visual states */
                         >
                           <input
                             type="checkbox"
@@ -653,47 +679,35 @@ const Profile = () => {
                                 e.target.checked
                               )
                             }
-                            className="rounded"
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" /* ✅ Better checkbox styling */
                           />
                           <Label
                             htmlFor={`secondary-${position.id}`}
-                            className={isPrimary ? "text-gray-400" : ""}
+                            className={`flex-1 text-sm font-medium cursor-pointer ${
+                              isPrimary ? "text-gray-400" : "text-gray-700"
+                            }`} /* ✅ Improved text styling */
                           >
-                            {position.name} {isPrimary && "(Primary)"}
+                            {position.name}
+                            {isPrimary && (
+                              <span className="ml-2 text-xs bg-gray-200 px-2 py-1 rounded-full">
+                                Primary
+                              </span>
+                            )}
                           </Label>
                         </div>
                       );
                     })}
                   </div>
-                </div>
-
-                <div>
-                  <Label>Skill Level (1-10)</Label>
-                  <RadioGroup
-                    value={profile.skill_rating?.toString() || ""}
-                    onValueChange={(value) =>
-                      setProfile({ ...profile, skill_rating: parseInt(value) })
-                    }
-                    disabled={!isOwnProfile}
-                    className="flex flex-wrap gap-4 mt-2"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
-                      <div key={level} className="flex items-center space-x-2">
-                        <RadioGroupItem
-                          value={level.toString()}
-                          id={`level-${level}`}
-                        />
-                        <Label htmlFor={`level-${level}`}>{level}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Select additional positions you can play effectively
+                  </p>
                 </div>
 
                 {isOwnProfile && (
                   <Button
                     onClick={handleSkillsSave}
                     disabled={saving || !hasSkillsChanges()}
-                    className="w-full"
+                    className="w-full h-12" /* ✅ Larger button */
                   >
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>
