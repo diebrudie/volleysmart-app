@@ -11,9 +11,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
         primary:
-          "bg-[#243F8D] text-white hover:bg-[#1e3a8a] dark:bg-blue-600 dark:hover:bg-blue-700 focus-visible:ring-blue-500",
+          "bg-[#243F8D] text-white hover:bg-[#1a365d] dark:bg-blue-600 dark:hover:bg-blue-700 focus-visible:ring-blue-500",
         secondary:
-          "bg-[#FBBE24] text-[#243F8D] hover:bg-[#f59e0b] dark:bg-amber-500 dark:hover:bg-amber-600 dark:text-blue-900 focus-visible:ring-amber-500",
+          "bg-[#FBBE24] text-black hover:bg-[#f59e0b] dark:bg-amber-500 dark:hover:bg-amber-600 dark:text-white focus-visible:ring-amber-500",
         tertiary:
           "border border-[#243F8D] text-[#243F8D] bg-transparent hover:bg-[#243F8D] hover:text-white dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white focus-visible:ring-blue-500",
         action:

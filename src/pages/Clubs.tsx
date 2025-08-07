@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, UserPlus, UsersRound } from "lucide-react";
+import { MoreVertical, UserPlus, UsersRound, Edit, Trash } from "lucide-react";
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,14 +45,18 @@ const Clubs = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedClub, setSelectedClub] = useState<ClubWithDetails | null>(null);
+  const [selectedClub, setSelectedClub] = useState<ClubWithDetails | null>(
+    null
+  );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [clubToDelete, setClubToDelete] = useState<ClubWithDetails | null>(null);
+  const [clubToDelete, setClubToDelete] = useState<ClubWithDetails | null>(
+    null
+  );
   const { setClubId } = useClub();
 
-  useEffect(() => { 
-    const lastClub = localStorage.getItem('lastVisitedClub');
+  useEffect(() => {
+    const lastClub = localStorage.getItem("lastVisitedClub");
     if (lastClub) {
       setClubId(lastClub);
     }
@@ -60,14 +64,15 @@ const Clubs = () => {
 
   // Query to fetch all clubs user is a member of
   const { data: userClubs, isLoading } = useQuery({
-    queryKey: ['userClubs', user?.id],
+    queryKey: ["userClubs", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
 
       // Get clubs where user is a member
       const { data: memberClubs, error: memberError } = await supabase
-        .from('club_members')
-        .select(`
+        .from("club_members")
+        .select(
+          `
           club_id,
           role,
           clubs (
@@ -78,23 +83,26 @@ const Clubs = () => {
             created_by,
             description
           )
-        `)
-        .eq('user_id', user.id);
+        `
+        )
+        .eq("user_id", user.id);
 
       if (memberError) throw memberError;
 
       // Get clubs created by user
       const { data: createdClubs, error: createdError } = await supabase
-        .from('clubs')
-        .select(`
+        .from("clubs")
+        .select(
+          `
           id,
           name,
           image_url,
           created_at,
           created_by,
           description
-        `)
-        .eq('created_by', user.id);
+        `
+        )
+        .eq("created_by", user.id);
 
       if (createdError) throw createdError;
 
@@ -102,7 +110,7 @@ const Clubs = () => {
       const allClubs: ClubWithDetails[] = [];
 
       // Add member clubs
-      memberClubs?.forEach(member => {
+      memberClubs?.forEach((member) => {
         if (member.clubs) {
           allClubs.push({
             id: member.clubs.id,
@@ -110,42 +118,42 @@ const Clubs = () => {
             image_url: member.clubs.image_url,
             created_at: member.clubs.created_at,
             created_by: member.clubs.created_by,
-            creator_first_name: '',
-            creator_last_name: '',
+            creator_first_name: "",
+            creator_last_name: "",
             role: member.role,
-            description: member.clubs.description
+            description: member.clubs.description,
           });
         }
       });
 
       // Add created clubs (if not already included)
-      createdClubs?.forEach(club => {
-        if (!allClubs.find(c => c.id === club.id)) {
+      createdClubs?.forEach((club) => {
+        if (!allClubs.find((c) => c.id === club.id)) {
           allClubs.push({
             id: club.id,
             name: club.name,
             image_url: club.image_url,
             created_at: club.created_at,
             created_by: club.created_by,
-            creator_first_name: '',
-            creator_last_name: '',
-            role: 'admin', // Creator is always admin
-            description: club.description
+            creator_first_name: "",
+            creator_last_name: "",
+            role: "admin", // Creator is always admin
+            description: club.description,
           });
         }
       });
 
       // Get creator names for all clubs
-      const creatorIds = [...new Set(allClubs.map(club => club.created_by))];
+      const creatorIds = [...new Set(allClubs.map((club) => club.created_by))];
       if (creatorIds.length > 0) {
         const { data: creators } = await supabase
-          .from('players')
-          .select('user_id, first_name, last_name')
-          .in('user_id', creatorIds);
+          .from("players")
+          .select("user_id, first_name, last_name")
+          .in("user_id", creatorIds);
 
         // Map creator names to clubs
-        allClubs.forEach(club => {
-          const creator = creators?.find(c => c.user_id === club.created_by);
+        allClubs.forEach((club) => {
+          const creator = creators?.find((c) => c.user_id === club.created_by);
           if (creator) {
             club.creator_first_name = creator.first_name;
             club.creator_last_name = creator.last_name;
@@ -159,16 +167,16 @@ const Clubs = () => {
   });
 
   const handleCreateClub = () => {
-    navigate('/new-club');
+    navigate("/new-club");
   };
 
   const handleJoinClub = () => {
-    navigate('/join-club');
+    navigate("/join-club");
   };
 
   const handleClubClick = (clubId: string) => {
     setClubId(clubId); // set it globally
-    localStorage.setItem('lastVisitedClub', clubId);
+    localStorage.setItem("lastVisitedClub", clubId);
     navigate(`/dashboard/${clubId}`);
   };
 
@@ -186,13 +194,13 @@ const Clubs = () => {
 
   const handleConfirmDelete = async () => {
     if (!clubToDelete || !user?.id) return;
-    
+
     try {
       // Delete club (this will cascade delete members, matches, etc.)
       const { error } = await supabase
-        .from('clubs')
+        .from("clubs")
         .delete()
-        .eq('id', clubToDelete.id);
+        .eq("id", clubToDelete.id);
 
       if (error) throw error;
 
@@ -201,11 +209,11 @@ const Clubs = () => {
         description: "Club deleted successfully",
       });
 
-      queryClient.invalidateQueries({ queryKey: ['userClubs'] });
+      queryClient.invalidateQueries({ queryKey: ["userClubs"] });
       setShowDeleteDialog(false);
       setClubToDelete(null);
     } catch (error) {
-      console.error('Error deleting club:', error);
+      console.error("Error deleting club:", error);
       toast({
         title: "Error",
         description: "Failed to delete club",
@@ -216,15 +224,15 @@ const Clubs = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+    return date.toLocaleDateString("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
   };
 
   const isClubAdmin = (club: ClubWithDetails) => {
-    return club.role === 'admin' || club.created_by === user?.id;
+    return club.role === "admin" || club.created_by === user?.id;
   };
 
   const getCreatorDisplayName = (club: ClubWithDetails) => {
@@ -236,7 +244,7 @@ const Clubs = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <Spinner className="h-8 w-8" />
@@ -246,27 +254,29 @@ const Clubs = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Navbar />
-      
+
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header with title and buttons */}
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-serif">Your clubs</h1>
+            <h1 className="text-4xl font-serif text-gray-900 dark:text-gray-100">
+              Your clubs
+            </h1>
             <div className="flex gap-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="action"
+                icon={<UsersRound className="h-4 w-4" />}
                 onClick={handleJoinClub}
               >
-                <UsersRound className="mr-2 h-4 w-4" />
                 Join a Club
               </Button>
-              <Button 
+              <Button
+                variant="secondary"
+                icon={<UserPlus className="h-4 w-4" />}
                 onClick={handleCreateClub}
-                className="bg-volleyball-secondary text-black hover:bg-volleyball-secondary/90"
               >
-                <UserPlus className="mr-2 h-4 w-4" />
                 Create a Club
               </Button>
             </div>
@@ -276,16 +286,16 @@ const Clubs = () => {
           {userClubs && userClubs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {userClubs.map((club) => (
-                <Card 
-                  key={club.id} 
-                  className="cursor-pointer hover:shadow-lg transition-shadow relative"
+                <Card
+                  key={club.id}
+                  className="cursor-pointer hover:shadow-lg transition-shadow relative bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                   onClick={() => handleClubClick(club.id)}
                 >
                   <CardHeader className="p-0">
-                    <div className="aspect-video w-full bg-gray-200 rounded-t-lg overflow-hidden">
+                    <div className="aspect-video w-full bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
                       {club.image_url ? (
-                        <img 
-                          src={club.image_url} 
+                        <img
+                          src={club.image_url}
                           alt={club.name}
                           className="w-full h-full object-cover"
                         />
@@ -300,14 +310,16 @@ const Clubs = () => {
                   </CardHeader>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-semibold flex-1 pr-2">{club.name}</h3>
+                      <h3 className="text-lg font-semibold flex-1 pr-2 text-gray-900 dark:text-gray-100">
+                        {club.name}
+                      </h3>
                       {isClubAdmin(club) && (
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <MoreVertical className="h-4 w-4" />
@@ -320,14 +332,16 @@ const Clubs = () => {
                                 size="sm"
                                 className="w-full justify-start"
                                 onClick={(e) => handleEditClick(e, club)}
+                                icon={<Edit className="h-4 w-4" />}
                               >
                                 Edit Club
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="w-full justify-start text-destructive hover:text-destructive"
+                                className="w-full justify-start text-destructive hover:text-destructive dark:text-red-400 dark:hover:text-red-300"
                                 onClick={(e) => handleDeleteClick(e, club)}
+                                icon={<Trash className="h-4 w-4" />}
                               >
                                 Delete Club
                               </Button>
@@ -336,10 +350,10 @@ const Clubs = () => {
                         </Popover>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                       Created on: {formatDate(club.created_at)}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Created by: {getCreatorDisplayName(club)}
                     </p>
                   </CardContent>
@@ -348,20 +362,22 @@ const Clubs = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600 text-lg mb-6">You haven't joined any clubs yet.</p>
+              <p className="text-gray-600 dark:text-gray-400 text-lg mb-6">
+                You haven't joined any clubs yet.
+              </p>
               <div className="flex gap-4 justify-center">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="action"
+                  icon={<UsersRound className="h-4 w-4" />}
                   onClick={handleJoinClub}
                 >
-                  <UsersRound className="mr-2 h-4 w-4" />
                   Join a Club
                 </Button>
-                <Button 
+                <Button
+                  variant="secondary"
+                  icon={<UserPlus className="h-4 w-4" />}
                   onClick={handleCreateClub}
-                  className="bg-volleyball-secondary text-black hover:bg-volleyball-secondary/90"
                 >
-                  <UserPlus className="mr-2 h-4 w-4" />
                   Create a Club
                 </Button>
               </div>
@@ -388,14 +404,15 @@ const Clubs = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the club
-              "{clubToDelete?.name}" and all associated data including matches, teams, and member records.
+              This action cannot be undone. This will permanently delete the
+              club "{clubToDelete?.name}" and all associated data including
+              matches, teams, and member records.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmDelete} 
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete Club

@@ -106,7 +106,7 @@ const Login = () => {
 
       checkUserProfile();
     }
-  }, [isAuthenticated, authLoading, navigate, user, location.pathname]); // Added location.pathname
+  }, [isAuthenticated, authLoading, navigate, user, location.pathname]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -119,9 +119,7 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      //console. log('Attempting login for:', data.email);
       await login(data.email, data.password);
-      //console. log('Login successful, redirection will happen in useEffect');
       // The redirection will happen automatically in the useEffect hook
     } catch (error) {
       console.error("Login error:", error);
@@ -137,7 +135,9 @@ const Login = () => {
       <AuthLayout>
         <div className="flex items-center justify-center p-8">
           <Spinner className="h-8 w-8" />
-          <span className="ml-2">Checking profile...</span>
+          <span className="ml-2 text-gray-900 dark:text-gray-100">
+            Checking profile...
+          </span>
         </div>
       </AuthLayout>
     );
@@ -145,8 +145,10 @@ const Login = () => {
 
   return (
     <AuthLayout>
-      <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
-        <h2 className="text-2xl font-semibold mb-6">Login</h2>
+      <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
+        <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
+          Login
+        </h2>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -178,21 +180,26 @@ const Login = () => {
             <div className="flex justify-end">
               <Link
                 to="/forgot-password"
-                className="text-sm text-volleyball-primary hover:underline"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
               >
                 Forgot your password?
               </Link>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              variant="primary"
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
               {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </Form>
-        <p className="mt-4 text-sm text-gray-600 text-center">
+        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
           Don't have an account?{" "}
           <Link
             to="/signup"
-            className="text-volleyball-primary hover:underline"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
           >
             Sign up
           </Link>

@@ -105,12 +105,14 @@ const ResetPassword = () => {
   if (!isValidLink) {
     return (
       <AuthLayout>
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
-          <h2 className="text-2xl font-bold mb-2">Invalid Link</h2>
-          <p className="text-gray-600 mb-6">
+        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
+          <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+            Invalid Link
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             This password reset link is invalid or has expired.
           </p>
-          <Button asChild className="w-full">
+          <Button variant="primary" asChild className="w-full">
             <Link to="/forgot-password">Request new reset link</Link>
           </Button>
         </div>
@@ -120,23 +122,27 @@ const ResetPassword = () => {
 
   return (
     <AuthLayout>
-      <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
-        <h2 className="text-2xl font-bold mb-2">Reset Password</h2>
-        <p className="text-gray-600 mb-6">
+      <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
+        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+          Reset Password
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
           Enter a new password for your account.
         </p>
 
         {isSuccess ? (
           <div className="text-center py-8">
-            <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
-              <Check className="h-6 w-6 text-green-600" />
+            <div className="mx-auto w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mb-4">
+              <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
-            <h3 className="text-lg font-medium mb-2">Password Updated!</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-lg font-medium mb-2 text-gray-900 dark:text-gray-100">
+              Password Updated!
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Your password has been successfully reset. You will be redirected
               to the login page shortly.
             </p>
-            <Button asChild>
+            <Button variant="primary" asChild>
               <Link to="/login">Back to login</Link>
             </Button>
           </div>
@@ -177,7 +183,12 @@ const ResetPassword = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                variant="primary"
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
                 {isLoading ? "Resetting..." : "Reset Password"}
               </Button>
             </form>
