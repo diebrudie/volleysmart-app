@@ -137,7 +137,7 @@ const Profile = () => {
       }
 
       setProfile(data);
-      setOriginalProfile(data); // Store original for comparison
+      setOriginalProfile(data);
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
@@ -187,7 +187,7 @@ const Profile = () => {
 
       if (!error && data) {
         setPlayerPositions(data);
-        setOriginalPlayerPositions(data); // Store original for comparison
+        setOriginalPlayerPositions(data);
       }
     } catch (error) {
       console.error("Error fetching player positions:", error);
@@ -207,11 +207,10 @@ const Profile = () => {
         const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("player-images") // ✅ Using your existing player-images bucket
+          .from("player-images")
           .upload(fileName, imageFile);
 
         if (uploadError) {
-          // Handle bucket/policy errors gracefully
           if (
             uploadError.message?.includes("bucket") ||
             uploadError.message?.includes("policy")
@@ -229,9 +228,7 @@ const Profile = () => {
         } else {
           const {
             data: { publicUrl },
-          } = supabase.storage
-            .from("player-images") // ✅ Using your existing player-images bucket
-            .getPublicUrl(fileName);
+          } = supabase.storage.from("player-images").getPublicUrl(fileName);
 
           imageUrl = publicUrl;
         }
@@ -383,10 +380,12 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar />
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading...</div>
+          <div className="text-lg text-gray-900 dark:text-gray-100">
+            Loading...
+          </div>
         </div>
       </div>
     );
@@ -394,30 +393,34 @@ const Profile = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar />
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Profile not found</div>
+          <div className="text-lg text-gray-900 dark:text-gray-100">
+            Profile not found
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
       <div className="max-w-4xl mx-auto py-8 px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             {profile.first_name} {profile.last_name}
           </h1>
           {userCreatedAt && (
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
               Member since {formatMemberSince(userCreatedAt)}
             </p>
           )}
           {!isOwnProfile && (
-            <p className="text-gray-600 mt-1">Viewing player profile</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Viewing player profile
+            </p>
           )}
         </div>
 
@@ -457,7 +460,7 @@ const Profile = () => {
                   {isOwnProfile && (
                     <div>
                       <Label htmlFor="image-upload" className="cursor-pointer">
-                        <div className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800">
+                        <div className="flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
                           <Upload className="h-4 w-4" />
                           <span>Upload new photo</span>
                         </div>
@@ -479,7 +482,7 @@ const Profile = () => {
                     id="email"
                     value={user?.email || ""}
                     disabled
-                    className="bg-gray-100"
+                    className="bg-gray-100 dark:bg-gray-800"
                   />
                 </div>
 
@@ -579,6 +582,7 @@ const Profile = () => {
 
                 {isOwnProfile && (
                   <Button
+                    variant="primary"
                     onClick={handlePersonalInfoSave}
                     disabled={saving || !hasPersonalInfoChanges()}
                     className="w-full"
@@ -602,15 +606,15 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {profile.skill_rating && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                     <div className="text-center">
-                      <Label className="text-sm font-medium text-gray-600">
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">
                         Overall Skill Level
                       </Label>
-                      <div className="text-3xl font-bold text-blue-600 mt-1">
+                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
                         {profile.skill_rating}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         out of 100
                       </div>
                     </div>
@@ -630,7 +634,6 @@ const Profile = () => {
                     disabled={!isOwnProfile}
                   >
                     <SelectTrigger className="h-12">
-                      {" "}
                       <SelectValue placeholder="Select your main position" />
                     </SelectTrigger>
                     <SelectContent>
@@ -648,7 +651,6 @@ const Profile = () => {
                     Secondary Positions
                   </Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {" "}
                     {positions.map((position) => {
                       const isPrimary = playerPositions.some(
                         (p) => p.position_id === position.id && p.is_primary
@@ -662,11 +664,11 @@ const Profile = () => {
                           key={position.id}
                           className={`flex items-center space-x-3 p-3 border rounded-lg transition-colors ${
                             isPrimary
-                              ? "bg-gray-50 border-gray-200"
+                              ? "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                               : isSecondary
-                              ? "bg-blue-50 border-blue-200"
-                              : "bg-white border-gray-200 hover:border-gray-300"
-                          }`} /* ✅ Better styling with visual states */
+                              ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700"
+                              : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                          }`}
                         >
                           <input
                             type="checkbox"
@@ -679,17 +681,19 @@ const Profile = () => {
                                 e.target.checked
                               )
                             }
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" /* ✅ Better checkbox styling */
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
                           />
                           <Label
                             htmlFor={`secondary-${position.id}`}
                             className={`flex-1 text-sm font-medium cursor-pointer ${
-                              isPrimary ? "text-gray-400" : "text-gray-700"
-                            }`} /* ✅ Improved text styling */
+                              isPrimary
+                                ? "text-gray-400 dark:text-gray-500"
+                                : "text-gray-700 dark:text-gray-300"
+                            }`}
                           >
                             {position.name}
                             {isPrimary && (
-                              <span className="ml-2 text-xs bg-gray-200 px-2 py-1 rounded-full">
+                              <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full">
                                 Primary
                               </span>
                             )}
@@ -698,16 +702,17 @@ const Profile = () => {
                       );
                     })}
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     Select additional positions you can play effectively
                   </p>
                 </div>
 
                 {isOwnProfile && (
                   <Button
+                    variant="primary"
                     onClick={handleSkillsSave}
                     disabled={saving || !hasSkillsChanges()}
-                    className="w-full h-12" /* ✅ Larger button */
+                    className="w-full h-12"
                   >
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>

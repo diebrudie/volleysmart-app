@@ -86,9 +86,6 @@ const GameDetail = () => {
     queryFn: async (): Promise<MatchDayData> => {
       if (!matchDayId) throw new Error("Match day ID is required");
 
-      // console. log("=== FETCHING MATCH DAY DETAILS ===");
-      // console. log("Match Day ID:", matchDayId);
-
       // Get match day with matches and club info
       const { data: matchDay, error: matchDayError } = await supabase
         .from("match_days")
@@ -164,7 +161,6 @@ const GameDetail = () => {
         game_players: gamePlayers,
       };
 
-      // console. log("Match day data:", result);
       return result;
     },
     enabled: !!matchDayId,
@@ -307,9 +303,6 @@ const GameDetail = () => {
     if (!matchData || !user?.id) return;
 
     try {
-      // console. log("=== CREATING GAME WITH SAME TEAMS ===");
-      // console. log("Original match data:", matchData);
-
       // 1. Create a new match day for today
       const { data: matchDay, error: matchDayError } = await supabase
         .from("match_days")
@@ -326,8 +319,6 @@ const GameDetail = () => {
         console.error("Match day error:", matchDayError);
         throw matchDayError;
       }
-
-      // console. log("Created new match day:", matchDay);
 
       // 2. Create 5 matches for the 5 sets (all starting at 0-0)
       const matches = Array.from({ length: 5 }, (_, index) => ({
@@ -348,8 +339,6 @@ const GameDetail = () => {
         throw matchesError;
       }
 
-      // console. log("Created matches:", matchesData);
-
       // 3. Copy the exact same team composition from the original game
       const gamePlayersToInsert = matchData.game_players.map(
         (originalPlayer) => ({
@@ -362,8 +351,6 @@ const GameDetail = () => {
         })
       );
 
-      // console. log("Game players to insert:", gamePlayersToInsert);
-
       const { error: gamePlayersError } = await supabase
         .from("game_players")
         .insert(gamePlayersToInsert);
@@ -374,8 +361,6 @@ const GameDetail = () => {
           `Failed to create game players: ${gamePlayersError.message}`
         );
       }
-
-      // console. log("=== GAME CREATED SUCCESSFULLY ===");
 
       // 4. Invalidate queries to refresh the dashboard
       await queryClient.invalidateQueries({
@@ -402,7 +387,7 @@ const GameDetail = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <Spinner className="h-8 w-8" />
@@ -414,12 +399,14 @@ const GameDetail = () => {
   // Error state
   if (error || !matchData) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-xl font-semibold mb-2">Match not found</h2>
-            <p className="text-gray-600 mb-4">
+            <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
+              Match not found
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               The match you're looking for doesn't exist or you don't have
               access to it.
             </p>
@@ -473,7 +460,7 @@ const GameDetail = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Navbar />
 
       <main className="flex-grow">
@@ -489,7 +476,9 @@ const GameDetail = () => {
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">Game Details</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Game Details
+              </h1>
             </div>
             <div className="flex gap-2">
               {canEdit ? (
@@ -506,7 +495,7 @@ const GameDetail = () => {
                         <X className="mr-2 h-4 w-4" />
                         Cancel
                       </Button>
-                      <Button onClick={handleSaveChanges}>
+                      <Button variant="primary" onClick={handleSaveChanges}>
                         <Save className="mr-2 h-4 w-4" />
                         Save Changes
                       </Button>
@@ -571,20 +560,26 @@ const GameDetail = () => {
           {/* Main Match Card */}
           <Card className="mb-8">
             <CardContent className="p-6">
-              {/* Match Info Row - Now includes Date, Final Score, and Winner */}
+              {/* Match Info Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div className="flex items-top">
-                  <Calendar className="h-5 w-5 mt-1 text-volleyball-primary mr-2" />
+                  <Calendar className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
                   <div>
-                    <p className="text-sm text-gray-500">Date</p>
-                    <p className="font-medium">{formatDate(matchData.date)}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Date
+                    </p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                      {formatDate(matchData.date)}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-top">
-                  <Trophy className="h-5 w-5 mt-1 text-volleyball-primary mr-2" />
+                  <Trophy className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
                   <div>
-                    <p className="text-sm text-gray-500">Final Score</p>
-                    <p className="font-medium text-lg">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Final Score
+                    </p>
+                    <p className="font-medium text-lg text-gray-900 dark:text-gray-100">
                       <span
                         className={teamAWins > teamBWins ? "font-bold" : ""}
                       >
@@ -600,10 +595,14 @@ const GameDetail = () => {
                   </div>
                 </div>
                 <div className="flex items-top">
-                  <Trophy className="h-5 w-5 mt-1 text-volleyball-primary mr-2" />
+                  <Trophy className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
                   <div>
-                    <p className="text-sm text-gray-500">Winner</p>
-                    <p className="font-medium">{matchWinner}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Winner
+                    </p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                      {matchWinner}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -618,7 +617,7 @@ const GameDetail = () => {
                 <TabsContent value="teams">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center">
+                      <h3 className="text-lg font-semibold mb-3 flex items-center text-gray-900 dark:text-gray-100">
                         <div className="h-6 w-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs mr-2">
                           A
                         </div>
@@ -628,16 +627,16 @@ const GameDetail = () => {
                         {teamAPlayers.map((player, index) => (
                           <li
                             key={player.id}
-                            className="flex items-center p-2 bg-gray-50 rounded-md"
+                            className="flex items-center p-2 bg-gray-50 dark:bg-gray-800 rounded-md"
                           >
                             <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                               {player.name.charAt(0)}
                             </div>
                             <div className="ml-3">
-                              <p className="text-sm font-medium">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                 {player.name}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {player.position}
                               </p>
                             </div>
@@ -647,7 +646,7 @@ const GameDetail = () => {
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center">
+                      <h3 className="text-lg font-semibold mb-3 flex items-center text-gray-900 dark:text-gray-100">
                         <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs mr-2">
                           B
                         </div>
@@ -657,16 +656,16 @@ const GameDetail = () => {
                         {teamBPlayers.map((player, index) => (
                           <li
                             key={player.id}
-                            className="flex items-center p-2 bg-gray-50 rounded-md"
+                            className="flex items-center p-2 bg-gray-50 dark:bg-gray-800 rounded-md"
                           >
                             <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                               {player.name.charAt(0)}
                             </div>
                             <div className="ml-3">
-                              <p className="text-sm font-medium">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                 {player.name}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {player.position}
                               </p>
                             </div>
@@ -679,30 +678,30 @@ const GameDetail = () => {
 
                 <TabsContent value="games">
                   <div className="mt-6">
-                    <div className="rounded-md border overflow-hidden">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <div className="rounded-md border dark:border-gray-700 overflow-hidden">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-800">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Game
                             </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Team A
                             </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Team B
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Winner
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                           {(editing ? editedGames : matchData.matches)
                             .sort((a, b) => a.game_number - b.game_number)
                             .map((game, index) => (
                               <tr key={game.id}>
-                                <td className="px-6 py-4 whitespace-nowrap font-medium">
+                                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">
                                   Match {game.game_number}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -725,7 +724,7 @@ const GameDetail = () => {
                                       className={
                                         game.team_a_score > game.team_b_score
                                           ? "font-bold text-red-600"
-                                          : ""
+                                          : "text-gray-900 dark:text-gray-100"
                                       }
                                     >
                                       {game.team_a_score}
@@ -752,7 +751,7 @@ const GameDetail = () => {
                                       className={
                                         game.team_b_score > game.team_a_score
                                           ? "font-bold text-emerald-600"
-                                          : ""
+                                          : "text-gray-900 dark:text-gray-100"
                                       }
                                     >
                                       {game.team_b_score}
@@ -764,11 +763,11 @@ const GameDetail = () => {
                                     <span
                                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                         game.team_a_score > game.team_b_score
-                                          ? "bg-red-500/10 text-red-600"
+                                          ? "bg-red-500/10 text-red-600 dark:bg-red-900/20 dark:text-red-400"
                                           : game.team_b_score >
                                             game.team_a_score
-                                          ? "bg-emerald-500/10 text-emerald-600"
-                                          : "bg-gray-100 text-gray-600"
+                                          ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
+                                          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                                       }`}
                                     >
                                       {game.team_a_score > game.team_b_score
@@ -778,31 +777,31 @@ const GameDetail = () => {
                                         : "Tie"}
                                     </span>
                                   ) : (
-                                    <span className="text-gray-400 text-xs">
+                                    <span className="text-gray-400 dark:text-gray-500 text-xs">
                                       Not played
                                     </span>
                                   )}
                                 </td>
                               </tr>
                             ))}
-                          <tr className="bg-gray-50 font-semibold">
-                            <td className="px-6 py-4 whitespace-nowrap">
+                          <tr className="bg-gray-50 dark:bg-gray-800 font-semibold">
+                            <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
                               Total Points
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-gray-100">
                               {totalScore.teamA}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-gray-100">
                               {totalScore.teamB}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span
                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                   matchWinner === "Team A"
-                                    ? "bg-red-500/10 text-red-600"
+                                    ? "bg-red-500/10 text-red-600 dark:bg-red-900/20 dark:text-red-400"
                                     : matchWinner === "Team B"
-                                    ? "bg-emerald-500/10 text-emerald-600"
-                                    : "bg-gray-100 text-gray-600"
+                                    ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
+                                    : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                                 }`}
                               >
                                 {matchWinner}
