@@ -514,10 +514,10 @@ const GameDetail = () => {
                   ) : (
                     <>
                       <Button
-                        variant="outline"
+                        variant="action"
+                        icon={<Edit className="h-4 w-4" />}
                         onClick={() => setEditing(true)}
                       >
-                        <Edit className="mr-2 h-4 w-4" />
                         Edit Match
                       </Button>
                       <Dialog
@@ -561,7 +561,7 @@ const GameDetail = () => {
                   )}
                 </>
               ) : (
-                <Button variant="outline" onClick={handleCreateSameTeams}>
+                <Button variant="action" onClick={handleCreateSameTeams}>
                   Create Game w. same Teams
                 </Button>
               )}

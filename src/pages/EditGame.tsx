@@ -706,8 +706,11 @@ const EditGame = () => {
               </Popover>
 
               {/* Shuffle Teams Button */}
-              <Button variant="outline" onClick={handleShuffleTeams}>
-                <Shuffle className="mr-2 h-4 w-4" />
+              <Button
+                variant="action"
+                icon={<Shuffle className="h-4 w-4" />}
+                onClick={handleShuffleTeams}
+              >
                 Shuffle Teams
               </Button>
             </div>

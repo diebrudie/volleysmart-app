@@ -232,7 +232,6 @@ const Games = () => {
   };
 
   // Delete match function
-  // Delete match function
   const deleteMatch = async () => {
     if (!selectedMatch) return;
 
@@ -569,9 +568,7 @@ const Games = () => {
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Link to={`/game-details/${match.match_day_id}`}>
-                                <Button variant="outline" size="sm">
-                                  View Details
-                                </Button>
+                                <Button variant="action">View Details</Button>
                               </Link>
                               {isAdmin && selectedMatch === match.id && (
                                 <Button

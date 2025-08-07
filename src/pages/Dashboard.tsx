@@ -11,7 +11,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Pencil } from "lucide-react";
-import { format, isWednesday } from "date-fns";
 import { useClub } from "@/contexts/ClubContext";
 import { useParams } from "react-router-dom";
 
@@ -563,12 +562,14 @@ const Dashboard = () => {
               <p className="text-gray-600">{formatDate(matchDate)}</p>
             </div>
             {isEditingAllowed && (
-              <button
-                className="flex items-center gap-1 text-sm font-medium border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-50"
-                onClick={handleEditTeamsClick}
+              <Button
+                variant="action"
+                icon={<Pencil className="h-4 w-4" />}
+                onClick={handleEditTeamsClick} // ✅ Keep the SAME onClick handler
+                size="sm"
               >
-                <Pencil className="h-4 w-4" /> Edit Teams
-              </button>
+                Edit Teams
+              </Button>
             )}
           </div>
 

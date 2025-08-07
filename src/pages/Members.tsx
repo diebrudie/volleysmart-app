@@ -461,12 +461,8 @@ const Members = () => {
               onOpenChange={setIsInviteModalOpen}
             >
               <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-[#243F8D] text-[#243F8D] bg-white hover:bg-[#243F8D] hover:text-white transition-colors"
-                >
+                <Button variant="action" icon={<Plus className="h-4 w-4" />}>
                   Invite Member
-                  <Plus className="w-4 h-4 ml-2" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
