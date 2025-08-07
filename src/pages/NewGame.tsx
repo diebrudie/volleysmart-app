@@ -409,10 +409,6 @@ const NewGame = () => {
         id.startsWith("extra-")
       );
 
-      // console. log("=== PROCESSING PLAYERS ===");
-      // console. log("Regular player IDs:", regularPlayerIds);
-      // console. log("Extra player IDs:", extraPlayerIds);
-
       // 4. Create temporary player records for extra players
       const extraPlayerRecords = [];
       for (const extraId of extraPlayerIds) {
@@ -423,8 +419,6 @@ const NewGame = () => {
           const firstName = nameParts[0] || "Extra";
           const lastName =
             nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Player";
-
-          // console. log(`Creating temp player: ${firstName} ${lastName} from "${extraPlayer.name}"`);
 
           // Create a temporary player record in the players table
           const { data: tempPlayer, error: tempPlayerError } = await supabase
@@ -446,8 +440,6 @@ const NewGame = () => {
             console.error("Error creating temp player:", tempPlayerError);
             throw tempPlayerError;
           }
-
-          // console. log("Successfully created temp player with ID:",tempPlayer.id);
 
           extraPlayerRecords.push({
             tempPlayerId: tempPlayer.id,
@@ -712,12 +704,14 @@ const NewGame = () => {
     );
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Navbar />
 
-      <main className="flex-grow bg-gray-50">
+      <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-4xl font-serif mb-8">Create New Game</h1>
+          <h1 className="text-4xl font-serif mb-8 text-gray-900 dark:text-gray-100">
+            Create New Game
+          </h1>
 
           {isLoadingPlayers ? (
             <div className="flex justify-center py-12">
@@ -725,18 +719,16 @@ const NewGame = () => {
             </div>
           ) : (
             <div className="space-y-6 max-w-4xl pb-24">
-              {" "}
-              {/* Increased max-width for 2-column layout */}
               {/* Date Picker and Extra Players Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Date Picker */}
-                <div className="bg-white p-4 rounded-lg">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal border-gray-300",
+                          "w-full justify-start text-left font-normal border-gray-300 dark:border-gray-600",
                           !date && "text-muted-foreground"
                         )}
                       >
@@ -761,9 +753,9 @@ const NewGame = () => {
                 </div>
 
                 {/* Add Extra Players */}
-                <div className="bg-white p-4 rounded-lg">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Add guests or temp. players
                     </span>
                     <div className="flex items-center gap-3">
@@ -774,10 +766,9 @@ const NewGame = () => {
                         onClick={() => handleExtraPlayersChange(false)}
                         disabled={extraPlayersCount === 0}
                         className="h-8 w-8"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="font-medium text-gray-900 min-w-[2rem] text-center">
+                        icon={<Minus className="h-4 w-4" />}
+                      />
+                      <span className="font-medium text-gray-900 dark:text-gray-100 min-w-[2rem] text-center">
                         {extraPlayersCount}
                       </span>
                       <Button
@@ -786,16 +777,16 @@ const NewGame = () => {
                         size="icon"
                         onClick={() => handleExtraPlayersChange(true)}
                         className="h-8 w-8"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
+                        icon={<Plus className="h-4 w-4" />}
+                      />
                     </div>
                   </div>
                 </div>
               </div>
+
               {/* Players Selection */}
-              <div className="bg-white rounded-lg overflow-hidden">
-                <div className="bg-amber-400 p-4 flex items-center justify-between">
+              <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+                <div className="bg-amber-400 dark:bg-amber-500 p-4 flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-black">
                     Select Players
                   </h2>
@@ -807,7 +798,7 @@ const NewGame = () => {
                         placeholder="Search players..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-48 bg-white border-none"
+                        className="w-48 bg-white dark:bg-gray-700 border-none"
                         autoFocus
                         onBlur={() => {
                           if (!searchTerm) setIsSearchExpanded(false);
@@ -819,7 +810,7 @@ const NewGame = () => {
                         variant="ghost"
                         size="icon"
                         onClick={handleSearchClick}
-                        className="text-black hover:bg-amber-500"
+                        className="text-black hover:bg-amber-500 dark:hover:bg-amber-600"
                       >
                         <Search className="h-4 w-4" />
                       </Button>
@@ -840,14 +831,14 @@ const NewGame = () => {
                 {/* Players list */}
                 <div>
                   {filteredAndSortedPlayers.length > 0 ? (
-                    <div className="divide-y divide-gray-200">
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredAndSortedPlayers.map((player) => (
                         <div
                           key={player.id}
                           className={cn(
-                            "flex items-center justify-between p-4 hover:bg-gray-50",
+                            "flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700",
                             player.isExtraPlayer &&
-                              "bg-blue-50 border-l-4 border-l-blue-400"
+                              "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-400 dark:border-l-blue-500"
                           )}
                         >
                           <div className="flex flex-col flex-grow">
@@ -875,8 +866,9 @@ const NewGame = () => {
                                 <>
                                   <span
                                     className={cn(
-                                      "font-medium",
-                                      player.isExtraPlayer && "text-blue-700"
+                                      "font-medium text-gray-900 dark:text-gray-100",
+                                      player.isExtraPlayer &&
+                                        "text-blue-700 dark:text-blue-300"
                                     )}
                                   >
                                     {formatPlayerName(player)}
@@ -885,7 +877,7 @@ const NewGame = () => {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-4 w-4 text-gray-400 hover:text-gray-600"
+                                      className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                                       onClick={() =>
                                         setEditingExtraPlayer(player.id)
                                       }
@@ -900,8 +892,8 @@ const NewGame = () => {
                               className={cn(
                                 "text-sm",
                                 player.isExtraPlayer
-                                  ? "text-blue-600"
-                                  : "text-gray-500"
+                                  ? "text-blue-600 dark:text-blue-400"
+                                  : "text-gray-500 dark:text-gray-400"
                               )}
                             >
                               {getPlayerPosition(player)}
@@ -918,7 +910,7 @@ const NewGame = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="p-8 text-center text-gray-500">
+                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                       {searchTerm
                         ? "No players found matching your search."
                         : "No players found in your club."}
@@ -926,10 +918,11 @@ const NewGame = () => {
                   )}
                 </div>
               </div>
+
               {/* Summary */}
               {selectedPlayers.length > 0 && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
                     <strong>{selectedPlayers.length} players selected</strong>
                     {extraPlayersCount > 0 && (
                       <span>
@@ -940,9 +933,11 @@ const NewGame = () => {
                   </p>
                 </div>
               )}
+
               {/* Button - right aligned with proper spacing */}
               <div className="flex justify-end pt-4">
                 <Button
+                  variant="primary"
                   type="submit"
                   onClick={handleSubmit}
                   className="py-3 px-8"

@@ -9,8 +9,8 @@ const Admin = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        Loading...
+      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <span className="text-gray-900 dark:text-gray-100">Loading...</span>
       </div>
     );
   }
@@ -21,11 +21,13 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+            Admin Dashboard
+          </h1>
 
           <Tabs defaultValue="users">
             <TabsList className="mb-6">
@@ -38,9 +40,13 @@ const Admin = () => {
             </TabsContent>
 
             <TabsContent value="settings">
-              <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-lg font-medium mb-4">System Settings</h2>
-                <p>Admin settings will be available here in future updates.</p>
+              <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h2 className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100">
+                  System Settings
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Admin settings will be available here in future updates.
+                </p>
               </div>
             </TabsContent>
           </Tabs>

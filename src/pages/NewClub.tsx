@@ -68,7 +68,6 @@ const NewClub = () => {
 
   const { setClubId } = useClub();
 
-  // In NewClub.tsx, update the uploadImage function:
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
       // Generate unique filename to avoid collisions
@@ -107,11 +106,10 @@ const NewClub = () => {
       } else {
         console.error("Unknown error:", error);
       }
-      return null; // Add this return statement
+      return null;
     }
-  }; // ← uploadImage function ends here
+  };
 
-  // ✅ CORRECT: onSubmit is at component level
   const onSubmit = async (data: NewClubFormData) => {
     if (!user) {
       toast({
@@ -226,19 +224,19 @@ const NewClub = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <div className="w-full max-w-lg">
         <Button
           variant="ghost"
           onClick={handleBack}
-          className="mb-6 p-0 h-auto font-normal text-gray-600 hover:text-gray-900"
+          className="mb-6 p-0 h-auto font-normal text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent dark:hover:bg-transparent"
+          icon={<ArrowLeft className="h-4 w-4" />}
         >
-          <ArrowLeft className="mr-1 h-4 w-4" />
           Back
         </Button>
 
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-2xl font-semibold text-center mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+          <h1 className="text-2xl font-semibold text-center mb-6 text-gray-900 dark:text-gray-100">
             Create a New Club
           </h1>
 
@@ -259,7 +257,9 @@ const NewClub = () => {
                 {...register("name", { required: "Club name is required" })}
               />
               {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
+                <p className="text-sm text-red-500 dark:text-red-400">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
@@ -282,7 +282,9 @@ const NewClub = () => {
               />
 
               {uploadError && (
-                <p className="text-sm text-red-500">{uploadError}</p>
+                <p className="text-sm text-red-500 dark:text-red-400">
+                  {uploadError}
+                </p>
               )}
 
               {imagePreview && (
@@ -296,7 +298,12 @@ const NewClub = () => {
               )}
             </div>
 
-            <Button type="submit" disabled={isSubmitting} className="w-full">
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full"
+            >
               {isSubmitting ? (
                 <>
                   <Spinner className="mr-2 h-4 w-4" />

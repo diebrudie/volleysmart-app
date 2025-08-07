@@ -21,6 +21,7 @@ const InviteMembers = () => {
   const { toast } = useToast();
   const { clubId, setClubId } = useClub();
   const navigate = useNavigate();
+
   const handleAddInvite = () => {
     if (invites.length < 6) {
       setInvites([...invites, { name: "", email: "" }]);
@@ -148,19 +149,23 @@ const InviteMembers = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-2xl bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-semibold text-center mb-2">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+        <h1 className="text-2xl font-semibold text-center mb-2 text-gray-900 dark:text-gray-100">
           Great! Now Invite your club members
         </h1>
-        <p className="text-center text-gray-600 mb-6">
+        <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
           You can skip this step and invite your members later
         </p>
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-[2fr_3fr_auto] gap-3 mb-4">
-            <div className="font-medium">Name</div>
-            <div className="font-medium">Email</div>
+            <div className="font-medium text-gray-900 dark:text-gray-100">
+              Name
+            </div>
+            <div className="font-medium text-gray-900 dark:text-gray-100">
+              Email
+            </div>
             <div></div>
 
             {invites.map((invite, index) => (
@@ -210,11 +215,11 @@ const InviteMembers = () => {
           </div>
 
           <div className="flex justify-between mt-8">
-            <Button type="button" variant="outline" onClick={handleSkip}>
+            <Button type="button" variant="action" onClick={handleSkip}>
               Skip for now
             </Button>
 
-            <Button type="submit" disabled={isSubmitting}>
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Spinner className="mr-2 h-4 w-4" />

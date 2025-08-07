@@ -1,7 +1,12 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
@@ -29,32 +34,33 @@ const VerifyEmail = () => {
 
   return (
     <AuthLayout>
-      <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
+      <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
         <div className="flex justify-center mb-4">
-          <CheckCircle className="h-16 w-16 text-green-500"/>
+          <CheckCircle className="h-16 w-16 text-green-500 dark:text-green-400" />
         </div>
-        <CardTitle className="text-2xl font-bold text-center">Check Your Email</CardTitle>
-        <CardDescription className="text-center mt-2">
-          We sent a verification link to <span className="font-medium">{email}</span>
+        <CardTitle className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100">
+          Check Your Email
+        </CardTitle>
+        <CardDescription className="text-center mt-2 text-gray-600 dark:text-gray-400">
+          We sent a verification link to{" "}
+          <span className="font-medium">{email}</span>
         </CardDescription>
-        
+
         <div className="mt-6 space-y-4">
-          <p className="text-sm text-gray-500 text-center">
-            Please click the link in your email to verify your account. If you don't see it, check your spam folder.
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+            Please click the link in your email to verify your account. If you
+            don't see it, check your spam folder.
           </p>
-          
+
           <div className="text-center mt-6">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Redirecting to login in {countdown} seconds...
             </p>
             <div className="flex justify-center gap-3 mt-4">
-              <Button onClick={() => navigate('/login')} variant="outline">
+              <Button variant="action" onClick={() => navigate("/login")}>
                 Go to Login
               </Button>
-              <Button 
-                onClick={() => navigate('/')} 
-                variant="default"
-              >
+              <Button variant="primary" onClick={() => navigate("/")}>
                 Back to Home
               </Button>
             </div>

@@ -31,8 +31,6 @@ const JoinClub = () => {
     const fetchUserCreatedClubs = async () => {
       if (!user?.id) return;
 
-      //console. log('Current user ID:', user.id);
-
       try {
         const { data: clubs, error } = await supabase
           .from("clubs")
@@ -42,7 +40,6 @@ const JoinClub = () => {
         if (error) {
           console.error("Error fetching user created clubs:", error);
         } else {
-          //console. log('Clubs created by user:', clubs);
           setUserCreatedClubs(clubs || []);
         }
       } catch (error) {
@@ -66,7 +63,6 @@ const JoinClub = () => {
 
     try {
       const trimmedClubId = clubIdInput.trim();
-      //console. log('Searching for club with slug:', trimmedClubId);
 
       // First try exact match
       let { data: club, error: clubError } = await supabase
@@ -75,12 +71,8 @@ const JoinClub = () => {
         .eq("slug", trimmedClubId)
         .maybeSingle();
 
-      //console. log('Exact match result:', club);
-      //console. log('Exact match error:', clubError);
-
       // If no exact match, try case-insensitive
       if (!club && !clubError) {
-        //console. log('No exact match found, trying case-insensitive search...');
         const { data: clubCaseInsensitive, error: clubCaseError } =
           await supabase
             .from("clubs")
@@ -90,18 +82,7 @@ const JoinClub = () => {
 
         club = clubCaseInsensitive;
         clubError = clubCaseError;
-        //console. log('Case-insensitive result:', club);
-        //console. log('Case-insensitive error:', clubError);
       }
-
-      // Debug: Let's also check all clubs to see what's in the database
-      const { data: allClubs, error: allClubsError } = await supabase
-        .from("clubs")
-        .select("id, name, slug")
-        .limit(10);
-
-      //console. log('All clubs in database (first 10):', allClubs);
-      //console. log('All clubs query error:', allClubsError);
 
       if (clubError) {
         console.error("Database error when searching for club:", clubError);
@@ -116,7 +97,6 @@ const JoinClub = () => {
       }
 
       if (!club) {
-        //console. log('No club found with slug:', trimmedClubId);
         toast({
           title: "Club not found",
           description: "Please check the Club ID and try again.",
@@ -126,8 +106,6 @@ const JoinClub = () => {
         return;
       }
 
-      //console. log('Found club:', club.name, 'with ID:', club.id);
-
       // Check if user is already a member
       const { data: existingMember, error: memberError } = await supabase
         .from("club_members")
@@ -135,8 +113,6 @@ const JoinClub = () => {
         .eq("club_id", club.id)
         .eq("user_id", user.id)
         .maybeSingle();
-
-      //console. log('Existing member check:', existingMember);
 
       if (memberError) {
         console.error("Error checking membership:", memberError);
@@ -160,7 +136,6 @@ const JoinClub = () => {
       }
 
       // Add user as a member
-      //console. log('Adding user as member to club:', club.id);
       const { error: insertError } = await supabase
         .from("club_members")
         .insert({
@@ -180,7 +155,6 @@ const JoinClub = () => {
         return;
       }
 
-      //console. log('Successfully joined club:', club.name);
       setGlobalClubId(club.id);
       localStorage.setItem("lastVisitedClub", club.id);
 
@@ -189,7 +163,7 @@ const JoinClub = () => {
         description: `Welcome to ${club.name}`,
       });
 
-      // Redirect to dashboardg
+      // Redirect to dashboard
       navigate(`/dashboard/${club.id}`);
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -204,52 +178,22 @@ const JoinClub = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <div className="w-full max-w-md">
         <Button
           variant="ghost"
           onClick={handleBack}
-          className="mb-6 p-0 h-auto font-normal text-gray-600 hover:text-gray-900"
+          className="mb-6 p-0 h-auto font-normal text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent dark:hover:bg-transparent"
+          icon={<ArrowLeft className="h-4 w-4" />}
         >
-          <ArrowLeft className="mr-1 h-4 w-4" />
           Back
         </Button>
 
-        {/* Debug Information
-        <Card className="mb-4 bg-blue-50 border-blue-200">
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader>
-            <h2 className="text-lg font-semibold">Debug Information</h2>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm">
-              <p>
-                <strong>Current User ID:</strong> {user?.id || "Not logged in"}
-              </p>
-              <p>
-                <strong>User Email:</strong> {user?.email || "N/A"}
-              </p>
-              <div>
-                <strong>Clubs created by this user:</strong>
-                {userCreatedClubs.length > 0 ? (
-                  <ul className="mt-1 list-disc list-inside">
-                    {userCreatedClubs.map((club) => (
-                      <li key={club.id} className="text-xs">
-                        <strong>ID:</strong> {club.id} | <strong>Name:</strong>{" "}
-                        {club.name} | <strong>Slug:</strong> {club.slug}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span className="text-gray-500"> None found</span>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card> */}
-
-        <Card>
-          <CardHeader>
-            <h1 className="text-2xl font-semibold text-center">Join a club</h1>
+            <h1 className="text-2xl font-semibold text-center text-gray-900 dark:text-gray-100">
+              Join a club
+            </h1>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -264,7 +208,12 @@ const JoinClub = () => {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                variant="primary"
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
                 {isLoading ? "Joining..." : "Join Club"}
               </Button>
             </form>
