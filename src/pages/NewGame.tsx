@@ -704,7 +704,7 @@ const NewGame = () => {
     );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
       <main className="flex-grow">
@@ -722,7 +722,7 @@ const NewGame = () => {
               {/* Date Picker and Extra Players Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Date Picker */}
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -753,8 +753,8 @@ const NewGame = () => {
                 </div>
 
                 {/* Add Extra Players */}
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                  <div className="flex items-center justify-between">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4 w-full">
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Add guests or temp. players
                     </span>

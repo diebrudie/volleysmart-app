@@ -354,15 +354,15 @@ const Dashboard = () => {
         <div className="flex-grow flex flex-col items-center justify-center p-4">
           <div className="max-w-lg w-full text-center">
             {clubDetails && (
-              <p className="text-lg text-gray-700 mb-4">
+              <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
                 Welcome to{" "}
                 <span className="font-semibold">{clubDetails.name}</span>!
               </p>
             )}
-            <h1 className="text-3xl font-bold mb-2">
+            <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
               You haven't played any games yet.
             </h1>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
               {canInviteMembers
                 ? "Proceed with inviting other members to your club or creating a game:"
                 : "Wait for the club admin to invite more members or create a game:"}
@@ -558,14 +558,18 @@ const Dashboard = () => {
           {/* Game Overview with dynamic heading */}
           <div className="mb-8 flex justify-between items-center">
             <div>
-              <h1 className="text-4xl font-serif mb-2">{headingText}</h1>
-              <p className="text-gray-600">{formatDate(matchDate)}</p>
+              <h1 className="text-4xl font-serif mb-2 text-gray-900 dark:text-gray-100">
+                {headingText}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {formatDate(matchDate)}
+              </p>
             </div>
             {isEditingAllowed && (
               <Button
                 variant="action"
                 icon={<Pencil className="h-4 w-4" />}
-                onClick={handleEditTeamsClick} // ✅ Keep the SAME onClick handler
+                onClick={handleEditTeamsClick}
                 size="sm"
               >
                 Edit Teams
@@ -577,12 +581,12 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Left Column - Winner Card */}
             <div className="h-full">
-              <div className="rounded-lg overflow-hidden border border-gray-200 h-full flex flex-col">
-                <div className="bg-volleyball-primary text-white p-4 text-center">
+              <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 h-full flex flex-col">
+                <div className="bg-volleyball-primary dark:bg-blue-700 text-white p-4 text-center">
                   <h2 className="text-2xl font-bold">SCORE</h2>
                 </div>
-                <div className="bg-white p-6 text-center flex-grow flex flex-col justify-center">
-                  <h3 className="text-3xl font-bold mb-4">
+                <div className="bg-white dark:bg-gray-800 p-6 text-center flex-grow flex flex-col justify-center">
+                  <h3 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">
                     {hasPlayedAnySet ? winner : "TBD"}
                   </h3>
                   <div className="text-5xl font-bold">
@@ -595,20 +599,20 @@ const Dashboard = () => {
 
             {/* Right Column - Team Cards */}
             <div className="h-full">
-              <div className="flex h-full rounded-lg overflow-hidden border border-gray-200">
+              <div className="flex h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                 {/* Team A Card */}
-                <div className="w-1/2 bg-white p-0">
-                  <h3 className="bg-red-500 text-white py-1 px-2 text-center">
+                <div className="w-1/2 bg-white dark:bg-gray-800 p-0">
+                  <h3 className="bg-red-500 dark:bg-red-600 text-white py-1 px-2 text-center">
                     Team A
                   </h3>
                   <ul className="space-y-0.5 p-4">
                     {teamAPlayers.map((player, index) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium">
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
                           {index + 1}. {player.name}
                         </span>
                         {player.position && (
-                          <span className="text-gray-600">
+                          <span className="text-gray-600 dark:text-gray-400">
                             {" "}
                             - {player.position}
                           </span>
@@ -619,18 +623,18 @@ const Dashboard = () => {
                 </div>
 
                 {/* Team B Card */}
-                <div className="w-1/2 bg-white p-0">
-                  <h3 className="bg-emerald-500 text-white py-1 px-2 text-center">
+                <div className="w-1/2 bg-white dark:bg-gray-800 p-0">
+                  <h3 className="bg-emerald-500 dark:bg-emerald-600 text-white py-1 px-2 text-center">
                     Team B
                   </h3>
                   <ul className="space-y-0.5 p-4">
                     {teamBPlayers.map((player, index) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium">
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
                           {index + 1}. {player.name}
                         </span>
                         {player.position && (
-                          <span className="text-gray-600">
+                          <span className="text-gray-600 dark:text-gray-400">
                             {" "}
                             - {player.position}
                           </span>

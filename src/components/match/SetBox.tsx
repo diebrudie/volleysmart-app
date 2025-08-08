@@ -74,7 +74,7 @@ const SetBox: React.FC<SetBoxProps> = ({
     if (hasBeenPlayed) {
       return `rgba(251, 190, 36, ${getOpacity()})`; // Yellow with opacity
     } else {
-      return `rgba(216, 214, 211, ${getOpacity()})`; // Grey with opacity
+      return `rgba(156, 163, 175, ${getOpacity()})`; // Better gray with opacity
     }
   };
 
@@ -117,7 +117,7 @@ const SetBox: React.FC<SetBoxProps> = ({
     >
       <h3
         className={cn(
-          "font-serif mb-4 text-center",
+          "font-serif mb-4 text-center font-bold text-gray-900 dark:text-gray-100",
           isLarge ? "text-3xl" : "text-xl"
         )}
       >
@@ -126,20 +126,22 @@ const SetBox: React.FC<SetBoxProps> = ({
 
       <div
         className={cn(
-          "font-bold mb-3 text-center whitespace-nowrap min-w-0 overflow-hidden",
+          "font-bold mb-3 text-center whitespace-nowrap min-w-0 overflow-hidden text-gray-900 dark:text-gray-100",
           isLarge ? "text-[min(7vw,5rem)]" : "text-[min(6vw,3rem)]"
         )}
       >
         {hasBeenPlayed ? teamAScore : "0"} - {hasBeenPlayed ? teamBScore : "0"}
       </div>
 
-      <p className="text-sm text-center">Team A vs. Team B</p>
+      <p className="text-sm text-center text-gray-700 dark:text-gray-300">
+        Team A vs. Team B
+      </p>
 
       {isEditingAllowed && (
         <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
           <DialogTrigger asChild>
-            <button className="absolute top-2 right-2 p-1 hover:bg-black/10 rounded-md transition-colors">
-              <Pencil className="h-5 w-5" />
+            <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
+              <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
             </button>
           </DialogTrigger>
           <DialogContent>
@@ -164,11 +166,13 @@ const SetBox: React.FC<SetBoxProps> = ({
                       setLocalTeamAScore(parseInt(e.target.value) || 0)
                     }
                     onKeyDown={handleKeyDown}
-                    className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500"
+                    className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   />
                 </div>
 
-                <div className="text-2xl font-medium self-end">vs.</div>
+                <div className="text-2xl font-medium self-end text-gray-900 dark:text-gray-100">
+                  vs.
+                </div>
 
                 <div className="text-center">
                   <p className="text-sm font-medium mb-2 text-emerald-500">
@@ -182,13 +186,15 @@ const SetBox: React.FC<SetBoxProps> = ({
                       setLocalTeamBScore(parseInt(e.target.value) || 0)
                     }
                     onKeyDown={handleKeyDown}
-                    className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500"
+                    className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
 
               <div className="flex justify-center">
-                <Button onClick={handleSubmit}>Submit</Button>
+                <Button variant="primary" onClick={handleSubmit}>
+                  Submit
+                </Button>
               </div>
             </div>
           </DialogContent>

@@ -14,7 +14,7 @@ const Start = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
         <h1 className="text-2xl font-semibold text-center mb-6 text-gray-900 dark:text-gray-100">
           What would you like to do next?

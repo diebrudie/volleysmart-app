@@ -85,7 +85,7 @@ const Navbar = () => {
   ].filter(Boolean);
 
   const DesktopNav = () => (
-    <header className="bg-white dark:bg-gray-900 shadow-sm">
+    <header className="shadow-sm border-b border-gray-200 dark:border-gray-700">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 lg:border-none">
           <div className="flex items-center">
@@ -175,7 +175,7 @@ const Navbar = () => {
   );
 
   const MobileNav = () => (
-    <header className="bg-white dark:bg-gray-900 shadow-sm">
+    <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <nav className="px-4 py-3 flex items-center justify-between">
         <Logo
           size="sm"

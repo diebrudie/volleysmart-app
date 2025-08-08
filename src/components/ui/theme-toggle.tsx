@@ -20,7 +20,7 @@ const ThemeToggle: React.FC = () => {
       variant="ghost"
       size="sm"
       onClick={handleToggle}
-      className="h-9 w-9 px-0"
+      className="h-9 w-9 px-0 hover:bg-gray-100 dark:hover:bg-gray-800"
       title={`Switch to ${isDark ? "light" : "dark"} mode`}
     >
       {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
