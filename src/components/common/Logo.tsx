@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg";
@@ -8,10 +9,11 @@ interface LogoProps {
 
 const Logo = ({ size = "md", linkTo = "/" }: LogoProps) => {
   const { isAuthenticated } = useAuth();
-  
+  const { isDark } = useTheme();
+
   const destination = isAuthenticated ? "/dashboard" : "/";
-  
-  const finalLinkTo = (linkTo !== "/" || !isAuthenticated) ? linkTo : destination;
+
+  const finalLinkTo = linkTo !== "/" || !isAuthenticated ? linkTo : destination;
 
   const sizeClasses = {
     sm: "h-6",
@@ -19,12 +21,11 @@ const Logo = ({ size = "md", linkTo = "/" }: LogoProps) => {
     lg: "h-12",
   };
 
+  // Choose logo based on theme
+  const logoSrc = isDark ? "/logo-darkmode.svg" : "/logo-lightmode.svg";
+
   const logoElement = (
-    <img 
-      src="/lovable-uploads/e54f46fd-5eab-4f09-94df-48c27897b119.png" 
-      alt="VolleyMatch Logo" 
-      className={sizeClasses[size]} 
-    />
+    <img src={logoSrc} alt="VolleyMatch Logo" className={sizeClasses[size]} />
   );
 
   if (finalLinkTo) {

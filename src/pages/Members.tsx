@@ -583,9 +583,9 @@ const Members = () => {
                     </Select>
 
                     {/* View Toggle */}
-                    <div className="flex bg-gray-100 rounded-lg p-1">
+                    <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                       <Button
-                        variant={viewMode === "grid" ? "default" : "ghost"}
+                        variant={viewMode === "grid" ? "primary" : "ghost"}
                         size="sm"
                         onClick={() => setViewMode("grid")}
                         className="px-3 py-2"
@@ -593,7 +593,7 @@ const Members = () => {
                         <Grid3X3 className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant={viewMode === "list" ? "default" : "ghost"}
+                        variant={viewMode === "list" ? "primary" : "ghost"}
                         size="sm"
                         onClick={() => setViewMode("list")}
                         className="px-3 py-2"
