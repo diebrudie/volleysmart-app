@@ -112,10 +112,8 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <ThemeProvider>
-          {" "}
-          {/* 🆕 Add ThemeProvider here */}
-          <AuthProvider>
+        <AuthProvider>
+          <AuthAwareThemeWrapper>
             <ClubProvider>
               <TooltipProvider>
                 <Toaster />
@@ -288,11 +286,19 @@ const App = () => {
                 </BrowserRouter>
               </TooltipProvider>
             </ClubProvider>
-          </AuthProvider>
-        </ThemeProvider>{" "}
-        {/* 🆕 Close ThemeProvider here */}
+          </AuthAwareThemeWrapper>
+        </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>
+  );
+};
+
+// Component to bridge auth status with theme
+const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <ThemeProvider isAuthenticated={isAuthenticated}>{children}</ThemeProvider>
   );
 };
 

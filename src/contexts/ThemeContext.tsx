@@ -48,9 +48,13 @@ const resolveTheme = (theme: Theme): "light" | "dark" => {
 
 interface ThemeProviderProps {
   children: ReactNode;
+  isAuthenticated?: boolean;
 }
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({
+  children,
+  isAuthenticated = true,
+}) => {
   // Initialize theme from localStorage or default to 'system'
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
@@ -79,6 +83,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Effect to handle theme changes and system preference changes
   useEffect(() => {
+    // Force light mode for unauthenticated users
+    if (!isAuthenticated) {
+      const root = document.documentElement;
+      root.classList.remove("dark");
+      setIsDark(false);
+      return;
+    }
+
+    // Normal theme logic for authenticated users
     const resolvedTheme = resolveTheme(theme);
     setIsDark(resolvedTheme === "dark");
 
@@ -113,7 +126,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     return () => {
       mediaQuery.removeEventListener("change", handleChange);
     };
-  }, [theme]);
+  }, [theme, isAuthenticated]);
 
   const value: ThemeContextType = {
     theme,

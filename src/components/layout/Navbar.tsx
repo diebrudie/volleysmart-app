@@ -182,7 +182,7 @@ const Navbar = () => {
           linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"}
         />
         <div className="flex items-center space-x-2">
-          <ThemeToggle />
+          {isAuthenticated && <ThemeToggle />}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
