@@ -1,0 +1,445 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+This file provides comprehensive guidance to Claude Code when working with the VolleyMatch volleyball club and match management web app.
+
+## 🏐 Project Overview
+
+VolleyMatch is a React-based web application for managing volleyball clubs, teams, and matches. Built with modern TypeScript, Supabase backend, and deployed via Lovable.
+
+### Tech Stack
+- **Frontend**: React 18 + TypeScript + Vite
+- **UI Framework**: shadcn/ui + Tailwind CSS + Radix UI primitives
+- **Backend**: Supabase (Auth, Database, Storage, RLS)
+- **State Management**: React Context API (AuthContext, ClubContext)
+- **Data Fetching**: @tanstack/react-query
+- **Routing**: React Router v6
+- **Development**: ESLint + Vite SWC
+- **Deployment**: GitHub → Auto-deploy to Lovable
+
+## 🧱 Architecture & File Structure
+
+### Core Principles
+- **Feature-based organization** - Components grouped by domain (auth/, clubs/, members/, etc.)
+- **Context-driven state** - AuthContext and ClubContext manage global state
+- **Type safety with flexibility** - TypeScript with relaxed settings for rapid development
+- **Component composition** - Extensive use of shadcn/ui primitives
+- **Route-based club scoping** - All views depend on clubId from URL parameters
+
+### Project Structure
+```
+src/
+├── components/          # Feature-organized components
+│   ├── admin/          # Admin-only components
+│   ├── auth/           # Authentication components
+│   ├── clubs/          # Club management
+│   ├── common/         # Shared components
+│   ├── layout/         # Navigation, layout
+│   ├── members/        # Member management
+│   ├── team-generator/ # Team generation logic
+│   └── ui/             # shadcn/ui components
+├── contexts/           # React Context providers
+├── hooks/              # Custom hooks
+├── integrations/       # Supabase integration
+├── lib/                # Utilities
+├── pages/              # Page components
+├── types/              # TypeScript types
+└── main.tsx           # App entry point
+```
+
+## 🔐 Authentication & Authorization
+
+### Auth Flow
+- **AuthContext** manages user state, login/logout, and profile data
+- **ProtectedRoute** component handles route-level authorization
+- **Role-based access**: admin, editor, member, user
+- **Session persistence** via Supabase Auth with localStorage
+
+### Key Auth Patterns
+```typescript
+// Use auth in components
+const { user, isAuthenticated, isLoading } = useAuth();
+
+// Protect routes with roles
+<ProtectedRoute allowedRoles={["admin", "editor"]}>
+  <AdminComponent />
+</ProtectedRoute>
+
+// Check auth state
+if (!isAuthenticated) return <Navigate to="/login" />;
+```
+
+## 🏢 Club Context & Scoping
+
+### Club Context Pattern
+- **ClubContext** manages current club scope
+- **URL-based club selection** - clubId from route parameters
+- **localStorage persistence** - remembers last visited club
+- **All data queries scoped to current club**
+
+### Key Club Patterns
+```typescript
+// Access club context
+const { clubId, setClubId, clearClubId } = useClub();
+
+// Set club from URL params
+const { clubId: urlClubId } = useParams<{ clubId: string }>();
+useEffect(() => {
+  if (urlClubId) setClubId(urlClubId);
+}, [urlClubId, setClubId]);
+
+// Club-scoped queries
+const { data } = useQuery({
+  queryKey: ["clubData", clubId],
+  queryFn: () => fetchClubData(clubId),
+  enabled: !!clubId
+});
+```
+
+## 🗄️ Supabase Integration
+
+### Database Schema Overview
+- **clubs** - Club information and settings
+- **club_members** - User-club relationships with roles
+- **players** - Player profiles (linked to clubs)
+- **match_days** - Game sessions
+- **matches** - Individual match results
+- **game_players** - Player-team assignments for matches
+
+### RLS (Row Level Security) Patterns
+```sql
+-- Players visible only to club members
+EXISTS (
+  SELECT 1 FROM club_members me
+  JOIN club_members them ON me.club_id = them.club_id
+  WHERE me.user_id = auth.uid()
+  AND them.user_id = players.user_id
+)
+```
+
+### Common Query Patterns
+```typescript
+// Club-scoped data fetching
+const { data: players } = await supabase
+  .from("players")
+  .select(`
+    *,
+    player_positions (
+      is_primary,
+      positions (name)
+    )
+  `)
+  .eq("club_id", clubId);
+
+// Error handling
+if (error) {
+  console.error("Supabase error:", error);
+  throw error;
+}
+```
+
+## 🎯 Component Patterns
+
+### Page Component Structure
+```typescript
+// Standard page component pattern
+const Dashboard = () => {
+  const { user } = useAuth();
+  const { clubId } = useClub();
+  const { clubId: urlClubId } = useParams<{ clubId: string }>();
+  
+  // Sync URL clubId with context
+  useEffect(() => {
+    if (urlClubId) setClubId(urlClubId);
+  }, [urlClubId, setClubId]);
+
+  // Club-scoped queries
+  const { data, isLoading } = useQuery({
+    queryKey: ["data", clubId],
+    queryFn: () => fetchData(clubId),
+    enabled: !!clubId && !isCheckingClub
+  });
+
+  // Loading states
+  if (isLoading) return <LoadingSpinner />;
+  
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-grow">
+        {/* Page content */}
+      </main>
+    </div>
+  );
+};
+```
+
+### Data Fetching Patterns
+```typescript
+// React Query with proper keys
+const { data: clubData } = useQuery({
+  queryKey: ["club", clubId],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("clubs")
+      .select("*")
+      .eq("id", clubId)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+  enabled: !!clubId
+});
+
+// Invalidate queries after mutations
+await queryClient.invalidateQueries({
+  queryKey: ["club", clubId]
+});
+```
+
+## 🐛 Common Debugging Patterns
+
+### Context Debugging
+```typescript
+// Add strategic logging for context issues
+useEffect(() => {
+  console.log("🏐 ClubContext Debug:", { clubId, urlClubId });
+}, [clubId, urlClubId]);
+
+// Check auth state
+useEffect(() => {
+  console.log("👤 Auth Debug:", { user, isAuthenticated, isLoading });
+}, [user, isAuthenticated, isLoading]);
+```
+
+### Navigation Debugging
+```typescript
+// Route debugging
+console.log("📍 Current route:", window.location.pathname);
+console.log("🎯 Navigating to:", `/dashboard/${clubId}`);
+
+// Ensure clubId is in navigation
+navigate(`/members/${clubId}`);
+```
+
+### Supabase RLS Debugging
+```typescript
+// Check RLS policies when queries fail
+const { data, error } = await supabase
+  .from("players")
+  .select("*")
+  .eq("club_id", clubId);
+
+if (error) {
+  console.error("🔒 RLS Policy Error:", error);
+  console.log("🔍 Debug info:", { clubId, userId: user?.id });
+}
+```
+
+## 🚨 Known Issues & Solutions
+
+### Issue: ClubContext not persisting
+**Symptoms**: clubId resets on page refresh  
+**Solution**: Check localStorage persistence and URL param sync
+```typescript
+// Ensure proper URL param handling
+const { clubId: urlClubId } = useParams<{ clubId: string }>();
+useEffect(() => {
+  if (urlClubId) {
+    setClubId(urlClubId);
+  }
+}, [urlClubId, setClubId]);
+```
+
+### Issue: RLS blocking player queries
+**Symptoms**: Empty results despite data existing  
+**Solution**: Verify club membership and RLS policies
+```typescript
+// Debug club membership
+const { data: membership } = await supabase
+  .from("club_members")
+  .select("role")
+  .eq("club_id", clubId)
+  .eq("user_id", user.id)
+  .single();
+```
+
+### Issue: Navigation losing clubId
+**Symptoms**: Routes not preserving club context  
+**Solution**: Always include clubId in navigation
+```typescript
+// ❌ Wrong - loses club context
+navigate("/members");
+
+// ✅ Correct - preserves club context
+navigate(`/members/${clubId}`);
+```
+
+## 🎨 Styling & UI Patterns
+
+### Tailwind + shadcn/ui Patterns
+```typescript
+// Standard layout pattern
+<div className="min-h-screen flex flex-col">
+  <Navbar />
+  <main className="flex-grow">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Content */}
+    </div>
+  </main>
+</div>
+
+// Card components
+<Card className="hover:shadow-lg transition-shadow">
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+  </CardHeader>
+  <CardContent>
+    {/* Content */}
+  </CardContent>
+</Card>
+```
+
+### Theme Support
+- Dark mode via ThemeContext
+- Consistent color scheme with volleyball-primary brand color
+- Responsive design with mobile-first approach
+
+## 🧪 Development Guidelines
+
+### Component Development
+```typescript
+// Component interface pattern
+interface ComponentProps {
+  member: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    // ... other properties
+  };
+}
+
+export const Component = ({ member }: ComponentProps) => {
+  // Component logic
+  return <div>{/* JSX */}</div>;
+};
+```
+
+### Error Handling
+```typescript
+// Standard error handling
+try {
+  const result = await supabaseOperation();
+  return result;
+} catch (error) {
+  console.error("Operation failed:", error);
+  toast({
+    title: "Error",
+    description: "Operation failed. Please try again.",
+    variant: "destructive"
+  });
+  throw error;
+}
+```
+
+### TypeScript Patterns
+```typescript
+// Use database types
+import { Tables } from "@/types/supabase";
+type Player = Tables<"players">;
+
+// Extend types as needed
+interface PlayerWithPositions extends Player {
+  player_positions: Array<{
+    is_primary: boolean;
+    positions: { name: string };
+  }>;
+}
+```
+
+## 🚀 Deployment & CI/CD
+
+### GitHub → Lovable Flow
+- **Push to main** triggers auto-deployment
+- **Development builds** available via `npm run build:dev`
+- **Component tagging** via lovable-tagger (currently disabled)
+
+### Environment Variables
+- Supabase URL and keys managed by Lovable
+- No manual environment setup required
+
+### Storage Requirements
+- **Manual bucket creation required** - `player-images` and `club-images` buckets must be created manually in Supabase
+- **Dynamic bucket creation disabled** due to RLS policies
+- **Storage API errors suppressed** - App.tsx includes fetch interception to handle bucket creation errors gracefully
+
+## 🔧 Development Commands
+
+```bash
+# Development
+npm run dev              # Start dev server on :8080
+
+# Building
+npm run build           # Production build
+npm run build:dev       # Development build (with development mode)
+npm run preview         # Preview production build
+
+# Code Quality
+npm run lint            # ESLint check (no test commands available)
+
+# Setup
+npm i                   # Install dependencies
+```
+
+## 🧪 Testing & Quality Assurance
+
+- **No test framework configured** - project does not include Jest, Vitest, or other testing libraries
+- **ESLint configuration** includes TypeScript rules with relaxed unused variables setting
+- **No TypeScript strict mode** - @typescript-eslint/no-unused-vars is disabled
+- **Component tagging disabled** - lovable-tagger is commented out in vite.config.ts
+
+## 📋 Best Practices for Claude
+
+### When Debugging Issues
+1. **Always ask for specific error messages** and browser console output
+2. **Check clubId context** - most issues stem from missing club scope
+3. **Verify authentication state** - ensure user is logged in and has proper roles
+4. **Review Supabase RLS policies** - common source of data access issues
+5. **Insert strategic console.log statements** to trace data flow
+
+### When Implementing Features
+1. **Follow existing patterns** - use established component and context patterns
+2. **Scope to clubs** - ensure all new features respect club boundaries
+3. **Handle loading states** - use Spinner component for async operations
+4. **Include proper error handling** - toast notifications for user feedback
+5. **Maintain type safety** - use existing TypeScript interfaces
+
+### When Modifying Navigation
+1. **Always include clubId** in route parameters
+2. **Update route definitions** in App.tsx if adding new routes
+3. **Test ProtectedRoute logic** for role-based access
+4. **Verify context persistence** across navigation
+
+### Code Style Guidelines
+- **Use existing component patterns** from shadcn/ui
+- **Follow Tailwind CSS conventions** for styling
+- **Maintain consistent error handling** with toast notifications
+- **Use React Query** for all server state management
+- **Implement proper loading states** for better UX
+
+## 🚨 Critical Debugging Checklist
+
+When encountering issues, always check:
+- [ ] Is user authenticated? (`useAuth()`)
+- [ ] Is clubId set correctly? (`useClub()`)
+- [ ] Are route parameters correct? (`useParams()`)
+- [ ] Do Supabase queries include proper clubId filtering?
+- [ ] Are RLS policies allowing access for the current user?
+- [ ] Is React Query cache properly invalidated after mutations?
+- [ ] Are navigation links including clubId in the path?
+
+---
+
+**Remember**: This is a club-scoped application where almost all functionality depends on the current club context. Always verify clubId is properly set and propagated through the application.
