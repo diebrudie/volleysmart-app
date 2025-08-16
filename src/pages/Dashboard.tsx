@@ -608,14 +608,13 @@ const Dashboard = () => {
                   <ul className="space-y-0.5 p-4">
                     {teamAPlayers.map((player, index) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
                           {index + 1}. {player.name}
-                        </span>
+                        </div>
                         {player.position && (
-                          <span className="text-gray-600 dark:text-gray-400">
-                            {" "}
-                            - {player.position}
-                          </span>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 ml-3">
+                            {player.position}
+                          </div>
                         )}
                       </li>
                     ))}
@@ -630,14 +629,13 @@ const Dashboard = () => {
                   <ul className="space-y-0.5 p-4">
                     {teamBPlayers.map((player, index) => (
                       <li key={player.id} className="text-sm">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
                           {index + 1}. {player.name}
-                        </span>
+                        </div>
                         {player.position && (
-                          <span className="text-gray-600 dark:text-gray-400">
-                            {" "}
-                            - {player.position}
-                          </span>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 ml-3">
+                            {player.position}
+                          </div>
                         )}
                       </li>
                     ))}

@@ -118,7 +118,7 @@ const SetBox: React.FC<SetBoxProps> = ({
       <h3
         className={cn(
           "font-serif mb-4 text-center font-bold text-gray-900 dark:text-gray-100",
-          isLarge ? "text-3xl" : "text-xl"
+          "text-xl"
         )}
       >
         SET {setNumber}
@@ -127,7 +127,7 @@ const SetBox: React.FC<SetBoxProps> = ({
       <div
         className={cn(
           "font-bold mb-3 text-center whitespace-nowrap min-w-0 overflow-hidden text-gray-900 dark:text-gray-100",
-          isLarge ? "text-[min(7vw,5rem)]" : "text-[min(6vw,3rem)]"
+          "text-3xl"
         )}
       >
         {hasBeenPlayed ? teamAScore : "0"} - {hasBeenPlayed ? teamBScore : "0"}
