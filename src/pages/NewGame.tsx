@@ -851,10 +851,20 @@ const NewGame = () => {
                         <div
                           key={player.id}
                           className={cn(
-                            "flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700",
+                            "flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer select-none",
                             player.isExtraPlayer &&
                               "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-400 dark:border-l-blue-500"
                           )}
+                          onClick={() => handlePlayerToggle(player.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handlePlayerToggle(player.id);
+                            }
+                          }}
+                          tabIndex={0}
+                          role="button"
+                          aria-pressed={selectedPlayers.includes(player.id)}
                         >
                           <div className="flex flex-col flex-grow">
                             <div className="flex items-center gap-2">
