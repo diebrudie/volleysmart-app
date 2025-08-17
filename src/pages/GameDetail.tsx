@@ -185,6 +185,25 @@ const GameDetail = () => {
     enabled: !!matchDayId,
   });
 
+  // Track if the current screen size is mobile (less than 640px width)
+  // This is used to conditionally align the dropdown menu appropriately for different screen sizes
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+
+  // Set up a resize listener to update mobile state when window size changes
+  useEffect(() => {
+    // Function to check current window width and update mobile state
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640); // 640px is the 'sm' breakpoint in Tailwind
+    };
+
+    // Add event listener to track window resize events
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup function to remove event listener when component unmounts
+    // This prevents memory leaks and ensures the listener doesn't persist
+    return () => window.removeEventListener("resize", handleResize);
+  }, []); // Empty dependency array means this effect runs only once on mount
+
   // Set club ID from match data
   useEffect(() => {
     if (matchData?.club_id && matchData.club_id !== clubId) {
@@ -509,7 +528,10 @@ const GameDetail = () => {
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent
+                  align={isMobile ? "start" : "end"}
+                  className="w-56"
+                >
                   {canEditScores && (
                     <>
                       {editing ? (
