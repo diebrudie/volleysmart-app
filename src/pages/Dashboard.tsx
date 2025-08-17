@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Pencil } from "lucide-react";
+import { Pencil, MapPin } from "lucide-react";
 import { useClub } from "@/contexts/ClubContext";
 import { useParams } from "react-router-dom";
 
@@ -37,8 +37,13 @@ interface MatchDayData {
   id: string;
   date: string;
   notes: string | null;
+  location_id: string | null;
   matches: MatchData[];
   game_players: GamePlayerData[];
+  locations?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 // Helper function to check if game can still be edited (within 1 day)
@@ -188,26 +193,23 @@ const Dashboard = () => {
     queryFn: async (): Promise<MatchDayData | null> => {
       if (!userClubId) return null;
 
-      // console. log(("=== FETCHING LATEST GAME ===");
-      // console. log(("Club ID:", userClubId);
-
-      // First, get the latest match day
       // Get the latest match day that actually has players
       const { data: allMatchDays, error: matchDayError } = await supabase
         .from("match_days")
         .select(
           `
-    id,
-    date,
-    notes,
-    created_at,
-    matches (
-      id,
-      game_number,
-      team_a_score,
-      team_b_score
-    )
-  `
+        id,
+        date,
+        notes,
+        created_at,
+        location_id,
+        matches (
+          id,
+          game_number,
+          team_a_score,
+          team_b_score
+        )
+      `
         )
         .eq("club_id", userClubId)
         .order("created_at", { ascending: false });
@@ -217,14 +219,10 @@ const Dashboard = () => {
         throw matchDayError;
       }
 
-      // console. log("All match days:", allMatchDays);
-
       // Find the latest match day that has game players
-      let matchDay = null;
+      let selectedMatchDay = null;
       if (allMatchDays && allMatchDays.length > 0) {
         for (const md of allMatchDays) {
-          // console. log(("Checking match day:", md.id);
-
           // Quick check if this match day has game players
           const { data: playerCheck } = await supabase
             .from("game_players")
@@ -232,46 +230,50 @@ const Dashboard = () => {
             .eq("match_day_id", md.id)
             .limit(1);
 
-          //console. log(`Match day ${md.id} has ${playerCheck?.length || 0} players`);
-
           if (playerCheck && playerCheck.length > 0) {
-            matchDay = md;
-            // console. log(("Using match day:", matchDay.id);
+            selectedMatchDay = md;
             break;
           }
         }
       }
 
-      // Alternative query approach - fetch game_players and players separately
-      // console. log("About to query game_players for match_day_id:", matchDay.id);
+      if (!selectedMatchDay) {
+        return null;
+      }
 
-      // First get the game players
+      // Get location data separately
+      let locationData = null;
+      if (selectedMatchDay.location_id) {
+        const { data: location } = await supabase
+          .from("locations")
+          .select("id, name")
+          .eq("id", selectedMatchDay.location_id)
+          .single();
+
+        locationData = location;
+      }
+
+      // Get game players
       const { data: gamePlayersRaw, error: gamePlayersError } = await supabase
         .from("game_players")
         .select("player_id, team_name, position_played")
-        .eq("match_day_id", matchDay.id);
-
-      // console. log(("Raw game players:", gamePlayersRaw);
+        .eq("match_day_id", selectedMatchDay.id);
 
       if (gamePlayersError) {
         console.error("Game players error:", gamePlayersError);
       }
 
-      let gamePlayers = [];
+      let gamePlayers: GamePlayerData[] = [];
 
       if (gamePlayersRaw && gamePlayersRaw.length > 0) {
         // Get player IDs
         const playerIds = gamePlayersRaw.map((gp) => gp.player_id);
-
-        // console. log(("Player IDs to fetch:", playerIds);
 
         // Then get the player details
         const { data: playersData, error: playersError } = await supabase
           .from("players")
           .select("id, first_name, last_name")
           .in("id", playerIds);
-
-        // console. log(("Players data:", playersData);
 
         if (playersError) {
           console.error("Players error:", playersError);
@@ -294,12 +296,16 @@ const Dashboard = () => {
           });
         }
       }
-      // console. log("Final combined game players:", gamePlayers);
 
       // Combine the data
       const result: MatchDayData = {
-        ...matchDay,
-        game_players: gamePlayers || [],
+        id: selectedMatchDay.id,
+        date: selectedMatchDay.date,
+        notes: selectedMatchDay.notes,
+        location_id: selectedMatchDay.location_id,
+        matches: selectedMatchDay.matches || [],
+        game_players: gamePlayers,
+        locations: locationData,
       };
 
       return result;
@@ -561,9 +567,18 @@ const Dashboard = () => {
               <h1 className="text-4xl font-serif mb-2 text-gray-900 dark:text-gray-100">
                 {headingText}
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {formatDate(matchDate)}
-              </p>
+              <div className="flex items-center text-gray-600 dark:text-gray-400">
+                <span>{formatDate(matchDate)}</span>
+                {latestGame?.locations?.name && (
+                  <>
+                    <span className="mx-2">|</span>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      <span>{latestGame.locations.name}</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             {isEditingAllowed && (
               <Button

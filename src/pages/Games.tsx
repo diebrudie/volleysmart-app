@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, X, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, X, Trash2, MapPin } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
@@ -46,6 +46,7 @@ interface MatchData {
   total_games_played: number;
   winner: string;
   match_day_id: string;
+  location_name: string | null;
 }
 
 const Games = () => {
@@ -99,11 +100,16 @@ const Games = () => {
           id,
           date,
           notes,
+          location_id,
           matches (
             id,
             game_number,
             team_a_score,
             team_b_score
+          ),
+          locations (
+            id,
+            name
           )
         `
         )
@@ -164,6 +170,7 @@ const Games = () => {
           total_games_played: totalGamesPlayed,
           winner,
           match_day_id: matchDay.id,
+          location_name: matchDay.locations?.name || null,
         });
       }
 
@@ -438,7 +445,7 @@ const Games = () => {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <CardTitle>All Games Archive</CardTitle>
 
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex gap-3 flex-row">
                   <Select
                     value={selectedMonth}
                     onValueChange={(value) => setSelectedMonth(value)}
@@ -517,6 +524,7 @@ const Games = () => {
                           Winner {getSortIcon("winner")}
                         </button>
                       </TableHead>
+                      <TableHead>Location</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -524,7 +532,7 @@ const Games = () => {
                     {filteredMatches.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={isAdmin ? 5 : 4}
+                          colSpan={isAdmin ? 6 : 5}
                           className="text-center py-8 text-gray-500"
                         >
                           No matches found. Try adjusting your filters.
@@ -546,7 +554,7 @@ const Games = () => {
                               />
                             </TableCell>
                           )}
-                          <TableCell className="font-medium">
+                          <TableCell className="font-medium w-[180px] whitespace-nowrap">
                             {formatDate(match.date)}
                           </TableCell>
                           <TableCell className="text-center font-semibold">
@@ -564,6 +572,18 @@ const Games = () => {
                             >
                               {match.winner}
                             </span>
+                          </TableCell>
+                          <TableCell>
+                            {match.location_name ? (
+                              <div className="flex items-center">
+                                <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                  {match.location_name}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">

@@ -10,6 +10,7 @@ import {
   Save,
   X,
   Trash,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,11 +57,16 @@ interface MatchDayData {
   date: string;
   notes: string | null;
   club_id: string;
+  location_id: string | null;
   matches: Match[];
   game_players: GamePlayer[];
   clubs: {
     name: string;
   };
+  locations?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 const GameDetail = () => {
@@ -95,6 +101,7 @@ const GameDetail = () => {
           date,
           notes,
           club_id,
+          location_id,
           matches (
             id,
             game_number,
@@ -102,6 +109,10 @@ const GameDetail = () => {
             team_b_score
           ),
           clubs (
+            name
+          ),
+          locations (
+            id,
             name
           )
         `
@@ -561,7 +572,7 @@ const GameDetail = () => {
           <Card className="mb-8">
             <CardContent className="p-6">
               {/* Match Info Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div className="flex items-top">
                   <Calendar className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
                   <div>
@@ -573,6 +584,19 @@ const GameDetail = () => {
                     </p>
                   </div>
                 </div>
+                {matchData.locations?.name && (
+                  <div className="flex items-top">
+                    <MapPin className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Location
+                      </p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {matchData.locations.name}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-top">
                   <Trophy className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
                   <div>

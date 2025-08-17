@@ -21,6 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { LocationSelector } from "@/components/forms/LocationSelector";
 
 interface ClubMember {
   id: string;
@@ -73,6 +74,9 @@ const NewGame = () => {
   const [extraPlayersCount, setExtraPlayersCount] = useState(0);
   const [extraPlayers, setExtraPlayers] = useState<ExtraPlayer[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState<
+    string | undefined
+  >();
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [editingExtraPlayer, setEditingExtraPlayer] = useState<string | null>(
@@ -373,6 +377,7 @@ const NewGame = () => {
           created_by: user.id,
           club_id: clubId,
           team_generated: true,
+          location_id: selectedLocationId,
         })
         .select()
         .single();
@@ -719,8 +724,8 @@ const NewGame = () => {
             </div>
           ) : (
             <div className="space-y-6 max-w-4xl pb-24">
-              {/* Date Picker and Extra Players Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Date Picker, Location, and Extra Players Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Date Picker */}
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                   <Popover>
@@ -750,6 +755,16 @@ const NewGame = () => {
                       />
                     </PopoverContent>
                   </Popover>
+                </div>
+
+                {/* Location Selector */}
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <LocationSelector
+                    clubId={clubId!}
+                    value={selectedLocationId}
+                    onValueChange={setSelectedLocationId}
+                    placeholder="Select or create location"
+                  />
                 </div>
 
                 {/* Add Extra Players */}
