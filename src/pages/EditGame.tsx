@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Shuffle, Save, Edit2 } from "lucide-react";
+import { LocationSelector } from "@/components/forms/LocationSelector";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -76,7 +77,12 @@ interface MatchDayData {
   id: string;
   date: string;
   notes: string | null;
+  location_id: string | null;
   game_players: GamePlayerData[];
+  locations?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 interface PlayerWithPosition {
@@ -144,6 +150,9 @@ const EditGame = () => {
   const [teamAPlayers, setTeamAPlayers] = useState<EditPlayer[]>([]);
   const [teamBPlayers, setTeamBPlayers] = useState<EditPlayer[]>([]);
   const [activePlayer, setActivePlayer] = useState<EditPlayer | null>(null);
+  const [selectedLocationId, setSelectedLocationId] = useState<
+    string | undefined
+  >();
 
   // Fetch real game data
   const { data: gameData, isLoading } = useQuery({
@@ -157,7 +166,18 @@ const EditGame = () => {
       // Get the match day
       const { data: matchDay, error: matchDayError } = await supabase
         .from("match_days")
-        .select("id, date, notes")
+        .select(
+          `
+    id, 
+    date, 
+    notes,
+    location_id,
+    locations (
+      id,
+      name
+    )
+  `
+        )
         .eq("id", gameId)
         .single();
 
@@ -247,6 +267,11 @@ const EditGame = () => {
       // Set the date from game data
       if (gameData.date) {
         setDate(new Date(gameData.date));
+      }
+
+      // Set the location from game data
+      if (gameData.location_id) {
+        setSelectedLocationId(gameData.location_id);
       }
 
       console.log("Team A players:", teamA);
@@ -642,15 +667,18 @@ const EditGame = () => {
         throw insertError;
       }
 
-      // Update match day date if changed
-      const { error: dateError } = await supabase
+      // Update match day date and location if changed
+      const { error: updateError } = await supabase
         .from("match_days")
-        .update({ date: date.toISOString() })
+        .update({
+          date: date.toISOString(),
+          location_id: selectedLocationId || null,
+        })
         .eq("id", gameId);
 
-      if (dateError) {
-        console.error("Error updating date:", dateError);
-        throw dateError;
+      if (updateError) {
+        console.error("Error updating match day:", updateError);
+        throw updateError;
       }
 
       toast({
@@ -679,14 +707,14 @@ const EditGame = () => {
               Edit Teams
             </h1>
 
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
               {/* Date Picker */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "justify-start text-left font-normal",
+                      "justify-start text-left font-normal w-full sm:w-auto",
                       !date && "text-muted-foreground"
                     )}
                   >
@@ -705,11 +733,23 @@ const EditGame = () => {
                 </PopoverContent>
               </Popover>
 
+              {/* Location Selector */}
+              {clubId && (
+                <LocationSelector
+                  clubId={clubId}
+                  value={selectedLocationId}
+                  onValueChange={setSelectedLocationId}
+                  placeholder="Select or create location"
+                  className="w-full sm:w-[250px]"
+                />
+              )}
+
               {/* Shuffle Teams Button */}
               <Button
                 variant="action"
                 icon={<Shuffle className="h-4 w-4" />}
                 onClick={handleShuffleTeams}
+                className="w-full sm:w-auto"
               >
                 Shuffle Teams
               </Button>

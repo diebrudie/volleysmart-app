@@ -322,6 +322,7 @@ const GameDetail = () => {
           created_by: user.id,
           club_id: matchData.club_id,
           team_generated: true,
+          location_id: matchData.location_id, // Copy the same location
         })
         .select()
         .single();
@@ -584,19 +585,17 @@ const GameDetail = () => {
                     </p>
                   </div>
                 </div>
-                {matchData.locations?.name && (
-                  <div className="flex items-top">
-                    <MapPin className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Location
-                      </p>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">
-                        {matchData.locations.name}
-                      </p>
-                    </div>
+                <div className="flex items-top">
+                  <MapPin className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Location
+                    </p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                      {matchData.locations?.name || "Location unknown"}
+                    </p>
                   </div>
-                )}
+                </div>
                 <div className="flex items-top">
                   <Trophy className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
                   <div>
