@@ -221,6 +221,7 @@ const GameDetail = () => {
   };
 
   const canEdit = isAdminOrEditor && isToday();
+  const canEditScores = isAdminOrEditor; // Admins can always edit scores
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -493,7 +494,7 @@ const GameDetail = () => {
               </h1>
             </div>
             <div className="flex gap-2">
-              {canEdit ? (
+              {canEditScores ? (
                 <>
                   {editing ? (
                     <>
@@ -519,45 +520,50 @@ const GameDetail = () => {
                         icon={<Edit className="h-4 w-4" />}
                         onClick={() => setEditing(true)}
                       >
-                        Edit Match
+                        Edit Scores
                       </Button>
-                      <Dialog
-                        open={confirmDeleteOpen}
-                        onOpenChange={setConfirmDeleteOpen}
-                      >
-                        <DialogTrigger asChild>
-                          <Button variant="destructive">
-                            <Trash className="mr-2 h-4 w-4" />
-                            Delete
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>
-                              Are you sure you want to delete?
-                            </DialogTitle>
-                            <DialogDescription>
-                              This action cannot be undone. This will
-                              permanently delete the match and all associated
-                              data.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <Button
-                              variant="outline"
-                              onClick={() => setConfirmDeleteOpen(false)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              onClick={handleDeleteMatch}
-                            >
+                      {canEdit && (
+                        <Dialog
+                          open={confirmDeleteOpen}
+                          onOpenChange={setConfirmDeleteOpen}
+                        >
+                          <DialogTrigger asChild>
+                            <Button variant="destructive">
+                              <Trash className="mr-2 h-4 w-4" />
                               Delete
                             </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>
+                                Are you sure you want to delete?
+                              </DialogTitle>
+                              <DialogDescription>
+                                This action cannot be undone. This will
+                                permanently delete the match and all associated
+                                data.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button
+                                variant="outline"
+                                onClick={() => setConfirmDeleteOpen(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={handleDeleteMatch}
+                              >
+                                Delete
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                      <Button variant="action" onClick={handleCreateSameTeams}>
+                        Create Game w. same Teams
+                      </Button>
                     </>
                   )}
                 </>
