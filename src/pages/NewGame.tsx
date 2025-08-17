@@ -727,74 +727,69 @@ const NewGame = () => {
               {/* Date Picker, Location, and Extra Players Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Date Picker */}
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal border-gray-300 dark:border-gray-600",
-                          !date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? (
-                          format(date, "EEEE, do MMMM yyyy")
-                        ) : (
-                          <span>Select Game's Date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full h-14 justify-start text-left font-normal border-gray-300 dark:border-gray-600",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? (
+                        format(date, "EEEE, do MMMM yyyy")
+                      ) : (
+                        <span>Select Game's Date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
 
                 {/* Location Selector */}
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <LocationSelector
-                    clubId={clubId!}
-                    value={selectedLocationId}
-                    onValueChange={setSelectedLocationId}
-                    placeholder="Select or create location"
-                  />
-                </div>
+                <LocationSelector
+                  clubId={clubId!}
+                  value={selectedLocationId}
+                  onValueChange={setSelectedLocationId}
+                  placeholder="Select or create location"
+                  className="h-14"
+                />
 
                 {/* Add Extra Players */}
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                  <div className="flex items-center justify-between gap-4 w-full">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Add guests or temp. players
+                <div className="bg-white dark:bg-gray-800 h-14 px-4 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Add guests
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleExtraPlayersChange(false)}
+                      disabled={extraPlayersCount === 0}
+                      className="h-8 w-8"
+                      icon={<Minus className="h-4 w-4" />}
+                    />
+                    <span className="font-medium text-gray-900 dark:text-gray-100 min-w-[2rem] text-center">
+                      {extraPlayersCount}
                     </span>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleExtraPlayersChange(false)}
-                        disabled={extraPlayersCount === 0}
-                        className="h-8 w-8"
-                        icon={<Minus className="h-4 w-4" />}
-                      />
-                      <span className="font-medium text-gray-900 dark:text-gray-100 min-w-[2rem] text-center">
-                        {extraPlayersCount}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleExtraPlayersChange(true)}
-                        className="h-8 w-8"
-                        icon={<Plus className="h-4 w-4" />}
-                      />
-                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleExtraPlayersChange(true)}
+                      className="h-8 w-8"
+                      icon={<Plus className="h-4 w-4" />}
+                    />
                   </div>
                 </div>
               </div>
