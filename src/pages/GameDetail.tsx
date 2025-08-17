@@ -11,6 +11,7 @@ import {
   X,
   Trash,
   MapPin,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +25,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
@@ -477,7 +485,7 @@ const GameDetail = () => {
       <Navbar />
 
       <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8">
           {/* Header Section */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center">
@@ -494,90 +502,104 @@ const GameDetail = () => {
               </h1>
             </div>
             <div className="flex gap-2">
-              {canEditScores ? (
-                <>
-                  {editing ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="action">
+                    Actions
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {canEditScores && (
                     <>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setEditing(false);
-                          setEditedGames([...matchData.matches]);
-                        }}
-                      >
-                        <X className="mr-2 h-4 w-4" />
-                        Cancel
-                      </Button>
-                      <Button variant="primary" onClick={handleSaveChanges}>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Changes
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        variant="action"
-                        icon={<Edit className="h-4 w-4" />}
-                        onClick={() => setEditing(true)}
-                      >
-                        Edit Scores
-                      </Button>
-                      {canEdit && (
-                        <Dialog
-                          open={confirmDeleteOpen}
-                          onOpenChange={setConfirmDeleteOpen}
+                      {editing ? (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditing(false);
+                              setEditedGames([...matchData.matches]);
+                            }}
+                            className="text-gray-700 dark:text-gray-300"
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Cancel Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={handleSaveChanges}
+                            className="text-blue-600 dark:text-blue-400"
+                          >
+                            <Save className="mr-2 h-4 w-4" />
+                            Save Changes
+                          </DropdownMenuItem>
+                        </>
+                      ) : (
+                        <DropdownMenuItem
+                          onClick={() => setEditing(true)}
+                          className="text-gray-700 dark:text-gray-300"
                         >
-                          <DialogTrigger asChild>
-                            <Button variant="destructive">
-                              <Trash className="mr-2 h-4 w-4" />
-                              Delete
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>
-                                Are you sure you want to delete?
-                              </DialogTitle>
-                              <DialogDescription>
-                                This action cannot be undone. This will
-                                permanently delete the match and all associated
-                                data.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                              <Button
-                                variant="outline"
-                                onClick={() => setConfirmDeleteOpen(false)}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                onClick={handleDeleteMatch}
-                              >
-                                Delete
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Scores
+                        </DropdownMenuItem>
                       )}
-                      <Button variant="action" onClick={handleCreateSameTeams}>
-                        Create Game w. same Teams
-                      </Button>
+                      <DropdownMenuSeparator />
                     </>
                   )}
-                </>
-              ) : (
-                <Button variant="action" onClick={handleCreateSameTeams}>
-                  Create Game w. same Teams
-                </Button>
-              )}
+
+                  <DropdownMenuItem
+                    onClick={handleCreateSameTeams}
+                    className="text-gray-700 dark:text-gray-300"
+                  >
+                    <Trophy className="mr-2 h-4 w-4" />
+                    New Game w. same Teams
+                  </DropdownMenuItem>
+
+                  {canEdit && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => setConfirmDeleteOpen(true)}
+                        className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Keep the existing delete dialog */}
+              <Dialog
+                open={confirmDeleteOpen}
+                onOpenChange={setConfirmDeleteOpen}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Are you sure you want to delete?</DialogTitle>
+                    <DialogDescription>
+                      This action cannot be undone. This will permanently delete
+                      the match and all associated data.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setConfirmDeleteOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={handleDeleteMatch}>
+                      Delete
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
           {/* Main Match Card */}
           <Card className="mb-8">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               {/* Match Info Row */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div className="flex items-top">
@@ -707,20 +729,20 @@ const GameDetail = () => {
 
                 <TabsContent value="games">
                   <div className="mt-6">
-                    <div className="rounded-md border dark:border-gray-700 overflow-hidden">
+                    <div className="rounded-md border dark:border-gray-700 overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gray-50 dark:bg-gray-800">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 sm:w-auto">
                               Game
                             </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            <th className="px-2 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                               Team A
                             </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            <th className="px-2 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                               Team B
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            <th className="pl-6 pr-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Winner
                             </th>
                           </tr>
@@ -730,10 +752,10 @@ const GameDetail = () => {
                             .sort((a, b) => a.game_number - b.game_number)
                             .map((game, index) => (
                               <tr key={game.id}>
-                                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100 text-sm">
                                   Match {game.game_number}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right">
                                   {editing ? (
                                     <Input
                                       type="number"
@@ -760,7 +782,7 @@ const GameDetail = () => {
                                     </span>
                                   )}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right">
                                   {editing ? (
                                     <Input
                                       type="number"
@@ -787,7 +809,7 @@ const GameDetail = () => {
                                     </span>
                                   )}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="pl-6 pr-2 sm:px-6 py-4 whitespace-nowrap">
                                   {game.team_a_score + game.team_b_score > 0 ? (
                                     <span
                                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -814,16 +836,16 @@ const GameDetail = () => {
                               </tr>
                             ))}
                           <tr className="bg-gray-50 dark:bg-gray-800 font-semibold">
-                            <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
+                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100 text-sm">
                               Total Points
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-gray-100">
+                            <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-gray-100">
                               {totalScore.teamA}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-gray-100">
+                            <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-gray-100">
                               {totalScore.teamB}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="pl-6 pr-2 sm:px-6 py-4 whitespace-nowrap">
                               <span
                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                   matchWinner === "Team A"
