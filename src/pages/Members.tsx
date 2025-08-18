@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { MemberCard } from "@/components/members/MemberCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Select,
   SelectContent,
@@ -24,7 +25,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Grid3X3, List, Users, Plus, X } from "lucide-react";
+import { Search, Grid3X3, List, Users, Plus, X, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -57,6 +59,16 @@ interface MemberWithPlayer {
   player: Player | null;
 }
 
+// Update ClubMember interface to include role
+interface ClubMember {
+  club_id: string;
+  id: string;
+  joined_at: string;
+  user_id: string;
+  is_active: boolean;
+  role?: string; // Add role field
+}
+
 type SortOption =
   | "first_name_asc"
   | "first_name_desc"
@@ -72,6 +84,7 @@ const Members = () => {
 
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const { clubId: contextClubId, setClubId } = useClub();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -89,12 +102,41 @@ const Members = () => {
   // Use URL clubId first, fallback to context
   const clubId = urlClubId || contextClubId;
 
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   // Set context from URL if available
   useEffect(() => {
     if (urlClubId && urlClubId !== contextClubId) {
       setClubId(urlClubId);
     }
   }, [urlClubId, contextClubId, setClubId]);
+
+  // Check if current user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!clubId || !user?.id) return;
+
+      try {
+        const { data: memberData, error } = await supabase
+          .from("club_members")
+          .select("role")
+          .eq("club_id", clubId)
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .single();
+
+        if (!error && memberData) {
+          setIsAdmin(memberData.role === "admin");
+        }
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [clubId, user?.id]);
 
   // Query to fetch club members (keeping your existing logic)
   const {
@@ -114,7 +156,7 @@ const Members = () => {
         // Step 1: Get club members for the specific club
         const { data: clubMembersRaw, error: membersError } = await supabase
           .from("club_members")
-          .select("club_id, id, joined_at, user_id, is_active")
+          .select("club_id, id, joined_at, user_id, is_active, role")
           .eq("club_id", clubId)
           .eq("is_active", true);
 
@@ -332,6 +374,48 @@ const Members = () => {
     return members?.filter((memberData) => !memberData.player) || [];
   }, [members]);
 
+  // Handle member selection
+  const handleMemberSelection = (userId: string, checked: boolean) => {
+    setSelectedMembers((prev) =>
+      checked ? [...prev, userId] : prev.filter((id) => id !== userId)
+    );
+  };
+
+  // Handle delete selected members
+  const handleDeleteSelected = async () => {
+    if (selectedMembers.length === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from("club_members")
+        .update({ is_active: false })
+        .in("user_id", selectedMembers)
+        .eq("club_id", clubId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${selectedMembers.length} member(s) removed from the club`,
+      });
+
+      setSelectedMembers([]);
+      refetch();
+    } catch (error) {
+      console.error("Error deleting members:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove members. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Clear selections
+  const clearSelections = () => {
+    setSelectedMembers([]);
+  };
+
   // List view component that matches your MemberCard styling
   const MemberListItem = ({ memberData }: { memberData: MemberWithPlayer }) => {
     const player = memberData.player!;
@@ -347,87 +431,85 @@ const Members = () => {
       : "";
 
     return (
-      <Link to={`/players/${player.id}`}>
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-4">
-              {/* Avatar */}
-              <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                {player.image_url ? (
-                  <img
-                    src={player.image_url}
-                    alt={`${player.first_name} ${player.last_name}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src="/avatar-placeholder.svg"
-                    alt={`${player.first_name} ${player.last_name}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = "none";
-                      target.parentElement!.innerHTML = `
+      <Card className="hover:shadow-lg transition-shadow">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-4">
+            {/* Avatar */}
+            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+              {player.image_url ? (
+                <img
+                  src={player.image_url}
+                  alt={`${player.first_name} ${player.last_name}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <img
+                  src="/avatar-placeholder.svg"
+                  alt={`${player.first_name} ${player.last_name}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                    target.parentElement!.innerHTML = `
                       <div class="w-full h-full bg-gray-300 flex items-center justify-center">
                         <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                           <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                         </svg>
                       </div>
                     `;
-                    }}
-                  />
-                )}
-              </div>
+                  }}
+                />
+              )}
+            </div>
 
-              {/* Member Info */}
-              <div className="flex-grow min-w-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex-grow min-w-0">
-                    <h3 className="font-semibold text-lg truncate">
-                      {player.first_name} {lastNameInitial}.
-                    </h3>
-                    <p className="text-gray-600 text-sm font-medium truncate">
-                      {primaryPosition}
+            {/* Member Info */}
+            <div className="flex-grow min-w-0">
+              <div className="flex items-center justify-between">
+                <div className="flex-grow min-w-0">
+                  <h3 className="font-semibold text-lg truncate">
+                    {player.first_name} {lastNameInitial}.
+                  </h3>
+                  <p className="text-gray-600 text-sm font-medium truncate">
+                    {primaryPosition}
+                  </p>
+                </div>
+
+                {/* Volleyball Badge and Join Date */}
+                <div className="flex items-center space-x-3 flex-shrink-0">
+                  {/* Join Date - Hidden on mobile */}
+                  <div className="hidden sm:block text-right text-sm text-gray-500">
+                    <p className="text-xs">
+                      Joined:{" "}
+                      {new Date(
+                        memberData.member.joined_at
+                      ).toLocaleDateString()}
                     </p>
                   </div>
 
-                  {/* Volleyball Badge and Join Date */}
-                  <div className="flex items-center space-x-3 flex-shrink-0">
-                    {/* Join Date - Hidden on mobile */}
-                    <div className="hidden sm:block text-right text-sm text-gray-500">
-                      <p className="text-xs">
-                        Joined:{" "}
-                        {new Date(
-                          memberData.member.joined_at
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-
-                    {player.member_association && (
-                      <div className="w-5 h-5 flex-shrink-0">
-                        <img
-                          src="/volleyball.svg"
-                          alt="Club member"
-                          className="w-full h-full"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = "none";
-                            target.parentElement!.innerHTML = `
+                  {player.member_association && (
+                    <div className="w-5 h-5 flex-shrink-0">
+                      <img
+                        src="/volleyball.svg"
+                        alt="Club member"
+                        className="w-full h-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          target.parentElement!.innerHTML = `
                             <div class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
                               <span class="text-white text-xs font-bold">V</span>
                             </div>
                           `;
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </Link>
+          </div>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -623,12 +705,34 @@ const Members = () => {
               <div className="mb-6">
                 {/* Desktop Layout - All in one row */}
                 <div className="hidden sm:flex items-center gap-4">
-                  {/* Member Count - Left side */}
-                  <div className="flex items-center flex-shrink-0">
-                    <Users className="w-5 h-5 mr-2 text-gray-600" />
-                    <span className="text-lg font-semibold">
-                      {members?.length || 0} Members
-                    </span>
+                  {/* Member Count and Delete Actions - Left side */}
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="flex items-center">
+                      <Users className="w-5 h-5 mr-2 text-gray-600" />
+                      <span className="text-lg font-semibold">
+                        {members?.length || 0} Members
+                      </span>
+                    </div>
+
+                    {/* Delete actions - Show when members are selected and user is admin */}
+                    {selectedMembers.length > 0 && isAdmin && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleDeleteSelected}
+                          icon={<Trash2 className="h-4 w-4" />}
+                        >
+                          Delete ({selectedMembers.length})
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={clearSelections}
+                          icon={<X className="h-4 w-4" />}
+                        ></Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Spacer to push everything to the right */}
@@ -695,12 +799,34 @@ const Members = () => {
 
                 {/* Mobile Layout - Stacked */}
                 <div className="sm:hidden space-y-4">
-                  {/* Member Count */}
-                  <div className="flex items-center">
-                    <Users className="w-5 h-5 mr-2 text-gray-600" />
-                    <span className="text-lg font-semibold">
-                      {members?.length || 0} Members
-                    </span>
+                  {/* Member Count and Delete Actions */}
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <Users className="w-5 h-5 mr-2 text-gray-600" />
+                      <span className="text-lg font-semibold">
+                        {members?.length || 0} Members
+                      </span>
+                    </div>
+
+                    {/* Delete actions - Show when members are selected and user is admin */}
+                    {selectedMembers.length > 0 && isAdmin && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleDeleteSelected}
+                          icon={<Trash2 className="h-4 w-4" />}
+                        >
+                          Delete ({selectedMembers.length})
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={clearSelections}
+                          icon={<X className="h-4 w-4" />}
+                        ></Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Search - Full width */}
@@ -770,6 +896,16 @@ const Members = () => {
                     <MemberCard
                       key={memberData.member.user_id}
                       member={memberData.player!}
+                      isAdmin={isAdmin}
+                      isSelected={selectedMembers.includes(
+                        memberData.member.user_id
+                      )}
+                      onSelectionChange={(checked) =>
+                        handleMemberSelection(
+                          memberData.member.user_id,
+                          checked
+                        )
+                      }
                     />
                   ))}
                 </div>
