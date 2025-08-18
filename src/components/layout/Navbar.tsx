@@ -84,6 +84,36 @@ const Navbar = () => {
     user?.role === "admin" && { label: "Users", path: "/admin", icon: Users },
   ].filter(Boolean);
 
+  // Homepage/Landing Navbar (when not authenticated)
+  const HomepageNav = () => (
+    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
+      <div className="container mx-auto px-6 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <Logo size="md" linkTo="/" />
+
+          {/* Auth Buttons */}
+          <div className="flex items-center gap-3">
+            <Link to="/login">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:text-white hover:bg-white/10"
+              >
+                Login
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button variant="hero" size="sm">
+                Sign Up
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+
   const DesktopNav = () => (
     <header className="shadow-sm border-b border-gray-200 dark:border-gray-700">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
@@ -112,62 +142,49 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
-              <>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    if (clubId) {
-                      navigate(`/new-game/${clubId}`);
-                    } else {
-                      navigate("/new-game");
-                    }
-                  }}
-                >
-                  Create Game
-                </Button>
-                <ThemeToggle />
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="flex items-center">
-                    <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">
-                        {user?.email?.charAt(0).toUpperCase() || "U"}
-                      </span>
-                    </div>
-                    <ChevronDown className="ml-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    {accountItems.map((item, index) => (
-                      <DropdownMenuItem key={index} asChild>
-                        <Link
-                          to={item.path}
-                          className="flex items-center cursor-pointer"
-                        >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.label}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="cursor-pointer"
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (clubId) {
+                  navigate(`/new-game/${clubId}`);
+                } else {
+                  navigate("/new-game");
+                }
+              }}
+            >
+              Create Game
+            </Button>
+            <ThemeToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center">
+                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">
+                    {user?.email?.charAt(0).toUpperCase() || "U"}
+                  </span>
+                </div>
+                <ChevronDown className="ml-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {accountItems.map((item, index) => (
+                  <DropdownMenuItem key={index} asChild>
+                    <Link
+                      to={item.path}
+                      className="flex items-center cursor-pointer"
                     >
-                      Log Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="outline">Log in</Button>
-                </Link>
-                <Link to="/signup">
-                  <Button variant="default">Sign up</Button>
-                </Link>
-              </>
-            )}
+                      <item.icon className="mr-2 h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer"
+                >
+                  Log Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </nav>
@@ -182,7 +199,7 @@ const Navbar = () => {
           linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"}
         />
         <div className="flex items-center space-x-2">
-          {isAuthenticated && <ThemeToggle />}
+          <ThemeToggle />
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -218,69 +235,47 @@ const Navbar = () => {
                       </SheetClose>
                     ))}
 
-                  {isAuthenticated &&
-                    accountItems.map((item, index) => (
-                      <SheetClose asChild key={`account-${index}`}>
-                        <Link
-                          to={item.path}
-                          className="px-4 py-4 text-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-center border-b border-gray-100 dark:border-gray-800 flex items-center justify-center dark:text-gray-100"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SheetClose>
-                    ))}
+                  {accountItems.map((item, index) => (
+                    <SheetClose asChild key={`account-${index}`}>
+                      <Link
+                        to={item.path}
+                        className="px-4 py-4 text-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-center border-b border-gray-100 dark:border-gray-800 flex items-center justify-center dark:text-gray-100"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SheetClose>
+                  ))}
                 </div>
 
                 <div className="p-4 border-t dark:border-gray-700 mt-auto">
-                  {isAuthenticated ? (
-                    <>
-                      <SheetClose asChild>
-                        <Button
-                          variant="primary"
-                          className="w-full mb-3"
-                          onClick={() => {
-                            setIsOpen(false);
-                            if (clubId) {
-                              navigate(`/new-game/${clubId}`);
-                            } else {
-                              navigate("/new-game");
-                            }
-                          }}
-                        >
-                          Create Game
-                        </Button>
-                      </SheetClose>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          setIsOpen(false);
-                          handleLogout();
-                        }}
-                      >
-                        Log Out
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="space-y-3">
-                      <SheetClose asChild>
-                        <Link to="/login" className="block w-full">
-                          <Button variant="outline" className="w-full">
-                            Log in
-                          </Button>
-                        </Link>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Link to="/signup" className="block w-full">
-                          <Button variant="default" className="w-full">
-                            Sign up
-                          </Button>
-                        </Link>
-                      </SheetClose>
-                    </div>
-                  )}
+                  <SheetClose asChild>
+                    <Button
+                      variant="primary"
+                      className="w-full mb-3"
+                      onClick={() => {
+                        setIsOpen(false);
+                        if (clubId) {
+                          navigate(`/new-game/${clubId}`);
+                        } else {
+                          navigate("/new-game");
+                        }
+                      }}
+                    >
+                      Create Game
+                    </Button>
+                  </SheetClose>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setIsOpen(false);
+                      handleLogout();
+                    }}
+                  >
+                    Log Out
+                  </Button>
                 </div>
               </div>
             </SheetContent>
@@ -289,6 +284,76 @@ const Navbar = () => {
       </nav>
     </header>
   );
+
+  // Mobile homepage nav
+  const MobileHomepageNav = () => (
+    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          <Logo size="sm" linkTo="/" />
+          <div className="flex items-center space-x-2">
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:text-white hover:bg-white/10"
+                >
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="top"
+                className="w-full h-full p-0 bg-black/95 backdrop-blur-md border-glass-border [&>button]:text-white [&>button]:hover:bg-white/10"
+              >
+                <div className="flex flex-col h-full">
+                  <SheetHeader className="p-4 border-b border-glass-border">
+                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                    <div className="flex justify-start items-center">
+                      <Logo size="sm" linkTo="/" />
+                    </div>
+                  </SheetHeader>
+
+                  <div className="flex flex-col flex-1 justify-center items-center space-y-6">
+                    <SheetClose asChild>
+                      <Link to="/login" className="w-full max-w-xs">
+                        <Button
+                          variant="ghost"
+                          size="lg"
+                          className="w-full text-white hover:text-white hover:bg-white/10 text-xl py-6"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          Login
+                        </Button>
+                      </Link>
+                    </SheetClose>
+
+                    <SheetClose asChild>
+                      <Link to="/signup" className="w-full max-w-xs">
+                        <Button
+                          variant="hero"
+                          size="lg"
+                          className="w-full text-xl py-6"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          Sign Up
+                        </Button>
+                      </Link>
+                    </SheetClose>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+
+  // Return different navbar based on authentication status
+  if (!isAuthenticated) {
+    return isMobile ? <MobileHomepageNav /> : <HomepageNav />;
+  }
 
   return isMobile ? <MobileNav /> : <DesktopNav />;
 };

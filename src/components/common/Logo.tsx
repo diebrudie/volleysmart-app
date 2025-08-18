@@ -5,9 +5,10 @@ import { useTheme } from "@/contexts/ThemeContext";
 interface LogoProps {
   size?: "sm" | "md" | "lg";
   linkTo?: string;
+  forceTheme?: "light" | "dark"; // Add this new prop
 }
 
-const Logo = ({ size = "md", linkTo = "/" }: LogoProps) => {
+const Logo = ({ size = "md", linkTo = "/", forceTheme }: LogoProps) => {
   const { isAuthenticated } = useAuth();
   const { isDark } = useTheme();
 
@@ -21,8 +22,18 @@ const Logo = ({ size = "md", linkTo = "/" }: LogoProps) => {
     lg: "h-12",
   };
 
-  // Choose logo based on theme
-  const logoSrc = isDark ? "/logo-darkmode.svg" : "/logo-lightmode.svg";
+  // Choose logo based on theme or forceTheme prop
+  let logoSrc;
+  if (forceTheme) {
+    logoSrc =
+      forceTheme === "dark" ? "/logo-darkmode.svg" : "/logo-lightmode.svg";
+  } else if (!isAuthenticated) {
+    // Always use dark logo for homepage when not authenticated
+    logoSrc = "/logo-darkmode.svg";
+  } else {
+    // Use theme-based logo for authenticated users
+    logoSrc = isDark ? "/logo-darkmode.svg" : "/logo-lightmode.svg";
+  }
 
   const logoElement = (
     <img src={logoSrc} alt="VolleyMatch Logo" className={sizeClasses[size]} />

@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* Primary Brand Colors */
     --background: 210 20% 98%;
     --foreground: 222.2 84% 4.9%;
 
@@ -15,6 +16,7 @@
 
     --primary: 225 80% 33%; /* Mikasa blue */
     --primary-foreground: 210 40% 98%;
+    --primary-glow: 225 85% 55%;
 
     --secondary: 42 96% 56%; /* Mikasa yellow */
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -33,6 +35,7 @@
     --ring: 225 80% 33%; /* Match primary */
 
     --radius: 0.5rem;
+    --radius-lg: 1.5rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -42,6 +45,53 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 225 80% 33%; /* Match primary */
+
+    /* Glass System */
+    --glass-primary: 225 80% 33% / 0.1;
+    --glass-secondary: 0 0% 100% / 0.05;
+    --glass-border: 0 0% 100% / 0.1;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(225 80% 33%) 0%,
+      hsl(225 85% 55%) 100%
+    );
+    --gradient-glass: linear-gradient(
+      135deg,
+      hsl(0 0% 100% / 0.1) 0%,
+      hsl(0 0% 100% / 0.05) 100%
+    );
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(210 20% 98%) 0%,
+      hsl(210 15% 95%) 100%
+    );
+
+    /* Shadows & Effects */
+    --shadow-glass: 0 8px 32px hsl(225 80% 33% / 0.1);
+    --shadow-card: 0 4px 24px hsl(0 0% 0% / 0.1);
+    --blur-glass: blur(16px);
+
+    /* Animations & Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Dark theme for homepage */
+    --homepage-background: 240 10% 3.9%;
+    --homepage-foreground: 0 0% 98%;
+
+    /* Update gradients for dark theme */
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(240 10% 3.9%) 0%,
+      hsl(240 8% 8%) 100%
+    );
+
+    /* Glass system for dark backgrounds */
+    --glass-primary: 225 80% 33% / 0.15;
+    --glass-secondary: 0 0% 100% / 0.05;
+    --glass-border: 0 0% 100% / 0.15;
   }
 
   .dark {
@@ -56,6 +106,7 @@
 
     --primary: 225 80% 33%; /* Mikasa blue */
     --primary-foreground: 210 40% 98%;
+    --primary-glow: 225 85% 55%;
 
     --secondary: 42 96% 56%; /* Mikasa yellow */
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -81,6 +132,18 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 225 80% 33%; /* Match primary */
+
+    /* Dark mode glass adjustments */
+    --glass-primary: 225 80% 33% / 0.15;
+    --glass-secondary: 0 0% 0% / 0.1;
+    --glass-border: 0 0% 100% / 0.15;
+
+    /* Dark mode gradients */
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(222.2 84% 4.9%) 0%,
+      hsl(217.2 32.6% 17.5%) 100%
+    );
   }
 }
 
@@ -90,11 +153,44 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    min-height: 100vh;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 }
 
 @layer components {
+  /* Glass Morphism Effects */
+  .glass {
+    background: hsl(var(--glass-secondary));
+    backdrop-filter: var(--blur-glass);
+    border: 1px solid hsl(var(--glass-border));
+  }
+
+  .glass-primary {
+    background: hsl(var(--glass-primary));
+    backdrop-filter: var(--blur-glass);
+    border: 1px solid hsl(var(--accent) / 0.2);
+    box-shadow: var(--shadow-glass);
+  }
+
+  /* Background Gradients */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  /* Border Glass */
+  .border-glass-border {
+    border-color: hsl(var(--glass-border));
+  }
+
   .volleyball-gradient {
     @apply bg-gradient-to-br from-volleyball-primary to-volleyball-secondary;
   }
@@ -119,6 +215,39 @@
 
   .set-box--yellow {
     @apply bg-[#FBBE24];
+  }
+
+  /* Hero Animations */
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  /* Hover Effects */
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-glass);
+  }
+
+  /* Text Gradients */
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 
