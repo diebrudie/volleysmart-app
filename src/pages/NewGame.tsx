@@ -925,6 +925,7 @@ const NewGame = () => {
                             onCheckedChange={() =>
                               handlePlayerToggle(player.id)
                             }
+                            onClick={(e) => e.stopPropagation()}
                           />
                         </div>
                       ))}

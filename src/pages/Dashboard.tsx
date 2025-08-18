@@ -658,13 +658,18 @@ const Dashboard = () => {
                     {teamAPlayers.map((player, index) => (
                       <li key={player.id} className="text-sm">
                         <div className="font-medium text-gray-900 dark:text-gray-100">
-                          {index + 1}. {player.name}
+                          <span className="block sm:inline">
+                            {index + 1}. {player.name}
+                            {player.position && (
+                              <span className="hidden sm:inline"> - </span>
+                            )}
+                          </span>
+                          {player.position && (
+                            <span className="block sm:inline text-xs sm:text-sm text-gray-600 dark:text-gray-400 sm:font-medium">
+                              {player.position}
+                            </span>
+                          )}
                         </div>
-                        {player.position && (
-                          <div className="text-xs text-gray-600 dark:text-gray-400 ml-3">
-                            {player.position}
-                          </div>
-                        )}
                       </li>
                     ))}
                   </ul>
@@ -679,13 +684,18 @@ const Dashboard = () => {
                     {teamBPlayers.map((player, index) => (
                       <li key={player.id} className="text-sm">
                         <div className="font-medium text-gray-900 dark:text-gray-100">
-                          {index + 1}. {player.name}
+                          <span className="block sm:inline">
+                            {index + 1}. {player.name}
+                            {player.position && (
+                              <span className="hidden sm:inline"> - </span>
+                            )}
+                          </span>
+                          {player.position && (
+                            <span className="block sm:inline text-xs sm:text-sm text-gray-600 dark:text-gray-400 sm:font-medium">
+                              {player.position}
+                            </span>
+                          )}
                         </div>
-                        {player.position && (
-                          <div className="text-xs text-gray-600 dark:text-gray-400 ml-3">
-                            {player.position}
-                          </div>
-                        )}
                       </li>
                     ))}
                   </ul>
