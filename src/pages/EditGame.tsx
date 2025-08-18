@@ -828,10 +828,10 @@ const EditGame = () => {
             {/* Drag Overlay */}
             <DragOverlay>
               {activePlayer ? (
-                <div className="bg-white border-2 border-blue-500 rounded-md p-2 shadow-lg opacity-95">
+                <div className="bg-card border-2 border-primary rounded-md p-2 shadow-lg opacity-95 text-card-foreground">
                   <span className="font-medium">{activePlayer.name}</span>
                   {" - "}
-                  <span className="text-xs rounded px-1.5 py-0.5 bg-gray-200 text-black">
+                  <span className="text-xs rounded px-1.5 py-0.5 bg-muted text-muted-foreground">
                     {activePlayer.preferredPosition}
                   </span>
                 </div>

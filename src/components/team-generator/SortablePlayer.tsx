@@ -98,9 +98,8 @@ export const SortablePlayer = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center p-2 rounded-md",
-        isDragging ? "opacity-50 bg-gray-100" : "",
-        "border"
+        "flex items-center p-2 rounded-md border bg-card text-card-foreground",
+        isDragging ? "opacity-75 bg-muted" : ""
       )}
       {...attributes}
     >
