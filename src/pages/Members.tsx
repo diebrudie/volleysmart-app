@@ -452,79 +452,167 @@ const Members = () => {
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header with Title and Invite Button */}
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-serif">Club's Members</h1>
+          <div className="mb-8">
+            {/* Desktop Layout */}
+            <div className="hidden sm:flex items-center justify-between">
+              <h1 className="text-4xl font-serif">Club's Members</h1>
 
-            {/* Invite Member Modal */}
-            <Dialog
-              open={isInviteModalOpen}
-              onOpenChange={setIsInviteModalOpen}
-            >
-              <DialogTrigger asChild>
-                <Button variant="action" icon={<Plus className="h-4 w-4" />}>
-                  Invite Member
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="mb-4">Invite New Member</DialogTitle>
-                </DialogHeader>
+              {/* Invite Member Modal */}
+              <Dialog
+                open={isInviteModalOpen}
+                onOpenChange={setIsInviteModalOpen}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="action" icon={<Plus className="h-4 w-4" />}>
+                    Invite Member
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="mb-4">
+                      Invite New Member
+                    </DialogTitle>
+                  </DialogHeader>
 
-                <form onSubmit={handleInviteSubmit} className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="member-name"
-                      className="block text-sm font-medium mb-2"
-                    >
-                      Name
-                    </label>
-                    <Input
-                      id="member-name"
-                      placeholder="Maxi"
-                      value={inviteName}
-                      onChange={(e) => setInviteName(e.target.value)}
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
+                  <form onSubmit={handleInviteSubmit} className="space-y-4">
+                    <div>
+                      <label
+                        htmlFor="member-name"
+                        className="block text-sm font-medium mb-2"
+                      >
+                        Name
+                      </label>
+                      <Input
+                        id="member-name"
+                        placeholder="Maxi"
+                        value={inviteName}
+                        onChange={(e) => setInviteName(e.target.value)}
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
 
-                  <div>
-                    <label
-                      htmlFor="member-email"
-                      className="block text-sm font-medium mb-2"
-                    >
-                      Email Address
-                    </label>
-                    <Input
-                      id="member-email"
-                      type="email"
-                      placeholder="maxi.mustermann@email.com"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
+                    <div>
+                      <label
+                        htmlFor="member-email"
+                        className="block text-sm font-medium mb-2"
+                      >
+                        Email Address
+                      </label>
+                      <Input
+                        id="member-email"
+                        type="email"
+                        placeholder="maxi.mustermann@email.com"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
 
-                  <div className="flex justify-end pt-4">
+                    <div className="flex justify-end pt-4">
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="bg-[#243F8D] hover:bg-[#1e3470]"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Spinner className="mr-2 h-4 w-4" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Send Invitation"
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="sm:hidden">
+              <h1 className="text-4xl font-serif mb-4">Club's Members</h1>
+
+              <div className="flex justify-start">
+                {/* Invite Member Modal */}
+                <Dialog
+                  open={isInviteModalOpen}
+                  onOpenChange={setIsInviteModalOpen}
+                >
+                  <DialogTrigger asChild>
                     <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="bg-[#243F8D] hover:bg-[#1e3470]"
+                      variant="action"
+                      icon={<Plus className="h-4 w-4" />}
                     >
-                      {isSubmitting ? (
-                        <>
-                          <Spinner className="mr-2 h-4 w-4" />
-                          Sending...
-                        </>
-                      ) : (
-                        "Send Invitation"
-                      )}
+                      Invite Member
                     </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="mb-4">
+                        Invite New Member
+                      </DialogTitle>
+                    </DialogHeader>
+
+                    <form onSubmit={handleInviteSubmit} className="space-y-4">
+                      <div>
+                        <label
+                          htmlFor="member-name-mobile"
+                          className="block text-sm font-medium mb-2"
+                        >
+                          Name
+                        </label>
+                        <Input
+                          id="member-name-mobile"
+                          placeholder="Maxi"
+                          value={inviteName}
+                          onChange={(e) => setInviteName(e.target.value)}
+                          disabled={isSubmitting}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="member-email-mobile"
+                          className="block text-sm font-medium mb-2"
+                        >
+                          Email Address
+                        </label>
+                        <Input
+                          id="member-email-mobile"
+                          type="email"
+                          placeholder="maxi.mustermann@email.com"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          disabled={isSubmitting}
+                          required
+                        />
+                      </div>
+
+                      <div className="flex justify-end pt-4">
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="bg-[#243F8D] hover:bg-[#1e3470]"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Spinner className="mr-2 h-4 w-4" />
+                              Sending...
+                            </>
+                          ) : (
+                            "Send Invitation"
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
           </div>
 
           {/* Table Container */}

@@ -260,25 +260,53 @@ const Clubs = () => {
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header with title and buttons */}
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-serif text-gray-900 dark:text-gray-100">
-              Your clubs
-            </h1>
-            <div className="flex gap-4">
-              <Button
-                variant="action"
-                icon={<UsersRound className="h-4 w-4" />}
-                onClick={handleJoinClub}
-              >
-                Join a Club
-              </Button>
-              <Button
-                variant="secondary"
-                icon={<UserPlus className="h-4 w-4" />}
-                onClick={handleCreateClub}
-              >
-                Create a Club
-              </Button>
+          <div className="mb-8">
+            {/* Desktop Layout */}
+            <div className="hidden sm:flex justify-between items-center">
+              <h1 className="text-4xl font-serif text-gray-900 dark:text-gray-100">
+                Your clubs
+              </h1>
+              <div className="flex gap-4">
+                <Button
+                  variant="action"
+                  icon={<UsersRound className="h-4 w-4" />}
+                  onClick={handleJoinClub}
+                >
+                  Join a Club
+                </Button>
+                <Button
+                  variant="secondary"
+                  icon={<UserPlus className="h-4 w-4" />}
+                  onClick={handleCreateClub}
+                >
+                  Create a Club
+                </Button>
+              </div>
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="sm:hidden">
+              <h1 className="text-4xl font-serif text-gray-900 dark:text-gray-100 mb-4">
+                Your clubs
+              </h1>
+              <div className="flex flex-wrap gap-3 justify-end">
+                <Button
+                  variant="action"
+                  icon={<UsersRound className="h-4 w-4" />}
+                  onClick={handleJoinClub}
+                  className="flex-1 min-w-[140px] max-w-[200px]"
+                >
+                  Join a Club
+                </Button>
+                <Button
+                  variant="secondary"
+                  icon={<UserPlus className="h-4 w-4" />}
+                  onClick={handleCreateClub}
+                  className="flex-1 min-w-[140px] max-w-[200px]"
+                >
+                  Create a Club
+                </Button>
+              </div>
             </div>
           </div>
 

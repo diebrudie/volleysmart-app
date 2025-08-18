@@ -561,35 +561,69 @@ const Dashboard = () => {
 
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Game Overview with dynamic heading */}
-          <div className="mb-8 flex justify-between items-center">
-            <div>
+          {/* Header with title and buttons */}
+          <div className="mb-8">
+            {/* Desktop Layout */}
+            <div className="hidden sm:block">
               <h1 className="text-4xl font-serif mb-2 text-gray-900 dark:text-gray-100">
                 {headingText}
               </h1>
-              <div className="flex items-center text-gray-600 dark:text-gray-400">
-                <span>{formatDate(matchDate)}</span>
-                {latestGame?.locations?.name && (
-                  <>
-                    <span className="mx-2">|</span>
-                    <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      <span>{latestGame.locations.name}</span>
-                    </div>
-                  </>
+              <div className="flex justify-between items-end">
+                <div className="flex items-center text-gray-600 dark:text-gray-400">
+                  <span>{formatDate(matchDate)}</span>
+                  {latestGame?.locations?.name && (
+                    <>
+                      <span className="mx-2">|</span>
+                      <div className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        <span>{latestGame.locations.name}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {isEditingAllowed && (
+                  <Button
+                    variant="action"
+                    icon={<Pencil className="h-4 w-4" />}
+                    onClick={handleEditTeamsClick}
+                    size="sm"
+                  >
+                    Edit Teams
+                  </Button>
                 )}
               </div>
             </div>
-            {isEditingAllowed && (
-              <Button
-                variant="action"
-                icon={<Pencil className="h-4 w-4" />}
-                onClick={handleEditTeamsClick}
-                size="sm"
-              >
-                Edit Teams
-              </Button>
-            )}
+
+            {/* Mobile Layout */}
+            <div className="sm:hidden">
+              <h1 className="text-4xl font-serif mb-2 text-gray-900 dark:text-gray-100">
+                {headingText}
+              </h1>
+              <div className="flex flex-wrap items-center text-gray-600 dark:text-gray-400 gap-x-2 mb-3">
+                <span className="whitespace-nowrap">
+                  {formatDate(matchDate)}
+                </span>
+                {latestGame?.locations?.name && (
+                  <div className="flex items-center whitespace-nowrap">
+                    <span className="mr-2">|</span>
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span>{latestGame.locations.name}</span>
+                  </div>
+                )}
+              </div>
+              {isEditingAllowed && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="action"
+                    icon={<Pencil className="h-4 w-4" />}
+                    onClick={handleEditTeamsClick}
+                    size="sm"
+                  >
+                    Edit Teams
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Main Content */}

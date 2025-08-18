@@ -39,6 +39,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
+import { LocationSelector } from "@/components/forms/LocationSelector";
 
 interface Player {
   id: string;
@@ -88,6 +89,7 @@ const GameDetail = () => {
   const [editing, setEditing] = useState(false);
   const [editedGames, setEditedGames] = useState<Match[]>([]);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
 
   // Fetch match day data
   const {
@@ -532,47 +534,29 @@ const GameDetail = () => {
                   align={isMobile ? "start" : "end"}
                   className="w-56"
                 >
-                  {canEditScores && (
-                    <>
-                      {editing ? (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditing(false);
-                              setEditedGames([...matchData.matches]);
-                            }}
-                            className="text-gray-700 dark:text-gray-300"
-                          >
-                            <X className="mr-2 h-4 w-4" />
-                            Cancel Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={handleSaveChanges}
-                            className="text-blue-600 dark:text-blue-400"
-                          >
-                            <Save className="mr-2 h-4 w-4" />
-                            Save Changes
-                          </DropdownMenuItem>
-                        </>
-                      ) : (
-                        <DropdownMenuItem
-                          onClick={() => setEditing(true)}
-                          className="text-gray-700 dark:text-gray-300"
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Scores
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-
                   <DropdownMenuItem
                     onClick={handleCreateSameTeams}
                     className="text-gray-700 dark:text-gray-300"
                   >
                     <Trophy className="mr-2 h-4 w-4" />
                     New Game w. same Teams
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {canEditScores && !editing && (
+                    <DropdownMenuItem
+                      onClick={() => setEditing(true)}
+                      className="text-gray-700 dark:text-gray-300"
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Scores
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => setIsEditingLocation(true)}
+                    className="text-gray-700 dark:text-gray-300"
+                  >
+                    <MapPin className="mr-2 h-4 w-4" />
+                    Edit Location
                   </DropdownMenuItem>
 
                   {canEdit && (
@@ -637,13 +621,63 @@ const GameDetail = () => {
                 </div>
                 <div className="flex items-top">
                   <MapPin className="h-5 w-5 mt-1 text-volleyball-primary dark:text-blue-400 mr-2" />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex-grow">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
                       Location
                     </p>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
-                      {matchData.locations?.name || "Location unknown"}
-                    </p>
+                    {isEditingLocation ? (
+                      <div className="space-y-2">
+                        <LocationSelector
+                          clubId={matchData.club_id}
+                          value={matchData.location_id || undefined}
+                          onValueChange={async (locationId) => {
+                            try {
+                              const { error } = await supabase
+                                .from("match_days")
+                                .update({ location_id: locationId })
+                                .eq("id", matchData.id);
+
+                              if (error) throw error;
+
+                              toast({
+                                title: "Location updated",
+                                description:
+                                  "The game location has been updated.",
+                              });
+
+                              setIsEditingLocation(false);
+                              refetch();
+                            } catch (error) {
+                              console.error("Error updating location:", error);
+                              toast({
+                                title: "Error",
+                                description:
+                                  "Failed to update location. Please try again.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          placeholder="Select or create location"
+                          className="max-w-xs"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsEditingLocation(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p
+                        className="font-medium text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                        onClick={() => setIsEditingLocation(true)}
+                      >
+                        {matchData.locations?.name || "Click to set location"}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-top">
@@ -884,6 +918,32 @@ const GameDetail = () => {
                         </tbody>
                       </table>
                     </div>
+                    {/* Edit Controls - Only show when editing */}
+                    {editing && (
+                      <div className="mt-4 flex justify-end gap-2 px-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditing(false);
+                            setEditedGames([...matchData.matches]);
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <X className="h-4 w-4" />
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={handleSaveChanges}
+                          className="flex items-center gap-1"
+                        >
+                          <Save className="h-4 w-4" />
+                          Save Changes
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
