@@ -368,32 +368,33 @@ const Members = () => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = "none";
                       target.parentElement!.innerHTML = `
-                        <div class="w-full h-full bg-gray-300 flex items-center justify-center">
-                          <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                          </svg>
-                        </div>
-                      `;
+                      <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                    `;
                     }}
                   />
                 )}
               </div>
 
               {/* Member Info */}
-              <div className="flex-grow">
+              <div className="flex-grow min-w-0">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg">
+                  <div className="flex-grow min-w-0">
+                    <h3 className="font-semibold text-lg truncate">
                       {player.first_name} {lastNameInitial}.
                     </h3>
-                    <p className="text-gray-600 text-sm font-medium">
+                    <p className="text-gray-600 text-sm font-medium truncate">
                       {primaryPosition}
                     </p>
                   </div>
 
                   {/* Volleyball Badge and Join Date */}
-                  <div className="flex items-center space-x-3">
-                    <div className="text-right text-sm text-gray-500">
+                  <div className="flex items-center space-x-3 flex-shrink-0">
+                    {/* Join Date - Hidden on mobile */}
+                    <div className="hidden sm:block text-right text-sm text-gray-500">
                       <p className="text-xs">
                         Joined:{" "}
                         {new Date(
@@ -412,10 +413,10 @@ const Members = () => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = "none";
                             target.parentElement!.innerHTML = `
-                              <div class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-                                <span class="text-white text-xs font-bold">V</span>
-                              </div>
-                            `;
+                            <div class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                              <span class="text-white text-xs font-bold">V</span>
+                            </div>
+                          `;
                           }}
                         />
                       </div>
@@ -740,9 +741,9 @@ const Members = () => {
                     </Select>
 
                     {/* View Toggle */}
-                    <div className="flex bg-gray-100 rounded-lg p-1 flex-shrink-0">
+                    <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 flex-shrink-0">
                       <Button
-                        variant={viewMode === "grid" ? "default" : "ghost"}
+                        variant={viewMode === "grid" ? "primary" : "ghost"}
                         size="sm"
                         onClick={() => setViewMode("grid")}
                         className="px-3 py-2"
@@ -750,7 +751,7 @@ const Members = () => {
                         <Grid3X3 className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant={viewMode === "list" ? "default" : "ghost"}
+                        variant={viewMode === "list" ? "primary" : "ghost"}
                         size="sm"
                         onClick={() => setViewMode("list")}
                         className="px-3 py-2"
