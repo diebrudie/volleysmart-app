@@ -59,9 +59,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("volleymatch-theme") as Theme;
-      return savedTheme || "system";
+      return savedTheme || "dark";
     }
-    return "system";
+    return "dark";
   });
 
   // Calculate if we're in dark mode
@@ -83,15 +83,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
   // Effect to handle theme changes and system preference changes
   useEffect(() => {
-    // Force light mode for unauthenticated users
-    if (!isAuthenticated) {
-      const root = document.documentElement;
-      root.classList.remove("dark");
-      setIsDark(false);
-      return;
-    }
-
-    // Normal theme logic for authenticated users
+    // Apply theme logic for both authenticated and unauthenticated users
     const resolvedTheme = resolveTheme(theme);
     setIsDark(resolvedTheme === "dark");
 
