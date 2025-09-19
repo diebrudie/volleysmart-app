@@ -8,11 +8,16 @@
 Storage buckets (`player-images` and `club-images`) must be created manually in Supabase. Dynamic creation is disabled due to RLS.
 
 
-**Use Lovable**
+**Check the App using a Test Account**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4d14f056-03fa-45ae-8594-895b9508e68d) and start prompting.
+Since the app works best when the user belongs to a Club, you can simply sollow these steps:
+1. Signup using your email address.
+2. Complete the onboarding to get a Score.
+3. When landing on the `/start` page, select `Join a Club`
+4. Enter the following ClubId = `AOJKT`
+5. Navigate and play around with the app.
+6. Enjoy!
 
-Changes made via Lovable will be committed automatically to this repo.
 
 **Use your preferred IDE**
 
