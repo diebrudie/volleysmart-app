@@ -379,18 +379,27 @@ const Clubs = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              aria-label="Open club menu"
+                              className="h-8 w-8 p-0 rounded-md
+             text-gray-600 hover:text-gray-900 hover:bg-gray-100
+             dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-700"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-40 p-2" align="end">
+                          <PopoverContent
+                            className="w-40 p-2 bg-white border border-gray-200 shadow-md
+             dark:bg-gray-800 dark:border-gray-700"
+                            align="end"
+                          >
                             <div className="flex flex-col space-y-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="w-full justify-start"
+                                className="w-full justify-start
+             text-gray-700 hover:text-gray-900 hover:bg-gray-100
+             dark:text-gray-200 dark:hover:text-white dark:hover:bg-gray-700"
                                 onClick={(e) => handleEditClick(e, club)}
                                 icon={<Edit className="h-4 w-4" />}
                               >
@@ -399,7 +408,9 @@ const Clubs = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="w-full justify-start text-destructive hover:text-destructive dark:text-red-400 dark:hover:text-red-300"
+                                className="w-full justify-start
+             text-red-600 hover:text-red-700 hover:bg-red-50
+             dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
                                 onClick={(e) => handleDeleteClick(e, club)}
                                 icon={<Trash className="h-4 w-4" />}
                               >
