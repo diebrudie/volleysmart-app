@@ -127,7 +127,7 @@ const ClubSettingsDialog = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
-        <DialogHeader className="mb-4 mt-5">
+        <DialogHeader className="mb-4 mt-5 text-left">
           <div className="flex items-end justify-between gap-4">
             {/* Left: title + subtitle */}
             <div className="space-y-1">
