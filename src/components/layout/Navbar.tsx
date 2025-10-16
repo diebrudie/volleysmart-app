@@ -154,19 +154,44 @@ const Navbar = () => {
             >
               Create Game
             </Button>
-            <ThemeToggle />
+            <ThemeToggle
+              className="rounded-md p-2
+  hover:bg-gray-100 focus:bg-gray-100
+  dark:hover:bg-gray-800 dark:focus:bg-gray-800
+  transition-colors"
+            />
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center">
-                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <DropdownMenuTrigger className="flex items-center group">
+                <div
+                  className="h-10 w-10 rounded-full flex items-center justify-center
+               bg-gray-200 dark:bg-gray-700
+               hover:bg-gray-100 dark:hover:bg-gray-600
+               ring-0 group-hover:ring-2 ring-gray-300 dark:ring-gray-600
+               transition-all"
+                  aria-label="Open account menu"
+                >
                   <span className="text-gray-700 dark:text-gray-300 font-medium">
                     {user?.email?.charAt(0).toUpperCase() || "U"}
                   </span>
                 </div>
-                <ChevronDown className="ml-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <ChevronDown
+                  className="ml-1 h-4 w-4 text-gray-500 dark:text-gray-400
+               group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
+                />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent
+                align="end"
+                className="w-56 bg-white border border-gray-200 shadow-md
+             dark:bg-gray-800 dark:border-gray-700"
+              >
                 {accountItems.map((item, index) => (
-                  <DropdownMenuItem key={index} asChild>
+                  <DropdownMenuItem
+                    key={index}
+                    asChild
+                    className="text-gray-700 hover:bg-gray-100 hover:text-gray-900
+             focus:bg-gray-100 focus:text-gray-900
+             dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+                  >
                     <Link
                       to={item.path}
                       className="flex items-center cursor-pointer"
@@ -179,7 +204,9 @@ const Navbar = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}
-                  className="cursor-pointer"
+                  className="cursor-pointer text-gray-700 hover:bg-gray-100 hover:text-gray-900
+             focus:bg-gray-100 focus:text-gray-900
+             dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
                 >
                   Log Out
                 </DropdownMenuItem>
@@ -199,7 +226,12 @@ const Navbar = () => {
           linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"}
         />
         <div className="flex items-center space-x-2">
-          <ThemeToggle />
+          <ThemeToggle
+            className="rounded-md p-2
+  hover:bg-gray-100 focus:bg-gray-100
+  dark:hover:bg-gray-800 dark:focus:bg-gray-800
+  transition-colors"
+          />
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
