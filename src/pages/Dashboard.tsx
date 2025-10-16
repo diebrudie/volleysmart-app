@@ -13,6 +13,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Pencil, MapPin } from "lucide-react";
 import { useClub } from "@/contexts/ClubContext";
 import { useParams } from "react-router-dom";
+import CopyableClubId from "@/components/clubs/CopyableClubId";
 
 // Define proper interfaces
 interface GamePlayerData {
@@ -357,10 +358,11 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-grow flex flex-col items-center justify-center p-4">
-          <div className="max-w-lg w-full text-center">
+        {/* Scrollable main area for mobile visibility */}
+        <div className="flex-grow overflow-y-auto p-4">
+          <div className="max-w-lg w-full mx-auto text-center min-h-[80vh] flex flex-col items-center justify-center">
             {clubDetails && (
-              <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
+              <p className="text-lg text-gray-700 dark:text-gray-300 mb-2">
                 Welcome to{" "}
                 <span className="font-semibold">{clubDetails.name}</span>!
               </p>
@@ -379,6 +381,13 @@ const Dashboard = () => {
               onInviteMembers={handleInviteMembers}
               canInviteMembers={canInviteMembers}
             />
+
+            {/* Club ID (slug) display for empty dashboard */}
+            {clubDetails?.slug && (
+              <div className="mt-10 mb-10 flex justify-end w-full">
+                <CopyableClubId slug={clubDetails.slug} />
+              </div>
+            )}
           </div>
         </div>
       </div>

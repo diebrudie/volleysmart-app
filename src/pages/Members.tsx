@@ -29,6 +29,7 @@ import { Search, Grid3X3, List, Users, Plus, X, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import CopyableClubId from "@/components/clubs/CopyableClubId";
 
 // Simple types to avoid complex Supabase type inference
 interface ClubMember {
@@ -101,6 +102,22 @@ const Members = () => {
 
   // Use URL clubId first, fallback to context
   const clubId = urlClubId || contextClubId;
+
+  // Fetch club meta (slug) for CopyableClubId in the invite dialog
+  const { data: clubMeta } = useQuery({
+    queryKey: ["clubMeta", clubId],
+    queryFn: async () => {
+      if (!clubId) return null;
+      const { data, error } = await supabase
+        .from("clubs")
+        .select("name, slug")
+        .eq("id", clubId)
+        .single();
+      if (error) throw error;
+      return data as { name: string; slug: string };
+    },
+    enabled: !!clubId,
+  });
 
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -551,10 +568,18 @@ const Members = () => {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle className="mb-4">
-                      Invite New Member
-                    </DialogTitle>
+                  <DialogHeader className="mb-4 mt-4 text-left">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <DialogTitle>Invite New Member</DialogTitle>
+                      </div>
+
+                      {clubMeta?.slug && (
+                        <div className="shrink-0">
+                          <CopyableClubId slug={clubMeta.slug} compact />
+                        </div>
+                      )}
+                    </div>
                   </DialogHeader>
 
                   <form onSubmit={handleInviteSubmit} className="space-y-4">
@@ -615,85 +640,18 @@ const Members = () => {
             </div>
 
             {/* Mobile Layout */}
+            {/* Mobile Layout */}
             <div className="sm:hidden">
               <h1 className="text-4xl font-serif mb-4">Club's Members</h1>
 
               <div className="flex justify-start">
-                {/* Invite Member Modal */}
-                <Dialog
-                  open={isInviteModalOpen}
-                  onOpenChange={setIsInviteModalOpen}
+                <Button
+                  variant="action"
+                  icon={<Plus className="h-4 w-4" />}
+                  onClick={() => setIsInviteModalOpen(true)}
                 >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="action"
-                      icon={<Plus className="h-4 w-4" />}
-                    >
-                      Invite Member
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle className="mb-4">
-                        Invite New Member
-                      </DialogTitle>
-                    </DialogHeader>
-
-                    <form onSubmit={handleInviteSubmit} className="space-y-4">
-                      <div>
-                        <label
-                          htmlFor="member-name-mobile"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          Name
-                        </label>
-                        <Input
-                          id="member-name-mobile"
-                          placeholder="Maxi"
-                          value={inviteName}
-                          onChange={(e) => setInviteName(e.target.value)}
-                          disabled={isSubmitting}
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="member-email-mobile"
-                          className="block text-sm font-medium mb-2"
-                        >
-                          Email Address
-                        </label>
-                        <Input
-                          id="member-email-mobile"
-                          type="email"
-                          placeholder="maxi.mustermann@email.com"
-                          value={inviteEmail}
-                          onChange={(e) => setInviteEmail(e.target.value)}
-                          disabled={isSubmitting}
-                          required
-                        />
-                      </div>
-
-                      <div className="flex justify-end pt-4">
-                        <Button
-                          type="submit"
-                          disabled={isSubmitting}
-                          className="bg-[#243F8D] hover:bg-[#1e3470]"
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <Spinner className="mr-2 h-4 w-4" />
-                              Sending...
-                            </>
-                          ) : (
-                            "Send Invitation"
-                          )}
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+                  Invite Member
+                </Button>
               </div>
             </div>
           </div>

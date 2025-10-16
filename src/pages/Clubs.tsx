@@ -38,7 +38,32 @@ interface ClubWithDetails {
   creator_last_name: string;
   role: string;
   description?: string;
+  slug: string; // NEW: 5-char Club ID
 }
+
+type MemberClubRow = {
+  club_id: string;
+  role: string;
+  clubs: {
+    id: string;
+    name: string;
+    image_url: string | null;
+    created_at: string;
+    created_by: string;
+    description?: string;
+    slug: string; // ensure presence
+  } | null;
+};
+
+type CreatedClubRow = {
+  id: string;
+  name: string;
+  image_url: string | null;
+  created_at: string;
+  created_by: string;
+  description?: string;
+  slug: string; // ensure presence
+};
 
 const Clubs = () => {
   const { user } = useAuth();
@@ -81,7 +106,8 @@ const Clubs = () => {
             image_url,
             created_at,
             created_by,
-            description
+            description,
+            slug
           )
         `
         )
@@ -99,18 +125,22 @@ const Clubs = () => {
           image_url,
           created_at,
           created_by,
-          description
+          description,
+          slug
         `
         )
         .eq("created_by", user.id);
 
       if (createdError) throw createdError;
 
+      const memberClubsTyped = (memberClubs ?? []) as MemberClubRow[];
+      const createdClubsTyped = (createdClubs ?? []) as CreatedClubRow[];
+
       // Combine and format results
       const allClubs: ClubWithDetails[] = [];
 
       // Add member clubs
-      memberClubs?.forEach((member) => {
+      memberClubsTyped.forEach((member) => {
         if (member.clubs) {
           allClubs.push({
             id: member.clubs.id,
@@ -122,12 +152,13 @@ const Clubs = () => {
             creator_last_name: "",
             role: member.role,
             description: member.clubs.description,
+            slug: member.clubs.slug,
           });
         }
       });
 
       // Add created clubs (if not already included)
-      createdClubs?.forEach((club) => {
+      createdClubsTyped.forEach((club) => {
         if (!allClubs.find((c) => c.id === club.id)) {
           allClubs.push({
             id: club.id,
@@ -137,8 +168,9 @@ const Clubs = () => {
             created_by: club.created_by,
             creator_first_name: "",
             creator_last_name: "",
-            role: "admin", // Creator is always admin
+            role: "admin",
             description: club.description,
+            slug: club.slug,
           });
         }
       });
@@ -381,9 +413,15 @@ const Clubs = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                       Created on: {formatDate(club.created_at)}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Created by: {getCreatorDisplayName(club)}
-                    </p>
+                    {/* Club ID shown as plain text (non-clickable) */}
+                    {club.slug && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Club ID:{" "}
+                        <span className="font-mono font-semibold">
+                          {club.slug}
+                        </span>
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               ))}

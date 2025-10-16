@@ -7,6 +7,8 @@ import { Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
 import { useClub } from "@/contexts/ClubContext";
+import CopyableClubId from "@/components/clubs/CopyableClubId";
+import { useQuery } from "@tanstack/react-query";
 
 interface MemberInvite {
   email: string;
@@ -18,6 +20,22 @@ const InviteMembers = () => {
   const { toast } = useToast();
   const { clubId, setClubId } = useClub();
   const navigate = useNavigate();
+
+  // Fetch club info for the CopyableClubId display
+  const { data: clubMeta } = useQuery({
+    queryKey: ["clubMeta", clubId],
+    queryFn: async () => {
+      if (!clubId) return null;
+      const { data, error } = await supabase
+        .from("clubs")
+        .select("name, slug")
+        .eq("id", clubId)
+        .single();
+      if (error) throw error;
+      return data as { name: string; slug: string };
+    },
+    enabled: !!clubId,
+  });
 
   const handleAddInvite = () => {
     if (invites.length < 6) {
@@ -155,7 +173,11 @@ const InviteMembers = () => {
         <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
           You can skip this step and invite your members later
         </p>
-
+        {clubMeta?.slug && (
+          <div className="flex justify-end mb-4">
+            <CopyableClubId slug={clubMeta.slug} compact />
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="space-y-3 mb-6">
             <div className="font-medium text-gray-900 dark:text-gray-100">

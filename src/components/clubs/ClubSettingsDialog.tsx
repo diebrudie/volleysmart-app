@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FileInput } from "@/components/ui/file-input";
+import CopyableClubId from "@/components/clubs/CopyableClubId";
 
 interface ClubSettingsDialogProps {
   isOpen: boolean;
@@ -24,7 +25,8 @@ interface ClubSettingsDialogProps {
     id: string;
     name: string;
     image_url: string | null;
-    description?: string;
+    slug: string; // NEW: 5-char Club ID
+    // description?: string; // (optional) keep only if you still need it elsewhere
   };
 }
 
@@ -38,7 +40,6 @@ const ClubSettingsDialog = ({
   const queryClient = useQueryClient();
 
   const [name, setName] = useState(club.name);
-  const [description, setDescription] = useState(club.description || "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -46,20 +47,16 @@ const ClubSettingsDialog = ({
   useEffect(() => {
     if (isOpen) {
       setName(club.name);
-      setDescription(club.description || "");
       setImageFile(null);
     }
-  }, [isOpen, club.name, club.description]);
+  }, [isOpen, club.name]);
 
   const handleImageChange = (file: File) => {
     setImageFile(file);
   };
 
   // Check if there are any changes
-  const hasChanges =
-    name.trim() !== club.name ||
-    description !== (club.description || "") ||
-    imageFile !== null;
+  const hasChanges = name.trim() !== club.name || imageFile !== null;
 
   const handleSave = async () => {
     if (!user?.id) return;
@@ -102,7 +99,6 @@ const ClubSettingsDialog = ({
         .from("clubs")
         .update({
           name,
-          description,
           image_url: imageUrl,
         })
         .eq("id", club.id);
@@ -131,13 +127,25 @@ const ClubSettingsDialog = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Club Settings</DialogTitle>
-          <DialogDescription>Edit your club details.</DialogDescription>
+        <DialogHeader className="mb-4 mt-5 text-left">
+          <div className="flex items-end justify-between gap-4">
+            {/* Left: title + subtitle */}
+            <div className="space-y-1">
+              <DialogTitle>Club Settings</DialogTitle>
+              <DialogDescription>Edit your club details.</DialogDescription>
+            </div>
+
+            {/* Club ID (slug) display - full width, copyable */}
+            {club.slug && (
+              <div className="shrink-0">
+                <CopyableClubId slug={club.slug} compact />
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
+        <div className="space-y-5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="club-name">Club Name</Label>
             <Input
               id="club-name"
@@ -147,29 +155,18 @@ const ClubSettingsDialog = ({
             />
           </div>
 
-          <div>
-            <Label htmlFor="club-description">Description</Label>
-            <Textarea
-              id="club-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter club description"
-              rows={3}
-            />
-          </div>
-
-          <div>
+          <div className="flex flex-col gap-2">
             <Label htmlFor="club-image">Club Image</Label>
             <FileInput
               id="club-image"
               accept="image/*"
-              buttonText="Choose club image"
+              buttonText="Update club image"
               onImageSelected={handleImageChange}
             />
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2">
+        <DialogFooter className="flex gap-2 mt-3">
           <Button variant="outline" onClick={onClose} className="flex-1">
             Cancel
           </Button>
