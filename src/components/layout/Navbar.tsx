@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useClub } from "@/contexts/ClubContext";
+import { supabase } from "@/integrations/supabase/client";
 
 import {
   DropdownMenu,
@@ -37,6 +38,65 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
+/**
+ * Local types to avoid `any` and satisfy ESLint.
+ */
+type Maybe<T> = T | null | undefined;
+
+interface AuthLikeUser {
+  id: string;
+  email?: string;
+  role?: string;
+  user_metadata?: {
+    first_name?: string;
+    last_name?: string;
+    full_name?: string;
+    picture?: string;
+    avatar_url?: string;
+  };
+}
+
+interface PlayerProfile {
+  first_name?: string;
+  last_name?: string;
+  image_url?: string;
+}
+
+/**
+ * Compute avatar URL and initials from user + player profile.
+ */
+function getAvatarAndInitials(
+  user: Maybe<AuthLikeUser>,
+  player: Maybe<PlayerProfile>
+): { avatarUrl?: string; initials: string } {
+  // 1) Preferred avatar comes from players.image_url
+  const avatarUrl =
+    player?.image_url ||
+    user?.user_metadata?.picture ||
+    user?.user_metadata?.avatar_url;
+
+  // 2) Names – prefer players.*, fallback to user_metadata.*
+  const firstName =
+    player?.first_name ||
+    user?.user_metadata?.first_name ||
+    user?.user_metadata?.full_name?.split(" ")?.[0];
+
+  const lastName =
+    player?.last_name ||
+    user?.user_metadata?.last_name ||
+    user?.user_metadata?.full_name?.split(" ")?.slice(-1)?.[0];
+
+  const initialsCandidate =
+    [firstName?.[0], lastName?.[0]].filter(Boolean).join("") ||
+    user?.email?.[0] ||
+    "U";
+
+  return {
+    avatarUrl,
+    initials: initialsCandidate.toUpperCase(),
+  };
+}
+
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
@@ -49,6 +109,35 @@ const Navbar = () => {
     await logout();
     navigate("/");
   };
+
+  // Player profile for avatar + names
+  const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(
+    null
+  );
+
+  useEffect(() => {
+    const fetchPlayer = async () => {
+      if (!user?.id) return;
+
+      const tryKeys = ["auth_user_id", "user_id", "profile_id"] as const;
+
+      for (const key of tryKeys) {
+        const { data, error } = await supabase
+          .from("players")
+          .select("first_name,last_name,image_url")
+          .eq(key, user.id)
+          .single();
+
+        if (!error && data) {
+          setPlayerProfile(data as PlayerProfile);
+          return;
+        }
+      }
+      // If nothing matched, keep null; we'll fall back to initials from user/email.
+    };
+
+    fetchPlayer();
+  }, [user?.id]);
 
   useEffect(() => {
     const lastClub = localStorage.getItem("lastVisitedClub");
@@ -161,24 +250,43 @@ const Navbar = () => {
   transition-colors"
             />
             <DropdownMenu>
+              {/* Account trigger with photo or initials */}
               <DropdownMenuTrigger className="flex items-center group">
-                <div
-                  className="h-10 w-10 rounded-full flex items-center justify-center
-               bg-gray-200 dark:bg-gray-700
-               hover:bg-gray-100 dark:hover:bg-gray-600
-               ring-0 group-hover:ring-2 ring-gray-300 dark:ring-gray-600
-               transition-all"
-                  aria-label="Open account menu"
-                >
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">
-                    {user?.email?.charAt(0).toUpperCase() || "U"}
-                  </span>
-                </div>
+                {(() => {
+                  const { avatarUrl, initials } = getAvatarAndInitials(
+                    (user ?? null) as AuthLikeUser | null,
+                    playerProfile
+                  );
+
+                  return (
+                    <div
+                      className="h-10 w-10 rounded-full overflow-hidden
+                   ring-0 group-hover:ring-2 ring-gray-300 dark:ring-gray-600
+                   bg-gray-200 dark:bg-gray-700
+                   transition-all flex items-center justify-center"
+                      aria-label="Open account menu"
+                    >
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt="User avatar"
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 select-none">
+                          {initials}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
                 <ChevronDown
                   className="ml-1 h-4 w-4 text-gray-500 dark:text-gray-400
                group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
                 />
               </DropdownMenuTrigger>
+
               <DropdownMenuContent
                 align="end"
                 className="w-56 bg-white border border-gray-200 shadow-md
