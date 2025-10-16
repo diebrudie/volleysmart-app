@@ -125,7 +125,7 @@ const Navbar = () => {
         const { data, error } = await supabase
           .from("players")
           .select("first_name,last_name,image_url")
-          .eq(key, user.id)
+          .eq("user_id", user.id)
           .single();
 
         if (!error && data) {
