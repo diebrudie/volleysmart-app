@@ -15,9 +15,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Upload,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  CalendarIcon,
+} from "lucide-react";
 
 interface Position {
   id: string;
@@ -117,6 +131,7 @@ const PlayerOnboarding = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   const [answers, setAnswers] = useState<OnboardingAnswers>({
     primaryPosition: "",
@@ -137,6 +152,13 @@ const PlayerOnboarding = () => {
   useEffect(() => {
     fetchPositions();
   }, []);
+
+  // Initialize selected date if birthday is already set
+  useEffect(() => {
+    if (answers.birthday && !selectedDate) {
+      setSelectedDate(new Date(answers.birthday));
+    }
+  }, [answers.birthday, selectedDate]);
 
   const fetchPositions = async () => {
     try {
@@ -814,20 +836,30 @@ const PlayerOnboarding = () => {
               <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
                 When's your birthday?
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                You must be at least 10 years old
-              </p>
             </div>
-            <div className="max-w-xs mx-auto">
-              <Input
-                type="date"
-                value={answers.birthday}
-                max={maxDate} // ✅ Restrict to 10+ years ago
-                onChange={(e) =>
-                  setAnswers((prev) => ({ ...prev, birthday: e.target.value }))
-                }
-                className="text-center"
-              />
+            <div className="max-w-xs space-y-3">
+              {/* Typeable Date Input */}
+              <div>
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none z-10" />
+                  <Input
+                    type="date"
+                    value={answers.birthday}
+                    max={maxDate}
+                    onChange={(e) => {
+                      setAnswers((prev) => ({
+                        ...prev,
+                        birthday: e.target.value,
+                      }));
+                      if (e.target.value) {
+                        setSelectedDate(new Date(e.target.value));
+                      }
+                    }}
+                    className="text-left dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:[color-scheme:dark] pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    placeholder="YYYY-MM-DD"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         );

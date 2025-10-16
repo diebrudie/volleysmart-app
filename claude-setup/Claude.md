@@ -1,12 +1,12 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Code within this application when working with code in this repository.
 
-This file provides comprehensive guidance to Claude Code when working with the VolleyMatch volleyball club and match management web app.
+This file provides comprehensive guidance to any LLM and Vibe Coding App when working with the VolleySmart volleyball club and match management web app.
 
 ## 🏐 Project Overview
 
-VolleyMatch is a React-based web application for managing volleyball clubs, teams, and matches. Built with modern TypeScript, Supabase backend, and deployed via Lovable.
+VolleySmart is a React-based web application for managing volleyball clubs, teams, and matches. Built with modern TypeScript, Supabase backend, and deployed via Lovable and local machine.
 
 ### Tech Stack
 - **Frontend**: React 18 + TypeScript + Vite
@@ -35,7 +35,10 @@ src/
 │   ├── auth/           # Authentication components
 │   ├── clubs/          # Club management
 │   ├── common/         # Shared components
+│   ├── forms/          # Form, layout
+│   ├── home/           # Homepage Sections components
 │   ├── layout/         # Navigation, layout
+│   ├── match/          # Match Overview, layout
 │   ├── members/        # Member management
 │   ├── team-generator/ # Team generation logic
 │   └── ui/             # shadcn/ui components
@@ -45,7 +48,8 @@ src/
 ├── lib/                # Utilities
 ├── pages/              # Page components
 ├── types/              # TypeScript types
-└── main.tsx           # App entry point
+├── App.tsx/            # App router page
+└── main.tsx            # App entry point
 ```
 
 ## 🔐 Authentication & Authorization

@@ -9,14 +9,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { useClub } from "@/contexts/ClubContext";
 
 interface MemberInvite {
-  name: string;
   email: string;
 }
 
 const InviteMembers = () => {
-  const [invites, setInvites] = useState<MemberInvite[]>([
-    { name: "", email: "" },
-  ]);
+  const [invites, setInvites] = useState<MemberInvite[]>([{ email: "" }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { clubId, setClubId } = useClub();
@@ -24,7 +21,7 @@ const InviteMembers = () => {
 
   const handleAddInvite = () => {
     if (invites.length < 6) {
-      setInvites([...invites, { name: "", email: "" }]);
+      setInvites([...invites, { email: "" }]);
     } else {
       toast({
         title: "Maximum reached",
@@ -41,13 +38,9 @@ const InviteMembers = () => {
     }
   };
 
-  const handleInputChange = (
-    index: number,
-    field: keyof MemberInvite,
-    value: string
-  ) => {
+  const handleInputChange = (index: number, value: string) => {
     const newInvites = [...invites];
-    newInvites[index][field] = value;
+    newInvites[index].email = value;
     setInvites(newInvites);
   };
 
@@ -63,9 +56,7 @@ const InviteMembers = () => {
     e.preventDefault();
 
     // Filter out empty invites
-    const validInvites = invites.filter(
-      (invite) => invite.name.trim() && invite.email.trim()
-    );
+    const validInvites = invites.filter((invite) => invite.email.trim());
 
     if (validInvites.length === 0) {
       // If no valid invites, just skip
@@ -85,6 +76,13 @@ const InviteMembers = () => {
 
       if (clubError) throw clubError;
 
+      // For the API call, we'll send invites with just email
+      // The API can extract the name from the email if needed, or use a default
+      const invitesToSend = validInvites.map((invite) => ({
+        name: invite.email.split("@")[0], // Use email prefix as name
+        email: invite.email,
+      }));
+
       // Call our edge function to send invitation emails
       const response = await fetch(
         `https://hdorkmnfwpegvlxygfwv.supabase.co/functions/v1/send-club-invitations`,
@@ -99,7 +97,7 @@ const InviteMembers = () => {
             }`,
           },
           body: JSON.stringify({
-            invites: validInvites,
+            invites: invitesToSend,
             clubInfo: {
               id: clubId,
               name: clubData.name,
@@ -159,57 +157,38 @@ const InviteMembers = () => {
         </p>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-[2fr_3fr_auto] gap-3 mb-4">
+          <div className="space-y-3 mb-6">
             <div className="font-medium text-gray-900 dark:text-gray-100">
-              Name
+              Email Addresses
             </div>
-            <div className="font-medium text-gray-900 dark:text-gray-100">
-              Email
-            </div>
-            <div></div>
 
             {invites.map((invite, index) => (
-              <div key={index} className="contents">
-                <div>
-                  <Input
-                    placeholder="Member name"
-                    value={invite.name}
-                    onChange={(e) =>
-                      handleInputChange(index, "name", e.target.value)
+              <div key={index} className="flex gap-3">
+                <Input
+                  type="email"
+                  placeholder="member@email.com"
+                  value={invite.email}
+                  onChange={(e) => handleInputChange(index, e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={() => {
+                    if (index === 0 && invites.length < 6) {
+                      handleAddInvite();
+                    } else {
+                      handleRemoveInvite(index);
                     }
-                  />
-                </div>
-                <div>
-                  <Input
-                    type="email"
-                    placeholder="member@email.com"
-                    value={invite.email}
-                    onChange={(e) =>
-                      handleInputChange(index, "email", e.target.value)
-                    }
-                  />
-                </div>
-                <div className="flex items-center">
+                  }}
+                >
                   {index === 0 && invites.length < 6 ? (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      onClick={handleAddInvite}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                    <Plus className="h-4 w-4" />
                   ) : (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      onClick={() => handleRemoveInvite(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <X className="h-4 w-4" />
                   )}
-                </div>
+                </Button>
               </div>
             ))}
           </div>
