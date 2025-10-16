@@ -62,6 +62,13 @@ interface PlayerProfile {
   image_url?: string;
 }
 
+interface AccountMenuItem {
+  label: string;
+  path?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  disabled?: boolean;
+}
+
 /**
  * Compute avatar URL and initials from user + player profile.
  */
@@ -169,7 +176,11 @@ const Navbar = () => {
   const accountItems = [
     { label: "Profile", path: `/user/${user?.id}`, icon: User },
     { label: "Clubs", path: "/clubs", icon: UserPlus },
-    { label: "Settings", path: "/settings", icon: Settings },
+    {
+      label: "Settings",
+      icon: Settings,
+      disabled: true, // visually disabled
+    },
     user?.role === "admin" && { label: "Users", path: "/admin", icon: Users },
   ].filter(Boolean);
 
@@ -292,23 +303,39 @@ const Navbar = () => {
                 className="w-56 bg-white border border-gray-200 shadow-md
              dark:bg-gray-800 dark:border-gray-700"
               >
-                {accountItems.map((item, index) => (
-                  <DropdownMenuItem
-                    key={index}
-                    asChild
-                    className="text-gray-700 hover:bg-gray-100 hover:text-gray-900
-             focus:bg-gray-100 focus:text-gray-900
-             dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
-                  >
-                    <Link
-                      to={item.path}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
+                {accountItems.map((item: AccountMenuItem, index) => {
+                  const base =
+                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900 dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700";
+
+                  if (item.disabled) {
+                    // Disabled (e.g., Settings)
+                    return (
+                      <DropdownMenuItem
+                        key={index}
+                        disabled
+                        className={`${base} opacity-50 cursor-not-allowed hover:bg-transparent hover:text-gray-500`}
+                      >
+                        <div className="flex items-center w-full">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    );
+                  }
+
+                  // Enabled items keep Link behavior
+                  return (
+                    <DropdownMenuItem key={index} asChild className={base}>
+                      <Link
+                        to={item.path}
+                        className="flex items-center cursor-pointer"
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}
@@ -375,18 +402,32 @@ const Navbar = () => {
                       </SheetClose>
                     ))}
 
-                  {accountItems.map((item, index) => (
-                    <SheetClose asChild key={`account-${index}`}>
-                      <Link
-                        to={item.path}
-                        className="px-4 py-4 text-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-center border-b border-gray-100 dark:border-gray-800 flex items-center justify-center dark:text-gray-100"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <item.icon className="mr-2 h-4 w-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SheetClose>
-                  ))}
+                  {accountItems.map((item: AccountMenuItem, index) => {
+                    if (item.disabled) {
+                      return (
+                        <div
+                          key={`account-${index}`}
+                          className="px-4 py-4 text-lg font-medium text-gray-400 border-b border-gray-100 dark:border-gray-800 flex items-center justify-center opacity-60 cursor-not-allowed"
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <SheetClose asChild key={`account-${index}`}>
+                        <Link
+                          to={item.path}
+                          className="px-4 py-4 text-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-center border-b border-gray-100 dark:border-gray-800 flex items-center justify-center dark:text-gray-100"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SheetClose>
+                    );
+                  })}
                 </div>
 
                 <div className="p-4 border-t dark:border-gray-700 mt-auto">
