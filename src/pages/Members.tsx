@@ -78,10 +78,12 @@ type SortOption =
 type ViewMode = "grid" | "list";
 
 const Members = () => {
-  console.log(
+  /*
+  //console.log(
     "👥 Members component rendering, current URL:",
     window.location.pathname
   );
+  */
 
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const { clubId: contextClubId, setClubId } = useClub();
@@ -165,7 +167,7 @@ const Members = () => {
     queryKey: ["clubMembers", clubId],
     queryFn: async (): Promise<MemberWithPlayer[]> => {
       if (!clubId) {
-        console.log("❌ No clubId in queryFn");
+        // console.log("❌ No clubId in queryFn");
         return [];
       }
 
@@ -183,7 +185,7 @@ const Members = () => {
         }
 
         if (!clubMembersRaw || clubMembersRaw.length === 0) {
-          console.log("⚠️ No members found for club:", clubId);
+          // console.log("⚠️ No members found for club:", clubId);
           return [];
         }
 

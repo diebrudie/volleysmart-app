@@ -70,11 +70,11 @@ export const SortablePlayer = ({
     if (onPositionChange && tempPosition !== player.preferredPosition) {
       // Extract the actual player ID from the DnD ID
       const actualPlayerId = id.replace(/^(A|B)-/, "");
-      console.log("=== POSITION CHANGE DEBUG ===");
-      console.log("DnD ID:", id);
-      console.log("Actual Player ID:", actualPlayerId);
-      console.log("Old Position:", player.preferredPosition);
-      console.log("New Position:", tempPosition);
+      // console.log("=== POSITION CHANGE DEBUG ===");
+      // console.log("DnD ID:", id);
+      // console.log("Actual Player ID:", actualPlayerId);
+      // console.log("Old Position:", player.preferredPosition);
+      // console.log("New Position:", tempPosition);
 
       onPositionChange(actualPlayerId, tempPosition);
     }

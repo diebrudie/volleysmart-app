@@ -52,7 +52,7 @@ const HomeRoute = () => {
 };
 
 const App = () => {
-  console.log("🔄 App rendering, current URL:", window.location.pathname);
+  //console.log("🔄 App rendering, current URL:", window.location.pathname);
 
   useEffect(() => {
     // Intercept and suppress bucket creation attempts
