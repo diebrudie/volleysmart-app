@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, Navigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useClub } from "@/contexts/ClubContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -22,6 +22,15 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import Navbar from "@/components/layout/Navbar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Role = ManageMemberRow["role"];
 
@@ -31,6 +40,8 @@ export default function ManageMembers() {
   const clubId = urlClubId ?? clubIdFromCtx ?? undefined;
   const asRole = (v: string): Role =>
     v === "admin" || v === "editor" || v === "member" ? v : "member";
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
 
   useEffect(() => {
     if (urlClubId) setClubId(urlClubId);
@@ -60,6 +71,19 @@ export default function ManageMembers() {
   const onUnknownError = (e: unknown, title: string) => {
     const msg = e instanceof Error ? e.message : "Unknown error";
     toast({ title, description: msg, variant: "destructive" });
+  };
+
+  const requestRemove = (id: string) => {
+    setPendingRemoveId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmRemove = () => {
+    if (pendingRemoveId) {
+      removeMut.mutate(pendingRemoveId);
+    }
+    setConfirmOpen(false);
+    setPendingRemoveId(null);
   };
 
   const approveMut = useMutation({
@@ -100,15 +124,11 @@ export default function ManageMembers() {
   });
 
   const rows = useMemo(() => {
-    const order: Record<ManageMemberRow["status"], number> = {
-      pending: 0,
-      active: 1,
-      removed: 2,
-      rejected: 2,
-    };
+    // Do not show removed (previous) members; sort by first_name A→Z
     return (data ?? [])
+      .filter((m) => m.status !== "removed")
       .slice()
-      .sort((a, b) => order[a.status] - order[b.status]);
+      .sort((a, b) => (a.first_name ?? "").localeCompare(b.first_name ?? ""));
   }, [data]);
 
   if (adminLoading) {
@@ -126,12 +146,20 @@ export default function ManageMembers() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Navbar />
+
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Heading row outside of the table (mirrors Members page structure) */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <h1 className="text-4xl font-serif">Manage Members</h1>
+              <Link to={`/members/${clubId}`}>
+                <Button variant="outline">Back to Members</Button>
+              </Link>
+            </div>
+          </div>
           <Card>
-            <CardHeader>
-              <CardTitle>Manage Members</CardTitle>
-            </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="p-6 flex items-center gap-2">
@@ -145,11 +173,11 @@ export default function ManageMembers() {
                   <table className="min-w-full text-sm">
                     <thead className="border-b">
                       <tr>
-                        <th className="py-2 text-left">Name</th>
-                        <th className="py-2 text-left">Email</th>
-                        <th className="py-2 text-left">Role</th>
-                        <th className="py-2 text-left">Status</th>
-                        <th className="py-2 text-left">Actions</th>
+                        <th className="py-2 pt-5 text-left">Name</th>
+                        <th className="py-2 pt-5 text-left">Email</th>
+                        <th className="py-2 pt-5 text-left">Role</th>
+                        <th className="py-2 pt-5 text-left">Status</th>
+                        <th className="py-2 pt-5 text-left">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -216,9 +244,7 @@ export default function ManageMembers() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() =>
-                                    removeMut.mutate(m.membership_id)
-                                  }
+                                  onClick={() => requestRemove(m.membership_id)}
                                 >
                                   Remove
                                 </Button>
@@ -244,6 +270,25 @@ export default function ManageMembers() {
             </CardContent>
           </Card>
         </div>
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Remove member</DialogTitle>
+              <DialogDescription>
+                This will revoke the member’s access to this club. Are you sure
+                you want to continue?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmRemove}>
+                Confirm remove
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
