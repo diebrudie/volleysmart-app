@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Navigate, Link } from "react-router-dom";
+import { useParams, Navigate, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useClub } from "@/contexts/ClubContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronLeft } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import {
   Dialog,
@@ -38,6 +39,8 @@ export default function ManageMembers() {
   const { clubId: clubIdFromCtx, setClubId } = useClub();
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const clubId = urlClubId ?? clubIdFromCtx ?? undefined;
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const asRole = (v: string): Role =>
     v === "admin" || v === "editor" || v === "member" ? v : "member";
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -124,12 +127,13 @@ export default function ManageMembers() {
   });
 
   const rows = useMemo(() => {
-    // Do not show removed (previous) members; sort by first_name A→Z
+    // Hide removed members and the current user (admin); sort A→Z by first_name
+    const currentUserId = user?.id ?? null;
     return (data ?? [])
-      .filter((m) => m.status !== "removed")
+      .filter((m) => m.status !== "removed" && m.user_id !== currentUserId)
       .slice()
       .sort((a, b) => (a.first_name ?? "").localeCompare(b.first_name ?? ""));
-  }, [data]);
+  }, [data, user?.id]);
 
   if (adminLoading) {
     return (
@@ -153,12 +157,23 @@ export default function ManageMembers() {
           {/* Heading row outside of the table (mirrors Members page structure) */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
-              <h1 className="text-4xl font-serif">Manage Members</h1>
-              <Link to={`/members/${clubId}`}>
-                <Button variant="outline">Back to Members</Button>
-              </Link>
+              <div className="flex items-center">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="mr-4"
+                  onClick={() => navigate(`/members/${clubId}`)}
+                  aria-label="Back"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <h1 className="text-4xl font-serif">Manage Members</h1>
+              </div>
+              {/* Right side intentionally empty for now; add actions later if needed */}
+              <div />
             </div>
           </div>
+
           <Card>
             <CardContent>
               {isLoading ? (
