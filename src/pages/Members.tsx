@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,11 +25,26 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Grid3X3, List, Users, Plus, X, Trash2 } from "lucide-react";
+import {
+  Search,
+  Grid3X3,
+  List,
+  Users,
+  Plus,
+  X,
+  Trash2,
+  EllipsisVertical,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import CopyableClubId from "@/components/clubs/CopyableClubId";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 // Simple types to avoid complex Supabase type inference
 interface ClubMember {
@@ -554,28 +569,49 @@ const Members = () => {
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header with Title and Invite Button */}
+          {/* Header with Title and Actions (unified for all breakpoints) */}
           <div className="mb-8">
-            {/* Desktop Layout */}
-            <div className="hidden sm:flex items-center justify-between">
+            <div className="flex items-center justify-between">
               <h1 className="text-4xl font-serif">Club's Members</h1>
 
-              {/* Invite Member Modal */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="More actions"
+                    className="border-border text-foreground hover:bg-accent"
+                  >
+                    <EllipsisVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48 border border-gray-200 dark:border-gray-800"
+                >
+                  <DropdownMenuItem onClick={() => setIsInviteModalOpen(true)}>
+                    Invite Member
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to={`/clubs/${clubId}/manage`}>Manage Members</Link>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Keep the Invite dialog mounted so it can be opened from the menu */}
               <Dialog
                 open={isInviteModalOpen}
                 onOpenChange={setIsInviteModalOpen}
               >
-                <DialogTrigger asChild>
-                  <Button variant="action" icon={<Plus className="h-4 w-4" />}>
-                    Invite Member
-                  </Button>
-                </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader className="mb-4 mt-4 text-left">
                     <div className="flex items-end justify-between gap-4">
                       <div>
                         <DialogTitle>Invite New Member</DialogTitle>
                       </div>
-
                       {clubMeta?.slug && (
                         <div className="shrink-0">
                           <CopyableClubId slug={clubMeta.slug} compact />
@@ -584,6 +620,7 @@ const Members = () => {
                     </div>
                   </DialogHeader>
 
+                  {/* Existing invite form unchanged */}
                   <form onSubmit={handleInviteSubmit} className="space-y-4">
                     <div>
                       <label
@@ -639,22 +676,6 @@ const Members = () => {
                   </form>
                 </DialogContent>
               </Dialog>
-            </div>
-
-            {/* Mobile Layout */}
-            {/* Mobile Layout */}
-            <div className="sm:hidden">
-              <h1 className="text-4xl font-serif mb-4">Club's Members</h1>
-
-              <div className="flex justify-start">
-                <Button
-                  variant="action"
-                  icon={<Plus className="h-4 w-4" />}
-                  onClick={() => setIsInviteModalOpen(true)}
-                >
-                  Invite Member
-                </Button>
-              </div>
             </div>
           </div>
 

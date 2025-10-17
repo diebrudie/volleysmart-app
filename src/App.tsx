@@ -37,6 +37,7 @@ import InviteMembers from "./pages/InviteMembers";
 import NewGame from "./pages/NewGame";
 import Profile from "./pages/Profile";
 import Clubs from "./pages/Clubs";
+import ManageMembers from "@/pages/ManageMembers";
 
 const queryClient = new QueryClient();
 
@@ -241,6 +242,15 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
+                    <Route
+                      path="/clubs/:clubId/manage"
+                      element={
+                        <ProtectedRoute>
+                          <ManageMembers />
+                        </ProtectedRoute>
+                      }
+                    />
+
                     <Route
                       path="/players/:id"
                       element={
