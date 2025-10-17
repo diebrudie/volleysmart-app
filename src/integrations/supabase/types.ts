@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -139,6 +139,38 @@ export type Database = {
           },
         ]
       }
+      locations: {
+        Row: {
+          club_id: string | null
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_days: {
         Row: {
           club_id: string | null
@@ -146,6 +178,9 @@ export type Database = {
           created_by: string | null
           date: string
           id: string
+          last_modified_at: string | null
+          last_modified_by: string | null
+          location_id: string | null
           notes: string | null
           team_generated: boolean | null
         }
@@ -155,6 +190,9 @@ export type Database = {
           created_by?: string | null
           date: string
           id?: string
+          last_modified_at?: string | null
+          last_modified_by?: string | null
+          location_id?: string | null
           notes?: string | null
           team_generated?: boolean | null
         }
@@ -164,6 +202,9 @@ export type Database = {
           created_by?: string | null
           date?: string
           id?: string
+          last_modified_at?: string | null
+          last_modified_by?: string | null
+          location_id?: string | null
           notes?: string | null
           team_generated?: boolean | null
         }
@@ -173,6 +214,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_days_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
             referencedColumns: ["id"]
           },
         ]
@@ -264,9 +312,13 @@ export type Database = {
           is_active: boolean
           is_temporary: boolean | null
           last_name: string
+          last_rating_update: string | null
+          match_experience: string | null
           member_association: boolean
           profile_completed: boolean | null
+          rating_history: Json | null
           skill_rating: number | null
+          total_matches_played: number | null
           training_status: string | null
           user_id: string | null
         }
@@ -285,9 +337,13 @@ export type Database = {
           is_active?: boolean
           is_temporary?: boolean | null
           last_name: string
+          last_rating_update?: string | null
+          match_experience?: string | null
           member_association: boolean
           profile_completed?: boolean | null
+          rating_history?: Json | null
           skill_rating?: number | null
+          total_matches_played?: number | null
           training_status?: string | null
           user_id?: string | null
         }
@@ -306,9 +362,13 @@ export type Database = {
           is_active?: boolean
           is_temporary?: boolean | null
           last_name?: string
+          last_rating_update?: string | null
+          match_experience?: string | null
           member_association?: boolean
           profile_completed?: boolean | null
+          rating_history?: Json | null
           skill_rating?: number | null
+          total_matches_played?: number | null
           training_status?: string | null
           user_id?: string | null
         }

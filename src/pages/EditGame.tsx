@@ -45,6 +45,9 @@ import {
 } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { SortablePlayer } from "@/components/team-generator/SortablePlayer";
+import { useQueryClient, useQuery as useRQQuery } from "@tanstack/react-query";
+import { markModifiedBy } from "@/integrations/supabase/matchDays";
+import { formatFirstLastInitial } from "@/lib/formatName";
 
 // Mock positions data
 const mockPositions = [
@@ -144,6 +147,7 @@ const EditGame = () => {
   const { toast } = useToast();
   const { setClubId } = useClub();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const [date, setDate] = useState<Date>(new Date());
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
@@ -160,8 +164,8 @@ const EditGame = () => {
     queryFn: async (): Promise<MatchDayData | null> => {
       if (!gameId) return null;
 
-      console.log("=== FETCHING GAME DATA FOR EDIT ===");
-      console.log("Game ID (match_day_id):", gameId);
+      // console.log("=== FETCHING GAME DATA FOR EDIT ===");
+      // console.log("Game ID (match_day_id):", gameId);
 
       // Get the match day
       const { data: matchDay, error: matchDayError } = await supabase
@@ -237,11 +241,64 @@ const EditGame = () => {
     enabled: !!gameId,
   });
 
+  // Load who last modified the game (any change on Edit Game page)
+  const { data: auditInfo } = useRQQuery({
+    queryKey: ["matchDayAudit", gameId],
+    enabled: !!gameId,
+    queryFn: async () => {
+      if (!gameId) {
+        return { label: null as string | null, at: null as string | null };
+      }
+
+      // 1) Read audit fields with explicit return typing (avoids stale global types)
+      const { data: mdArr, error: mdErr } = await supabase
+        .from("match_days")
+        .select("id, last_modified_by, last_modified_at")
+        .eq("id", gameId)
+        .limit(1)
+        .returns<
+          {
+            id: string;
+            last_modified_by: string | null;
+            last_modified_at: string | null;
+          }[]
+        >();
+
+      // console.log("[auditInfo] read mdErr:", mdErr);
+      // console.log("[auditInfo] read mdArr:", mdArr);
+
+      if (mdErr) throw mdErr;
+
+      const md = mdArr?.[0];
+      if (!md || !md.last_modified_by) {
+        return { label: null, at: null };
+      }
+
+      // 2) Resolve name via players.user_id (explicit typing to avoid “deep instantiation”)
+      const { data: player } = await supabase
+        .from("players")
+        .select("first_name, last_name")
+        .eq("user_id", md.last_modified_by)
+        .limit(1)
+        .returns<{ first_name: string | null; last_name: string | null }[]>();
+
+      const name =
+        player && player[0]
+          ? formatFirstLastInitial(player[0].first_name, player[0].last_name)
+          : "Someone";
+
+      return {
+        label: name,
+        at: md.last_modified_at,
+      };
+    },
+  });
+
   // Update teams when game data loads
   useEffect(() => {
     if (gameData?.game_players) {
-      console.log("=== CONVERTING GAME DATA TO TEAMS ===");
-      console.log("Game players:", gameData.game_players);
+      // console.log("=== CONVERTING GAME DATA TO TEAMS ===");
+      // console.log("Game players:", gameData.game_players);
 
       const teamA = gameData.game_players
         .filter((gp) => gp.team_name === "team_a")
@@ -274,8 +331,8 @@ const EditGame = () => {
         setSelectedLocationId(gameData.location_id);
       }
 
-      console.log("Team A players:", teamA);
-      console.log("Team B players:", teamB);
+      // console.log("Team A players:", teamA);
+      // console.log("Team B players:", teamB);
     }
   }, [gameData]);
 
@@ -378,6 +435,19 @@ const EditGame = () => {
           setTeamBPlayers((prev) => prev.filter((p) => p.id !== playerId));
           setTeamAPlayers((prev) => [...prev, playerInfo.player]);
         }
+
+        // Mark as modified
+        if (user?.id && gameId) {
+          markModifiedBy(gameId, user.id)
+            .then(() =>
+              queryClient.invalidateQueries({
+                queryKey: ["matchDayAudit", gameId],
+              })
+            )
+            .catch((e) =>
+              console.error("Failed to mark modified (drag to team):", e)
+            );
+        }
       }
       return;
     }
@@ -406,6 +476,22 @@ const EditGame = () => {
           newTeam.splice(overPlayerInfo.index, 0, playerInfo.player);
           return newTeam;
         });
+      }
+
+      // Mark as modified (cross-team drop onto a player)
+      if (user?.id && gameId) {
+        markModifiedBy(gameId, user.id)
+          .then(() =>
+            queryClient.invalidateQueries({
+              queryKey: ["matchDayAudit", gameId],
+            })
+          )
+          .catch((e) =>
+            console.error(
+              "Failed to mark modified (drag over player different team):",
+              e
+            )
+          );
       }
     }
   };
@@ -441,6 +527,19 @@ const EditGame = () => {
         setTeamBPlayers((prev) =>
           arrayMove(prev, activePlayerInfo.index, overPlayerInfo.index)
         );
+      }
+
+      // Mark as modified (within-team reorder)
+      if (user?.id && gameId) {
+        markModifiedBy(gameId, user.id)
+          .then(() =>
+            queryClient.invalidateQueries({
+              queryKey: ["matchDayAudit", gameId],
+            })
+          )
+          .catch((e) =>
+            console.error("Failed to mark modified (reorder within team):", e)
+          );
       }
     }
   };
@@ -557,6 +656,19 @@ const EditGame = () => {
     setTeamAPlayers(newTeamA);
     setTeamBPlayers(newTeamB);
 
+    (async () => {
+      if (user?.id && gameId) {
+        try {
+          await markModifiedBy(gameId, user.id);
+          queryClient.invalidateQueries({
+            queryKey: ["matchDayAudit", gameId],
+          });
+        } catch (e) {
+          console.error("Failed to mark modified (shuffle):", e);
+        }
+      }
+    })();
+
     toast({
       title: "Teams balanced",
       description:
@@ -566,24 +678,30 @@ const EditGame = () => {
   };
 
   const handlePositionChange = (playerId: string, newPosition: string) => {
-    console.log("=== HANDLE POSITION CHANGE ===");
-    console.log("Player ID:", playerId);
-    console.log("New Position:", newPosition);
+    // console.log("=== HANDLE POSITION CHANGE ===");
+    // console.log("Player ID:", playerId);
+    // console.log("New Position:", newPosition);
+    /*
     console.log(
       "Team A Players:",
       teamAPlayers.map((p) => ({ id: p.id, name: p.name }))
     );
+    */
+    /*
     console.log(
       "Team B Players:",
       teamBPlayers.map((p) => ({ id: p.id, name: p.name }))
     );
+    */
 
     const updatePlayerPosition = (players: typeof teamAPlayers) =>
       players.map((player) => {
+        /*
         console.log(
           `Comparing ${player.id} === ${playerId}:`,
           player.id === playerId
         );
+        */
         return player.id === playerId
           ? { ...player, preferredPosition: newPosition }
           : player;
@@ -593,14 +711,14 @@ const EditGame = () => {
     const isInTeamA = teamAPlayers.some((p) => p.id === playerId);
     const isInTeamB = teamBPlayers.some((p) => p.id === playerId);
 
-    console.log("Is in Team A:", isInTeamA);
-    console.log("Is in Team B:", isInTeamB);
+    // console.log("Is in Team A:", isInTeamA);
+    // console.log("Is in Team B:", isInTeamB);
 
     if (isInTeamA) {
-      console.log("Updating Team A");
+      // console.log("Updating Team A");
       setTeamAPlayers(updatePlayerPosition);
     } else if (isInTeamB) {
-      console.log("Updating Team B");
+      // console.log("Updating Team B");
       setTeamBPlayers(updatePlayerPosition);
     } else {
       console.error("Player not found in either team!");
@@ -613,9 +731,9 @@ const EditGame = () => {
     if (!gameId) return;
 
     try {
-      console.log("=== SAVING TEAM CHANGES ===");
-      console.log("Team A players:", teamAPlayers);
-      console.log("Team B players:", teamBPlayers);
+      // console.log("=== SAVING TEAM CHANGES ===");
+      // console.log("Team A players:", teamAPlayers);
+      // console.log("Team B players:", teamBPlayers);
 
       // Delete existing game players for this match day
       const { error: deleteError } = await supabase
@@ -726,7 +844,20 @@ const EditGame = () => {
                   <Calendar
                     mode="single"
                     selected={date}
-                    onSelect={(newDate) => newDate && setDate(newDate)}
+                    onSelect={async (newDate) => {
+                      if (!newDate) return;
+                      setDate(newDate);
+                      if (user?.id && gameId) {
+                        try {
+                          await markModifiedBy(gameId, user.id);
+                          queryClient.invalidateQueries({
+                            queryKey: ["matchDayAudit", gameId],
+                          });
+                        } catch (e) {
+                          console.error("Failed to mark modified (date):", e);
+                        }
+                      }
+                    }}
                     initialFocus
                     className="pointer-events-auto"
                   />
@@ -738,7 +869,19 @@ const EditGame = () => {
                 <LocationSelector
                   clubId={clubId}
                   value={selectedLocationId}
-                  onValueChange={setSelectedLocationId}
+                  onValueChange={async (val) => {
+                    setSelectedLocationId(val);
+                    if (user?.id && gameId) {
+                      try {
+                        await markModifiedBy(gameId, user.id);
+                        queryClient.invalidateQueries({
+                          queryKey: ["matchDayAudit", gameId],
+                        });
+                      } catch (e) {
+                        console.error("Failed to mark modified (location):", e);
+                      }
+                    }
+                  }}
                   placeholder="Select or create location"
                   className="w-full sm:w-[250px]"
                 />
@@ -838,6 +981,15 @@ const EditGame = () => {
               ) : null}
             </DragOverlay>
           </DndContext>
+          {/* Last modified banner */}
+          {auditInfo?.label && (
+            <div className="flex justify-end mb-2">
+              <div className="text-sm text-gray-600 dark:text-gray-300">
+                Last modified by:{" "}
+                <span className="font-medium">{auditInfo.label}</span>
+              </div>
+            </div>
+          )}
 
           {/* Save Button */}
           <div className="flex justify-end">

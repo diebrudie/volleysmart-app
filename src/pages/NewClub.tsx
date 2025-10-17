@@ -157,7 +157,7 @@ const NewClub = () => {
         .from("clubs")
         .insert({
           name: data.name,
-          description: data.description || null,
+          //description: data.description || null,
           image_url: imageUrl,
           created_by: user.id,
           slug: clubIdentifier,
@@ -261,15 +261,6 @@ const NewClub = () => {
                   {errors.name.message}
                 </p>
               )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (optional)</Label>
-              <Textarea
-                id="description"
-                placeholder="Tell us about your club"
-                {...register("description")}
-              />
             </div>
 
             <div className="space-y-2">
