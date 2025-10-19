@@ -63,52 +63,74 @@ const JoinClub = () => {
     try {
       const slug = clubIdInput.trim();
 
-      const { data, error } = await supabase.rpc("request_club_membership", {
+      const { data: authCheck } = await supabase.auth.getUser();
+      console.log("[auth uid]", authCheck?.user?.id);
+
+      // If you deployed the function as request_join_by_slug, use that name.
+      // Otherwise, keep "request_club_membership".
+      const { data, error } = await supabase.rpc("request_join_by_slug", {
         p_slug: slug,
       });
+      console.log("[join RPC result]", { data, error });
 
       if (error) {
-        // Surface "club_not_found" from the function as a friendly UI error
         const notFound = (error.message || "")
           .toLowerCase()
           .includes("club_not_found");
         toast({
           title: notFound ? "Club not found" : "Join request failed",
           description: notFound
-            ? "Please check the Club ID and try again."
-            : "We couldn't send your request. Please try again.",
+            ? "We couldn’t find that club. Check the Club ID and try again."
+            : "We couldn’t send your request. Please try again.",
           variant: "destructive",
+          duration: 1500,
         });
         setIsLoading(false);
         return;
       }
 
-      // data = [{ club_id, status }]
-      const row = Array.isArray(data) ? data[0] : data;
-      if (row?.status === "pending") {
+      // Expected JSON: { ok: true, code: 'created_pending' | 'already_pending' | 'already_active' | 're_applied_pending' | 'club_not_found' }
+      const code = (data && (data as any).code) as string;
+
+      if (code === "created_pending" || code === "re_applied_pending") {
         toast({
           title: "Request sent",
-          description: "Your invite has been successfully sent.",
+          description: "A club admin must approve your membership.",
+          duration: 1500,
         });
-      } else if (row?.status === "active") {
-        toast({
-          title: "You are already a member",
-          description: "This club is already in your list.",
-        });
-      } else if (row?.status === "rejected") {
-        toast({
-          title: "Invite previously rejected",
-          description: "Please contact the club admin if this is unexpected.",
-        });
-      } else {
-        toast({
-          title: "Request processed",
-          description: "We'll notify you once the admin approves.",
-        });
+        navigate("/clubs");
+        return;
       }
 
-      // Redirect to Clubs page
-      navigate("/clubs");
+      if (code === "already_pending") {
+        toast({
+          title: "Request already pending",
+          description: "Please wait for admin approval.",
+          duration: 1500,
+        });
+        navigate("/clubs");
+        return;
+      }
+
+      if (code === "already_active") {
+        toast({
+          title: "You’re already a member",
+          description: "This club is already available in your list.",
+          duration: 1500,
+        });
+        navigate("/clubs");
+        return;
+      }
+
+      // Fallback (including 'club_not_found')
+      toast({
+        title: "Club not found",
+        description:
+          "We couldn’t find that club. Check the Club ID and try again.",
+        variant: "destructive",
+        duration: 1500,
+      });
+      // stay on page
     } catch (err) {
       console.error("Unexpected error:", err);
       toast({
