@@ -60,113 +60,57 @@ const JoinClub = () => {
     if (!user?.id || !clubIdInput.trim()) return;
 
     setIsLoading(true);
-
     try {
-      const trimmedClubId = clubIdInput.trim();
+      const slug = clubIdInput.trim();
 
-      // First try exact match
-      let { data: club, error: clubError } = await supabase
-        .from("clubs")
-        .select("id, name, slug")
-        .eq("slug", trimmedClubId)
-        .maybeSingle();
-
-      // If no exact match, try case-insensitive
-      if (!club && !clubError) {
-        const { data: clubCaseInsensitive, error: clubCaseError } =
-          await supabase
-            .from("clubs")
-            .select("id, name, slug")
-            .ilike("slug", trimmedClubId)
-            .maybeSingle();
-
-        club = clubCaseInsensitive;
-        clubError = clubCaseError;
-      }
-
-      if (clubError) {
-        console.error("Database error when searching for club:", clubError);
-        toast({
-          title: "Database error",
-          description:
-            "There was an error searching for the club. Please try again.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (!club) {
-        toast({
-          title: "Club not found",
-          description: "Please check the Club ID and try again.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Check if user is already a member
-      const { data: existingMember, error: memberError } = await supabase
-        .from("club_members")
-        .select("id")
-        .eq("club_id", club.id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (memberError) {
-        console.error("Error checking membership:", memberError);
-        toast({
-          title: "Error checking membership",
-          description: "Something went wrong. Please try again.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (existingMember) {
-        toast({
-          title: "Already a member",
-          description: "You are already a member of this club.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Add user as a member
-      const { error: insertError } = await supabase
-        .from("club_members")
-        .insert({
-          club_id: club.id,
-          user_id: user.id,
-          role: "member",
-        });
-
-      if (insertError) {
-        console.error("Error joining club:", insertError);
-        toast({
-          title: "Error joining club",
-          description: "Something went wrong. Please try again.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      setGlobalClubId(club.id);
-      localStorage.setItem("lastVisitedClub", club.id);
-
-      toast({
-        title: "Successfully joined club!",
-        description: `Welcome to ${club.name}`,
+      const { data, error } = await supabase.rpc("request_club_membership", {
+        p_slug: slug,
       });
 
-      // Redirect to dashboard
-      navigate(`/dashboard/${club.id}`);
-    } catch (error) {
-      console.error("Unexpected error:", error);
+      if (error) {
+        // Surface "club_not_found" from the function as a friendly UI error
+        const notFound = (error.message || "")
+          .toLowerCase()
+          .includes("club_not_found");
+        toast({
+          title: notFound ? "Club not found" : "Join request failed",
+          description: notFound
+            ? "Please check the Club ID and try again."
+            : "We couldn't send your request. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // data = [{ club_id, status }]
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row?.status === "pending") {
+        toast({
+          title: "Request sent",
+          description: "Your invite has been successfully sent.",
+        });
+      } else if (row?.status === "active") {
+        toast({
+          title: "You are already a member",
+          description: "This club is already in your list.",
+        });
+      } else if (row?.status === "rejected") {
+        toast({
+          title: "Invite previously rejected",
+          description: "Please contact the club admin if this is unexpected.",
+        });
+      } else {
+        toast({
+          title: "Request processed",
+          description: "We'll notify you once the admin approves.",
+        });
+      }
+
+      // Redirect to Clubs page
+      navigate("/clubs");
+    } catch (err) {
+      console.error("Unexpected error:", err);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
