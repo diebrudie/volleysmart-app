@@ -51,8 +51,23 @@ interface GamePlayer {
   player_id: string;
   team_name: string;
   position_played: string | null;
-  players: Player;
+  snapshot_name: string | null; // <- used to display name eve if player is deleted
+  players?: Player;
 }
+
+// Add: local row types to decouple from generated Supabase types
+type GamePlayerRowRaw = {
+  player_id: string;
+  team_name: string;
+  position_played: string | null;
+  snapshot_name: string | null;
+};
+
+type PlayerRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
 
 interface Match {
   id: string;
@@ -138,7 +153,10 @@ const GameDetail = () => {
       // Get game players separately to avoid relation issues
       const { data: gamePlayersRaw, error: gamePlayersError } = await supabase
         .from("game_players")
-        .select("player_id, team_name, position_played")
+        // Cast the select string through unknown so old generated types don't error on snapshot_name
+        .select(
+          "player_id, team_name, position_played, snapshot_name" as unknown as string
+        )
         .eq("match_day_id", matchDayId);
 
       if (gamePlayersError) {
@@ -147,10 +165,15 @@ const GameDetail = () => {
 
       let gamePlayers: GamePlayer[] = [];
 
-      if (gamePlayersRaw && gamePlayersRaw.length > 0) {
+      // Normalize result types first (Supabase generated types may not include `snapshot_name` yet)
+      const gamePlayersRawTyped = (gamePlayersRaw ??
+        []) as unknown as GamePlayerRowRaw[];
+
+      if (gamePlayersRawTyped.length > 0) {
         // Get player details
-        const playerIds = gamePlayersRaw.map((gp) => gp.player_id);
-        const { data: playersData, error: playersError } = await supabase
+        const playerIds = gamePlayersRawTyped.map((gp) => gp.player_id);
+
+        const { data: playersDataRaw, error: playersError } = await supabase
           .from("players")
           .select("id, first_name, last_name")
           .in("id", playerIds);
@@ -159,22 +182,20 @@ const GameDetail = () => {
           console.error("Error fetching players:", playersError);
         }
 
+        const playersData = (playersDataRaw ?? []) as PlayerRow[];
+
         // Combine the data
-        if (playersData) {
-          gamePlayers = gamePlayersRaw.map((gp) => {
-            const player = playersData.find((p) => p.id === gp.player_id);
-            return {
-              player_id: gp.player_id,
-              team_name: gp.team_name,
-              position_played: gp.position_played,
-              players: player || {
-                id: gp.player_id,
-                first_name: "Unknown",
-                last_name: "Player",
-              },
-            };
-          });
-        }
+        gamePlayers = gamePlayersRawTyped.map((gp) => {
+          const player = playersData.find((p) => p.id === gp.player_id);
+          return {
+            player_id: gp.player_id,
+            team_name: gp.team_name,
+            position_played: gp.position_played,
+            snapshot_name: gp.snapshot_name ?? null,
+            // keep players if present; we’ll prefer snapshot_name at render time
+            players: player,
+          };
+        });
       }
 
       const result: MatchDayData = {
@@ -261,6 +282,22 @@ const GameDetail = () => {
     };
     return new Date(dateString).toLocaleDateString("en-US", options);
   };
+
+  /** Prefer immutable snapshot_name; then live players name; then fallback */
+  function displayPlayerName(
+    gp: Pick<GamePlayer, "snapshot_name" | "players">
+  ): string {
+    const snap = gp.snapshot_name?.trim();
+    if (snap) return snap;
+
+    const fn = gp.players?.first_name?.trim() ?? "";
+    const ln = gp.players?.last_name?.trim() ?? "";
+    if (fn || ln) {
+      const initial = ln ? `${ln[0]}.` : "";
+      return [fn, initial].filter(Boolean).join(" ");
+    }
+    return "Unknown P.";
+  }
 
   const handleSaveChanges = async () => {
     if (!matchData) return;
@@ -464,7 +501,7 @@ const GameDetail = () => {
     .filter((gp) => gp.team_name === "team_a")
     .map((gp) => ({
       id: gp.player_id,
-      name: `${gp.players.first_name} ${gp.players.last_name}`,
+      name: displayPlayerName(gp),
       position: gp.position_played || "No Position",
     }));
 
@@ -472,7 +509,7 @@ const GameDetail = () => {
     .filter((gp) => gp.team_name === "team_b")
     .map((gp) => ({
       id: gp.player_id,
-      name: `${gp.players.first_name} ${gp.players.last_name}`,
+      name: displayPlayerName(gp),
       position: gp.position_played || "No Position",
     }));
 

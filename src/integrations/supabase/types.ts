@@ -12,31 +12,74 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       club_members: {
         Row: {
+          activated_at: string | null
           club_id: string | null
           id: string
           is_active: boolean
           joined_at: string | null
+          rejected_at: string | null
+          removed_at: string | null
+          removed_by: string | null
+          requested_at: string | null
           role: string
+          status: Database["public"]["Enums"]["membership_status"]
           user_id: string | null
         }
         Insert: {
+          activated_at?: string | null
           club_id?: string | null
           id?: string
           is_active?: boolean
           joined_at?: string | null
+          rejected_at?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+          requested_at?: string | null
           role?: string
+          status?: Database["public"]["Enums"]["membership_status"]
           user_id?: string | null
         }
         Update: {
+          activated_at?: string | null
           club_id?: string | null
           id?: string
           is_active?: boolean
           joined_at?: string | null
+          rejected_at?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+          requested_at?: string | null
           role?: string
+          status?: Database["public"]["Enums"]["membership_status"]
           user_id?: string | null
         }
         Relationships: [
@@ -91,6 +134,7 @@ export type Database = {
           original_team_name: string | null
           player_id: string
           position_played: string | null
+          snapshot_name: string | null
           team_name: string
           updated_at: string | null
         }
@@ -105,6 +149,7 @@ export type Database = {
           original_team_name?: string | null
           player_id: string
           position_played?: string | null
+          snapshot_name?: string | null
           team_name: string
           updated_at?: string | null
         }
@@ -119,6 +164,7 @@ export type Database = {
           original_team_name?: string | null
           player_id?: string
           position_played?: string | null
+          snapshot_name?: string | null
           team_name?: string
           updated_at?: string | null
         }
@@ -423,9 +469,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_membership: {
+        Args: { p_membership_id: string }
+        Returns: undefined
+      }
       can_view_profile: {
         Args: { viewed_user_id: string }
         Returns: boolean
+      }
+      change_member_role: {
+        Args: { p_membership_id: string; p_new_role: string }
+        Returns: undefined
       }
       check_is_club_member: {
         Args: { club_uuid: string; user_uuid: string }
@@ -439,8 +493,12 @@ export type Database = {
         Args: { match_day_id: string }
         Returns: undefined
       }
+      is_active_member: {
+        Args: { club_uuid: string; user_uuid?: string }
+        Returns: boolean
+      }
       is_club_admin: {
-        Args: { _club_id: string } | { club_uuid: string; user_uuid: string }
+        Args: { club_uuid: string; user_uuid?: string }
         Returns: boolean
       }
       is_club_admin_or_editor: {
@@ -463,13 +521,42 @@ export type Database = {
         Args: { club_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      manage_members_list: {
+        Args: { p_club_id: string }
+        Returns: {
+          activated_at: string
+          club_id: string
+          email: string
+          first_name: string
+          last_name: string
+          membership_id: string
+          rejected_at: string
+          removed_at: string
+          requested_at: string
+          role: string
+          status: Database["public"]["Enums"]["membership_status"]
+          user_id: string
+        }[]
+      }
+      reject_membership: {
+        Args: { p_membership_id: string }
+        Returns: undefined
+      }
+      remove_member: {
+        Args: { p_membership_id: string }
+        Returns: undefined
+      }
+      request_membership: {
+        Args: { p_club_id: string }
+        Returns: string
+      }
       user_can_view_club_members: {
-        Args: { target_club_id: string }
+        Args: { p_club_id: string }
         Returns: boolean
       }
     }
     Enums: {
-      [_ in never]: never
+      membership_status: "pending" | "active" | "removed" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -595,7 +682,12 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  public: {
+  graphql_public: {
     Enums: {},
+  },
+  public: {
+    Enums: {
+      membership_status: ["pending", "active", "removed", "rejected"],
+    },
   },
 } as const

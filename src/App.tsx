@@ -25,6 +25,7 @@ import Games from "./pages/Games";
 import GameDetail from "./pages/GameDetail";
 import Players from "./pages/Players";
 import Members from "./pages/Members";
+import ManageMembers from "@/pages/ManageMembers";
 import PlayerDetail from "./pages/PlayerDetail";
 import TeamGenerator from "./pages/TeamGenerator";
 import EditGame from "./pages/EditGame";
@@ -37,7 +38,6 @@ import InviteMembers from "./pages/InviteMembers";
 import NewGame from "./pages/NewGame";
 import Profile from "./pages/Profile";
 import Clubs from "./pages/Clubs";
-import ManageMembers from "@/pages/ManageMembers";
 
 const queryClient = new QueryClient();
 
