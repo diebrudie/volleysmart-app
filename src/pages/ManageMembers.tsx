@@ -199,6 +199,7 @@ export default function ManageMembers() {
                       <tr>
                         <th className="py-2 pt-5 text-left">Name</th>
                         <th className="py-2 pt-5 text-left">Role</th>
+                        <th className="py-2 pt-5 text-left">Status</th>
                         <th className="py-2 pt-5 text-left">Actions</th>
                       </tr>
                     </thead>
@@ -208,14 +209,15 @@ export default function ManageMembers() {
                           key={m.membership_id}
                           className="border-b last:border-0"
                         >
-                          {/* Name should not wrap on mobile */}
+                          {/* Name (non-wrapping) */}
                           <td className="py-2 pr-4 whitespace-nowrap">
                             {[m.first_name, m.last_name]
                               .filter(Boolean)
                               .join(" ") || "—"}
                           </td>
 
-                          <td className="py-2">
+                          {/* Role */}
+                          <td className="py-2 pr-4 sm:pr-6">
                             {m.status === "active" ? (
                               <Select
                                 defaultValue={m.role}
@@ -240,6 +242,22 @@ export default function ManageMembers() {
                             )}
                           </td>
 
+                          {/* Status */}
+                          <td className="py-2 pr-4 sm:pr-6 capitalize">
+                            <span
+                              className={
+                                m.status === "pending"
+                                  ? "text-yellow-600"
+                                  : m.status === "active"
+                                  ? "text-green-600"
+                                  : "text-gray-500"
+                              }
+                            >
+                              {m.status}
+                            </span>
+                          </td>
+
+                          {/* Actions */}
                           <td className="py-2">
                             <div className="flex gap-2">
                               {m.status === "pending" && (
@@ -252,7 +270,6 @@ export default function ManageMembers() {
                                       rejectMut.mutate(m.membership_id)
                                     }
                                   >
-                                    {/* Icon on mobile, text on desktop */}
                                     <span className="sm:hidden">✕</span>
                                     <span className="hidden sm:inline">
                                       Reject
@@ -291,11 +308,12 @@ export default function ManageMembers() {
                           </td>
                         </tr>
                       ))}
+
                       {rows.length === 0 && (
                         <tr>
                           <td
                             className="py-6 text-center opacity-60"
-                            colSpan={3}
+                            colSpan={4}
                           >
                             No memberships found for this club.
                           </td>
