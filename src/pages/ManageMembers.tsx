@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Navigate, Link, useNavigate } from "react-router-dom";
+import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useClub } from "@/contexts/ClubContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -12,7 +12,7 @@ import {
   type ManageMemberRow,
 } from "@/integrations/supabase/members";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -127,12 +127,21 @@ export default function ManageMembers() {
   });
 
   const rows = useMemo(() => {
-    // Hide removed members and the current user (admin); sort A→Z by first_name
+    // Hide removed members and the current user (admin)
+    // Sort priority:
+    //  1) pending requests first (pinned at top)
+    //  2) A→Z by first_name
     const currentUserId = user?.id ?? null;
     return (data ?? [])
       .filter((m) => m.status !== "removed" && m.user_id !== currentUserId)
       .slice()
-      .sort((a, b) => (a.first_name ?? "").localeCompare(b.first_name ?? ""));
+      .sort((a, b) => {
+        const aPending = a.status === "pending";
+        const bPending = b.status === "pending";
+        if (aPending && !bPending) return -1;
+        if (!aPending && bPending) return 1;
+        return (a.first_name ?? "").localeCompare(b.first_name ?? "");
+      });
   }, [data, user?.id]);
 
   if (adminLoading) {
@@ -154,7 +163,7 @@ export default function ManageMembers() {
 
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Heading row outside of the table (mirrors Members page structure) */}
+          {/* Heading row */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -169,7 +178,6 @@ export default function ManageMembers() {
                 </Button>
                 <h1 className="text-4xl font-serif">Manage Members</h1>
               </div>
-              {/* Right side intentionally empty for now; add actions later if needed */}
               <div />
             </div>
           </div>
@@ -184,14 +192,13 @@ export default function ManageMembers() {
               ) : error ? (
                 <div className="text-destructive">Failed to load members.</div>
               ) : (
-                <div className="overflow-x-auto">
+                // Keep horizontal scroll for narrow screens
+                <div className="w-full overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="border-b">
                       <tr>
                         <th className="py-2 pt-5 text-left">Name</th>
-                        <th className="py-2 pt-5 text-left">Email</th>
                         <th className="py-2 pt-5 text-left">Role</th>
-                        <th className="py-2 pt-5 text-left">Status</th>
                         <th className="py-2 pt-5 text-left">Actions</th>
                       </tr>
                     </thead>
@@ -201,12 +208,13 @@ export default function ManageMembers() {
                           key={m.membership_id}
                           className="border-b last:border-0"
                         >
-                          <td className="py-2">
+                          {/* Name should not wrap on mobile */}
+                          <td className="py-2 pr-4 whitespace-nowrap">
                             {[m.first_name, m.last_name]
                               .filter(Boolean)
                               .join(" ") || "—"}
                           </td>
-                          <td className="py-2">{m.email}</td>
+
                           <td className="py-2">
                             {m.status === "active" ? (
                               <Select
@@ -231,27 +239,30 @@ export default function ManageMembers() {
                               <span className="opacity-60">{m.role}</span>
                             )}
                           </td>
-                          <td className="py-2 capitalize">{m.status}</td>
+
                           <td className="py-2">
                             <div className="flex gap-2">
                               {m.status === "pending" && (
                                 <>
+                                  {/* Reject first, outlined */}
                                   <Button
                                     size="sm"
-                                    onClick={() =>
-                                      approveMut.mutate(m.membership_id)
-                                    }
-                                  >
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
+                                    variant="outline"
                                     onClick={() =>
                                       rejectMut.mutate(m.membership_id)
                                     }
                                   >
                                     Reject
+                                  </Button>
+                                  {/* Approve second, green */}
+                                  <Button
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                    onClick={() =>
+                                      approveMut.mutate(m.membership_id)
+                                    }
+                                  >
+                                    Approve
                                   </Button>
                                 </>
                               )}
@@ -272,7 +283,7 @@ export default function ManageMembers() {
                         <tr>
                           <td
                             className="py-6 text-center opacity-60"
-                            colSpan={5}
+                            colSpan={3}
                           >
                             No memberships found for this club.
                           </td>
@@ -285,6 +296,8 @@ export default function ManageMembers() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Confirm remove dialog */}
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
