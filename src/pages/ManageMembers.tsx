@@ -244,7 +244,7 @@ export default function ManageMembers() {
                             <div className="flex gap-2">
                               {m.status === "pending" && (
                                 <>
-                                  {/* Reject first, outlined */}
+                                  {/* Reject */}
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -252,9 +252,14 @@ export default function ManageMembers() {
                                       rejectMut.mutate(m.membership_id)
                                     }
                                   >
-                                    Reject
+                                    {/* Icon on mobile, text on desktop */}
+                                    <span className="sm:hidden">✕</span>
+                                    <span className="hidden sm:inline">
+                                      Reject
+                                    </span>
                                   </Button>
-                                  {/* Approve second, green */}
+
+                                  {/* Approve */}
                                   <Button
                                     size="sm"
                                     className="bg-green-600 hover:bg-green-700 text-white"
@@ -262,17 +267,24 @@ export default function ManageMembers() {
                                       approveMut.mutate(m.membership_id)
                                     }
                                   >
-                                    Approve
+                                    <span className="sm:hidden">✓</span>
+                                    <span className="hidden sm:inline">
+                                      Approve
+                                    </span>
                                   </Button>
                                 </>
                               )}
+
                               {m.status === "active" && (
                                 <Button
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => requestRemove(m.membership_id)}
                                 >
-                                  Remove
+                                  <span className="sm:hidden">✕</span>
+                                  <span className="hidden sm:inline">
+                                    Remove
+                                  </span>
                                 </Button>
                               )}
                             </div>
