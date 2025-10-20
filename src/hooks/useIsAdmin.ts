@@ -13,11 +13,6 @@ export function useIsAdmin(clubId?: string | null) {
   return useQuery({
     queryKey: ["isAdmin", clubId, user?.id],
     queryFn: async () => {
-      if (!clubId || !user?.id) {
-        console.log("[useIsAdmin] early false", { clubId, userId: user?.id });
-        return false;
-      }
-
       // 1) Creator path (policy “creators_or_members_can_select_clubs” allows this SELECT)
       const { data: creatorRow, error: creatorErr } = await supabase
         .from("clubs")
@@ -30,10 +25,6 @@ export function useIsAdmin(clubId?: string | null) {
         console.warn("[useIsAdmin] creator check error", String(creatorErr));
       }
       if (creatorRow) {
-        console.log("[useIsAdmin] true via creator", {
-          clubId,
-          userId: user.id,
-        });
         return true;
       }
 
@@ -52,13 +43,6 @@ export function useIsAdmin(clubId?: string | null) {
       }
 
       const ok = !!membershipRow;
-      console.log("[useIsAdmin] via membership", {
-        clubId,
-        userId: user.id,
-        ok,
-        role: membershipRow?.role,
-        status: membershipRow?.status,
-      });
       return ok;
     },
     enabled: !!clubId && !!user?.id,

@@ -120,14 +120,6 @@ const Members = () => {
   // Use URL clubId first, fallback to context
   const clubId = urlClubId || contextClubId;
 
-  useEffect(() => {
-    console.log("[Members] clubId resolved", {
-      urlClubId,
-      contextClubId,
-      clubId,
-    });
-  }, [urlClubId, contextClubId, clubId]);
-
   // Fetch club meta (slug) for CopyableClubId in the invite dialog
   const { data: clubMeta } = useQuery({
     queryKey: ["clubMeta", clubId],
@@ -272,6 +264,7 @@ const Members = () => {
         title: "Missing information",
         description: "Please provide both name and email",
         variant: "destructive",
+        duration: 2000,
       });
       return;
     }
@@ -327,6 +320,7 @@ const Members = () => {
       toast({
         title: "Invitation sent!",
         description: `Invitation has been sent to ${inviteEmail}`,
+        duration: 1500,
       });
 
       // Reset form and close modal
@@ -345,6 +339,7 @@ const Members = () => {
             ? error.message
             : "Failed to send invitation. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setIsSubmitting(false);
@@ -439,6 +434,7 @@ const Members = () => {
       toast({
         title: "Success",
         description: `${selectedMembers.length} member(s) removed from the club`,
+        duration: 1500,
       });
 
       setSelectedMembers([]);
@@ -449,6 +445,7 @@ const Members = () => {
         title: "Error",
         description: "Failed to remove members. Please try again.",
         variant: "destructive",
+        duration: 1500,
       });
     }
   };
@@ -602,17 +599,8 @@ const Members = () => {
                     Invite Member
                   </DropdownMenuItem>
                   {isAdmin && (
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        console.log("[Members] menu onSelect → navigate", {
-                          clubId,
-                          path: `/clubs/${clubId}/manage`,
-                        });
-                        if (clubId) navigate(`/clubs/${clubId}/manage`);
-                      }}
-                    >
-                      Manage Members
+                    <DropdownMenuItem asChild>
+                      <Link to={`/clubs/${clubId}/manage`}>Manage Members</Link>
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>

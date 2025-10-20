@@ -42,15 +42,6 @@ export default function ManageMembers() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  useEffect(() => {
-    console.log("[ManageMembers] mount", {
-      urlClubId,
-      clubIdFromCtx,
-      clubIdResolved: clubId,
-      userId: user?.id,
-    });
-  }, [urlClubId, clubIdFromCtx, clubId, user?.id]);
-
   const asRole = (v: string): Role =>
     v === "admin" || v === "editor" || v === "member" ? v : "member";
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -65,15 +56,6 @@ export default function ManageMembers() {
     isLoading: adminLoading,
     error: adminError,
   } = useIsAdmin(clubId);
-
-  useEffect(() => {
-    console.log("[ManageMembers] admin check", {
-      clubId,
-      adminLoading,
-      isAdmin,
-      adminError: adminError ? String(adminError) : null,
-    });
-  }, [clubId, adminLoading, isAdmin, adminError]);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -174,11 +156,6 @@ export default function ManageMembers() {
   }
 
   if (adminError || isAdmin === false) {
-    console.warn("[ManageMembers] redirecting away", {
-      reason: adminError ? "adminError" : "isAdmin === false",
-      clubId,
-      adminError: adminError ? String(adminError) : null,
-    });
     return <Navigate to={`/members/${clubId}`} replace />;
   }
 
