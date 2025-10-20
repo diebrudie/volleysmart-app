@@ -56,11 +56,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize auth state
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // 1) Set up a minimal listener first: only handle definitive sign-out
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      //console. log("Auth state changed:", event, session);
       console.log(
         "[Auth] event:",
         event,
@@ -70,36 +69,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         { hasFetchedProfile: hasFetchedProfile.current }
       );
 
-      // Handle token refresh errors
-      if (event === "TOKEN_REFRESHED" && !session) {
-        //console. log("Token refresh failed, signing out");
-        await supabase.auth.signOut();
+      if (event === "SIGNED_OUT") {
+        // Definitive guest
+        hasFetchedProfile.current = false;
         setSession(null);
         setUser(null);
         setIsLoading(false);
-        console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
-          hasUser: !!user,
-        });
         return;
       }
 
-      setSession(session);
-      if (session?.user && !hasFetchedProfile.current) {
-        hasFetchedProfile.current = true;
-        getUserProfile(session.user);
-      } else if (!session) {
-        // Clear state when no session
-        hasFetchedProfile.current = false;
-        setUser(null);
-        setIsLoading(false);
-        console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
-          hasUser: !!user,
-        });
-      }
+      // Handle interactive login (SIGNED_IN) and silent refresh (TOKEN_REFRESHED)
+      // if (
+      //   session?.user &&
+      //   (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")
+      // ) {
+      //   setSession(session);
+
+      //   // For an explicit, interactive SIGNED_IN, own the loading while we fetch profile.
+      //   if (event === "SIGNED_IN") {
+      //     setIsLoading(true);
+      //     hasFetchedProfile.current = true;
+      //     try {
+      //       await getUserProfile(session.user); // getUserProfile does NOT toggle loading
+      //     } catch (e) {
+      //       console.error("Error in onAuthStateChange -> getUserProfile:", e);
+      //     } finally {
+      //       setIsLoading(false);
+      //     }
+      //     return; // done for SIGNED_IN
+      //   }
+
+      //   // For TOKEN_REFRESHED, only fetch if we somehow don't have a profile yet, but don't flicker loading.
+      //   if (!hasFetchedProfile.current || !user) {
+      //     hasFetchedProfile.current = true;
+      //     try {
+      //       await getUserProfile(session.user);
+      //     } catch (e) {
+      //       console.error(
+      //         "Error in onAuthStateChange (refresh) -> getUserProfile:",
+      //         e
+      //       );
+      //     }
+      //   }
+      // }
     });
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    // 2) Initial session resolution — the ONLY place that controls isLoading during boot
+    (async () => {
+      setIsLoading(true);
+
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
       console.log("[Auth] getSession() result:", {
         hasSession: !!session,
         error,
@@ -107,28 +129,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Session error:", error);
-        // Clear invalid session
-        supabase.auth.signOut();
-        setIsLoading(false);
-        console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
-          hasUser: !!user,
-        });
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+
+        setIsLoading(false); // definitive guest
         return;
       }
 
-      //console. log("Initial session check:", session);
-      setSession(session);
-      if (session?.user && !hasFetchedProfile.current) {
-        hasFetchedProfile.current = true;
-        getUserProfile(session.user);
-        console.log("[Auth] getUserProfile() start -> setUser(null)");
-      } else {
+      setSession(session ?? null);
+
+      if (!session?.user) {
+        // No session → guest
+        hasFetchedProfile.current = false;
+        setUser(null);
+
         setIsLoading(false);
-        console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
-          hasUser: !!user,
-        });
+        return;
       }
-    });
+
+      // We have a session → fetch profile, then end loading
+      try {
+        if (!hasFetchedProfile.current) {
+          hasFetchedProfile.current = true;
+        }
+        await getUserProfile(session.user);
+      } catch (e) {
+        // Even if profile fetch fails, ensure the app is usable with a fallback user
+        console.error("Profile load failed in init:", e);
+        // getUserProfile already sets a fallback user on error
+      } finally {
+        setIsLoading(false); // user is set (or fallback), safe to render
+      }
+    })();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -136,12 +169,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Function to get user profile data
   const getUserProfile = async (authUser: User) => {
     try {
-      setIsLoading(true);
+      // Do NOT set isLoading here; outer flows own it.
 
-      // Clear any existing user data first to prevent confusion
-      setUser(null);
-
-      // Try to fetch user profile from the user_profiles table
+      // Try to fetch user profile ...
       const { data: profile, error } = await supabase
         .from("user_profiles")
         .select("*")
@@ -150,7 +180,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error fetching user profile:", error);
-        // Don't throw error, fallback to basic user data
+        // Continue with fallback below
       }
 
       const userWithProfile: AuthUser = {
@@ -163,7 +193,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: (profile?.role as UserRole) || "user",
       };
 
-      //console. log("Setting user profile:", userWithProfile);
       setUser(userWithProfile);
     } catch (error) {
       console.error("Error getting user profile:", error);
@@ -174,25 +203,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name: authUser.email?.split("@")[0] || "User",
         role: "user",
       };
-      //console. log("Setting fallback user:", fallbackUser);
       setUser(fallbackUser);
     } finally {
-      setIsLoading(false);
-      console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
-        hasUser: !!user,
-      });
+      // no isLoading toggles here
     }
   };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
       if (error) throw error;
+
+      // Resolve current session and set profile deterministically
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
+        hasFetchedProfile.current = true;
+        await getUserProfile(session.user);
+      } else {
+        // Defensive: no session -> clear state
+        hasFetchedProfile.current = false;
+        setUser(null);
+      }
 
       toast({
         title: "Success",
@@ -215,9 +252,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     } finally {
       setIsLoading(false);
-      console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
-        hasUser: !!user,
-      });
     }
   };
 
@@ -239,13 +273,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           },
         },
       });
-
       if (error) throw error;
+
+      // Ensure we have a session and a user profile immediately after signup
+      let sessionUser = data.session?.user ?? null;
+
+      // If Supabase didn't create a session on sign-up (depends on email confirmation settings),
+      // perform a one-time sign-in to establish the session.
+      if (!sessionUser) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInError) throw signInError;
+        const { data: sessionData } = await supabase.auth.getSession();
+        sessionUser = sessionData.session?.user ?? null;
+      }
+
+      if (sessionUser) {
+        // Mark that we've loaded the profile at least once and set user
+        hasFetchedProfile.current = true;
+        await getUserProfile(sessionUser);
+      } else {
+        // Defensive: no session available
+        hasFetchedProfile.current = false;
+        setUser(null);
+      }
 
       toast({
         title: "Success",
         description:
           "Account created successfully. You'll be redirected to complete your profile.",
+        duration: 1500,
       });
     } catch (error: unknown) {
       console.error("Signup error:", error);
@@ -261,9 +320,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     } finally {
       setIsLoading(false);
-      console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
-        hasUser: !!user,
-      });
     }
   };
 
