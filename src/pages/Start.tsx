@@ -6,10 +6,27 @@ const Start = () => {
   const navigate = useNavigate();
 
   const handleCreateClub = () => {
+    console.log(
+      "[START]",
+      "navigating from",
+      location.pathname,
+      "to",
+      "/new-club",
+      "reason: Create a New Club after onboarding"
+    );
+
     navigate("/new-club");
   };
 
   const handleJoinClub = () => {
+    console.log(
+      "[START]",
+      "navigating from",
+      location.pathname,
+      "to",
+      "/join-club",
+      "reason: Joining a Club after onboarding"
+    );
     navigate("/join-club");
   };
 

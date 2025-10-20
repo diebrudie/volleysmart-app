@@ -61,6 +61,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       //console. log("Auth state changed:", event, session);
+      console.log(
+        "[Auth] event:",
+        event,
+        "| hasSession:",
+        !!session,
+        "| before setUser:",
+        { hasFetchedProfile: hasFetchedProfile.current }
+      );
 
       // Handle token refresh errors
       if (event === "TOKEN_REFRESHED" && !session) {
@@ -69,6 +77,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(null);
         setUser(null);
         setIsLoading(false);
+        console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
+          hasUser: !!user,
+        });
         return;
       }
 
@@ -81,16 +92,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         hasFetchedProfile.current = false;
         setUser(null);
         setIsLoading(false);
+        console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
+          hasUser: !!user,
+        });
       }
     });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log("[Auth] getSession() result:", {
+        hasSession: !!session,
+        error,
+      });
+
       if (error) {
         console.error("Session error:", error);
         // Clear invalid session
         supabase.auth.signOut();
         setIsLoading(false);
+        console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
+          hasUser: !!user,
+        });
         return;
       }
 
@@ -99,8 +121,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (session?.user && !hasFetchedProfile.current) {
         hasFetchedProfile.current = true;
         getUserProfile(session.user);
+        console.log("[Auth] getUserProfile() start -> setUser(null)");
       } else {
         setIsLoading(false);
+        console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
+          hasUser: !!user,
+        });
       }
     });
 
@@ -152,6 +178,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(fallbackUser);
     } finally {
       setIsLoading(false);
+      console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
+        hasUser: !!user,
+      });
     }
   };
 
@@ -186,6 +215,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     } finally {
       setIsLoading(false);
+      console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
+        hasUser: !!user,
+      });
     }
   };
 
@@ -229,6 +261,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     } finally {
       setIsLoading(false);
+      console.log("[Auth] setIsLoading(false) at", new Date().toISOString(), {
+        hasUser: !!user,
+      });
     }
   };
 

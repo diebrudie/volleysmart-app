@@ -114,6 +114,15 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logout();
+    console.log(
+      "[NAV]",
+      "navigating from",
+      location.pathname,
+      "to",
+      "/",
+      "reason: Logging Out"
+    );
+
     navigate("/");
   };
 
@@ -246,8 +255,26 @@ const Navbar = () => {
               variant="primary"
               onClick={() => {
                 if (clubId) {
+                  console.log(
+                    "[NAV]",
+                    "navigating from",
+                    location.pathname,
+                    "to",
+                    "/new-game/:clubid",
+                    "reason: Clicking New game in the Navbar"
+                  );
+
                   navigate(`/new-game/${clubId}`);
                 } else {
+                  console.log(
+                    "[NAV]",
+                    "navigating from",
+                    location.pathname,
+                    "to",
+                    "/new-game",
+                    "reason: Clicking New game in nabar (else)"
+                  );
+
                   navigate("/new-game");
                 }
               }}
@@ -438,8 +465,26 @@ const Navbar = () => {
                       onClick={() => {
                         setIsOpen(false);
                         if (clubId) {
+                          console.log(
+                            "[NAV]",
+                            "navigating from",
+                            location.pathname,
+                            "to",
+                            "/new-game/:clubid",
+                            "reason: Clicking New Game mobile"
+                          );
+
                           navigate(`/new-game/${clubId}`);
                         } else {
+                          console.log(
+                            "[NAV]",
+                            "navigating from",
+                            location.pathname,
+                            "to",
+                            "/new-game",
+                            "reason: Clicking New Game mobile"
+                          );
+
                           navigate("/new-game");
                         }
                       }}
