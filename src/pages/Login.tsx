@@ -37,76 +37,94 @@ const Login = () => {
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
 
   // Get the intended destination from location state, or default to dashboard
-  const from = location.state?.from?.pathname || "/dashboard";
+  const from = location.state?.from?.pathname as string | undefined;
+
+  // Treat bare "/dashboard" as no 'from' — your router needs a :clubId
+  const normalizedFrom =
+    from && from !== "/login" && from !== "/dashboard" ? from : undefined;
 
   // Only redirect if we're actually ON the login page and user becomes authenticated
   useEffect(() => {
     if (
-      isAuthenticated &&
-      !authLoading &&
-      user &&
-      location.pathname === "/login"
-    ) {
-      setIsCheckingProfile(true);
+      !isAuthenticated ||
+      authLoading ||
+      !user ||
+      location.pathname !== "/login"
+    )
+      return;
 
-      // Check if user has completed player profile (onboarding)
-      const checkUserProfile = async () => {
-        try {
-          const { data: player, error } = await supabase
-            .from("players")
-            .select("id")
-            .eq("user_id", user.id)
-            .single();
+    setIsCheckingProfile(true);
 
-          if (error || !player) {
-            // User hasn't completed onboarding, redirect to onboarding
-            navigate("/players/onboarding", { replace: true });
-          } else {
-            // User has completed onboarding, check club membership count
-            const { data: clubMembers, error: clubError } = await supabase
-              .from("club_members")
-              .select("club_id")
-              .eq("user_id", user.id);
+    const routeAfterLogin = async () => {
+      // 1) Fast path: return to the protected page we came from
+      if (normalizedFrom) {
+        console.log(
+          "[NAV] navigating from /login to",
+          normalizedFrom,
+          "reason: return to 'from'"
+        );
+        navigate(normalizedFrom, { replace: true });
+        setIsCheckingProfile(false);
+        return;
+      }
 
-            if (clubError) {
-              console.error("Error checking club membership:", clubError);
-              navigate("/start", { replace: true });
-              return;
-            }
+      // 2) Otherwise run your existing onboarding + membership flow (unchanged)
+      try {
+        const { data: player, error } = await supabase
+          .from("players")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
 
-            if (!clubMembers || clubMembers.length === 0) {
-              navigate("/start", { replace: true });
-            } else if (clubMembers.length === 1) {
-              navigate(`/dashboard/${clubMembers[0].club_id}`, {
-                replace: true,
-              });
-            } else {
-              // Multiple clubs - check last visited
-              const lastVisitedClubId = localStorage.getItem("lastVisitedClub");
-              const isLastClubValid =
-                lastVisitedClubId &&
-                clubMembers.some(
-                  (member) => member.club_id === lastVisitedClubId
-                );
-
-              if (isLastClubValid) {
-                navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
-              } else {
-                navigate("/clubs", { replace: true });
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Error checking user profile:", error);
+        if (error || !player) {
           navigate("/players/onboarding", { replace: true });
-        } finally {
-          setIsCheckingProfile(false);
+          return;
         }
-      };
 
-      checkUserProfile();
-    }
-  }, [isAuthenticated, authLoading, navigate, user, location.pathname]);
+        const { data: clubMembers, error: clubError } = await supabase
+          .from("club_members")
+          .select("club_id")
+          .eq("user_id", user.id);
+
+        if (clubError) {
+          console.error("Error checking club membership:", clubError);
+          navigate("/start", { replace: true });
+          return;
+        }
+
+        if (!clubMembers || clubMembers.length === 0) {
+          navigate("/start", { replace: true });
+        } else if (clubMembers.length === 1) {
+          navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
+        } else {
+          const lastVisitedClubId = localStorage.getItem("lastVisitedClub");
+          const isLastClubValid =
+            !!lastVisitedClubId &&
+            clubMembers.some((m) => m.club_id === lastVisitedClubId);
+
+          if (isLastClubValid) {
+            navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
+          } else {
+            navigate("/clubs", { replace: true });
+          }
+        }
+      } catch (err) {
+        console.error("Error checking user profile:", err);
+        navigate("/players/onboarding", { replace: true });
+      } finally {
+        setIsCheckingProfile(false);
+      }
+    };
+
+    routeAfterLogin();
+  }, [
+    isAuthenticated,
+    authLoading,
+    user,
+    location.pathname,
+    normalizedFrom,
+    navigate,
+  ]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

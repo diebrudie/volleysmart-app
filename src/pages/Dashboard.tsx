@@ -122,15 +122,40 @@ const Dashboard = () => {
           }
 
           // User doesn't have access to this club
+          console.log(
+            "[DASH]",
+            "navigating from",
+            location.pathname,
+            "to",
+            "/clubs",
+            "reason: User have no access to this club"
+          );
+
           navigate("/clubs");
           return;
         }
 
         // User doesn't belong to any club and hasn't created one
+        console.log(
+          "[DASH]",
+          "navigating from",
+          location.pathname,
+          "to",
+          "/start",
+          "reason: User doesn't belong to any club and hasn't created one"
+        );
         navigate("/start");
       } catch (error) {
         console.error("Error checking user club:", error);
         // On error, safely redirect to start
+        console.log(
+          "[DASH]",
+          "navigating from",
+          location.pathname,
+          "to",
+          "/start",
+          "reason: On error, safely redirect to start"
+        );
         navigate("/start");
       } finally {
         setIsCheckingClub(false);
@@ -316,12 +341,28 @@ const Dashboard = () => {
 
   const handleInviteMembers = () => {
     if (userClubId) {
+      console.log(
+        "[DASHBOARD]",
+        "navigating from",
+        location.pathname,
+        "to",
+        "/invite-members",
+        "reason: Inviting members to the club"
+      );
       navigate(`/invite-members/${userClubId}`);
     }
   };
 
   const handleCreateGame = () => {
     if (userClubId) {
+      console.log(
+        "[DASHBOARD]",
+        "navigating from",
+        location.pathname,
+        "to",
+        "/new-game/:clubId",
+        "reason: Creating a new Game"
+      );
       navigate(`/new-game/${userClubId}`);
     }
   };
@@ -560,7 +601,14 @@ const Dashboard = () => {
 
     const targetPath = `/edit-game/${userClubId}/${latestGame.id}`;
     // console. log(("🚀 Navigating to:", targetPath);
-
+    console.log(
+      "[DASHBOARD]",
+      "navigating from",
+      location.pathname,
+      "to",
+      "/edit-game/:clubId/:latestGameId",
+      "reason: Clicked on Edit Game Button"
+    );
     navigate(targetPath);
   };
 
