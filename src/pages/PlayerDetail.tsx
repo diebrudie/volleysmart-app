@@ -1,6 +1,18 @@
-import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Edit, Save, X, Mail, Phone, Calendar, Award, Shield, Activity, MapPin } from 'lucide-react';
+import { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import {
+  ChevronLeft,
+  Edit,
+  Save,
+  X,
+  Mail,
+  Phone,
+  Calendar,
+  Award,
+  Shield,
+  Activity,
+  MapPin,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,10 +36,7 @@ const playerData = {
   dateJoined: "2024-01-15",
   location: "Main Gym",
   bio: "A dedicated player with a passion for volleyball. Alex excels in both setting and hitting, bringing versatility to the team.",
-  achievements: [
-    "Team MVP - 2023 Season",
-    "All-Star Selection - 2022",
-  ],
+  achievements: ["Team MVP - 2023 Season", "All-Star Selection - 2022"],
   stats: {
     kills: 250,
     assists: 450,
@@ -41,7 +50,7 @@ const PlayerDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [editing, setEditing] = useState(false);
   const [editedPlayer, setEditedPlayer] = useState(playerData);
 
@@ -50,6 +59,7 @@ const PlayerDetail = () => {
     toast({
       title: "Changes saved",
       description: "The player details have been updated.",
+      duration: 1500,
     });
     setEditing(false);
   };
@@ -60,11 +70,11 @@ const PlayerDetail = () => {
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-6 flex items-center">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="mr-4" 
-              onClick={() => navigate('/players')}
+            <Button
+              variant="outline"
+              size="icon"
+              className="mr-4"
+              onClick={() => navigate("/players")}
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -75,7 +85,10 @@ const PlayerDetail = () => {
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b">
               <div className="flex items-center">
                 <Avatar className="mr-4 h-12 w-12">
-                  <AvatarImage src="https://github.com/shadcn.png" alt={playerData.name} />
+                  <AvatarImage
+                    src="https://github.com/shadcn.png"
+                    alt={playerData.name}
+                  />
                   <AvatarFallback>{playerData.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -127,14 +140,18 @@ const PlayerDetail = () => {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Location</p>
+                      <p className="text-sm font-medium text-gray-700">
+                        Location
+                      </p>
                       <p className="text-gray-500">
                         <MapPin className="mr-2 inline-block h-4 w-4" />
                         {playerData.location}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Joined Date</p>
+                      <p className="text-sm font-medium text-gray-700">
+                        Joined Date
+                      </p>
                       <p className="text-gray-500">
                         <Calendar className="mr-2 inline-block h-4 w-4" />
                         {new Date(playerData.dateJoined).toLocaleDateString()}
@@ -146,7 +163,9 @@ const PlayerDetail = () => {
                     <p className="text-gray-500">{playerData.bio}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Positions</p>
+                    <p className="text-sm font-medium text-gray-700">
+                      Positions
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {playerData.positions.map((position, index) => (
                         <Badge key={index}>{position}</Badge>
@@ -154,7 +173,9 @@ const PlayerDetail = () => {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Achievements</p>
+                    <p className="text-sm font-medium text-gray-700">
+                      Achievements
+                    </p>
                     <ul className="list-disc pl-5 text-gray-500">
                       {playerData.achievements.map((achievement, index) => (
                         <li key={index}>{achievement}</li>
@@ -165,42 +186,60 @@ const PlayerDetail = () => {
                 <TabsContent value="stats" className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <p className="text-3xl font-bold">{playerData.stats.kills}</p>
+                      <p className="text-3xl font-bold">
+                        {playerData.stats.kills}
+                      </p>
                       <p className="text-sm text-gray-500">Kills</p>
                     </div>
                     <div>
-                      <p className="text-3xl font-bold">{playerData.stats.assists}</p>
+                      <p className="text-3xl font-bold">
+                        {playerData.stats.assists}
+                      </p>
                       <p className="text-sm text-gray-500">Assists</p>
                     </div>
                     <div>
-                      <p className="text-3xl font-bold">{playerData.stats.blocks}</p>
+                      <p className="text-3xl font-bold">
+                        {playerData.stats.blocks}
+                      </p>
                       <p className="text-sm text-gray-500">Blocks</p>
                     </div>
                     <div>
-                      <p className="text-3xl font-bold">{playerData.stats.aces}</p>
+                      <p className="text-3xl font-bold">
+                        {playerData.stats.aces}
+                      </p>
                       <p className="text-sm text-gray-500">Aces</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Skill Rating</p>
+                      <p className="text-sm font-medium text-gray-700">
+                        Skill Rating
+                      </p>
                       <div className="flex items-center">
                         <Award className="mr-2 h-4 w-4 text-yellow-500" />
-                        <p className="text-xl font-semibold">{playerData.skillRating}</p>
+                        <p className="text-xl font-semibold">
+                          {playerData.skillRating}
+                        </p>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Matches Played</p>
+                      <p className="text-sm font-medium text-gray-700">
+                        Matches Played
+                      </p>
                       <div className="flex items-center">
                         <Shield className="mr-2 h-4 w-4 text-blue-500" />
-                        <p className="text-xl font-semibold">{playerData.matchesPlayed}</p>
+                        <p className="text-xl font-semibold">
+                          {playerData.matchesPlayed}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </TabsContent>
                 <TabsContent value="activity" className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Recent Activity</p>
+                    <p className="text-sm font-medium text-gray-700">
+                      Recent Activity
+                    </p>
                     <ul className="list-disc pl-5 text-gray-500">
                       <li>Played in Match vs Team B on April 5, 2024</li>
                       <li>Achieved 15 kills in the above match</li>
@@ -208,12 +247,18 @@ const PlayerDetail = () => {
                     </ul>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Training Sessions</p>
-                    <p className="text-gray-500">Next session scheduled for April 12, 2024</p>
+                    <p className="text-sm font-medium text-gray-700">
+                      Training Sessions
+                    </p>
+                    <p className="text-gray-500">
+                      Next session scheduled for April 12, 2024
+                    </p>
                   </div>
                   <div className="flex items-center">
                     <Activity className="mr-2 h-4 w-4 text-purple-500" />
-                    <p className="text-sm font-medium text-gray-700">Overall Performance: Good</p>
+                    <p className="text-sm font-medium text-gray-700">
+                      Overall Performance: Good
+                    </p>
                   </div>
                 </TabsContent>
               </Tabs>

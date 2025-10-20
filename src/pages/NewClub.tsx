@@ -116,6 +116,7 @@ const NewClub = () => {
         title: "Error",
         description: "You must be logged in to create a club",
         variant: "destructive",
+        duration: 2000,
       });
       return;
     }
@@ -141,6 +142,7 @@ const NewClub = () => {
               description:
                 "Image upload failed, but club will be created without an image.",
               variant: "default",
+              duration: 1500,
             });
           }
         } catch (error) {
@@ -180,6 +182,7 @@ const NewClub = () => {
         toast({
           title: "Club created!",
           description: "Your club has been created successfully.",
+          duration: 1500,
         });
 
         // Navigate to invite members page with club id as parameter
@@ -195,6 +198,7 @@ const NewClub = () => {
           title: "Club created",
           description:
             "Your club was created successfully. You can proceed as the club creator.",
+          duration: 1500,
         });
 
         setClubId(clubData.id); // ✅ Context
@@ -217,6 +221,7 @@ const NewClub = () => {
             ? error.message
             : "Failed to create club. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setIsSubmitting(false);

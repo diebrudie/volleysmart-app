@@ -334,7 +334,7 @@ const PlayerOnboarding = () => {
         toast({
           title: "Success",
           description: "Player profile already exists!",
-          duration: 2000,
+          duration: 1500,
         });
         navigate("/start", { replace: true });
         return;

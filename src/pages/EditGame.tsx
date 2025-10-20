@@ -802,6 +802,7 @@ const EditGame = () => {
       toast({
         title: "Teams saved",
         description: "All changes have been saved successfully.",
+        duration: 1500,
       });
 
       navigate(`/dashboard/${clubId}`);
@@ -811,6 +812,7 @@ const EditGame = () => {
         title: "Error",
         description: "Failed to save changes. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     }
   };

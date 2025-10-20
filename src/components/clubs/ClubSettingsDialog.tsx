@@ -108,6 +108,7 @@ const ClubSettingsDialog = ({
       toast({
         title: "Success",
         description: "Club updated successfully",
+        duration: 2000,
       });
 
       queryClient.invalidateQueries({ queryKey: ["userClubs"] });
@@ -118,6 +119,7 @@ const ClubSettingsDialog = ({
         title: "Error",
         description: "Failed to update club",
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setIsLoading(false);

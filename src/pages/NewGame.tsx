@@ -665,6 +665,7 @@ const NewGame = () => {
             ? ` with ${extraPlayersCount} extra players`
             : ""
         }`,
+        duration: 1500,
       });
 
       // Navigate to the dashboard to see the game

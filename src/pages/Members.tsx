@@ -120,6 +120,14 @@ const Members = () => {
   // Use URL clubId first, fallback to context
   const clubId = urlClubId || contextClubId;
 
+  useEffect(() => {
+    console.log("[Members] clubId resolved", {
+      urlClubId,
+      contextClubId,
+      clubId,
+    });
+  }, [urlClubId, contextClubId, clubId]);
+
   // Fetch club meta (slug) for CopyableClubId in the invite dialog
   const { data: clubMeta } = useQuery({
     queryKey: ["clubMeta", clubId],
@@ -594,8 +602,17 @@ const Members = () => {
                     Invite Member
                   </DropdownMenuItem>
                   {isAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link to={`/clubs/${clubId}/manage`}>Manage Members</Link>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        console.log("[Members] menu onSelect → navigate", {
+                          clubId,
+                          path: `/clubs/${clubId}/manage`,
+                        });
+                        if (clubId) navigate(`/clubs/${clubId}/manage`);
+                      }}
+                    >
+                      Manage Members
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>

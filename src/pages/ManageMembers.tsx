@@ -41,6 +41,16 @@ export default function ManageMembers() {
   const clubId = urlClubId ?? clubIdFromCtx ?? undefined;
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  useEffect(() => {
+    console.log("[ManageMembers] mount", {
+      urlClubId,
+      clubIdFromCtx,
+      clubIdResolved: clubId,
+      userId: user?.id,
+    });
+  }, [urlClubId, clubIdFromCtx, clubId, user?.id]);
+
   const asRole = (v: string): Role =>
     v === "admin" || v === "editor" || v === "member" ? v : "member";
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -55,6 +65,16 @@ export default function ManageMembers() {
     isLoading: adminLoading,
     error: adminError,
   } = useIsAdmin(clubId);
+
+  useEffect(() => {
+    console.log("[ManageMembers] admin check", {
+      clubId,
+      adminLoading,
+      isAdmin,
+      adminError: adminError ? String(adminError) : null,
+    });
+  }, [clubId, adminLoading, isAdmin, adminError]);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -93,7 +113,7 @@ export default function ManageMembers() {
     mutationFn: (id: string) => approveMembership(id),
     onSuccess: async () => {
       await invalidateAll();
-      toast({ title: "Membership approved" });
+      toast({ title: "Membership approved", duration: 1500 });
     },
     onError: (e) => onUnknownError(e, "Approval failed"),
   });
@@ -102,7 +122,7 @@ export default function ManageMembers() {
     mutationFn: (id: string) => rejectMembership(id),
     onSuccess: async () => {
       await invalidateAll();
-      toast({ title: "Request rejected" });
+      toast({ title: "Request rejected", duration: 1500 });
     },
     onError: (e) => onUnknownError(e, "Reject failed"),
   });
@@ -111,7 +131,7 @@ export default function ManageMembers() {
     mutationFn: (id: string) => removeMember(id),
     onSuccess: async () => {
       await invalidateAll();
-      toast({ title: "Member removed" });
+      toast({ title: "Member removed", duration: 1500 });
     },
     onError: (e) => onUnknownError(e, "Remove failed"),
   });
@@ -121,7 +141,7 @@ export default function ManageMembers() {
       changeMemberRole(p.id, p.role),
     onSuccess: async () => {
       await invalidateAll();
-      toast({ title: "Role updated" });
+      toast({ title: "Role updated", duration: 1500 });
     },
     onError: (e) => onUnknownError(e, "Role update failed"),
   });
@@ -154,6 +174,11 @@ export default function ManageMembers() {
   }
 
   if (adminError || isAdmin === false) {
+    console.warn("[ManageMembers] redirecting away", {
+      reason: adminError ? "adminError" : "isAdmin === false",
+      clubId,
+      adminError: adminError ? String(adminError) : null,
+    });
     return <Navigate to={`/members/${clubId}`} replace />;
   }
 

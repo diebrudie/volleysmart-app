@@ -239,6 +239,7 @@ const Clubs = () => {
       toast({
         title: "Success",
         description: "Club deleted successfully",
+        duration: 1500,
       });
 
       queryClient.invalidateQueries({ queryKey: ["userClubs"] });
@@ -250,6 +251,7 @@ const Clubs = () => {
         title: "Error",
         description: "Failed to delete club",
         variant: "destructive",
+        duration: 2000,
       });
     }
   };

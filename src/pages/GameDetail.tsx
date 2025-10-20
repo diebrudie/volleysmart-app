@@ -319,6 +319,7 @@ const GameDetail = () => {
       toast({
         title: "Changes saved",
         description: "The match details have been updated.",
+        duration: 1200,
       });
 
       setEditing(false);
@@ -329,6 +330,7 @@ const GameDetail = () => {
         title: "Error",
         description: "Failed to save changes. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     }
   };
@@ -348,6 +350,7 @@ const GameDetail = () => {
       toast({
         title: "Match deleted",
         description: "The match has been deleted.",
+        duration: 1500,
       });
 
       navigate(`/games/${matchData.club_id}`);
@@ -357,6 +360,7 @@ const GameDetail = () => {
         title: "Error",
         description: "Failed to delete match. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     }
   };
@@ -449,6 +453,7 @@ const GameDetail = () => {
       toast({
         title: "Game created!",
         description: "New game created with the same teams",
+        duration: 1500,
       });
 
       // 5. Navigate to dashboard
@@ -459,6 +464,7 @@ const GameDetail = () => {
         title: "Error",
         description: "Failed to create new game. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     }
   };
@@ -680,6 +686,7 @@ const GameDetail = () => {
                                 title: "Location updated",
                                 description:
                                   "The game location has been updated.",
+                                duration: 1500,
                               });
 
                               setIsEditingLocation(false);
@@ -691,6 +698,7 @@ const GameDetail = () => {
                                 description:
                                   "Failed to update location. Please try again.",
                                 variant: "destructive",
+                                duration: 2000,
                               });
                             }
                           }}

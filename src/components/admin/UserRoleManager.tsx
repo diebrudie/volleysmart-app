@@ -1,11 +1,32 @@
-
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { updateUserRole, getUserProfile } from "@/integrations/supabase/profiles";
+import {
+  updateUserRole,
+  getUserProfile,
+} from "@/integrations/supabase/profiles";
 import { supabase } from "@/integrations/supabase/client";
 import { UserRole } from "@/types/supabase";
 
@@ -28,12 +49,13 @@ const UserRoleManager = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      
+
       // Get all users - Note: this requires admin rights in Supabase
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      
+      const { data: authUsers, error: authError } =
+        await supabase.auth.admin.listUsers();
+
       if (authError) throw authError;
-      
+
       // For each user, get their profile to include their role
       const usersWithProfiles = await Promise.all(
         authUsers.users.map(async (user) => {
@@ -41,28 +63,30 @@ const UserRoleManager = () => {
             const profile = await getUserProfile(user.id);
             return {
               id: user.id,
-              email: user.email || 'No email',
-              role: profile?.role as UserRole || 'user' as UserRole,
-              created_at: user.created_at
+              email: user.email || "No email",
+              role: (profile?.role as UserRole) || ("user" as UserRole),
+              created_at: user.created_at,
             };
           } catch (error) {
             return {
               id: user.id,
-              email: user.email || 'No email',
-              role: 'user' as UserRole,
-              created_at: user.created_at
+              email: user.email || "No email",
+              role: "user" as UserRole,
+              created_at: user.created_at,
             };
           }
         })
       );
-      
+
       setUsers(usersWithProfiles);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch users. You may not have admin privileges.",
-        variant: "destructive"
+        description:
+          "Failed to fetch users. You may not have admin privileges.",
+        variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setLoading(false);
@@ -72,21 +96,25 @@ const UserRoleManager = () => {
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
       await updateUserRole(userId, newRole);
-      
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, role: newRole } : user
-      ));
-      
+
+      setUsers(
+        users.map((user) =>
+          user.id === userId ? { ...user, role: newRole } : user
+        )
+      );
+
       toast({
         title: "Success",
         description: `User role updated to ${newRole}`,
+        duration: 2000,
       });
     } catch (error) {
       console.error("Error updating user role:", error);
       toast({
         title: "Error",
         description: "Failed to update user role",
-        variant: "destructive"
+        variant: "destructive",
+        duration: 2000,
       });
     }
   };
@@ -118,7 +146,9 @@ const UserRoleManager = () => {
                 <TableCell>
                   <Select
                     defaultValue={user.role}
-                    onValueChange={(value) => handleRoleChange(user.id, value as UserRole)}
+                    onValueChange={(value) =>
+                      handleRoleChange(user.id, value as UserRole)
+                    }
                   >
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="Select role" />
@@ -130,9 +160,15 @@ const UserRoleManager = () => {
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <Button variant="outline" size="sm" onClick={() => fetchUsers()}>
+                  {new Date(user.created_at).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchUsers()}
+                  >
                     Refresh
                   </Button>
                 </TableCell>

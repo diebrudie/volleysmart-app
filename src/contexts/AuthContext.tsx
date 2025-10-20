@@ -168,6 +168,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast({
         title: "Success",
         description: "You have successfully logged in",
+        duration: 1500,
       });
 
       return Promise.resolve();
@@ -180,6 +181,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             ? error.message
             : "Failed to log in. Please check your credentials.",
         variant: "destructive",
+        duration: 2000,
       });
       throw error;
     } finally {
@@ -222,6 +224,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             ? error.message
             : "Failed to create account. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
       throw error;
     } finally {
@@ -250,6 +253,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             ? error.message
             : "Failed to send password reset email.",
         variant: "destructive",
+        duration: 2000,
       });
       throw error;
     }
@@ -266,6 +270,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast({
         title: "Success",
         description: "Your password has been updated successfully.",
+        duration: 1500,
       });
     } catch (error: unknown) {
       console.error("Update password error:", error);
@@ -274,6 +279,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description:
           error instanceof Error ? error.message : "Failed to update password.",
         variant: "destructive",
+        duration: 2000,
       });
       throw error;
     }
@@ -290,6 +296,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
+        duration: 1500,
       });
 
       // Redirect to home page instead of /start
@@ -300,6 +307,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: "Error",
         description: "Failed to log out. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     }
   };

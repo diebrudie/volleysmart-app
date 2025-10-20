@@ -44,6 +44,7 @@ const InviteMembers = () => {
       toast({
         title: "Maximum reached",
         description: "You can invite up to 6 members at once",
+        duration: 2000,
       });
     }
   };
@@ -141,6 +142,7 @@ const InviteMembers = () => {
       toast({
         title: "Invitations sent!",
         description: `Invitations have been sent to ${validInvites.length} members.`,
+        duration: 2000,
       });
 
       // Navigate to dashboard
@@ -158,6 +160,7 @@ const InviteMembers = () => {
             ? error.message
             : "Failed to send invitations. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setIsSubmitting(false);

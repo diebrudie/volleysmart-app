@@ -257,6 +257,7 @@ const Profile = () => {
       toast({
         title: "Success",
         description: "Personal information updated successfully",
+        duration: 1500,
       });
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -316,6 +317,7 @@ const Profile = () => {
       toast({
         title: "Success",
         description: "Volleyball skills updated successfully",
+        duration: 1500,
       });
     } catch (error) {
       console.error("Error updating skills:", error);

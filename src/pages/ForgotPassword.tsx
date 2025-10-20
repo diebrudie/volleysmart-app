@@ -50,6 +50,7 @@ const ForgotPassword = () => {
       toast({
         title: "Password reset email sent",
         description: "Check your email for a link to reset your password.",
+        duration: 2500,
       });
     } catch (error: unknown) {
       console.error("Password reset error:", error);
@@ -60,6 +61,7 @@ const ForgotPassword = () => {
             ? error.message
             : "Failed to send password reset email.",
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setIsLoading(false);

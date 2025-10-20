@@ -83,6 +83,7 @@ const ResetPassword = () => {
       toast({
         title: "Password updated",
         description: "Your password has been successfully updated.",
+        duration: 1500,
       });
 
       // Redirect to login after 3 seconds
