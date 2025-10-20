@@ -9,6 +9,7 @@ This file provides comprehensive guidance to any LLM and Vibe Coding App when wo
 VolleySmart is a React-based web application for managing volleyball clubs, teams, and matches. Built with modern TypeScript, Supabase backend, and deployed via Lovable and local machine.
 
 ### Tech Stack
+
 - **Frontend**: React 18 + TypeScript + Vite
 - **UI Framework**: shadcn/ui + Tailwind CSS + Radix UI primitives
 - **Backend**: Supabase (Auth, Database, Storage, RLS)
@@ -21,6 +22,7 @@ VolleySmart is a React-based web application for managing volleyball clubs, team
 ## 🧱 Architecture & File Structure
 
 ### Core Principles
+
 - **Feature-based organization** - Components grouped by domain (auth/, clubs/, members/, etc.)
 - **Context-driven state** - AuthContext and ClubContext manage global state
 - **Type safety with flexibility** - TypeScript with relaxed settings for rapid development
@@ -28,6 +30,7 @@ VolleySmart is a React-based web application for managing volleyball clubs, team
 - **Route-based club scoping** - All views depend on clubId from URL parameters
 
 ### Project Structure
+
 ```
 src/
 ├── components/          # Feature-organized components
@@ -52,15 +55,88 @@ src/
 └── main.tsx            # App entry point
 ```
 
+## Auth & Routing — Source of Truth and Invariants
+
+### Core invariants
+
+- `isAuthenticated` is **derived**: `!!user`. Do not keep a separate boolean state.
+- `getUserProfile(user)` **does not** toggle `isLoading`. It only sets `user` (or a fallback).
+- Only **one place** controls `isLoading` at a time:
+  - **App boot / hard refresh**: the init effect (`supabase.auth.getSession()` → `getUserProfile()` → `isLoading=false`).
+  - **Interactive login**: the `login()` function resolves the session, calls `getUserProfile()`, then sets `isLoading=false`.
+  - **Auth listener** handles **SIGNED_OUT** only. It does **not** fetch profile or change loading for `SIGNED_IN`/`TOKEN_REFRESHED`.
+- Providers (e.g., `AuthProvider`) must **not** call `useNavigate`. Providers can mount outside `<Router>`; use `window.location.href` for hard redirects from providers when necessary.
+
+### Boot sequence (cold start / hard refresh)
+
+1. `isLoading = true`.
+2. `getSession()`.
+   - If **no session**: `user = null`, `isLoading = false`.
+   - If **session**: `getUserProfile()` → sets `user`, then `isLoading = false`.
+3. No redirects occur during boot; deep links render once `isLoading=false`.
+
+### Auth listener (onAuthStateChange)
+
+- **SIGNED_OUT**: clear `session`, `user = null`, `isLoading = false`.
+- **SIGNED_IN** / **TOKEN_REFRESHED**: **ignored** for loading and navigation. We do not fetch profile here (boot and login own it). If you decide to read profile on refresh, do it **without** toggling loading and only when `user` is null.
+
+### Login flow
+
+- `login(email, password)`:
+  - Sets `isLoading = true`.
+  - `signInWithPassword()` → `getSession()` → `getUserProfile()` → `isLoading = false`.
+- `ProtectedRoute` redirects unauthenticated users to `/login` with `state: { from: location }`.
+- `Login` page:
+  - If `location.state.from` is present and not `/login` or bare `/dashboard`, navigate **back to it**.
+  - Else run onboarding/club selection flow:
+    - If no `players` row: `/players/onboarding`
+    - If 0 clubs: `/start`
+    - If 1 club: `/dashboard/:clubId`
+    - If many clubs: `/dashboard/:lastVisitedClub` if valid, else `/clubs`
+
+### Signup flow
+
+- `signup()` must establish an authenticated session immediately after account creation:
+  - Call `auth.signUp(...)`.
+  - If no session returned (depending on email confirmation settings), **sign in once** with the same credentials.
+  - `getSession()` → `getUserProfile()` → `user` set.
+  - The `Signup` page then redirects via the same onboarding/club logic as Login.
+
+### Logout behavior
+
+- `logout()` clears local auth state and uses a **hard redirect** (`window.location.href = "/"`) from within providers (no `useNavigate` in providers).
+
+### Routing & deep links
+
+- `ProtectedRoute` must pass `state={{ from: location }}` when redirecting to `/login`.
+- `Login` must **normalize** invalid “from” paths (e.g., treat bare `/dashboard` as “no from”) to avoid 404s. Use only `/dashboard/:clubId`.
+- Avoid global navigations on app mount (e.g., do not navigate from `Navbar` or layout to dashboard unconditionally).
+
+### Common pitfalls (and what to avoid)
+
+- Do **not** set `isLoading=false` while a session exists **before** `user` is set → causes a detour to `/login`.
+- Do **not** toggle `isLoading` inside `getUserProfile`.
+- Do **not** navigate on any auth event other than explicit user actions.
+- Do **not** use `useNavigate` inside providers.
+
+### Testing checklist
+
+- Hard refresh on `/members/:clubId` stays on the same route; no login flash.
+- Logout → login as different user returns to `from` or runs onboarding/club flow correctly.
+- Signup → lands in onboarding automatically without manual login.
+- Idle tab / token refresh produces no navigation or loading flicker.
+
 ## 🔐 Authentication & Authorization
 
 ### Auth Flow
+
 - **AuthContext** manages user state, login/logout, and profile data
 - **ProtectedRoute** component handles route-level authorization
 - **Role-based access**: admin, editor, member, user
 - **Session persistence** via Supabase Auth with localStorage
 
 ### Key Auth Patterns
+
 ```typescript
 // Use auth in components
 const { user, isAuthenticated, isLoading } = useAuth();
@@ -68,7 +144,7 @@ const { user, isAuthenticated, isLoading } = useAuth();
 // Protect routes with roles
 <ProtectedRoute allowedRoles={["admin", "editor"]}>
   <AdminComponent />
-</ProtectedRoute>
+</ProtectedRoute>;
 
 // Check auth state
 if (!isAuthenticated) return <Navigate to="/login" />;
@@ -77,12 +153,14 @@ if (!isAuthenticated) return <Navigate to="/login" />;
 ## 🏢 Club Context & Scoping
 
 ### Club Context Pattern
+
 - **ClubContext** manages current club scope
 - **URL-based club selection** - clubId from route parameters
 - **localStorage persistence** - remembers last visited club
 - **All data queries scoped to current club**
 
 ### Key Club Patterns
+
 ```typescript
 // Access club context
 const { clubId, setClubId, clearClubId } = useClub();
@@ -97,13 +175,14 @@ useEffect(() => {
 const { data } = useQuery({
   queryKey: ["clubData", clubId],
   queryFn: () => fetchClubData(clubId),
-  enabled: !!clubId
+  enabled: !!clubId,
 });
 ```
 
 ## 🗄️ Supabase Integration
 
 ### Database Schema Overview
+
 - **clubs** - Club information and settings
 - **club_members** - User-club relationships with roles
 - **players** - Player profiles (linked to clubs)
@@ -112,6 +191,7 @@ const { data } = useQuery({
 - **game_players** - Player-team assignments for matches
 
 ### RLS (Row Level Security) Patterns
+
 ```sql
 -- Players visible only to club members
 EXISTS (
@@ -123,17 +203,20 @@ EXISTS (
 ```
 
 ### Common Query Patterns
+
 ```typescript
 // Club-scoped data fetching
 const { data: players } = await supabase
   .from("players")
-  .select(`
+  .select(
+    `
     *,
     player_positions (
       is_primary,
       positions (name)
     )
-  `)
+  `
+  )
   .eq("club_id", clubId);
 
 // Error handling
@@ -146,13 +229,14 @@ if (error) {
 ## 🎯 Component Patterns
 
 ### Page Component Structure
+
 ```typescript
 // Standard page component pattern
 const Dashboard = () => {
   const { user } = useAuth();
   const { clubId } = useClub();
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
-  
+
   // Sync URL clubId with context
   useEffect(() => {
     if (urlClubId) setClubId(urlClubId);
@@ -162,24 +246,23 @@ const Dashboard = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["data", clubId],
     queryFn: () => fetchData(clubId),
-    enabled: !!clubId && !isCheckingClub
+    enabled: !!clubId && !isCheckingClub,
   });
 
   // Loading states
   if (isLoading) return <LoadingSpinner />;
-  
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-grow">
-        {/* Page content */}
-      </main>
+      <main className="flex-grow">{/* Page content */}</main>
     </div>
   );
 };
 ```
 
 ### Data Fetching Patterns
+
 ```typescript
 // React Query with proper keys
 const { data: clubData } = useQuery({
@@ -190,22 +273,23 @@ const { data: clubData } = useQuery({
       .select("*")
       .eq("id", clubId)
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  enabled: !!clubId
+  enabled: !!clubId,
 });
 
 // Invalidate queries after mutations
 await queryClient.invalidateQueries({
-  queryKey: ["club", clubId]
+  queryKey: ["club", clubId],
 });
 ```
 
 ## 🐛 Common Debugging Patterns
 
 ### Context Debugging
+
 ```typescript
 // Add strategic logging for context issues
 useEffect(() => {
@@ -219,6 +303,7 @@ useEffect(() => {
 ```
 
 ### Navigation Debugging
+
 ```typescript
 // Route debugging
 console.log("📍 Current route:", window.location.pathname);
@@ -229,6 +314,7 @@ navigate(`/members/${clubId}`);
 ```
 
 ### Supabase RLS Debugging
+
 ```typescript
 // Check RLS policies when queries fail
 const { data, error } = await supabase
@@ -245,8 +331,10 @@ if (error) {
 ## 🚨 Known Issues & Solutions
 
 ### Issue: ClubContext not persisting
+
 **Symptoms**: clubId resets on page refresh  
 **Solution**: Check localStorage persistence and URL param sync
+
 ```typescript
 // Ensure proper URL param handling
 const { clubId: urlClubId } = useParams<{ clubId: string }>();
@@ -258,8 +346,10 @@ useEffect(() => {
 ```
 
 ### Issue: RLS blocking player queries
+
 **Symptoms**: Empty results despite data existing  
 **Solution**: Verify club membership and RLS policies
+
 ```typescript
 // Debug club membership
 const { data: membership } = await supabase
@@ -271,8 +361,10 @@ const { data: membership } = await supabase
 ```
 
 ### Issue: Navigation losing clubId
+
 **Symptoms**: Routes not preserving club context  
 **Solution**: Always include clubId in navigation
+
 ```typescript
 // ❌ Wrong - loses club context
 navigate("/members");
@@ -284,6 +376,7 @@ navigate(`/members/${clubId}`);
 ## 🎨 Styling & UI Patterns
 
 ### Tailwind + shadcn/ui Patterns
+
 ```typescript
 // Standard layout pattern
 <div className="min-h-screen flex flex-col">
@@ -307,6 +400,7 @@ navigate(`/members/${clubId}`);
 ```
 
 ### Theme Support
+
 - Dark mode via ThemeContext
 - Consistent color scheme with volleyball-primary brand color
 - Responsive design with mobile-first approach
@@ -314,6 +408,7 @@ navigate(`/members/${clubId}`);
 ## 🧪 Development Guidelines
 
 ### Component Development
+
 ```typescript
 // Component interface pattern
 interface ComponentProps {
@@ -332,6 +427,7 @@ export const Component = ({ member }: ComponentProps) => {
 ```
 
 ### Error Handling
+
 ```typescript
 // Standard error handling
 try {
@@ -342,13 +438,14 @@ try {
   toast({
     title: "Error",
     description: "Operation failed. Please try again.",
-    variant: "destructive"
+    variant: "destructive",
   });
   throw error;
 }
 ```
 
 ### TypeScript Patterns
+
 ```typescript
 // Use database types
 import { Tables } from "@/types/supabase";
@@ -366,15 +463,18 @@ interface PlayerWithPositions extends Player {
 ## 🚀 Deployment & CI/CD
 
 ### GitHub → Lovable Flow
+
 - **Push to main** triggers auto-deployment
 - **Development builds** available via `npm run build:dev`
 - **Component tagging** via lovable-tagger (currently disabled)
 
 ### Environment Variables
+
 - Supabase URL and keys managed by Lovable
 - No manual environment setup required
 
 ### Storage Requirements
+
 - **Manual bucket creation required** - `player-images` and `club-images` buckets must be created manually in Supabase
 - **Dynamic bucket creation disabled** due to RLS policies
 - **Storage API errors suppressed** - App.tsx includes fetch interception to handle bucket creation errors gracefully
@@ -407,6 +507,7 @@ npm i                   # Install dependencies
 ## 📋 Best Practices for Claude
 
 ### When Debugging Issues
+
 1. **Always ask for specific error messages** and browser console output
 2. **Check clubId context** - most issues stem from missing club scope
 3. **Verify authentication state** - ensure user is logged in and has proper roles
@@ -414,6 +515,7 @@ npm i                   # Install dependencies
 5. **Insert strategic console.log statements** to trace data flow
 
 ### When Implementing Features
+
 1. **Follow existing patterns** - use established component and context patterns
 2. **Scope to clubs** - ensure all new features respect club boundaries
 3. **Handle loading states** - use Spinner component for async operations
@@ -421,12 +523,14 @@ npm i                   # Install dependencies
 5. **Maintain type safety** - use existing TypeScript interfaces
 
 ### When Modifying Navigation
+
 1. **Always include clubId** in route parameters
 2. **Update route definitions** in App.tsx if adding new routes
 3. **Test ProtectedRoute logic** for role-based access
 4. **Verify context persistence** across navigation
 
 ### Code Style Guidelines
+
 - **Use existing component patterns** from shadcn/ui
 - **Follow Tailwind CSS conventions** for styling
 - **Maintain consistent error handling** with toast notifications
@@ -436,6 +540,7 @@ npm i                   # Install dependencies
 ## 🚨 Critical Debugging Checklist
 
 When encountering issues, always check:
+
 - [ ] Is user authenticated? (`useAuth()`)
 - [ ] Is clubId set correctly? (`useClub()`)
 - [ ] Are route parameters correct? (`useParams()`)
