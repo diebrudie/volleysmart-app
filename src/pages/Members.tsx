@@ -613,7 +613,7 @@ const Members = () => {
               ) : (
                 <Button
                   onClick={() => setIsInviteModalOpen(true)}
-                  className="bg-[#243F8D] hover:bg-[#1e3470]"
+                  variant="outline"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Invite Member
