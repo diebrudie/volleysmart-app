@@ -579,34 +579,48 @@ const Members = () => {
             <div className="flex items-center justify-between">
               <h1 className="text-4xl font-serif">Club's Members</h1>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="More actions"
-                    className="border-border text-foreground hover:bg-accent"
-                  >
-                    <EllipsisVertical className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
+              {isAdmin ? (
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        aria-label="More actions"
+                        className="border-border text-foreground hover:bg-accent"
+                      >
+                        <EllipsisVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
 
-                <DropdownMenuContent
-                  align="end"
-                  className="w-48 border border-gray-200 dark:border-gray-800"
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-48 border border-gray-200 dark:border-gray-800"
+                    >
+                      <DropdownMenuItem
+                        onClick={() => setIsInviteModalOpen(true)}
+                      >
+                        Invite Member
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to={`/clubs/${clubId}/manage`}>
+                          Manage Members
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setIsInviteModalOpen(true)}
+                  className="bg-[#243F8D] hover:bg-[#1e3470]"
                 >
-                  <DropdownMenuItem onClick={() => setIsInviteModalOpen(true)}>
-                    Invite Member
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link to={`/clubs/${clubId}/manage`}>Manage Members</Link>
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Invite Member
+                </Button>
+              )}
 
-              {/* Keep the Invite dialog mounted so it can be opened from the menu */}
+              {/* Keep the Invite dialog mounted so it can be opened from the menu or the button */}
               <Dialog
                 open={isInviteModalOpen}
                 onOpenChange={setIsInviteModalOpen}
