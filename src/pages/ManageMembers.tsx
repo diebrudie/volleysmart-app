@@ -200,7 +200,6 @@ export default function ManageMembers() {
                     <thead className="border-b">
                       <tr>
                         <th className="py-2 pt-5 text-left">Name</th>
-                        <th className="py-2 pt-5 text-left">Role</th>
                         <th className="py-2 pt-5 text-left">Status</th>
                         <th className="py-2 pt-5 text-left">Actions</th>
                       </tr>
@@ -216,32 +215,6 @@ export default function ManageMembers() {
                             {[m.first_name, m.last_name]
                               .filter(Boolean)
                               .join(" ") || "—"}
-                          </td>
-
-                          {/* Role */}
-                          <td className="py-2 pr-4 sm:pr-6">
-                            {m.status === "active" ? (
-                              <Select
-                                defaultValue={m.role}
-                                onValueChange={(val) =>
-                                  roleMut.mutate({
-                                    id: m.membership_id,
-                                    role: asRole(val),
-                                  })
-                                }
-                              >
-                                <SelectTrigger className="w-[140px]">
-                                  <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="member">member</SelectItem>
-                                  <SelectItem value="editor">editor</SelectItem>
-                                  <SelectItem value="admin">admin</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <span className="opacity-60">{m.role}</span>
-                            )}
                           </td>
 
                           {/* Status */}
@@ -315,7 +288,7 @@ export default function ManageMembers() {
                         <tr>
                           <td
                             className="py-6 text-center opacity-60"
-                            colSpan={4}
+                            colSpan={3}
                           >
                             No memberships found for this club.
                           </td>

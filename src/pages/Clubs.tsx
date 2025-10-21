@@ -327,7 +327,7 @@ const Clubs = () => {
 
       toast({
         title: "Club removed",
-        description: "The club is now hidden from all members.",
+        description: "The club is now removed from all members.",
         duration: 1500,
       });
     } catch (err) {
