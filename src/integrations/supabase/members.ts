@@ -9,14 +9,13 @@ export type ManageMemberRow = {
   user_id: string;
   first_name: string | null;
   last_name: string | null;
-  email: string;
   role: "admin" | "editor" | "member";
   status: "pending" | "active" | "removed" | "rejected";
   requested_at: string | null;
   activated_at: string | null;
   removed_at: string | null;
   rejected_at: string | null;
-  removed_by: string | null;
+  removed_by: string | null; // kept if your UI uses it; server doesn’t return it, so it will be null
 };
 
 /** Generic RPC caller that sidesteps generated RPC name unions */
