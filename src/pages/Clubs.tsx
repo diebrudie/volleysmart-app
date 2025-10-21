@@ -27,6 +27,7 @@ import { MoreVertical, UserPlus, UsersRound, Edit, Trash } from "lucide-react";
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import type { Database } from "@/integrations/supabase/types";
 
 interface ClubWithDetails {
   id: string;
@@ -65,6 +66,9 @@ type CreatedClubRow = {
   slug: string; // ensure presence
 };
 
+type ClubRow = Database["public"]["Tables"]["clubs"]["Row"];
+type ClubIdRow = Pick<ClubRow, "id">;
+
 const Clubs = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -98,38 +102,47 @@ const Clubs = () => {
         .from("club_members")
         .select(
           `
-          club_id,
-          role,
-          clubs (
-            id,
-            name,
-            image_url,
-            created_at,
-            created_by,
-            description,
-            slug
-          )
-        `
+    club_id,
+    role,
+    status,
+    is_active,
+    clubs (
+      id,
+      name,
+      image_url,
+      created_at,
+      created_by,
+      description,
+      slug
+    )
+  `
         )
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .eq("status", "active") // only active memberships should list the club
+        .eq("is_active", true); // belt-and-suspenders to match your lifecycle
 
       if (memberError) throw memberError;
 
-      // Get clubs created by user
+      /**
+       * Only show active clubs created by the user.
+       * RLS also hides deleted clubs, but we add an explicit filter for clarity.
+       */
       const { data: createdClubs, error: createdError } = await supabase
         .from("clubs")
         .select(
           `
-          id,
-          name,
-          image_url,
-          created_at,
-          created_by,
-          description,
-          slug
-        `
+    id,
+    name,
+    image_url,
+    created_at,
+    created_by,
+    description,
+    slug,
+    status
+  `
         )
-        .eq("created_by", user.id);
+        .eq("created_by", user.id)
+        .eq("status", "active");
 
       if (createdError) throw createdError;
 
@@ -251,35 +264,85 @@ const Clubs = () => {
     setShowDeleteDialog(true);
   };
 
+  /**
+   * Soft delete handler (type-safe, no row return on UPDATE, verify by refetch)
+   */
   const handleConfirmDelete = async () => {
     if (!clubToDelete || !user?.id) return;
 
+    // Optimistically remove from caches that list user's clubs
+    const keys = [["userClubs", user.id] as const, ["userClubs"] as const];
+
+    for (const key of keys) {
+      queryClient.setQueryData<ClubRow[] | undefined>(key, (prev) =>
+        Array.isArray(prev)
+          ? prev.filter((c) => c.id !== clubToDelete.id)
+          : prev
+      );
+    }
+
     try {
-      // Delete club (this will cascade delete members, matches, etc.)
+      // Do NOT request the updated row back (it is hidden by SELECT policies after deletion)
       const { error } = await supabase
         .from("clubs")
-        .delete()
+        .update({
+          status: "deleted" as Database["public"]["Enums"]["club_status"],
+        })
         .eq("id", clubToDelete.id);
 
       if (error) throw error;
 
+      // Revalidate the authoritative lists
+      await Promise.all(
+        keys.map((key) => queryClient.invalidateQueries({ queryKey: key }))
+      );
+
+      // Verify: if the club still shows up after refetch, the update did not take effect (RLS / stale id)
+      const latest =
+        queryClient.getQueryData<ClubRow[] | undefined>([
+          "userClubs",
+          user.id,
+        ]) ?? queryClient.getQueryData<ClubRow[] | undefined>(["userClubs"]);
+
+      const stillVisible = Array.isArray(latest)
+        ? latest.some((c) => c.id === clubToDelete.id)
+        : false;
+
+      if (stillVisible) {
+        throw new Error(
+          "Club still visible after update; likely RLS prevented the change."
+        );
+      }
+
+      // Safety: clear lastVisitedClub if it pointed to this club
+      if (localStorage.getItem("lastVisitedClub") === clubToDelete.id) {
+        localStorage.removeItem("lastVisitedClub");
+      }
+
       toast({
-        title: "Success",
-        description: "Club deleted successfully",
+        title: "Club removed",
+        description: "The club is now hidden from all members.",
         duration: 1500,
       });
+    } catch (err) {
+      // Roll back by refetching from server
+      await Promise.all(
+        keys.map((key) => queryClient.invalidateQueries({ queryKey: key }))
+      );
 
-      queryClient.invalidateQueries({ queryKey: ["userClubs"] });
-      setShowDeleteDialog(false);
-      setClubToDelete(null);
-    } catch (error) {
-      console.error("Error deleting club:", error);
+      console.error("Error soft-deleting club:", err);
+      const msg = (err as { message?: string })?.message?.includes("permission")
+        ? "You don't have permission to remove this club."
+        : "Failed to remove the club.";
       toast({
         title: "Error",
-        description: "Failed to delete club",
+        description: msg,
         variant: "destructive",
         duration: 2000,
       });
+    } finally {
+      setShowDeleteDialog(false);
+      setClubToDelete(null);
     }
   };
 
@@ -511,8 +574,8 @@ const Clubs = () => {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              club "{clubToDelete?.name}" and all associated data including
-              matches, teams, and member records.
+              club "{clubToDelete?.name}" and remove the club from everyone’s
+              view.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

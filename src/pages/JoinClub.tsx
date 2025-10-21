@@ -32,11 +32,15 @@ const JoinClub = () => {
       if (!user?.id) return;
 
       try {
+        /**
+         * Only show active clubs created by the user.
+         * RLS also hides deleted clubs, but we add an explicit filter for clarity.
+         */
         const { data: clubs, error } = await supabase
           .from("clubs")
-          .select("id, name, slug, created_at")
-          .eq("created_by", user.id);
-
+          .select("id, name, slug, created_at, status")
+          .eq("created_by", user.id)
+          .eq("status", "active");
         if (error) {
           console.error("Error fetching user created clubs:", error);
         } else {
@@ -55,6 +59,12 @@ const JoinClub = () => {
     window.history.back();
   };
 
+  /**
+   * Join a club by slug using the text-returning RPC.
+   * - RPC returns a string on success
+   * - RPC throws 'club_not_found_or_deleted' on deleted/unknown slugs (handled via error)
+   * - No 'any' used; no JSON parsing expected.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id || !clubIdInput.trim()) return;
@@ -63,80 +73,50 @@ const JoinClub = () => {
     try {
       const slug = clubIdInput.trim();
 
+      // Optional: ensure session is valid (helpful for debugging auth/RLS)
       const { data: authCheck } = await supabase.auth.getUser();
       console.log("[auth uid]", authCheck?.user?.id);
 
-      // If you deployed the function as request_join_by_slug, use that name.
-      // Otherwise, keep "request_club_membership".
       const { data, error } = await supabase.rpc("request_join_by_slug", {
         p_slug: slug,
       });
-      console.log("[join RPC result]", { data, error });
 
       if (error) {
-        const notFound = (error.message || "")
-          .toLowerCase()
-          .includes("club_not_found");
+        const isDeletedOrMissing =
+          typeof error.message === "string" &&
+          error.message.includes("club_not_found_or_deleted");
+
         toast({
-          title: notFound ? "Club not found" : "Join request failed",
-          description: notFound
-            ? "We couldn’t find that club. Check the Club ID and try again."
-            : "We couldn’t send your request. Please try again.",
+          title: "Couldn’t join",
+          description: isDeletedOrMissing
+            ? "This club isn’t available (it may have been deleted)."
+            : "Join request failed. Please try again.",
           variant: "destructive",
-          duration: 1500,
+          duration: 3000,
         });
-        setIsLoading(false);
         return;
       }
 
-      // Expected JSON: { ok: true, code: 'created_pending' | 'already_pending' | 'already_active' | 're_applied_pending' | 'club_not_found' }
-      const code = (data && (data as any).code) as string;
+      const message: string =
+        typeof data === "string"
+          ? data
+          : "Your request was sent to the club admins.";
 
-      if (code === "created_pending" || code === "re_applied_pending") {
-        toast({
-          title: "Request sent",
-          description: "A club admin must approve your membership.",
-          duration: 1500,
-        });
-        navigate("/clubs");
-        return;
-      }
-
-      if (code === "already_pending") {
-        toast({
-          title: "Request already pending",
-          description: "Please wait for admin approval.",
-          duration: 1500,
-        });
-        navigate("/clubs");
-        return;
-      }
-
-      if (code === "already_active") {
-        toast({
-          title: "You’re already a member",
-          description: "This club is already available in your list.",
-          duration: 1500,
-        });
-        navigate("/clubs");
-        return;
-      }
-
-      // Fallback (including 'club_not_found')
       toast({
-        title: "Club not found",
-        description:
-          "We couldn’t find that club. Check the Club ID and try again.",
-        variant: "destructive",
-        duration: 1500,
+        title: "Request sent",
+        description: message,
+        duration: 2000,
       });
-      // stay on page
+
+      // After a successful request, take the user back to Clubs
+      navigate("/clubs");
     } catch (err) {
       console.error("Unexpected error:", err);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive",
+        duration: 3000,
       });
     } finally {
       setIsLoading(false);

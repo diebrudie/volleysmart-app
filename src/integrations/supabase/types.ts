@@ -76,6 +76,7 @@ export type Database = {
           image_url: string | null
           name: string
           slug: string
+          status: Database["public"]["Enums"]["club_status"]
         }
         Insert: {
           created_at?: string
@@ -85,6 +86,7 @@ export type Database = {
           image_url?: string | null
           name: string
           slug: string
+          status?: Database["public"]["Enums"]["club_status"]
         }
         Update: {
           created_at?: string
@@ -94,6 +96,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           slug?: string
+          status?: Database["public"]["Enums"]["club_status"]
         }
         Relationships: []
       }
@@ -530,7 +533,7 @@ export type Database = {
       }
       request_join_by_slug: {
         Args: { p_slug: string }
-        Returns: Json
+        Returns: string
       }
       request_membership: {
         Args: { p_club_id: string }
@@ -542,6 +545,7 @@ export type Database = {
       }
     }
     Enums: {
+      club_status: "active" | "deleted"
       membership_status: "pending" | "active" | "removed" | "rejected"
     }
     CompositeTypes: {
@@ -670,6 +674,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      club_status: ["active", "deleted"],
       membership_status: ["pending", "active", "removed", "rejected"],
     },
   },
