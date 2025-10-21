@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { FileInput } from "@/components/ui/file-input";
 import { useToast } from "@/hooks/use-toast";
@@ -29,8 +31,11 @@ const NewClub = () => {
     formState: { errors },
   } = useForm<NewClubFormData>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Image selection + preview state
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileInputKey, setFileInputKey] = useState<number>(0); // used to reset FileInput
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -56,14 +61,25 @@ const NewClub = () => {
 
   const handleImageChange = (file: File) => {
     setImageFile(file);
-    setUploadError(null); // Clear any previous errors
+    setFileName(file?.name ?? null);
+    setUploadError(null);
 
-    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  /**
+   * Clear the selected file (create flow).
+   * Resets local preview and re-mounts the FileInput via key to clear its internal value.
+   */
+  const handleClearSelectedImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFileName(null);
+    setFileInputKey((k) => k + 1);
   };
 
   const { setClubId } = useClub();
@@ -269,29 +285,75 @@ const NewClub = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image">Upload an Image (optional)</Label>
-              <FileInput
-                id="image"
-                accept="image/*"
-                buttonText="Choose club image"
-                onImageSelected={handleImageChange}
-              />
+              <Label htmlFor="club-image">Club Image (optional)</Label>
 
-              {uploadError && (
-                <p className="text-sm text-red-500 dark:text-red-400">
-                  {uploadError}
-                </p>
-              )}
-
-              {imagePreview && (
-                <div className="mt-2">
-                  <img
-                    src={imagePreview}
-                    alt="Club preview"
-                    className="h-32 w-32 object-cover rounded-md"
-                  />
+              {/* Responsive layout: avatar left, actions + filename on the right */}
+              <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                {/* Left: circular preview (Avatar) */}
+                <div className="relative">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage
+                      src={imagePreview || ""}
+                      alt="Club preview"
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-gray-200 dark:bg-gray-700">
+                      📷
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
-              )}
+
+                {/* Right: dashed upload button and filename line */}
+                <div className="flex-1">
+                  {/* Upload button (dashed, same feel as onboarding) */}
+                  <label
+                    htmlFor="club-image-upload"
+                    className="cursor-pointer inline-block"
+                  >
+                    <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors bg-white dark:bg-gray-800 w-fit">
+                      <Upload className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {imagePreview ? "Change Photo" : "Upload Photo"}
+                      </span>
+                    </div>
+                  </label>
+                  <input
+                    id="club-image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageChange(file);
+                    }}
+                  />
+
+                  {/* File name (green) + red × to clear (create flow) */}
+                  {fileName && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-sm text-green-600 dark:text-green-400">
+                        ✓ {fileName}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleClearSelectedImage}
+                        className="text-red-600 hover:text-red-700 text-sm"
+                        aria-label="Remove selected image"
+                        title="Remove selected image"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Validation or upload errors */}
+                  {uploadError && (
+                    <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+                      {uploadError}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <Button
