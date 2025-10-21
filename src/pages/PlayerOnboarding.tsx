@@ -255,7 +255,10 @@ const PlayerOnboarding = () => {
       case 7:
         return answers.matchExperience !== "";
       case 8:
-        return true; // Birthday is optional
+        return (
+          !!answers.height && answers.height >= 110 && answers.height <= 220
+        );
+
       case 9:
         return true; // Height is optional
       case 10:
@@ -292,6 +295,7 @@ const PlayerOnboarding = () => {
       answers.competitionLevel,
       answers.gamePerformance,
       answers.matchExperience,
+      answers.height,
     ];
 
     if (
@@ -824,48 +828,7 @@ const PlayerOnboarding = () => {
           </div>
         );
 
-      case 8: {
-        const today = new Date();
-        const tenYearsAgo = new Date();
-        tenYearsAgo.setFullYear(today.getFullYear() - 10);
-        const maxDate = tenYearsAgo.toISOString().split("T")[0]; // Format: YYYY-MM-DD
-
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-                When's your birthday?
-              </h2>
-            </div>
-            <div className="max-w-xs space-y-3">
-              {/* Typeable Date Input */}
-              <div>
-                <div className="relative">
-                  <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none z-10" />
-                  <Input
-                    type="date"
-                    value={answers.birthday}
-                    max={maxDate}
-                    onChange={(e) => {
-                      setAnswers((prev) => ({
-                        ...prev,
-                        birthday: e.target.value,
-                      }));
-                      if (e.target.value) {
-                        setSelectedDate(new Date(e.target.value));
-                      }
-                    }}
-                    className="text-left dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:[color-scheme:dark] pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
-                    placeholder="YYYY-MM-DD"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      case 9:
+      case 8:
         return (
           <div className="space-y-6">
             <div className="text-center">
@@ -880,7 +843,7 @@ const PlayerOnboarding = () => {
               <div className="flex items-center space-x-2">
                 <Input
                   type="number"
-                  min="110" // ✅ Updated minimum
+                  min="110"
                   max="220"
                   placeholder="175"
                   value={answers.height || ""}
@@ -899,6 +862,44 @@ const PlayerOnboarding = () => {
             </div>
           </div>
         );
+
+      case 9: {
+        const today = new Date();
+        const tenYearsAgo = new Date();
+        tenYearsAgo.setFullYear(today.getFullYear() - 10);
+        const maxDate = tenYearsAgo.toISOString().split("T")[0];
+
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+                When's your birthday?
+              </h2>
+            </div>
+            <div className="w-full sm:max-w-xs space-y-3">
+              <div className="relative">
+                <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none z-10" />
+                <Input
+                  type="date"
+                  value={answers.birthday}
+                  max={maxDate}
+                  onChange={(e) => {
+                    setAnswers((prev) => ({
+                      ...prev,
+                      birthday: e.target.value,
+                    }));
+                    if (e.target.value) {
+                      setSelectedDate(new Date(e.target.value));
+                    }
+                  }}
+                  className="w-full text-left dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:[color-scheme:dark] pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  placeholder="YYYY-MM-DD"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      }
 
       case 10:
         return (
@@ -1054,9 +1055,9 @@ const PlayerOnboarding = () => {
     <div className="min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 
-                     min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] 
-                     flex flex-col"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-8
+             min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)]
+             flex flex-col"
         >
           {/* Progress Bar */}
           <div className="mb-8">
