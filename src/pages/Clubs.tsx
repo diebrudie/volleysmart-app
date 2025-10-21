@@ -540,22 +540,6 @@ const Clubs = () => {
               <p className="text-gray-600 dark:text-gray-400 text-lg mb-6">
                 You haven't joined any clubs yet.
               </p>
-              <div className="flex gap-4 justify-center">
-                <Button
-                  variant="action"
-                  icon={<UsersRound className="h-4 w-4" />}
-                  onClick={handleJoinClub}
-                >
-                  Join a Club
-                </Button>
-                <Button
-                  variant="secondary"
-                  icon={<UserPlus className="h-4 w-4" />}
-                  onClick={handleCreateClub}
-                >
-                  Create a Club
-                </Button>
-              </div>
             </div>
           )}
         </div>
