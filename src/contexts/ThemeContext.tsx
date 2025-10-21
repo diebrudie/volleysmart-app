@@ -55,13 +55,17 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
   isAuthenticated = true,
 }) => {
-  // Initialize theme from localStorage or default to 'system'
+  /**
+   * Initialize theme from localStorage or default to 'light'
+   * Rationale: make light the default for first-time users, while preserving
+   * any explicit user choice saved in localStorage.
+   */
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("volleymatch-theme") as Theme;
-      return savedTheme || "dark";
+      return savedTheme || "light";
     }
-    return "dark";
+    return "light";
   });
 
   // Calculate if we're in dark mode
