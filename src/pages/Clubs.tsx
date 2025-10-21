@@ -106,20 +106,22 @@ const Clubs = () => {
     role,
     status,
     is_active,
-    clubs (
+    clubs!inner (
       id,
       name,
       image_url,
       created_at,
       created_by,
       description,
-      slug
+      slug,
+      status
     )
   `
         )
         .eq("user_id", user.id)
-        .eq("status", "active") // only active memberships should list the club
-        .eq("is_active", true); // belt-and-suspenders to match your lifecycle
+        .eq("status", "active") // membership is active
+        .eq("is_active", true) // your lifecycle flag
+        .eq("clubs.status", "active"); // club itself is active
 
       if (memberError) throw memberError;
 
@@ -282,13 +284,17 @@ const Clubs = () => {
     }
 
     try {
-      // Do NOT request the updated row back (it is hidden by SELECT policies after deletion)
+      /**
+       * IMPORTANT: use returning:'minimal' to avoid PostgREST trying to SELECT
+       * the updated row, which RLS hides once status='deleted' → 403 otherwise.
+       */
       const { error } = await supabase
         .from("clubs")
         .update({
           status: "deleted" as Database["public"]["Enums"]["club_status"],
         })
-        .eq("id", clubToDelete.id);
+        .eq("id", clubToDelete.id)
+        .select("id");
 
       if (error) throw error;
 
