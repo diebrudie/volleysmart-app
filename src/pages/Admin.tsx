@@ -16,9 +16,9 @@ const Admin = () => {
   }
 
   // Check if user is admin, if not redirect to dashboard
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/clubs" />;
-  }
+  // if (!user || user.role !== "admin") {
+  //   return <Navigate to="/clubs" />;
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
