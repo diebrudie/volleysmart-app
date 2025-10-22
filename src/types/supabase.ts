@@ -598,3 +598,20 @@ export const Constants = {
 } as const;
 
 export type UserRole = "admin" | "editor" | "member" | "user";
+
+// Database Player type
+export type DatabasePlayer = Tables<"players">;
+
+// UI Player type for team generator (simplified for mock data and UI)
+export type Player = {
+  id: number;
+  name: string;
+  email: string;
+  positions: string[];
+  preferredPosition: string;
+  skillRating: number;
+  availability: boolean;
+  gender: "male" | "female" | "other";
+  matchesPlayed: number;
+  isPublic: boolean;
+};
