@@ -9,13 +9,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
-import { UserRole } from "@/types/supabase";
 
 interface AuthUser {
   id: string;
   email: string | undefined;
   name: string;
-  role: UserRole;
 }
 
 interface AuthContextType {
@@ -192,7 +190,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           profile?.email?.split("@")[0] ||
           authUser.email?.split("@")[0] ||
           "User",
-        role: (profile?.role as UserRole) || "user",
       };
 
       setUser(userWithProfile);
@@ -203,7 +200,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         id: authUser.id,
         email: authUser.email,
         name: authUser.email?.split("@")[0] || "User",
-        role: "user",
       };
       setUser(fallbackUser);
     } finally {
