@@ -114,7 +114,8 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logout();
-    console.log(
+
+    /*console.log(
       "[NAV]",
       "navigating from",
       location.pathname,
@@ -122,6 +123,7 @@ const Navbar = () => {
       "/",
       "reason: Logging Out"
     );
+    */
 
     navigate("/");
   };
@@ -255,7 +257,7 @@ const Navbar = () => {
               variant="primary"
               onClick={() => {
                 if (clubId) {
-                  console.log(
+                  /*console.log(
                     "[NAV]",
                     "navigating from",
                     location.pathname,
@@ -263,10 +265,11 @@ const Navbar = () => {
                     "/new-game/:clubid",
                     "reason: Clicking New game in the Navbar"
                   );
+                  */
 
                   navigate(`/new-game/${clubId}`);
                 } else {
-                  console.log(
+                  /* console.log(
                     "[NAV]",
                     "navigating from",
                     location.pathname,
@@ -274,6 +277,7 @@ const Navbar = () => {
                     "/new-game",
                     "reason: Clicking New game in nabar (else)"
                   );
+                  */
 
                   navigate("/new-game");
                 }
@@ -465,7 +469,7 @@ const Navbar = () => {
                       onClick={() => {
                         setIsOpen(false);
                         if (clubId) {
-                          console.log(
+                          /* console.log(
                             "[NAV]",
                             "navigating from",
                             location.pathname,
@@ -473,10 +477,11 @@ const Navbar = () => {
                             "/new-game/:clubid",
                             "reason: Clicking New Game mobile"
                           );
+                          */
 
                           navigate(`/new-game/${clubId}`);
                         } else {
-                          console.log(
+                          /*console.log(
                             "[NAV]",
                             "navigating from",
                             location.pathname,
@@ -484,6 +489,7 @@ const Navbar = () => {
                             "/new-game",
                             "reason: Clicking New Game mobile"
                           );
+                          */
 
                           navigate("/new-game");
                         }

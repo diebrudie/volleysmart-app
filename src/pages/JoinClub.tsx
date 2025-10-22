@@ -75,7 +75,7 @@ const JoinClub = () => {
 
       // Optional: ensure session is valid (helpful for debugging auth/RLS)
       const { data: authCheck } = await supabase.auth.getUser();
-      console.log("[auth uid]", authCheck?.user?.id);
+      /*console.log("[auth uid]", authCheck?.user?.id);*/
 
       const { data, error } = await supabase.rpc("request_join_by_slug", {
         p_slug: slug,

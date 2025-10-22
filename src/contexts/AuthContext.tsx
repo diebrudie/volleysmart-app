@@ -122,8 +122,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         data: { session },
         error,
       } = await supabase.auth.getSession();
-      /*
-      console.log("[Auth] getSession() result:", {
+
+      /*console.log("[Auth] getSession() result:", {
         hasSession: !!session,
         error,
       });

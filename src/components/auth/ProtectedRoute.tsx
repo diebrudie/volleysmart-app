@@ -80,8 +80,7 @@ const ProtectedRoute = ({
 
   // Redirect to login ONLY if definitely not authenticated and not loading
   if (!isLoading && !isAuthenticated) {
-    /*
-    console.log("[Route] redirect → /login", {
+    /*console.log("[Route] redirect → /login", {
       isLoading,
       isAuthenticated,
       path: location.pathname,
@@ -97,8 +96,7 @@ const ProtectedRoute = ({
     hasCompletedOnboarding === false &&
     location.pathname !== "/players/onboarding"
   ) {
-    /*
-    console.log("[Route] redirect → /players/onboarding", {
+    /*console.log("[Route] redirect → /players/onboarding", {
       requiresOnboarding,
       path: location.pathname,
     });
@@ -117,8 +115,7 @@ const ProtectedRoute = ({
     const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
 
     if (!hasRequiredRole) {
-      /*
-      console.log("[Route] role denied → /clubs", {
+      /*console.log("[Route] role denied → /clubs", {
         allowedRoles,
         userRole: user?.role,
         path: location.pathname,

@@ -681,14 +681,14 @@ const EditGame = () => {
     // console.log("=== HANDLE POSITION CHANGE ===");
     // console.log("Player ID:", playerId);
     // console.log("New Position:", newPosition);
-    /*
-    console.log(
+
+    /*console.log(
       "Team A Players:",
       teamAPlayers.map((p) => ({ id: p.id, name: p.name }))
     );
     */
-    /*
-    console.log(
+
+    /*console.log(
       "Team B Players:",
       teamBPlayers.map((p) => ({ id: p.id, name: p.name }))
     );
@@ -696,8 +696,7 @@ const EditGame = () => {
 
     const updatePlayerPosition = (players: typeof teamAPlayers) =>
       players.map((player) => {
-        /*
-        console.log(
+        /*console.log(
           `Comparing ${player.id} === ${playerId}:`,
           player.id === playerId
         );
