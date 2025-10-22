@@ -4,11 +4,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-type UserRole = "admin" | "editor" | "user" | "member";
-
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: UserRole[];
+  allowedRoles?: unknown;
   requiresOnboarding?: boolean;
   requiresCompletedOnboarding?: boolean;
 }
@@ -108,22 +106,6 @@ const ProtectedRoute = ({
   // If completed onboarding is required but user hasn't completed it, redirect to onboarding
   if (requiresCompletedOnboarding && hasCompletedOnboarding === false) {
     return <Navigate to="/players/onboarding" replace />;
-  }
-
-  // If roles are specified, check if the user has one of the allowed roles
-  if (allowedRoles && user) {
-    const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
-
-    if (!hasRequiredRole) {
-      /*console.log("[Route] role denied → /clubs", {
-        allowedRoles,
-        userRole: user?.role,
-        path: location.pathname,
-      });*/
-
-      // Redirect to clubs if user doesn't have required role
-      return <Navigate to="/clubs" replace />;
-    }
   }
 
   // If they're authenticated and have the required role (if specified), render the children

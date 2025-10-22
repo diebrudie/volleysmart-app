@@ -28,12 +28,10 @@ import {
   getUserProfile,
 } from "@/integrations/supabase/profiles";
 import { supabase } from "@/integrations/supabase/client";
-import { UserRole } from "@/types/supabase";
 
 interface UserWithProfile {
   id: string;
   email: string;
-  role: UserRole;
   created_at: string;
 }
 
@@ -64,14 +62,13 @@ const UserRoleManager = () => {
             return {
               id: user.id,
               email: user.email || "No email",
-              role: (profile?.role as UserRole) || ("user" as UserRole),
               created_at: user.created_at,
             };
           } catch (error) {
             return {
               id: user.id,
               email: user.email || "No email",
-              role: "user" as UserRole,
+
               created_at: user.created_at,
             };
           }
@@ -93,36 +90,6 @@ const UserRoleManager = () => {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: UserRole) => {
-    try {
-      try {
-        await updateUserRole(); // no args; stub will throw a controlled error
-      } catch (err) {
-        console.warn("Global role update not supported:", err);
-      }
-
-      setUsers(
-        users.map((user) =>
-          user.id === userId ? { ...user, role: newRole } : user
-        )
-      );
-
-      toast({
-        title: "Notice",
-        description: "Global roles are deprecated. No changes were made.",
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error("Error updating user role:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update user role",
-        variant: "destructive",
-        duration: 2000,
-      });
-    }
-  };
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading users...</div>;
   }
@@ -138,7 +105,6 @@ const UserRoleManager = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
               <TableHead>Created At</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -154,23 +120,6 @@ const UserRoleManager = () => {
               users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Select
-                      defaultValue={user.role}
-                      onValueChange={(value) =>
-                        handleRoleChange(user.id, value as UserRole)
-                      }
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="editor">Editor</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
                   <TableCell>
                     {new Date(user.created_at).toLocaleDateString()}
                   </TableCell>
