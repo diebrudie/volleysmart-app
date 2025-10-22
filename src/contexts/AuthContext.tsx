@@ -58,14 +58,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      /*console.log(
+      console.log(
         "[Auth] event:",
         event,
         "| hasSession:",
         !!session,
         "| before setUser:",
         { hasFetchedProfile: hasFetchedProfile.current }
-      );*/
+      );
 
       if (event === "SIGNED_OUT") {
         // Definitive guest
@@ -75,41 +75,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
         return;
       }
-
-      // Handle interactive login (SIGNED_IN) and silent refresh (TOKEN_REFRESHED)
-      // if (
-      //   session?.user &&
-      //   (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")
-      // ) {
-      //   setSession(session);
-
-      //   // For an explicit, interactive SIGNED_IN, own the loading while we fetch profile.
-      //   if (event === "SIGNED_IN") {
-      //     setIsLoading(true);
-      //     hasFetchedProfile.current = true;
-      //     try {
-      //       await getUserProfile(session.user); // getUserProfile does NOT toggle loading
-      //     } catch (e) {
-      //       console.error("Error in onAuthStateChange -> getUserProfile:", e);
-      //     } finally {
-      //       setIsLoading(false);
-      //     }
-      //     return; // done for SIGNED_IN
-      //   }
-
-      //   // For TOKEN_REFRESHED, only fetch if we somehow don't have a profile yet, but don't flicker loading.
-      //   if (!hasFetchedProfile.current || !user) {
-      //     hasFetchedProfile.current = true;
-      //     try {
-      //       await getUserProfile(session.user);
-      //     } catch (e) {
-      //       console.error(
-      //         "Error in onAuthStateChange (refresh) -> getUserProfile:",
-      //         e
-      //       );
-      //     }
-      //   }
-      // }
     });
 
     // 2) Initial session resolution — the ONLY place that controls isLoading during boot

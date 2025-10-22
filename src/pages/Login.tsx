@@ -39,9 +39,14 @@ const Login = () => {
   // Get the intended destination from location state, or default to dashboard
   const from = location.state?.from?.pathname as string | undefined;
 
-  // Treat bare "/dashboard" as no 'from' — your router needs a :clubId
+  /**
+   * Normalize the "from" target. We never "return to" onboarding or bare dashboard/login.
+   * This prevents bouncing back to /players/onboarding after a successful login.
+   */
   const normalizedFrom =
-    from && from !== "/login" && from !== "/dashboard" ? from : undefined;
+    from && !["/login", "/dashboard", "/players/onboarding"].includes(from)
+      ? from
+      : undefined;
 
   // Only redirect if we're actually ON the login page and user becomes authenticated
   useEffect(() => {
@@ -68,15 +73,18 @@ const Login = () => {
         return;
       }
 
-      // 2) Otherwise run your existing onboarding + membership flow (unchanged)
+      /**
+       * Must have players.profile_completed === true to leave onboarding.
+       * If row is missing OR profile_completed is not true -> go to onboarding.
+       */
       try {
         const { data: player, error } = await supabase
           .from("players")
-          .select("id")
+          .select("profile_completed")
           .eq("user_id", user.id)
           .single();
 
-        if (error || !player) {
+        if (error || player?.profile_completed !== true) {
           navigate("/players/onboarding", { replace: true });
           return;
         }

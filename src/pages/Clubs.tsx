@@ -28,6 +28,7 @@ import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
+import { buildImageUrl } from "@/utils/buildImageUrl";
 
 interface ClubWithDetails {
   id: string;
@@ -453,9 +454,11 @@ const Clubs = () => {
                     <div className="aspect-video w-full bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
                       {club.image_url ? (
                         <img
-                          src={club.image_url}
+                          src={buildImageUrl(club.image_url ?? "", { w: 720 })} // q=60, format=avif by default
                           alt={club.name}
                           className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">

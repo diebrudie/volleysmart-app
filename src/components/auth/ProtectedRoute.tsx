@@ -39,11 +39,12 @@ const ProtectedRoute = ({
         try {
           const { data: player, error } = await supabase
             .from("players")
-            .select("id")
+            .select("profile_completed")
             .eq("user_id", user.id)
             .single();
 
-          setHasCompletedOnboarding(!error && !!player);
+          const completed = !error && player?.profile_completed === true;
+          setHasCompletedOnboarding(completed);
         } catch (error) {
           console.error("Error checking onboarding status:", error);
           setHasCompletedOnboarding(false);
