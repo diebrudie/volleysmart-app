@@ -10,7 +10,18 @@ import { useEffect } from "react";
 import { ClubProvider } from "@/contexts/ClubContext";
 import AppRoutes from "@/routes/AppRoutes";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Reduce background refetch noise that competes with image downloads
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+      staleTime: 60_000, // cache data for 1 minute
+      gcTime: 10 * 60_000, // garbage collect after 10 minutes
+    },
+  },
+});
 
 const App = () => {
   //console.log("🔄 App rendering, current URL:", window.location.pathname);
