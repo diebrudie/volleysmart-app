@@ -45,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { buildImageUrl } from "@/utils/buildImageUrl";
 
 // Simple types to avoid complex Supabase type inference
 interface ClubMember {
@@ -477,9 +478,15 @@ const Members = () => {
             <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
               {player.image_url ? (
                 <img
-                  src={player.image_url}
+                  src={buildImageUrl(player.image_url, {
+                    w: 128,
+                    q: 70,
+                    format: "webp",
+                  })}
                   alt={`${player.first_name} ${player.last_name}`}
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
               ) : (
                 <img

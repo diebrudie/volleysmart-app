@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import { buildImageUrl } from "@/utils/buildImageUrl";
 
 interface MemberCardProps {
   member: {
@@ -53,9 +54,15 @@ export const MemberCard = ({
         <div className="aspect-[4/3] w-full bg-gray-200 overflow-hidden">
           {member.image_url ? (
             <img
-              src={member.image_url}
+              src={buildImageUrl(member.image_url, {
+                w: 800,
+                q: 75,
+                format: "webp",
+              })}
               alt={`${member.first_name} ${member.last_name}`}
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <img

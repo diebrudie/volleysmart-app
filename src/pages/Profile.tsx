@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/layout/Navbar";
 import { Upload, Calendar } from "lucide-react";
+import { buildImageUrl } from "@/utils/buildImageUrl";
 
 interface PlayerProfile {
   id: string;
@@ -449,7 +450,11 @@ const Profile = () => {
                       src={
                         imageFile
                           ? URL.createObjectURL(imageFile)
-                          : profile.image_url || ""
+                          : buildImageUrl(profile.image_url || "", {
+                              w: 192,
+                              q: 75,
+                              format: "webp",
+                            })
                       }
                       alt="Profile"
                       className="object-cover"
