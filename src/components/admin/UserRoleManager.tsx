@@ -95,7 +95,11 @@ const UserRoleManager = () => {
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
-      await updateUserRole(userId, newRole);
+      try {
+        await updateUserRole(); // no args; stub will throw a controlled error
+      } catch (err) {
+        console.warn("Global role update not supported:", err);
+      }
 
       setUsers(
         users.map((user) =>
@@ -104,8 +108,8 @@ const UserRoleManager = () => {
       );
 
       toast({
-        title: "Success",
-        description: `User role updated to ${newRole}`,
+        title: "Notice",
+        description: "Global roles are deprecated. No changes were made.",
         duration: 2000,
       });
     } catch (error) {
@@ -140,40 +144,48 @@ const UserRoleManager = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Select
-                    defaultValue={user.role}
-                    onValueChange={(value) =>
-                      handleRoleChange(user.id, value as UserRole)
-                    }
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="editor">Editor</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  {new Date(user.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fetchUsers()}
-                  >
-                    Refresh
-                  </Button>
+            {users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4}>
+                  No users found or global role management is disabled.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Select
+                      defaultValue={user.role}
+                      onValueChange={(value) =>
+                        handleRoleChange(user.id, value as UserRole)
+                      }
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="editor">Editor</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchUsers()}
+                    >
+                      Refresh
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>
