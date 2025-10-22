@@ -2,15 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/theme-toggle";
-import {
-  Menu,
-  X,
-  ChevronDown,
-  Settings,
-  User,
-  Users,
-  UserPlus,
-} from "lucide-react";
+import { Menu, X, ChevronDown, Settings, User, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -46,7 +38,6 @@ type Maybe<T> = T | null | undefined;
 interface AuthLikeUser {
   id: string;
   email?: string;
-  role?: string;
   user_metadata?: {
     first_name?: string;
     last_name?: string;
@@ -192,7 +183,6 @@ const Navbar = () => {
       icon: Settings,
       disabled: true, // visually disabled
     },
-    user?.role === "admin" && { label: "Users", path: "/admin", icon: Users },
   ].filter(Boolean);
 
   // Homepage/Landing Navbar (when not authenticated)
