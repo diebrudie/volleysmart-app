@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Shuffle, Save, Edit2 } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Shuffle,
+  Save,
+  ChevronLeft,
+} from "lucide-react";
 import { LocationSelector } from "@/components/forms/LocationSelector";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -438,7 +443,7 @@ const EditGame = () => {
 
         // Mark as modified
         if (user?.id && gameId) {
-          markModifiedBy(gameId, user.id)
+          markModifiedBy(gameId)
             .then(() =>
               queryClient.invalidateQueries({
                 queryKey: ["matchDayAudit", gameId],
@@ -480,7 +485,7 @@ const EditGame = () => {
 
       // Mark as modified (cross-team drop onto a player)
       if (user?.id && gameId) {
-        markModifiedBy(gameId, user.id)
+        markModifiedBy(gameId)
           .then(() =>
             queryClient.invalidateQueries({
               queryKey: ["matchDayAudit", gameId],
@@ -531,7 +536,7 @@ const EditGame = () => {
 
       // Mark as modified (within-team reorder)
       if (user?.id && gameId) {
-        markModifiedBy(gameId, user.id)
+        markModifiedBy(gameId)
           .then(() =>
             queryClient.invalidateQueries({
               queryKey: ["matchDayAudit", gameId],
@@ -659,7 +664,7 @@ const EditGame = () => {
     (async () => {
       if (user?.id && gameId) {
         try {
-          await markModifiedBy(gameId, user.id);
+          await markModifiedBy(gameId);
           queryClient.invalidateQueries({
             queryKey: ["matchDayAudit", gameId],
           });
@@ -822,10 +827,19 @@ const EditGame = () => {
       <main className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-              Edit Teams
-            </h1>
-
+            <div className="flex items-center mb-7">
+              <Button
+                variant="outline"
+                size="icon"
+                className="mr-4"
+                onClick={() => navigate(`/dashboard/${clubId}`)}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                Edit Teams
+              </h1>
+            </div>
             <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
               {/* Date Picker */}
               <Popover>
@@ -850,7 +864,7 @@ const EditGame = () => {
                       setDate(newDate);
                       if (user?.id && gameId) {
                         try {
-                          await markModifiedBy(gameId, user.id);
+                          await markModifiedBy(gameId);
                           queryClient.invalidateQueries({
                             queryKey: ["matchDayAudit", gameId],
                           });
@@ -874,7 +888,7 @@ const EditGame = () => {
                     setSelectedLocationId(val);
                     if (user?.id && gameId) {
                       try {
-                        await markModifiedBy(gameId, user.id);
+                        await markModifiedBy(gameId);
                         queryClient.invalidateQueries({
                           queryKey: ["matchDayAudit", gameId],
                         });
