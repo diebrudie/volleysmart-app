@@ -734,6 +734,16 @@ const EditGame = () => {
   const handleSave = async () => {
     if (!gameId) return;
 
+    if (!selectedLocationId) {
+      toast({
+        title: "Location required",
+        description: "Please select or create a location before saving",
+        variant: "destructive",
+        duration: 2000,
+      });
+      return;
+    }
+
     try {
       // console.log("=== SAVING TEAM CHANGES ===");
       // console.log("Team A players:", teamAPlayers);
@@ -793,8 +803,9 @@ const EditGame = () => {
       const { error: updateError } = await supabase
         .from("match_days")
         .update({
-          date: date.toISOString(),
-          location_id: selectedLocationId || null,
+          // Write as DATE, not ISO datetime
+          date: format(date, "yyyy-MM-dd"),
+          location_id: selectedLocationId,
         })
         .eq("id", gameId);
 

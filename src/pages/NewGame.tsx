@@ -344,6 +344,15 @@ const NewGame = () => {
       return;
     }
 
+    if (!selectedLocationId) {
+      toast({
+        title: "Location required",
+        description: "Please select or create a location for the game",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (selectedPlayers.length < 4) {
       toast({
         title: "Not enough players",
@@ -963,7 +972,12 @@ const NewGame = () => {
                   type="submit"
                   onClick={handleSubmit}
                   className="py-3 px-8"
-                  disabled={isSubmitting || selectedPlayers.length < 4 || !date}
+                  disabled={
+                    isSubmitting ||
+                    selectedPlayers.length < 4 ||
+                    !date ||
+                    !selectedLocationId
+                  }
                 >
                   {isSubmitting ? (
                     <>
