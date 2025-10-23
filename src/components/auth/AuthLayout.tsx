@@ -1,69 +1,56 @@
-import React, { PropsWithChildren, useEffect } from "react";
-import { Link } from "react-router-dom";
+/**
+ * AuthLayout
+ * - Forces LIGHT MODE on auth pages before paint (useLayoutEffect)
+ * - Prevents any re-addition of the `dark` class while mounted
+ * - Restores previous theme on unmount
+ */
+import React, { PropsWithChildren, useLayoutEffect } from "react";
 
 const THEME_STORAGE_KEY = "volleymatch-theme";
 
-/**
- * AuthLayout
- * - Forces light mode on all auth screens (Login/Signup/Reset/Forgot/Verify)
- * - Restores user's saved theme when leaving these screens
- * - Uses a logo suitable for light backgrounds
- */
 export default function AuthLayout({ children }: PropsWithChildren) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const html = document.documentElement;
-    const hadDark = html.classList.contains("dark");
 
-    // Force light mode while on auth screens
+    // Remember state to restore later
+    const hadDark = html.classList.contains("dark");
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+
+    // Force light BEFORE first paint
     html.classList.remove("dark");
+    html.classList.add("light"); // harmless utility class if you want to target it
+    // Ensure native controls render light
+    (html.style as any).colorScheme = "light";
+    document.body.style.backgroundColor = "#ffffff";
+    document.body.style.color = "#0f172a";
+
+    // Guard against any code that re-applies "dark" while we're mounted
+    const observer = new MutationObserver(() => {
+      if (html.classList.contains("dark")) {
+        html.classList.remove("dark");
+      }
+    });
+    observer.observe(html, { attributes: true, attributeFilter: ["class"] });
 
     return () => {
-      // Restore saved preference (or prior state if storage not available)
-      try {
-        const saved =
-          (localStorage.getItem(THEME_STORAGE_KEY) as
-            | "light"
-            | "dark"
-            | "system") || "light";
+      observer.disconnect();
+      html.classList.remove("light");
+      (html.style as any).colorScheme = "";
+      document.body.style.backgroundColor = "";
+      document.body.style.color = "";
 
-        if (saved === "dark") {
-          html.classList.add("dark");
-        } else if (saved === "light") {
-          html.classList.remove("dark");
-        } else {
-          const prefersDark = window.matchMedia(
-            "(prefers-color-scheme: dark)"
-          ).matches;
-          html.classList.toggle("dark", prefersDark);
-        }
-      } catch {
-        // Fallback: restore to whatever was there before
-        html.classList.toggle("dark", hadDark);
+      // Restore previous theme
+      if (hadDark || savedTheme === "dark") {
+        html.classList.add("dark");
+      } else {
+        html.classList.remove("dark");
       }
     };
   }, []);
 
-  // TODO: Point this to your dark-on-light logo asset (visible on white bg)
-  const LIGHT_PAGE_LOGO = "/logo-lightmode.svg";
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <Link to="/" className="inline-flex items-center">
-            <img
-              src={LIGHT_PAGE_LOGO}
-              alt="VolleyMatch"
-              className="h-10 w-auto"
-            />
-          </Link>
-        </div>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Create balanced volleyball teams with ease
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">{children}</div>
+    <div className="min-h-screen bg-white text-slate-900 antialiased">
+      {children}
     </div>
   );
 }
