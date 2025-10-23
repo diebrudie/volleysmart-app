@@ -57,7 +57,7 @@ const Signup = () => {
 
   return (
     <AuthLayout>
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
         <div className="w-full max-w-lg px-6 sm:px-8 md:px-12">
           <img
             src="/volleyball.svg"

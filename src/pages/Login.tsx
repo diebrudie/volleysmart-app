@@ -58,7 +58,7 @@ const Login = () => {
 
   return (
     <AuthLayout>
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 lg:gap-x-12">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 lg:gap-x-12 bg-gray-100">
         {/* Left: Logo + Headline + Form */}
         <div className="flex items-center">
           <div className="w-full max-w-[500px] px-6 sm:px-8 md:px-12 lg:px-12 lg:ml-auto lg:mr-12">
