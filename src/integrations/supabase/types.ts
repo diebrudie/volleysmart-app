@@ -426,19 +426,16 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
-          role: string
         }
         Insert: {
           created_at?: string
           email?: string | null
           id: string
-          role?: string
         }
         Update: {
           created_at?: string
           email?: string | null
           id?: string
-          role?: string
         }
         Relationships: []
       }
@@ -451,10 +448,7 @@ export type Database = {
         Args: { p_membership_id: string }
         Returns: undefined
       }
-      can_view_profile: {
-        Args: { viewed_user_id: string }
-        Returns: boolean
-      }
+      can_view_profile: { Args: { viewed_user_id: string }; Returns: boolean }
       change_member_role: {
         Args: { p_membership_id: string; p_new_role: string }
         Returns: undefined
@@ -463,10 +457,7 @@ export type Database = {
         Args: { club_uuid: string; user_uuid: string }
         Returns: boolean
       }
-      club_has_members: {
-        Args: { club_uuid: string }
-        Returns: boolean
-      }
+      club_has_members: { Args: { club_uuid: string }; Returns: boolean }
       delete_match_day_with_matches: {
         Args: { match_day_id: string }
         Returns: undefined
@@ -504,7 +495,6 @@ export type Database = {
         Returns: {
           activated_at: string
           club_id: string
-          email: string
           first_name: string
           last_name: string
           membership_id: string
@@ -516,14 +506,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      mark_match_day_modified: {
+        Args: { p_match_day_id: string }
+        Returns: undefined
+      }
       reject_membership: {
         Args: { p_membership_id: string }
         Returns: undefined
       }
-      remove_member: {
-        Args: { p_membership_id: string }
-        Returns: undefined
-      }
+      remove_member: { Args: { p_membership_id: string }; Returns: undefined }
       request_club_membership: {
         Args: { p_slug: string }
         Returns: {
@@ -531,14 +522,8 @@ export type Database = {
           status: string
         }[]
       }
-      request_join_by_slug: {
-        Args: { p_slug: string }
-        Returns: string
-      }
-      request_membership: {
-        Args: { p_club_id: string }
-        Returns: string
-      }
+      request_join_by_slug: { Args: { p_slug: string }; Returns: string }
+      request_membership: { Args: { p_club_id: string }; Returns: string }
       user_can_view_club_members: {
         Args: { p_club_id: string }
         Returns: boolean
