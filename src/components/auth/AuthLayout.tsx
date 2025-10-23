@@ -1,39 +1,49 @@
 /**
  * AuthLayout
- * - Forces LIGHT MODE while on auth pages (login/signup/forgot/reset/verify)
- * - Restores the user's original theme on unmount
- * - Provides a plain, no-card page shell; each screen controls its own layout
+ * - Forces LIGHT MODE on auth pages before paint (useLayoutEffect)
+ * - Prevents any re-addition of the `dark` class while mounted
+ * - Restores previous theme on unmount
  */
-import React, { PropsWithChildren, useEffect } from "react";
+import React, { PropsWithChildren, useLayoutEffect } from "react";
 
 const THEME_STORAGE_KEY = "volleymatch-theme";
 
 export default function AuthLayout({ children }: PropsWithChildren) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const html = document.documentElement;
 
-    // Remember whether dark class was present so we can restore it
+    // Remember state to restore later
     const hadDark = html.classList.contains("dark");
     const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
 
-    // Force light mode for the whole page while on auth
+    // Force light BEFORE first paint
     html.classList.remove("dark");
-    html.classList.add("light");
-
-    // Also prevent any system/dark overrides on the body
+    html.classList.add("light"); // harmless utility class if you want to target it
+    // Ensure native controls render light
+    (html.style as any).colorScheme = "light";
     document.body.style.backgroundColor = "#ffffff";
     document.body.style.color = "#0f172a";
 
+    // Guard against any code that re-applies "dark" while we're mounted
+    const observer = new MutationObserver(() => {
+      if (html.classList.contains("dark")) {
+        html.classList.remove("dark");
+      }
+    });
+    observer.observe(html, { attributes: true, attributeFilter: ["class"] });
+
     return () => {
-      // Restore prior theme preference (class + storage drives your ThemeContext)
+      observer.disconnect();
       html.classList.remove("light");
+      (html.style as any).colorScheme = "";
+      document.body.style.backgroundColor = "";
+      document.body.style.color = "";
+
+      // Restore previous theme
       if (hadDark || savedTheme === "dark") {
         html.classList.add("dark");
-        document.body.style.backgroundColor = "";
-        document.body.style.color = "";
       } else {
-        document.body.style.backgroundColor = "";
-        document.body.style.color = "";
+        html.classList.remove("dark");
       }
     };
   }, []);
