@@ -132,6 +132,16 @@ const Login = () => {
             </div>
 
             <p className="mt-6 text-sm text-slate-600">
+              Forgot your password?{" "}
+              <Link
+                to="/forgot-password"
+                className="text-blue-600 hover:underline"
+              >
+                Reset it here
+              </Link>
+              .
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
               New to VolleySmart?{" "}
               <Link to="/signup" className="text-blue-600 hover:underline">
                 Create an account
