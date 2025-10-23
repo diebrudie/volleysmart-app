@@ -58,9 +58,9 @@ const Signup = () => {
   return (
     <AuthLayout>
       <div className="flex min-h-screen items-center justify-center">
-        <div className="w-full max-w-md px-6 sm:px-8 md:px-12">
+        <div className="w-full max-w-lg px-6 sm:px-8 md:px-12">
           <img
-            src="/logo-lightmode.svg"
+            src="/volleyball.svg"
             alt="VolleySmart"
             className="h-10 w-auto"
             loading="eager"
@@ -73,9 +73,9 @@ const Signup = () => {
             Create balanced volleyball teams with ease
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
+              <div className="space-y-1">
                 <Label htmlFor="firstName">First name</Label>
                 <Input
                   id="firstName"
@@ -85,7 +85,7 @@ const Signup = () => {
                   placeholder="Jane"
                 />
               </div>
-              <div>
+              <div className="space-y-1">
                 <Label htmlFor="lastName">Last name</Label>
                 <Input
                   id="lastName"
@@ -97,7 +97,7 @@ const Signup = () => {
               </div>
             </div>
 
-            <div>
+            <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -109,9 +109,8 @@ const Signup = () => {
                 placeholder="name@example.com"
               />
             </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
+            <div className="space-y-4">
+              <div className="space-y-1">
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
@@ -122,7 +121,7 @@ const Signup = () => {
                   placeholder="Create a password"
                 />
               </div>
-              <div>
+              <div className="space-y-1">
                 <Label htmlFor="confirmPassword">Confirm password</Label>
                 <Input
                   id="confirmPassword"
@@ -135,7 +134,11 @@ const Signup = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full mt-3"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Creating account..." : "Create account"}
             </Button>
           </form>

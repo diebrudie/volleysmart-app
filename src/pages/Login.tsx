@@ -58,13 +58,13 @@ const Login = () => {
 
   return (
     <AuthLayout>
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 lg:gap-x-12">
         {/* Left: Logo + Headline + Form */}
         <div className="flex items-center">
-          <div className="w-full max-w-md px-6 sm:px-8 md:px-12 lg:pl-16">
+          <div className="w-full max-w-[500px] px-6 sm:px-8 md:px-12 lg:px-12 lg:ml-auto lg:mr-12">
             <Link to="/" className="inline-block">
               <img
-                src="/logo-lightmode.svg"
+                src="/volleyball.svg"
                 alt="VolleySmart"
                 className="h-10 w-auto"
                 loading="eager"
@@ -132,10 +132,11 @@ const Login = () => {
             </div>
 
             <p className="mt-6 text-sm text-slate-600">
-              Don&apos;t have an account?{" "}
+              New to VolleySmart?{" "}
               <Link to="/signup" className="text-blue-600 hover:underline">
-                Sign up
-              </Link>
+                Create an account
+              </Link>{" "}
+              instead
             </p>
           </div>
         </div>
