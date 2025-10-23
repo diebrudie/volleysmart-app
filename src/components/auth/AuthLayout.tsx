@@ -44,7 +44,7 @@ export default function AuthLayout({ children }: PropsWithChildren) {
   }, []);
 
   // TODO: Point this to your dark-on-light logo asset (visible on white bg)
-  const LIGHT_PAGE_LOGO = "public/logo-lightmode.svg";
+  const LIGHT_PAGE_LOGO = "/public/logo-lightmode.svg";
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
