@@ -58,14 +58,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(
+      /* console.log(
         "[Auth] event:",
         event,
         "| hasSession:",
         !!session,
         "| before setUser:",
         { hasFetchedProfile: hasFetchedProfile.current }
-      );
+      );*/
 
       if (event === "SIGNED_OUT") {
         // Definitive guest
