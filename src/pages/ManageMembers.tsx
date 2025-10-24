@@ -178,7 +178,7 @@ export default function ManageMembers() {
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
-                <h1 className="text-4xl font-serif">Manage Members</h1>
+                <h1 className="text-4xl font-serif">Manage Requests</h1>
               </div>
               <div />
             </div>
@@ -265,19 +265,6 @@ export default function ManageMembers() {
                                     </span>
                                   </Button>
                                 </>
-                              )}
-
-                              {m.status === "active" && (
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => requestRemove(m.membership_id)}
-                                >
-                                  <span className="sm:hidden">✕</span>
-                                  <span className="hidden sm:inline">
-                                    Remove
-                                  </span>
-                                </Button>
                               )}
                             </div>
                           </td>
