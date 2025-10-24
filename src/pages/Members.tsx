@@ -421,11 +421,6 @@ const Members = () => {
     return filteredMembers;
   }, [members, searchTerm, sortBy]);
 
-  // Members without player profiles (for the end section)
-  const membersWithoutProfiles = useMemo(() => {
-    return members?.filter((memberData) => !memberData.player) || [];
-  }, [members]);
-
   // Handle member selection
   const handleMemberSelection = (userId: string, checked: boolean) => {
     setSelectedMembers((prev) =>
@@ -959,28 +954,6 @@ const Members = () => {
               )}
             </CardContent>
           </Card>
-
-          {/* Show members without player profiles at the end */}
-          {membersWithoutProfiles.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-2xl font-serif mb-4">
-                Members Without Profiles
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {membersWithoutProfiles.map((memberData) => (
-                  <div
-                    key={memberData.member.user_id}
-                    className="p-4 border rounded-lg bg-gray-50"
-                  >
-                    <p className="font-medium">Member (No Profile)</p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      This member hasn't completed their player profile yet.
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </main>
     </div>
