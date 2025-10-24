@@ -14,12 +14,19 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signup, isAuthenticated } = useAuth();
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signup } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/players/onboarding");
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
@@ -32,24 +39,11 @@ const Signup = () => {
 
     setIsSubmitting(true);
     try {
-      const displayName = `${firstName} ${lastName}`.trim() || undefined;
-
-      // AuthContext.signup(email, password, displayName?)
-      await signup(email, password, displayName);
-
-      toast({
-        title: "Account created",
-        description: "Please check your email to verify your account.",
-      });
-
-      navigate("/login");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Please try again.";
-      toast({
-        title: "Sign up failed",
-        description: message,
-        variant: "destructive",
-      });
+      await signup(email, password, firstName, lastName);
+      // The useEffect will handle the redirect to onboarding when isAuthenticated becomes true
+    } catch (error) {
+      console.error("Signup error:", error);
+      // Toast is already shown in the signup function
     } finally {
       setIsSubmitting(false);
     }

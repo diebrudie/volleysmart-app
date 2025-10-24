@@ -19,42 +19,154 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
 
-// Validation schema
-const LoginSchema = z.object({
-  email: z.string().email("Please enter a valid email."),
-  password: z.string().min(6, "Password must be at least 6 characters."),
+const loginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters" }),
 });
 
-type LoginValues = z.infer<typeof LoginSchema>;
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { login, isAuthenticated, isLoading: authLoading, user } = useAuth();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingProfile, setIsCheckingProfile] = useState(false);
 
-  const form = useForm<LoginValues>({
-    resolver: zodResolver(LoginSchema),
-    defaultValues: { email: "", password: "" },
+  // Get the intended destination from location state, or default to dashboard
+  const from = location.state?.from?.pathname as string | undefined;
+
+  /**
+   * Normalize the "from" target. We never "return to" onboarding or bare dashboard/login.
+   * This prevents bouncing back to /players/onboarding after a successful login.
+   */
+  const normalizedFrom =
+    from && !["/login", "/dashboard", "/players/onboarding"].includes(from)
+      ? from
+      : undefined;
+
+  // Only redirect if we're actually ON the login page and user becomes authenticated
+  useEffect(() => {
+    if (
+      !isAuthenticated ||
+      authLoading ||
+      !user ||
+      location.pathname !== "/login"
+    )
+      return;
+
+    setIsCheckingProfile(true);
+
+    const routeAfterLogin = async () => {
+      // 1) Fast path: return to the protected page we came from
+      if (normalizedFrom) {
+        /* console.log(
+          "[NAV] navigating from /login to",
+          normalizedFrom,
+          "reason: return to 'from'"
+        );*/
+        navigate(normalizedFrom, { replace: true });
+        setIsCheckingProfile(false);
+        return;
+      }
+
+      /**
+       * Must have players.profile_completed === true to leave onboarding.
+       * If row is missing OR profile_completed is not true -> go to onboarding.
+       */
+      try {
+        const { data: player, error } = await supabase
+          .from("players")
+          .select("profile_completed")
+          .eq("user_id", user.id)
+          .single();
+
+        if (error || player?.profile_completed !== true) {
+          navigate("/players/onboarding", { replace: true });
+          return;
+        }
+
+        const { data: clubMembers, error: clubError } = await supabase
+          .from("club_members")
+          .select("club_id")
+          .eq("user_id", user.id);
+
+        if (clubError) {
+          console.error("Error checking club membership:", clubError);
+          navigate("/start", { replace: true });
+          return;
+        }
+
+        if (!clubMembers || clubMembers.length === 0) {
+          navigate("/start", { replace: true });
+        } else if (clubMembers.length === 1) {
+          navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
+        } else {
+          const lastVisitedClubId = localStorage.getItem("lastVisitedClub");
+          const isLastClubValid =
+            !!lastVisitedClubId &&
+            clubMembers.some((m) => m.club_id === lastVisitedClubId);
+
+          if (isLastClubValid) {
+            navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
+          } else {
+            navigate("/clubs", { replace: true });
+          }
+        }
+      } catch (err) {
+        console.error("Error checking user profile:", err);
+        navigate("/players/onboarding", { replace: true });
+      } finally {
+        setIsCheckingProfile(false);
+      }
+    };
+
+    routeAfterLogin();
+  }, [
+    isAuthenticated,
+    authLoading,
+    user,
+    location.pathname,
+    normalizedFrom,
+    navigate,
+  ]);
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
 
-  const onSubmit = async (values: LoginValues) => {
-    setIsSubmitting(true);
+  const onSubmit = async (data: LoginFormValues) => {
+    setIsLoading(true);
     try {
-      // AuthContext.login throws on error; no return payload to destructure
-      await login(values.email, values.password);
-      navigate("/start");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Please try again.";
-      toast({
-        title: "Sign in failed",
-        description: message,
-        variant: "destructive",
-      });
+      await login(data.email, data.password);
+      // The redirection will happen automatically in the useEffect hook
+    } catch (error) {
+      console.error("Login error:", error);
+      // Toast is already shown in the login function
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
+
+  // Show loading state while checking profile
+  if (isCheckingProfile) {
+    return (
+      <AuthLayout>
+        <div className="flex items-center justify-center p-8">
+          <Spinner className="h-8 w-8" />
+          <span className="ml-2 text-gray-900 dark:text-gray-100">
+            Checking profile...
+          </span>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>
@@ -120,12 +232,8 @@ const Login = () => {
                     )}
                   />
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Signing in..." : "Sign in"}
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Signing in..." : "Sign in"}
                   </Button>
                 </form>
               </Form>
