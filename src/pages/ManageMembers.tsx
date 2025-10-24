@@ -41,9 +41,6 @@ export default function ManageMembers() {
   const clubId = urlClubId ?? clubIdFromCtx ?? undefined;
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  const asRole = (v: string): Role =>
-    v === "admin" || v === "editor" || v === "member" ? v : "member";
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
 
@@ -70,6 +67,9 @@ export default function ManageMembers() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["members.manage", clubId] }),
       queryClient.invalidateQueries({ queryKey: ["clubMembers", clubId] }),
+      queryClient.invalidateQueries({
+        queryKey: ["pendingRequestsCount", clubId],
+      }),
     ]);
   };
 
@@ -178,7 +178,7 @@ export default function ManageMembers() {
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
-                <h1 className="text-4xl font-serif">Manage Members</h1>
+                <h1 className="text-4xl font-serif">Manage Requests</h1>
               </div>
               <div />
             </div>
@@ -265,19 +265,6 @@ export default function ManageMembers() {
                                     </span>
                                   </Button>
                                 </>
-                              )}
-
-                              {m.status === "active" && (
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => requestRemove(m.membership_id)}
-                                >
-                                  <span className="sm:hidden">✕</span>
-                                  <span className="hidden sm:inline">
-                                    Remove
-                                  </span>
-                                </Button>
                               )}
                             </div>
                           </td>

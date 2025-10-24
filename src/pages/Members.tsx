@@ -25,16 +25,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Search,
-  Grid3X3,
-  List,
-  Users,
-  Plus,
-  X,
-  Trash2,
-  EllipsisVertical,
-} from "lucide-react";
+import { Search, Grid3X3, List, Users, Plus, X, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import CopyableClubId from "@/components/clubs/CopyableClubId";
@@ -139,6 +130,29 @@ const Members = () => {
 
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  /**
+   * Count pending membership requests for this club.
+   * Only enabled for admins and when we have a clubId.
+   */
+  const {
+    data: pendingRequests = 0,
+    isLoading: pendingLoading,
+    error: pendingError,
+  } = useQuery({
+    queryKey: ["pendingRequestsCount", clubId, isAdmin],
+    enabled: !!clubId && isAdmin,
+    queryFn: async (): Promise<number> => {
+      const { error, count } = await supabase
+        .from("club_members")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", clubId!)
+        .eq("status", "pending");
+
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
 
   // Set context from URL if available
   useEffect(() => {
@@ -407,11 +421,6 @@ const Members = () => {
     return filteredMembers;
   }, [members, searchTerm, sortBy]);
 
-  // Members without player profiles (for the end section)
-  const membersWithoutProfiles = useMemo(() => {
-    return members?.filter((memberData) => !memberData.player) || [];
-  }, [members]);
-
   // Handle member selection
   const handleMemberSelection = (userId: string, checked: boolean) => {
     setSelectedMembers((prev) =>
@@ -580,134 +589,124 @@ const Members = () => {
 
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header with Title and Invite Button */}
-          {/* Header with Title and Actions (unified for all breakpoints) */}
           <div className="mb-8">
-            <div className="flex items-center justify-between">
+            {/* Mobile: stack; Desktop: row */}
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <h1 className="text-4xl font-serif">Club's Members</h1>
 
-              {isAdmin ? (
-                <>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="More actions"
-                        className="border-border text-foreground hover:bg-accent"
-                      >
-                        <EllipsisVertical className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
+              <Button
+                onClick={() => setIsInviteModalOpen(true)}
+                variant="outline"
+                className="self-start sm:self-end"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Invite Member
+              </Button>
+            </div>
 
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-48 border border-gray-200 dark:border-gray-800"
+            {/* Admin-only pending requests banner */}
+            {isAdmin &&
+              !pendingLoading &&
+              !pendingError &&
+              pendingRequests > 0 && (
+                <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-900 dark:border-yellow-900/40 dark:bg-yellow-950/40 dark:text-yellow-200">
+                  <div className="flex flex-col sm:flex-row space-y-3 items-center justify-between">
+                    <p className="text-sm sm:text-base">
+                      You have{" "}
+                      <span className="font-semibold">{pendingRequests}</span>{" "}
+                      request{pendingRequests === 1 ? "" : "s"} to join your
+                      club.
+                    </p>
+                    <Button
+                      onClick={() => navigate(`/clubs/${clubId}/manage`)}
+                      className="ml-4"
                     >
-                      <DropdownMenuItem
-                        onClick={() => setIsInviteModalOpen(true)}
-                      >
-                        Invite Member
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to={`/clubs/${clubId}/manage`}>
-                          Manage Members
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
-              ) : (
-                <Button
-                  onClick={() => setIsInviteModalOpen(true)}
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Invite Member
-                </Button>
+                      Manage Requests
+                    </Button>
+                  </div>
+                </div>
               )}
 
-              {/* Keep the Invite dialog mounted so it can be opened from the menu or the button */}
-              <Dialog
-                open={isInviteModalOpen}
-                onOpenChange={setIsInviteModalOpen}
-              >
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader className="mb-4 mt-4 text-left">
-                    <div className="flex items-end justify-between gap-4">
-                      <div>
-                        <DialogTitle>Invite New Member</DialogTitle>
+            {/* Keep the Invite dialog mounted so it can be opened from the button */}
+            <Dialog
+              open={isInviteModalOpen}
+              onOpenChange={setIsInviteModalOpen}
+            >
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader className="mb-4 mt-4 text-left">
+                  <div className="flex items-end justify-between gap-4">
+                    <div>
+                      <DialogTitle>Invite New Member</DialogTitle>
+                    </div>
+                    {clubMeta?.slug && (
+                      <div className="shrink-0">
+                        <CopyableClubId slug={clubMeta.slug} compact />
                       </div>
-                      {clubMeta?.slug && (
-                        <div className="shrink-0">
-                          <CopyableClubId slug={clubMeta.slug} compact />
-                        </div>
+                    )}
+                  </div>
+                </DialogHeader>
+
+                {/* Existing invite form unchanged */}
+                <form onSubmit={handleInviteSubmit} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="member-name"
+                      className="block text-sm font-medium mb-2"
+                    >
+                      Name
+                    </label>
+                    <Input
+                      id="member-name"
+                      placeholder="Maxi"
+                      value={inviteName}
+                      onChange={(e) => setInviteName(e.target.value)}
+                      disabled={isSubmitting}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="member-email"
+                      className="block text-sm font-medium mb-2"
+                    >
+                      Email Address
+                    </label>
+                    <Input
+                      id="member-email"
+                      type="email"
+                      placeholder="maxi.mustermann@email.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      disabled={isSubmitting}
+                      required
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="bg-[#243F8D] hover:bg-[#1e3470]"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Spinner className="mr-2 h-4 w-4" />
+                          Sending...
+                        </>
+                      ) : (
+                        "Send Invitation"
                       )}
-                    </div>
-                  </DialogHeader>
-
-                  {/* Existing invite form unchanged */}
-                  <form onSubmit={handleInviteSubmit} className="space-y-4">
-                    <div>
-                      <label
-                        htmlFor="member-name"
-                        className="block text-sm font-medium mb-2"
-                      >
-                        Name
-                      </label>
-                      <Input
-                        id="member-name"
-                        placeholder="Maxi"
-                        value={inviteName}
-                        onChange={(e) => setInviteName(e.target.value)}
-                        disabled={isSubmitting}
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="member-email"
-                        className="block text-sm font-medium mb-2"
-                      >
-                        Email Address
-                      </label>
-                      <Input
-                        id="member-email"
-                        type="email"
-                        placeholder="maxi.mustermann@email.com"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        disabled={isSubmitting}
-                        required
-                      />
-                    </div>
-
-                    <div className="flex justify-end pt-4">
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="bg-[#243F8D] hover:bg-[#1e3470]"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Spinner className="mr-2 h-4 w-4" />
-                            Sending...
-                          </>
-                        ) : (
-                          "Send Invitation"
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Table Container */}
           <Card className="border border-gray-200">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               {/* All Controls in One Row */}
               <div className="mb-6">
                 {/* Desktop Layout - All in one row */}
@@ -955,28 +954,6 @@ const Members = () => {
               )}
             </CardContent>
           </Card>
-
-          {/* Show members without player profiles at the end */}
-          {membersWithoutProfiles.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-2xl font-serif mb-4">
-                Members Without Profiles
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {membersWithoutProfiles.map((memberData) => (
-                  <div
-                    key={memberData.member.user_id}
-                    className="p-4 border rounded-lg bg-gray-50"
-                  >
-                    <p className="font-medium">Member (No Profile)</p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      This member hasn't completed their player profile yet.
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </main>
     </div>
