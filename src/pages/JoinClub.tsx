@@ -9,6 +9,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useClub } from "@/contexts/ClubContext";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 interface Club {
   id: string;
@@ -60,10 +61,12 @@ const JoinClub = () => {
   };
 
   /**
-   * Join a club by slug relying on SECURITY DEFINER RPC.
-   * - No pre-SELECT on clubs (RLS forbids non-members from reading).
-   * - Handles duplicates via unique violation (23505).
-   * - Always shows a generic success toast (no club_id surfaced).
+   * Join a club by slug with a membership pre-check that respects RLS:
+   * - If the current user can read the club by slug (RLS allows this only for creators/members),
+   *   we assume they already have access and do NOT call the RPC.
+   * - Otherwise we call SECURITY DEFINER RPC `request_join_by_slug`.
+   * - Duplicate requests are handled via unique violation (23505).
+   * - No club_id is surfaced to the user in any toast.
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,33 +79,51 @@ const JoinClub = () => {
       // Optional: ensure session is valid (useful during debugging)
       await supabase.auth.getUser();
 
-      const { data, error: rpcErr } = await supabase.rpc(
-        "request_join_by_slug",
-        {
-          p_slug: slug,
-        }
-      );
+      /**
+       * PRE-CHECK: Are we already a creator/member of this active club?
+       * Your RLS only allows SELECT on clubs for creators or active members.
+       * If this returns a row, we can safely short-circuit and avoid the RPC.
+       */
+      const { data: visibleClub, error: visibleErr } = await supabase
+        .from("clubs")
+        .select("id")
+        .eq("status", "active")
+        .ilike("slug", slug)
+        .maybeSingle();
+
+      if (!visibleErr && visibleClub?.id) {
+        toast({
+          title: "Already a member",
+          description: "You are already a member of this club.",
+          duration: 2500,
+        });
+        navigate("/clubs");
+        return;
+      }
+
+      // Not visible -> likely not a member; proceed to RPC
+      const { error: rpcErr } = await supabase.rpc("request_join_by_slug", {
+        p_slug: slug,
+      });
 
       if (rpcErr) {
-        // Map common server errors to UX messages
-        const msg = String(rpcErr.message || "").toLowerCase();
+        const err = rpcErr as PostgrestError;
+        const msg = String(err.message || "").toLowerCase();
 
-        // Unique violation -> user already has a row (pending or active)
-        // Postgres code is 23505; PostgREST often puts it in error.code
+        // Unique violation => an existing row already ties this user to the club (pending or active)
         if (
-          (rpcErr as any).code === "23505" ||
+          err.code === "23505" ||
           msg.includes("club_members_club_id_user_id_key")
         ) {
           toast({
             title: "Request already sent",
             description:
-              "You already have a membership request or you’re already a member of this club. Please contact an admin if you need access.",
+              "You already have a membership request pending or you’re already a member. Please contact an admin if you need access.",
             duration: 3500,
           });
           return;
         }
 
-        // Custom exception from RPC
         if (msg.includes("club_not_found_or_deleted")) {
           toast({
             title: "Club not found",
@@ -114,7 +135,6 @@ const JoinClub = () => {
           return;
         }
 
-        // Generic fallback
         toast({
           title: "Couldn’t join",
           description: "Join request failed. Please try again.",
@@ -130,7 +150,6 @@ const JoinClub = () => {
         description: "Your request was sent to the club admins.",
         duration: 2500,
       });
-
       navigate("/clubs");
     } catch (err) {
       console.error("Unexpected error:", err);
