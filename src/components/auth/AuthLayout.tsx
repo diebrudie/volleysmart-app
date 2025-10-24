@@ -20,7 +20,7 @@ export default function AuthLayout({ children }: PropsWithChildren) {
     html.classList.remove("dark");
     html.classList.add("light"); // harmless utility class if you want to target it
     // Ensure native controls render light
-    (html.style as any).colorScheme = "light";
+    html.style.setProperty("color-scheme", "light");
     document.body.style.backgroundColor = "#ffffff";
     document.body.style.color = "#0f172a";
 
@@ -35,7 +35,7 @@ export default function AuthLayout({ children }: PropsWithChildren) {
     return () => {
       observer.disconnect();
       html.classList.remove("light");
-      (html.style as any).colorScheme = "";
+      html.style.removeProperty("color-scheme");
       document.body.style.backgroundColor = "";
       document.body.style.color = "";
 

@@ -141,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from("user_profiles")
         .select("*")
         .eq("id", authUser.id)
-        .single();
+        .maybeSingle(); // returns null instead of 406 when no row
 
       if (error) {
         console.error("Error fetching user profile:", error);
