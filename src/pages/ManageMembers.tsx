@@ -41,9 +41,6 @@ export default function ManageMembers() {
   const clubId = urlClubId ?? clubIdFromCtx ?? undefined;
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  const asRole = (v: string): Role =>
-    v === "admin" || v === "editor" || v === "member" ? v : "member";
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
 
@@ -70,6 +67,9 @@ export default function ManageMembers() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["members.manage", clubId] }),
       queryClient.invalidateQueries({ queryKey: ["clubMembers", clubId] }),
+      queryClient.invalidateQueries({
+        queryKey: ["pendingRequestsCount", clubId],
+      }),
     ]);
   };
 
