@@ -1,30 +1,47 @@
-import { Users, Trophy, Settings } from "lucide-react";
+/**
+ * Refactored FeaturesSection to use images instead of icons.
+ * Each feature now displays an image, title, and description.
+ * Layout is responsive (stacked on mobile, grid on desktop).
+ */
 
-const Features = () => {
-  const features = [
+import React from "react";
+
+interface Feature {
+  title: string;
+  description: string;
+  image: string;
+  alt: string;
+}
+
+const FeaturesSection: React.FC = () => {
+  const features: Feature[] = [
     {
-      icon: Users,
       title: "Smart Team Generation",
       description:
         "Create balanced teams automatically based on player positions and skill levels.",
+      image: "/img-home-teamCelebrating.png",
+      alt: "Players celebrating after volleyball match",
     },
     {
-      icon: Trophy,
       title: "Game & Score Tracking",
       description:
         "Real-time scoring system with detailed match analytics, set-by-set breakdowns, and comprehensive game history.",
+      image: "/img-home-scoreboard-v1.png",
+      alt: "Scoreboard tracking live volleyball game",
     },
     {
-      icon: Settings,
       title: "Players & Clubs Management",
       description:
         "Create as many Volleyball Clubs as you want, invite friends, and seamless member management in one intuitive platform.",
+      image: "/img-home-manageClubs-v1.png",
+      alt: "Dashboard for managing volleyball clubs and members",
     },
   ];
 
   return (
-    <section className="py-24 relative">
+    <section className="py-24 relative bg-[#DCE0E4]">
       <div className="container mx-auto px-6">
+        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Everything You Need to <span className="text-gradient">Play</span>
@@ -35,16 +52,23 @@ const Features = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <div key={index} className="glass rounded-xl p-8 group">
-              <div className="mb-6">
-                <div className="w-16 h-16 rounded-xl bg-gradient-primary flex items-center justify-center mb-4">
-                  <feature.icon className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold mb-3 transition-all">
-                  {feature.title}
-                </h3>
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-3 gap-12">
+          {features.map((feature) => (
+            <div
+              key={feature.title}
+              className="flex flex-col items-center text-left space-y-6"
+            >
+              <div className="w-full overflow-hidden rounded-2xl shadow-lg aspect-[4/3]">
+                <img
+                  src={feature.image}
+                  alt={feature.alt}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-3">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">
                   {feature.description}
                 </p>
@@ -57,4 +81,4 @@ const Features = () => {
   );
 };
 
-export default Features;
+export default FeaturesSection;
