@@ -60,10 +60,10 @@ const JoinClub = () => {
   };
 
   /**
-   * Join a club by slug using the text-returning RPC.
-   * - RPC returns a string on success
-   * - RPC throws 'club_not_found_or_deleted' on deleted/unknown slugs (handled via error)
-   * - No 'any' used; no JSON parsing expected.
+   * Join a club by slug relying on SECURITY DEFINER RPC.
+   * - No pre-SELECT on clubs (RLS forbids non-members from reading).
+   * - Handles duplicates via unique violation (23505).
+   * - Always shows a generic success toast (no club_id surfaced).
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,44 +71,66 @@ const JoinClub = () => {
 
     setIsLoading(true);
     try {
-      const slug = clubIdInput.trim();
+      const slug = clubIdInput.trim().toLowerCase();
 
-      // Optional: ensure session is valid (helpful for debugging auth/RLS)
-      const { data: authCheck } = await supabase.auth.getUser();
-      /*console.log("[auth uid]", authCheck?.user?.id);*/
+      // Optional: ensure session is valid (useful during debugging)
+      await supabase.auth.getUser();
 
-      const { data, error } = await supabase.rpc("request_join_by_slug", {
-        p_slug: slug,
-      });
+      const { data, error: rpcErr } = await supabase.rpc(
+        "request_join_by_slug",
+        {
+          p_slug: slug,
+        }
+      );
 
-      if (error) {
-        const isDeletedOrMissing =
-          typeof error.message === "string" &&
-          error.message.includes("club_not_found_or_deleted");
+      if (rpcErr) {
+        // Map common server errors to UX messages
+        const msg = String(rpcErr.message || "").toLowerCase();
 
+        // Unique violation -> user already has a row (pending or active)
+        // Postgres code is 23505; PostgREST often puts it in error.code
+        if (
+          (rpcErr as any).code === "23505" ||
+          msg.includes("club_members_club_id_user_id_key")
+        ) {
+          toast({
+            title: "Request already sent",
+            description:
+              "You already have a membership request or you’re already a member of this club. Please contact an admin if you need access.",
+            duration: 3500,
+          });
+          return;
+        }
+
+        // Custom exception from RPC
+        if (msg.includes("club_not_found_or_deleted")) {
+          toast({
+            title: "Club not found",
+            description:
+              "This club isn’t available (it may have been deleted).",
+            variant: "destructive",
+            duration: 3000,
+          });
+          return;
+        }
+
+        // Generic fallback
         toast({
           title: "Couldn’t join",
-          description: isDeletedOrMissing
-            ? "This club isn’t available (it may have been deleted)."
-            : "Join request failed. Please try again.",
+          description: "Join request failed. Please try again.",
           variant: "destructive",
           duration: 3000,
         });
         return;
       }
 
-      const message: string =
-        typeof data === "string"
-          ? data
-          : "Your request was sent to the club admins.";
-
+      // Success — keep message generic (no UUIDs)
       toast({
         title: "Request sent",
-        description: message,
-        duration: 2000,
+        description: "Your request was sent to the club admins.",
+        duration: 2500,
       });
 
-      // After a successful request, take the user back to Clubs
       navigate("/clubs");
     } catch (err) {
       console.error("Unexpected error:", err);
