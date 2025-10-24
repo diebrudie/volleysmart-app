@@ -155,6 +155,12 @@ const Navbar = () => {
     }
   }, [setClubId, clubId]);
 
+  const sizeClasses = {
+    sm: "h-6",
+    md: "h-8",
+    lg: "h-12",
+  };
+
   const navItems = clubId
     ? [
         {
@@ -191,7 +197,14 @@ const Navbar = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Logo size="md" linkTo="/" />
+          <Link to="/" className="inline-block">
+            <img
+              src="/logo-lightmode.svg"
+              alt="VolleySmart"
+              className={sizeClasses[size]}
+              loading="eager"
+            />
+          </Link>
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-3">
