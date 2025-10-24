@@ -24,11 +24,6 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 /**
  * Local types to avoid `any` and satisfy ESLint.
@@ -155,12 +150,6 @@ const Navbar = () => {
     }
   }, [setClubId, clubId]);
 
-  const sizeClasses = {
-    sm: "h-6",
-    md: "h-8",
-    lg: "h-12",
-  };
-
   const navItems = clubId
     ? [
         {
@@ -201,7 +190,7 @@ const Navbar = () => {
             <img
               src="/logo-lightmode.svg"
               alt="VolleySmart"
-              className={sizeClasses[size]}
+              className="h-8 sm:h-10 md:h-12 w-auto transition-all duration-300"
               loading="eager"
             />
           </Link>
@@ -210,15 +199,15 @@ const Navbar = () => {
           <div className="flex items-center gap-3">
             <Link to="/login">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="text-white hover:text-white hover:bg-white/10"
+                className="border-gray-900 text-gray-900 hover:bg-gray-100"
               >
                 Login
               </Button>
             </Link>
             <Link to="/signup">
-              <Button variant="hero" size="sm">
+              <Button variant="primary" size="sm">
                 Sign Up
               </Button>
             </Link>
@@ -520,42 +509,64 @@ const Navbar = () => {
     </header>
   );
 
-  // Mobile homepage nav
+  // Mobile homepage nav (white sheet, light logo)
   const MobileHomepageNav = () => (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
-          <Logo size="sm" linkTo="/" />
+          {/* Force light logo and link to / */}
+          <Link to="/" className="inline-block">
+            <img
+              src="/logo-lightmode.svg"
+              alt="VolleySmart"
+              className="h-8 w-auto sm:h-10 transition-all duration-300"
+              loading="eager"
+            />
+          </Link>
+
           <div className="flex items-center space-x-2">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-white hover:text-white hover:bg-white/10"
+                  className="text-gray-700 hover:bg-gray-100"
                 >
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
+
+              {/* White background instead of dark overlay */}
               <SheetContent
                 side="top"
-                className="w-full h-full p-0 bg-black/95 backdrop-blur-md border-glass-border [&>button]:text-white [&>button]:hover:bg-white/10"
+                className="w-full h-full p-0 bg-white border-gray-200"
               >
                 <div className="flex flex-col h-full">
-                  <SheetHeader className="p-4 border-b border-glass-border">
+                  <SheetHeader className="p-4 border-b border-gray-200">
                     <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                     <div className="flex justify-start items-center">
-                      <Logo size="sm" linkTo="/" />
+                      <Link
+                        to="/"
+                        className="inline-block"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <img
+                          src="/logo-lightmode.svg"
+                          alt="VolleySmart"
+                          className="h-8 w-auto"
+                          loading="eager"
+                        />
+                      </Link>
                     </div>
                   </SheetHeader>
 
-                  <div className="flex flex-col flex-1 justify-center items-center space-y-6">
+                  <div className="flex flex-col flex-1 justify-center items-center space-y-6 px-4">
                     <SheetClose asChild>
                       <Link to="/login" className="w-full max-w-xs">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="lg"
-                          className="w-full text-white hover:text-white hover:bg-white/10 text-xl py-6"
+                          className="w-full border-gray-900 text-gray-900 hover:bg-gray-100 text-xl py-6"
                           onClick={() => setIsOpen(false)}
                         >
                           Login
@@ -566,7 +577,7 @@ const Navbar = () => {
                     <SheetClose asChild>
                       <Link to="/signup" className="w-full max-w-xs">
                         <Button
-                          variant="hero"
+                          variant="primary"
                           size="lg"
                           className="w-full text-xl py-6"
                           onClick={() => setIsOpen(false)}
