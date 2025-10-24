@@ -594,14 +594,15 @@ const Members = () => {
 
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header with Title and a single "+ Invite Member" for everyone */}
           <div className="mb-8">
-            <div className="flex items-center justify-between">
+            {/* Mobile: stack; Desktop: row */}
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <h1 className="text-4xl font-serif">Club's Members</h1>
 
               <Button
                 onClick={() => setIsInviteModalOpen(true)}
                 variant="outline"
+                className="self-start sm:self-end"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Invite Member
@@ -614,7 +615,7 @@ const Members = () => {
               !pendingError &&
               pendingRequests > 0 && (
                 <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-900 dark:border-yellow-900/40 dark:bg-yellow-950/40 dark:text-yellow-200">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row space-y-3 items-center justify-between">
                     <p className="text-sm sm:text-base">
                       You have{" "}
                       <span className="font-semibold">{pendingRequests}</span>{" "}
@@ -710,7 +711,7 @@ const Members = () => {
 
           {/* Table Container */}
           <Card className="border border-gray-200">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               {/* All Controls in One Row */}
               <div className="mb-6">
                 {/* Desktop Layout - All in one row */}
