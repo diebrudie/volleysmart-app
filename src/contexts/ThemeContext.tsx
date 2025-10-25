@@ -45,13 +45,24 @@ const getSystemTheme = (): "light" | "dark" => {
 const resolveTheme = (theme: Theme): "light" | "dark" =>
   theme === "system" ? getSystemTheme() : theme;
 
+function normalizePath(p: string): string {
+  // remove trailing slashes except for root
+  return p.length > 1 ? p.replace(/\/+$/, "") : p;
+}
+
 function routeMatches(
   pathname: string,
   patterns: Array<string | RegExp>
 ): boolean {
-  return patterns.some((p) =>
-    typeof p === "string" ? p === pathname : p.test(pathname)
-  );
+  const path = normalizePath(pathname);
+  return patterns.some((p) => {
+    if (typeof p === "string") {
+      const pat = normalizePath(p);
+      // exact match OR prefix match (handles nested steps and optional trailing slash)
+      return path === pat || path.startsWith(pat + "/");
+    }
+    return p.test(pathname);
+  });
 }
 
 interface ThemeProviderProps {

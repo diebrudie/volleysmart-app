@@ -106,7 +106,7 @@ const App = () => {
 const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
 
-  // Define all public or pre-auth routes that must be light-only
+  // Public / pre-auth routes must ignore theme and stay light
   const enforceLightOnRoutes: Array<string | RegExp> = [
     "/",
     "/login",
