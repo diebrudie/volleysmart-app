@@ -3,6 +3,7 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useMemo,
   ReactNode,
 } from "react";
 
@@ -14,6 +15,8 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
   isDark: boolean;
   toggleTheme: () => void;
+  /** True when provider is currently enforcing light mode (no persistence). */
+  enforcingLight: boolean;
 }
 
 // Create context
@@ -28,7 +31,7 @@ export const useTheme = () => {
   return context;
 };
 
-// Helper function to get system preference
+// Helpers
 const getSystemTheme = (): "light" | "dark" => {
   if (typeof window !== "undefined") {
     return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -39,96 +42,117 @@ const getSystemTheme = (): "light" | "dark" => {
 };
 
 // Helper function to resolve actual theme
-const resolveTheme = (theme: Theme): "light" | "dark" => {
-  if (theme === "system") {
-    return getSystemTheme();
-  }
-  return theme;
-};
+const resolveTheme = (theme: Theme): "light" | "dark" =>
+  theme === "system" ? getSystemTheme() : theme;
+
+function routeMatches(
+  pathname: string,
+  patterns: Array<string | RegExp>
+): boolean {
+  return patterns.some((p) =>
+    typeof p === "string" ? p === pathname : p.test(pathname)
+  );
+}
 
 interface ThemeProviderProps {
   children: ReactNode;
+  /** Provided by App, not strictly required for enforcement but kept for compatibility. */
   isAuthenticated?: boolean;
+  enforceLightOnRoutes?: Array<string | RegExp>;
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
   isAuthenticated = true,
+  enforceLightOnRoutes = [
+    "/",
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+    "/players/onboarding",
+  ],
 }) => {
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "/";
+
+  // Should we enforce light for this route?
+  const enforcingLight = useMemo(
+    () => routeMatches(pathname, enforceLightOnRoutes),
+    [pathname, enforceLightOnRoutes]
+  );
+
   /**
-   * Initialize theme from localStorage or default to 'light'
-   * Rationale: make light the default for first-time users, while preserving
-   * any explicit user choice saved in localStorage.
+   * Initialize from localStorage only when we're NOT enforcing light.
+   * Default to light for first-time users.
    */
   const [theme, setThemeState] = useState<Theme>(() => {
+    if (enforcingLight) return "light";
     if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("volleymatch-theme") as Theme;
-      return savedTheme || "light";
+      const saved = localStorage.getItem("volleymatch-theme") as Theme | null;
+      return saved || "light";
     }
     return "light";
   });
 
-  // Calculate if we're in dark mode
   const [isDark, setIsDark] = useState<boolean>(() => {
-    return resolveTheme(theme) === "dark";
+    return resolveTheme(theme) === "dark" && !enforcingLight;
   });
 
-  // Function to update theme
   const setTheme = (newTheme: Theme) => {
+    if (enforcingLight) {
+      // Ignore writes before authenticated/allowed routes
+      setThemeState("light");
+      return;
+    }
     setThemeState(newTheme);
     localStorage.setItem("volleymatch-theme", newTheme);
   };
 
-  // Toggle between light and dark (ignoring system)
-  const toggleTheme = () => {
-    const newTheme = isDark ? "light" : "dark";
-    setTheme(newTheme);
-  };
+  const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
-  // Effect to handle theme changes and system preference changes
   useEffect(() => {
-    // Apply theme logic for both authenticated and unauthenticated users
-    const resolvedTheme = resolveTheme(theme);
-    setIsDark(resolvedTheme === "dark");
-
-    // Apply theme to document
     const root = document.documentElement;
-    if (resolvedTheme === "dark") {
-      root.classList.add("dark");
-    } else {
+
+    // Apply light-only mode when enforced
+    if (enforcingLight) {
+      setIsDark(false); // guarantee light
       root.classList.remove("dark");
+      return;
     }
 
-    // Listen for system theme changes if theme is 'system'
+    // Normal theming rules
+    const resolved = resolveTheme(theme);
+    setIsDark(resolved === "dark");
+
+    if (resolved === "dark") root.classList.add("dark");
+    else root.classList.remove("dark");
+  }, [theme, enforcingLight, isAuthenticated]);
+
+  // React to system theme changes ONLY when not enforcing light and theme === 'system'
+  useEffect(() => {
+    if (enforcingLight || theme !== "system") return;
+
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (theme === "system") {
-        const newResolvedTheme = getSystemTheme();
-        setIsDark(newResolvedTheme === "dark");
+      const resolved = getSystemTheme();
+      setIsDark(resolved === "dark");
 
-        const root = document.documentElement;
-        if (newResolvedTheme === "dark") {
-          root.classList.add("dark");
-        } else {
-          root.classList.remove("dark");
-        }
-      }
+      const root = document.documentElement;
+      if (resolved === "dark") root.classList.add("dark");
+      else root.classList.remove("dark");
     };
 
-    if (theme === "system") {
-      mediaQuery.addEventListener("change", handleChange);
-    }
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleChange);
-    };
-  }, [theme, isAuthenticated]);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [theme, enforcingLight]);
 
   const value: ThemeContextType = {
     theme,
     setTheme,
     isDark,
     toggleTheme,
+    enforcingLight,
   };
 
   return (

@@ -106,8 +106,23 @@ const App = () => {
 const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
 
+  // Define all public or pre-auth routes that must be light-only
+  const enforceLightOnRoutes: Array<string | RegExp> = [
+    "/",
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+    "/players/onboarding",
+  ];
+
   return (
-    <ThemeProvider isAuthenticated={isAuthenticated}>{children}</ThemeProvider>
+    <ThemeProvider
+      isAuthenticated={isAuthenticated}
+      enforceLightOnRoutes={enforceLightOnRoutes}
+    >
+      {children}
+    </ThemeProvider>
   );
 };
 
