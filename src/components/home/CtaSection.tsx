@@ -2,52 +2,59 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 
+/**
+ * CTA Section (forced light section, accessible)
+ * - White section background to match new homepage style
+ * - High-contrast brand gradient card using Tailwind tokens (bg-gradient-primary)
+ * - White text on the card; button is white with primary text for contrast
+ * - Content unchanged (tag, headline, paragraph, button, subtext)
+ */
 const CTA = () => {
   return (
-    <section className="py-24 relative">
+    <section className="bg-white text-gray-900 py-24">
       <div className="container mx-auto px-6">
-        <div className="glass-primary rounded-2xl p-12 md:p-16 text-center relative overflow-hidden">
-          {/* Background Elements */}
-          <div className="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 animate-pulse" />
-          <div className="absolute bottom-8 right-8 w-6 h-6 rounded-full bg-white/15 animate-pulse delay-1000" />
-          <div className="absolute top-1/2 left-8 w-4 h-4 rounded-full bg-white/20 animate-pulse delay-500" />
+        {/* Gradient card */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-primary px-14 py-14 md:px-16 text-center shadow-lg">
+          {/* Decorative speckles (subtle, do not reduce contrast) */}
+          <div className="pointer-events-none absolute top-20 left-10 h-3 w-3 rounded-full bg-white/25 animate-pulse" />
+          <div className="pointer-events-none absolute bottom-8 right-8 h-2 w-2 rounded-full bg-white/20 animate-pulse delay-1000" />
+          <div className="pointer-events-none absolute top-1/2 left-8 h-4 w-4 rounded-full bg-white/20 animate-pulse delay-500" />
 
-          <div className="relative z-10 max-w-3xl mx-auto">
-            <div className="flex justify-center mb-6">
-              <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">
+          <div className="relative z-10 mx-auto max-w-3xl">
+            {/* Tag pill */}
+            <div className="mb-6 flex justify-center">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 backdrop-blur-sm">
+                <Sparkles className="h-4 w-4 text-white" />
+                <span className="text-sm font-medium text-white">
                   Ready to Get Started?
                 </span>
               </div>
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+            {/* Headline */}
+            <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
               Join Thousands of Players Using{" "}
-              <span className="text-primary-glow">VolleyMatch</span>
+              <span className="text-white">VolleyMatch</span>
             </h2>
 
-            <p className="text-xl text-white/80 mb-10 leading-relaxed">
+            {/* Paragraph */}
+            <p className="mb-10 text-xl leading-relaxed text-white/90">
               Start organizing better games today. Create balanced teams, track
               scores, and build your volleyball community - all for free.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {/* CTA */}
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link to="/signup">
                 <Button
-                  variant="hero"
-                  size="hero"
-                  className="bg-white text-primary hover:bg-white/90"
+                  size="lg"
+                  className="bg-white text-primary hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/60"
                 >
                   Get Started Free
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
             </div>
-
-            <p className="text-sm text-white/60 mt-6">
-              No credit card required • Free forever • Setup in 2 minutes
-            </p>
           </div>
         </div>
       </div>

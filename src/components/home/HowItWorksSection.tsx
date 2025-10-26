@@ -136,10 +136,10 @@ export default function HowItWorksSection() {
           <h3 className="text-3xl font-bold mb-5">See It In Action</h3>
 
           <div className="glass rounded-2xl p-8 max-w-4xl mx-auto hover-lift">
-            <div className="relative aspect-video bg-gradient-primary rounded-xl overflow-hidden">
+            <div className="relative aspect-video bg-amber-300 rounded-xl overflow-hidden">
               {/* Poster with high-contrast CTA */}
               {!isPlaying && (
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/25 to-primary-glow/40 flex items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-br from-secondary/25 to-secondary-glow/40 flex items-center justify-center">
                   {/* Background placeholder image */}
                   {/* <img
                     src="/img-appScreen-dashboard-GameAndScoreTracking.png"
@@ -148,7 +148,7 @@ export default function HowItWorksSection() {
                   /> */}
                   <Button
                     size="lg"
-                    className="backdrop-blur-sm text-white border border-white/40 hover:bg-white/10"
+                    className="backdrop-blur-sm text-white border border-white/40 hover:bg-black/20"
                     onClick={() => setIsPlaying(true)}
                   >
                     <Play className="w-6 h-6 mr-2 text-white" />
@@ -156,9 +156,11 @@ export default function HowItWorksSection() {
                   </Button>
 
                   {/* Subtle animated speckles */}
-                  <div className="absolute top-4 left-4 w-3 h-3 rounded-full bg-white/30 animate-pulse" />
+                  <div className="absolute top-15 left-5 w-3 h-3 rounded-full bg-white/30 animate-pulse" />
                   <div className="absolute top-8 right-8 w-2 h-2 rounded-full bg-white/20 animate-pulse delay-1000" />
-                  <div className="absolute bottom-6 left-8 w-4 h-4 rounded-full bg-white/25 animate-pulse delay-500" />
+                  <div className="absolute top-20 right-25 w-4 h-4 rounded-full bg-white/40 animate-pulse delay-1000" />
+                  <div className="absolute bottom-6 left-11 w-4 h-4 rounded-full bg-white/25 animate-pulse delay-500" />
+                  <div className="absolute bottom-14 right-9 w-3 h-3 rounded-full bg-white/40 animate-pulse delay-1000" />
                 </div>
               )}
 
