@@ -128,6 +128,8 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
+    {/* Safety redirect: bare /dashboard → /clubs */}
+    <Route path="/dashboard" element={<Navigate to="/clubs" replace />} />
     <Route
       path="/games/:clubId"
       element={

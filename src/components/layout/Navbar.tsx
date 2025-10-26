@@ -96,7 +96,7 @@ const Navbar = () => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const { clubId, setClubId } = useClub();
+  const { clubId, membershipStatus, setClubId, initialized } = useClub();
 
   const handleLogout = async () => {
     await logout();
@@ -123,52 +123,34 @@ const Navbar = () => {
     const fetchPlayer = async () => {
       if (!user?.id) return;
 
-      const tryKeys = ["auth_user_id", "user_id", "profile_id"] as const;
+      const { data, error } = await supabase
+        .from("players")
+        .select("first_name,last_name,image_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      for (const key of tryKeys) {
-        const { data, error } = await supabase
-          .from("players")
-          .select("first_name,last_name,image_url")
-          .eq("user_id", user.id)
-          .single();
-
-        if (!error && data) {
-          setPlayerProfile(data as PlayerProfile);
-          return;
-        }
+      if (!error && data) {
+        setPlayerProfile(data as PlayerProfile);
+      } else {
+        // keep null; initials fallback will be used
       }
-      // If nothing matched, keep null; we'll fall back to initials from user/email.
     };
 
     fetchPlayer();
   }, [user?.id]);
 
-  useEffect(() => {
-    const lastClub = localStorage.getItem("lastVisitedClub");
-    if (lastClub && lastClub !== clubId) {
-      setClubId(lastClub);
-    }
-  }, [setClubId, clubId]);
-
-  const navItems = clubId
-    ? [
-        {
-          label: "Dashboard",
-          path: `/dashboard/${clubId}`,
-          visible: isAuthenticated,
-        },
-        {
-          label: "Archive",
-          path: `/games/${clubId}`,
-          visible: isAuthenticated,
-        },
-        {
-          label: "Members",
-          path: `/members/${clubId}`,
-          visible: isAuthenticated,
-        },
-      ]
-    : [];
+  /**
+   * Only show restricted tabs if the user is an ACTIVE member of the current club.
+   * Otherwise no tabs are exposed.
+   */
+  const navItems =
+    isAuthenticated && membershipStatus === "active" && clubId
+      ? [
+          { label: "Dashboard", path: `/dashboard/${clubId}`, visible: true },
+          { label: "Archive", path: `/games/${clubId}`, visible: true },
+          { label: "Members", path: `/members/${clubId}`, visible: true },
+        ]
+      : [];
 
   const accountItems = [
     { label: "Profile", path: `/user/${user?.id}`, icon: User },
@@ -222,9 +204,16 @@ const Navbar = () => {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 lg:border-none">
           <div className="flex items-center">
+            {/* /* If authenticated and we have a clubId → send to that club’s
+            dashboard. * If authenticated but NO clubId → send to /clubs
+            (fallback). * If not authenticated → send to homepage (/). */}
             <Logo
               size="md"
-              linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"}
+              linkTo={
+                isAuthenticated && membershipStatus === "active" && clubId
+                  ? `/dashboard/${clubId}`
+                  : "/clubs"
+              }
             />
           </div>
 
@@ -245,38 +234,18 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <Button
-              variant="primary"
-              onClick={() => {
-                if (clubId) {
-                  /*console.log(
-                    "[NAV]",
-                    "navigating from",
-                    location.pathname,
-                    "to",
-                    "/new-game/:clubid",
-                    "reason: Clicking New game in the Navbar"
-                  );
-                  */
-
+            {isAuthenticated && membershipStatus === "active" && clubId && (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  // Only reachable when clubId is valid and membership is active
                   navigate(`/new-game/${clubId}`);
-                } else {
-                  /* console.log(
-                    "[NAV]",
-                    "navigating from",
-                    location.pathname,
-                    "to",
-                    "/new-game",
-                    "reason: Clicking New game in nabar (else)"
-                  );
-                  */
+                }}
+              >
+                Create Game
+              </Button>
+            )}
 
-                  navigate("/new-game");
-                }
-              }}
-            >
-              Create Game
-            </Button>
             <ThemeToggle
               className="rounded-md p-2
   hover:bg-gray-100 focus:bg-gray-100
@@ -381,7 +350,11 @@ const Navbar = () => {
       <nav className="px-4 py-3 flex items-center justify-between">
         <Logo
           size="sm"
-          linkTo={isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"}
+          linkTo={
+            isAuthenticated && membershipStatus === "active" && clubId
+              ? `/dashboard/${clubId}`
+              : "/clubs"
+          }
         />
         <div className="flex items-center space-x-2">
           <ThemeToggle
@@ -404,7 +377,11 @@ const Navbar = () => {
                     <Logo
                       size="sm"
                       linkTo={
-                        isAuthenticated && clubId ? `/dashboard/${clubId}` : "/"
+                        isAuthenticated &&
+                        membershipStatus === "active" &&
+                        clubId
+                          ? `/dashboard/${clubId}`
+                          : "/clubs"
                       }
                     />
                   </div>
@@ -454,42 +431,23 @@ const Navbar = () => {
                 </div>
 
                 <div className="p-4 border-t dark:border-gray-700 mt-auto">
-                  <SheetClose asChild>
-                    <Button
-                      variant="primary"
-                      className="w-full mb-3"
-                      onClick={() => {
-                        setIsOpen(false);
-                        if (clubId) {
-                          /* console.log(
-                            "[NAV]",
-                            "navigating from",
-                            location.pathname,
-                            "to",
-                            "/new-game/:clubid",
-                            "reason: Clicking New Game mobile"
-                          );
-                          */
+                  {isAuthenticated &&
+                    membershipStatus === "active" &&
+                    clubId && (
+                      <SheetClose asChild>
+                        <Button
+                          variant="primary"
+                          className="w-full mb-3"
+                          onClick={() => {
+                            setIsOpen(false);
+                            navigate(`/new-game/${clubId}`);
+                          }}
+                        >
+                          Create Game
+                        </Button>
+                      </SheetClose>
+                    )}
 
-                          navigate(`/new-game/${clubId}`);
-                        } else {
-                          /*console.log(
-                            "[NAV]",
-                            "navigating from",
-                            location.pathname,
-                            "to",
-                            "/new-game",
-                            "reason: Clicking New Game mobile"
-                          );
-                          */
-
-                          navigate("/new-game");
-                        }
-                      }}
-                    >
-                      Create Game
-                    </Button>
-                  </SheetClose>
                   <Button
                     variant="outline"
                     className="w-full"
