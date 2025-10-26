@@ -1,4 +1,4 @@
-import Logo from "@/components/common/Logo";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -6,10 +6,14 @@ const Footer = () => {
       <div className="container mx-auto px-6 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            {/* Logo */}
-            <Logo size="md" linkTo="/" />
-          </div>
+          <Link to="/" className="inline-block">
+            <img
+              src="/logo-lightmode.svg"
+              alt="VolleySmart"
+              className="h-8 sm:h-10 md:h-8 w-auto transition-all duration-300"
+              loading="eager"
+            />
+          </Link>
 
           {/* Copyright */}
           <div className="text-sm text-muted-foreground">
