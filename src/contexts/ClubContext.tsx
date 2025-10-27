@@ -23,6 +23,7 @@ interface ClubContextType {
   setClubId: (id: string) => void; // Validates before persisting
   clearClubId: () => void;
   initialized: boolean;
+  isValidatingClub: boolean;
 }
 
 const ClubContext = createContext<ClubContextType | undefined>(undefined);
@@ -41,6 +42,7 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
   const [initialized, setInitialized] = useState(false);
   const [membershipStatus, setMembershipStatus] =
     useState<MembershipStatus | null>(null);
+  const [isValidatingClub, setIsValidatingClub] = useState(false);
 
   // Use a mounted ref instead of a "cancelled" flag to satisfy eslint prefer-const
   const mountedRef = useRef(true);
@@ -129,6 +131,8 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
 
     // Force a fresh server read on boot to respect revocations immediately
     (async () => {
+      setIsValidatingClub(true); // ✅ start validation
+
       const status = await fetchMembershipStatus(stored, true /* force */);
       if (!mountedRef.current) return;
 
@@ -140,29 +144,23 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
         setClubIdState(null);
         setMembershipStatus(status);
       }
+
       setInitialized(true);
+      setIsValidatingClub(false); // ✅ end validation
     })();
   }, [user?.id, fetchMembershipStatus]);
 
   /**
-   * Public setter: validate before persisting.
-   * Remains a sync signature; async is encapsulated inside.
+   * Public setter: set clubId and remember it. No async validation here.
+   * Validation is performed on boot (stored club) and revocations are handled
+   * by RealtimeAppEffect → clears context & navigates away if membership is lost.
    */
   const setClubId = (id: string) => {
-    (async () => {
-      const status = await fetchMembershipStatus(id);
-      if (!mountedRef.current) return;
-
-      if (status === "active") {
-        localStorage.setItem("lastVisitedClub", id);
-        setClubIdState(id);
-        setMembershipStatus("active");
-      } else {
-        localStorage.removeItem("lastVisitedClub");
-        setClubIdState(null);
-        setMembershipStatus(status);
-      }
-    })();
+    if (clubId === id && membershipStatus === "active") return;
+    localStorage.setItem("lastVisitedClub", id);
+    setClubIdState(id);
+    setMembershipStatus("active");
+    // Do NOT toggle isValidatingClub or run fetches here.
   };
 
   const clearClubId = () => {
@@ -179,6 +177,7 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
         setClubId,
         clearClubId,
         initialized,
+        isValidatingClub, // NEW
       }}
     >
       {children}

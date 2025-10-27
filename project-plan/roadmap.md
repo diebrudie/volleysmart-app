@@ -6,7 +6,7 @@
 
 - ✅ Define project goals based on multi-club volleyball management
 - ✅ Set up Supabase project with PostgreSQL database
-- ✅ Configure GitHub repository with Lovable deployment
+- ✅ Configure GitHub repository with Cloudflare deployment
 - ✅ Implement React + TypeScript + Vite foundation
 - ✅ Set up shadcn/ui component library with Tailwind CSS
 

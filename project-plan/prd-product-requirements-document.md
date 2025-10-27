@@ -169,7 +169,7 @@ VolleyMatch is a comprehensive web-based platform for managing volleyball clubs,
 
 ### 7.1 Technical Constraints
 
-- **Hosting Platform**: Must deploy via Lovable platform
+- **Hosting Platform**: Must deploy via Cloudflare platform
 - **Backend Service**: Supabase free tier limitations
 - **File Storage**: 500MB total across all clubs
 - **Database**: PostgreSQL with Row Level Security
@@ -204,5 +204,5 @@ VolleyMatch is a comprehensive web-based platform for managing volleyball clubs,
 ### 8.3 Operational Risks
 
 - **Single Developer**: Document all systems and create knowledge base
-- **Platform Dependency**: Monitor Lovable/Supabase stability and have backup plans
+- **Platform Dependency**: Monitor Cloudflare/Supabase stability and have backup plans
 - **Data Loss**: Implement automated backups and version control
