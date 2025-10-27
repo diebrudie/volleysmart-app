@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/theme-toggle";
-import { Menu, X, ChevronDown, Settings, User, UserPlus } from "lucide-react";
+import { Menu, ChevronDown, Settings, User, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -390,19 +390,8 @@ const Navbar = () => {
               className="p-0 bg-background"
             >
               <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
-                {/* Header with logo (left) and an 'X' (right) */}
-                <DrawerHeader className="h-14 px-4 border-b border-muted">
+                <DrawerHeader className="h-3 border-b border-muted">
                   <DrawerTitle className="sr-only">Navigation Menu</DrawerTitle>
-                  <div className="h-full flex items-center justify-end">
-                    <DrawerClose asChild>
-                      <button
-                        aria-label="Close menu"
-                        className="p-2 rounded-md hover:bg-muted focus:bg-muted"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </DrawerClose>
-                  </div>
                 </DrawerHeader>
 
                 {/* Body */}
@@ -505,20 +494,10 @@ const Navbar = () => {
 
               <DrawerContent className="p-0 bg-background">
                 <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
-                  <DrawerHeader className="h-14 px-4 border-b border-muted">
+                  <DrawerHeader className="h-3 border-b border-muted">
                     <DrawerTitle className="sr-only">
                       Navigation Menu
                     </DrawerTitle>
-                    <div className="h-full flex items-center justify-end">
-                      <DrawerClose asChild>
-                        <button
-                          aria-label="Close menu"
-                          className="p-2 rounded-md hover:bg-muted focus:bg-muted"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </DrawerClose>
-                    </div>
                   </DrawerHeader>
 
                   <div className="flex flex-1 flex-col items-center justify-center space-y-6 px-4">
