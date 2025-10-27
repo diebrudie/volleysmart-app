@@ -96,7 +96,7 @@ const Navbar = () => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const { clubId, membershipStatus, setClubId, initialized } = useClub();
+  const { clubId, membershipStatus, initialized, isValidatingClub } = useClub();
 
   const handleLogout = async () => {
     await logout();
@@ -144,7 +144,11 @@ const Navbar = () => {
    * Otherwise no tabs are exposed.
    */
   const navItems =
-    isAuthenticated && initialized && membershipStatus === "active" && clubId
+    isAuthenticated &&
+    initialized &&
+    membershipStatus === "active" &&
+    clubId &&
+    !isValidatingClub
       ? [
           { label: "Dashboard", path: `/dashboard/${clubId}`, visible: true },
           { label: "Archive", path: `/games/${clubId}`, visible: true },
@@ -237,11 +241,11 @@ const Navbar = () => {
             {isAuthenticated &&
               initialized &&
               membershipStatus === "active" &&
-              clubId && (
+              clubId &&
+              !isValidatingClub && (
                 <Button
                   variant="primary"
                   onClick={() => {
-                    // Only reachable when clubId is valid and membership is active
                     navigate(`/new-game/${clubId}`);
                   }}
                 >
@@ -437,19 +441,16 @@ const Navbar = () => {
                   {isAuthenticated &&
                     initialized &&
                     membershipStatus === "active" &&
-                    clubId && (
-                      <SheetClose asChild>
-                        <Button
-                          variant="primary"
-                          className="w-full mb-3"
-                          onClick={() => {
-                            setIsOpen(false);
-                            navigate(`/new-game/${clubId}`);
-                          }}
-                        >
-                          Create Game
-                        </Button>
-                      </SheetClose>
+                    clubId &&
+                    !isValidatingClub && (
+                      <Button
+                        variant="primary"
+                        onClick={() => {
+                          navigate(`/new-game/${clubId}`);
+                        }}
+                      >
+                        Create Game
+                      </Button>
                     )}
 
                   <Button
