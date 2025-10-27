@@ -395,7 +395,7 @@ const Navbar = () => {
                 </DrawerHeader>
 
                 {/* Body */}
-                <div className="flex flex-col flex-1 overflow-auto">
+                <div className="flex flex-1 flex-col justify-center overflow-auto">
                   {navItems
                     .filter((item) => item.visible)
                     .map((item) => (
@@ -428,15 +428,16 @@ const Navbar = () => {
                 </div>
 
                 {/* Footer with safe-area padding; lifts buttons from the bottom */}
-                <DrawerFooter className="mt-auto p-4 pt-3 border-t border-border pb-[calc(env(safe-area-inset-bottom)+24px)]">
+                <DrawerFooter className="mt-auto p-4 pt-6 border-t border-border pb-[calc(env(safe-area-inset-bottom)+24px)]">
                   {isAuthenticated &&
                     initialized &&
                     membershipStatus === "active" &&
                     clubId &&
                     !isValidatingClub && (
                       <Button
+                        data-vaul-no-drag
                         variant="primary"
-                        className="w-full mb-3"
+                        className="w-full mb-2"
                         onClick={() => {
                           setIsOpen(false);
                           navigate(`/new-game/${clubId}`);
@@ -447,6 +448,7 @@ const Navbar = () => {
                     )}
 
                   <Button
+                    data-vaul-no-drag
                     variant="outline"
                     className="w-full"
                     onClick={() => {
