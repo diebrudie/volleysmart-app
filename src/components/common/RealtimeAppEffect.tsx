@@ -25,6 +25,7 @@ export default function RealtimeAppEffect() {
   const navigate = useNavigate();
 
   // Families of query keys we refresh across the app
+  //adding this
   const families = useMemo(
     () =>
       new Set<string>([
@@ -158,6 +159,55 @@ export default function RealtimeAppEffect() {
       supabase.removeChannel(chMembersByClub);
     };
   }, [clubId, invalidateFamilies]);
+
+  // 3) Failsafe: if realtime doesn't deliver removal events due to RLS,
+  // periodically verify membership for the current club and kick out if revoked.
+  useEffect(() => {
+    if (!user?.id || !clubId) return;
+
+    let cancelled = false;
+    let timer: number | undefined;
+
+    const check = async () => {
+      // Single-row, very cheap guard query
+      const { data, error } = await supabase
+        .from("club_members")
+        .select("status,is_active")
+        .eq("user_id", user.id)
+        .eq("club_id", clubId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      const stillActive =
+        !!data && data.status === "active" && data.is_active !== false;
+
+      if (!stillActive || error) {
+        // Lost access → clear context and navigate away
+        clearClubId();
+        navigate("/clubs", { replace: true });
+        return;
+      }
+
+      // Schedule next check
+      timer = window.setTimeout(check, 7000); // 7s is a good balance
+    };
+
+    // Initial check immediately
+    void check();
+
+    // Also re-check on focus for snappy response
+    const onFocus = () => void check();
+    window.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+      window.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [user?.id, clubId, clearClubId, navigate]);
 
   return null;
 }
