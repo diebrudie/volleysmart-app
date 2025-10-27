@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +7,8 @@ import { buildImageUrl } from "@/utils/buildImageUrl";
 interface MemberCardProps {
   member: {
     id: string;
+    user_id?: string;
+    role?: string; // 'admin' | 'member' | ...
     first_name: string;
     last_name: string;
     image_url?: string | null;
@@ -17,6 +20,9 @@ interface MemberCardProps {
       };
     }>;
   };
+  /**
+   * Viewer is admin (shows checkbox; we hide the Admin chip for admins).
+   */
   isAdmin?: boolean;
   isSelected?: boolean;
   onSelectionChange?: (checked: boolean) => void;
@@ -32,6 +38,10 @@ export const MemberCard = ({
   const primaryPosition =
     member.player_positions?.find((pos) => pos.is_primary)?.positions.name ||
     "No position";
+
+  // Local image fallback flags (avoid DOM mutation in onError)
+  const [avatarErrored, setAvatarErrored] = useState(false);
+  const [volleyballErrored, setVolleyballErrored] = useState(false);
 
   // Get first letter of last name
   const lastNameInitial = member.last_name
