@@ -40,6 +40,7 @@ import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import { LocationSelector } from "@/components/forms/LocationSelector";
+import { formatFirstLastInitial } from "@/lib/formatName";
 
 interface Player {
   id: string;
@@ -288,15 +289,25 @@ const GameDetail = () => {
     gp: Pick<GamePlayer, "snapshot_name" | "players">
   ): string {
     const snap = gp.snapshot_name?.trim();
-    if (snap) return snap;
-
-    const fn = gp.players?.first_name?.trim() ?? "";
-    const ln = gp.players?.last_name?.trim() ?? "";
-    if (fn || ln) {
-      const initial = ln ? `${ln[0]}.` : "";
-      return [fn, initial].filter(Boolean).join(" ");
+    if (snap) {
+      // Try to parse "First ... Last" and abbreviate to "First L."
+      const parts = snap.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        const first = parts[0];
+        const last = parts[parts.length - 1];
+        return formatFirstLastInitial(first, last);
+      }
+      // Single token or unparseable: keep as-is
+      return snap;
     }
-    return "Unknown P.";
+
+    const fn = gp.players?.first_name ?? null;
+    const ln = gp.players?.last_name ?? null;
+
+    if (fn || ln) {
+      return formatFirstLastInitial(fn ?? "", ln ?? "");
+    }
+    return "Deleted P.";
   }
 
   const handleSaveChanges = async () => {

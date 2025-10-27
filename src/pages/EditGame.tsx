@@ -309,7 +309,10 @@ const EditGame = () => {
         .filter((gp) => gp.team_name === "team_a")
         .map((gp) => ({
           id: gp.player_id,
-          name: `${gp.players.first_name} ${gp.players.last_name}`,
+          name: formatFirstLastInitial(
+            gp.players.first_name,
+            gp.players.last_name
+          ),
           preferredPosition: gp.position_played || "No Position",
           skillRating: 7, // Default skill rating
         }));
@@ -318,7 +321,10 @@ const EditGame = () => {
         .filter((gp) => gp.team_name === "team_b")
         .map((gp) => ({
           id: gp.player_id,
-          name: `${gp.players.first_name} ${gp.players.last_name}`,
+          name: formatFirstLastInitial(
+            gp.players.first_name,
+            gp.players.last_name
+          ),
           preferredPosition: gp.position_played || "No Position",
           skillRating: 7, // Default skill rating
         }));

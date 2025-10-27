@@ -135,7 +135,7 @@ export default function HowItWorksSection() {
         <div className="text-center pt-20 mt-7" id="demo-section">
           <h3 className="text-3xl font-bold mb-5">See It In Action</h3>
 
-          <div className="glass rounded-2xl p-8 max-w-4xl mx-auto hover-lift">
+          <div className="max-w-4xl mx-auto sm:glass sm:rounded-2xl sm:p-8 sm:hover-lift">
             <div className="relative aspect-video bg-amber-300 rounded-xl overflow-hidden">
               {/* Poster with high-contrast CTA */}
               {!isPlaying && (
@@ -156,11 +156,11 @@ export default function HowItWorksSection() {
                   </Button>
 
                   {/* Subtle animated speckles */}
-                  <div className="absolute top-15 left-5 w-3 h-3 rounded-full bg-white/30 animate-pulse" />
-                  <div className="absolute top-8 right-8 w-2 h-2 rounded-full bg-white/20 animate-pulse delay-1000" />
-                  <div className="absolute top-20 right-25 w-4 h-4 rounded-full bg-white/40 animate-pulse delay-1000" />
-                  <div className="absolute bottom-6 left-11 w-4 h-4 rounded-full bg-white/25 animate-pulse delay-500" />
-                  <div className="absolute bottom-14 right-9 w-3 h-3 rounded-full bg-white/40 animate-pulse delay-1000" />
+                  <div className="hidden sm:block absolute top-15 left-5 w-3 h-3 rounded-full bg-white/30 animate-pulse" />
+                  <div className="hidden sm:block absolute top-8 right-8 w-2 h-2 rounded-full bg-white/20 animate-pulse delay-1000" />
+                  <div className="hidden sm:block absolute top-20 right-25 w-4 h-4 rounded-full bg-white/40 animate-pulse delay-1000" />
+                  <div className="hidden sm:block absolute bottom-6 left-11 w-4 h-4 rounded-full bg-white/25 animate-pulse delay-500" />
+                  <div className="hidden sm:block absolute bottom-14 right-9 w-3 h-3 rounded-full bg-white/40 animate-pulse delay-1000" />
                 </div>
               )}
 

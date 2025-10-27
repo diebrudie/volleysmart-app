@@ -14,7 +14,7 @@ const CTA = () => {
     <section className="bg-white text-gray-900 py-24">
       <div className="container mx-auto px-6">
         {/* Gradient card */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-primary px-14 py-14 md:px-16 text-center shadow-lg">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-primary px-8 py-14 md:px-16 text-center shadow-lg">
           {/* Decorative speckles (subtle, do not reduce contrast) */}
           <div className="pointer-events-none absolute top-20 left-10 h-3 w-3 rounded-full bg-white/25 animate-pulse" />
           <div className="pointer-events-none absolute bottom-8 right-8 h-2 w-2 rounded-full bg-white/20 animate-pulse delay-1000" />
