@@ -390,7 +390,7 @@ const Navbar = () => {
               className="p-0 bg-background"
             >
               <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
-                <DrawerHeader className="h-3 border-b border-muted">
+                <DrawerHeader className="h-3 border-border">
                   <DrawerTitle className="sr-only">Navigation Menu</DrawerTitle>
                 </DrawerHeader>
 
@@ -402,6 +402,7 @@ const Navbar = () => {
                       <DrawerClose asChild key={item.path}>
                         <Link
                           to={item.path}
+                          data-vaul-no-drag
                           className="px-4 py-4 text-lg font-medium hover:bg-muted/50 text-center border-b border-muted dark:text-gray-100"
                           onClick={() => setIsOpen(false)}
                         >
@@ -415,6 +416,7 @@ const Navbar = () => {
                     <DrawerClose asChild key={`account-${index}`}>
                       <Link
                         to={item.path ?? "#"}
+                        data-vaul-no-drag
                         className="px-4 py-4 text-lg font-medium hover:bg-muted/50 text-center border-b border-muted flex items-center justify-center dark:text-gray-100"
                         onClick={() => setIsOpen(false)}
                       >
@@ -426,7 +428,7 @@ const Navbar = () => {
                 </div>
 
                 {/* Footer with safe-area padding; lifts buttons from the bottom */}
-                <DrawerFooter className="mt-auto p-4 pt-3 border-t border-muted pb-[calc(env(safe-area-inset-bottom)+24px)]">
+                <DrawerFooter className="mt-auto p-4 pt-3 border-t border-border pb-[calc(env(safe-area-inset-bottom)+24px)]">
                   {isAuthenticated &&
                     initialized &&
                     membershipStatus === "active" &&
@@ -494,7 +496,7 @@ const Navbar = () => {
 
               <DrawerContent className="p-0 bg-background">
                 <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
-                  <DrawerHeader className="h-3 border-b border-muted">
+                  <DrawerHeader className="h-3 border-border">
                     <DrawerTitle className="sr-only">
                       Navigation Menu
                     </DrawerTitle>
@@ -504,6 +506,7 @@ const Navbar = () => {
                     <DrawerClose asChild>
                       <Link to="/login" className="w-full max-w-xs">
                         <Button
+                          data-vaul-no-drag
                           variant="outline"
                           size="lg"
                           className="w-full border-foreground text-foreground hover:bg-muted text-xl py-6"
@@ -517,6 +520,7 @@ const Navbar = () => {
                     <DrawerClose asChild>
                       <Link to="/signup" className="w-full max-w-xs">
                         <Button
+                          data-vaul-no-drag
                           variant="primary"
                           size="lg"
                           className="w-full text-xl py-6"
@@ -528,7 +532,7 @@ const Navbar = () => {
                     </DrawerClose>
                   </div>
 
-                  <DrawerFooter className="p-4 pt-0 border-t border-muted pb-[calc(env(safe-area-inset-bottom)+24px)]">
+                  <DrawerFooter className="p-4 pt-0 border-t border-border pb-[calc(env(safe-area-inset-bottom)+24px)]">
                     {/* Room for any future links or legal text */}
                   </DrawerFooter>
                 </div>
