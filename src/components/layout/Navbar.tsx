@@ -372,15 +372,25 @@ const Navbar = () => {
           />
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              {/* Theme-safe, never sticks white after closing */}
+              <Button
+                size="icon"
+                aria-expanded={isOpen}
+                className={`${
+                  isOpen ? "bg-muted" : "bg-transparent"
+                } border-border text-foreground hover:bg-muted focus:bg-muted`}
+              >
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="top" className="w-full h-full p-0">
+            <SheetContent
+              side="top"
+              className="w-full h-full p-0 [&>button.absolute]:hidden"
+            >
               <div className="flex flex-col h-full">
-                <SheetHeader className="p-4 border-b dark:border-gray-700">
+                <SheetHeader className="h-14 px-4 border-b dark:border-gray-700">
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                  <div className="flex justify-start items-center">
+                  <div className="h-full flex items-center justify-between">
                     <Logo
                       size="sm"
                       linkTo={
@@ -391,6 +401,14 @@ const Navbar = () => {
                           : "/clubs"
                       }
                     />
+                    <SheetClose asChild>
+                      <button
+                        aria-label="Close menu"
+                        className="p-2 rounded-md hover:bg-muted focus:bg-muted"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </SheetClose>
                   </div>
                 </SheetHeader>
 
@@ -445,7 +463,9 @@ const Navbar = () => {
                     !isValidatingClub && (
                       <Button
                         variant="primary"
+                        className="w-full mb-3"
                         onClick={() => {
+                          setIsOpen(false);
                           navigate(`/new-game/${clubId}`);
                         }}
                       >
@@ -490,10 +510,13 @@ const Navbar = () => {
           <div className="flex items-center space-x-2">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
+                {/* Light-mode friendly; no sticky white state */}
                 <Button
-                  variant="ghost"
                   size="icon"
-                  className="text-gray-700 hover:bg-gray-100"
+                  aria-expanded={isOpen}
+                  className={`${
+                    isOpen ? "bg-gray-100" : "bg-transparent"
+                  } text-gray-900 hover:bg-gray-100 focus:bg-gray-100`}
                 >
                   <Menu className="h-6 w-6" />
                 </Button>
@@ -502,12 +525,12 @@ const Navbar = () => {
               {/* White background instead of dark overlay */}
               <SheetContent
                 side="top"
-                className="w-full h-full p-0 bg-white border-gray-200"
+                className="w-full h-full p-0 bg-white border-gray-200 [&>button.absolute]:hidden"
               >
                 <div className="flex flex-col h-full">
-                  <SheetHeader className="p-4 border-b border-gray-200">
+                  <SheetHeader className="h-14 px-4">
                     <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                    <div className="flex justify-start items-center">
+                    <div className="h-full flex items-center justify-between">
                       <Link
                         to="/"
                         className="inline-block"
@@ -520,6 +543,14 @@ const Navbar = () => {
                           loading="eager"
                         />
                       </Link>
+                      <SheetClose asChild>
+                        <button
+                          aria-label="Close menu"
+                          className="p-2 rounded-md hover:bg-gray-100 focus:bg-gray-100"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </SheetClose>
                     </div>
                   </SheetHeader>
 

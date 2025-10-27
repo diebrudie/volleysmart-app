@@ -19,7 +19,7 @@ const FeaturesSection: React.FC = () => {
       title: "Smart Team Generation",
       description:
         "Create balanced teams automatically based on player positions and skill levels.",
-      image: "/img-home-teamCelebrating.png",
+      image: "/img-home-teamCelebrating-v2.png",
       alt: "Players celebrating after volleyball match",
     },
     {
