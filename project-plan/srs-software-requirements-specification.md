@@ -77,7 +77,7 @@ Access control implemented via:
 - **State Management**: React Context (AuthContext, ClubContext)
 - **Data Fetching**: @tanstack/react-query + Supabase client
 - **Backend**: Supabase (PostgreSQL + Auth + RLS + Storage)
-- **Deployment**: GitHub → Lovable auto-deploy
+- **Deployment**: GitHub → Cloudflare auto-deploy
 
 ### 4.2 API Design
 
@@ -155,7 +155,7 @@ Access control implemented via:
 
 ### 8.1 Development Constraints
 
-- Must use Lovable platform for hosting
+- Must use Cloudflare platform for hosting
 - Supabase free tier limitations (500MB storage, 50MB file uploads)
 - GitHub integration required for deployment
 - TypeScript strict mode compliance

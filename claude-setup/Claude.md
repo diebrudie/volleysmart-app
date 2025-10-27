@@ -6,7 +6,7 @@ This file provides comprehensive guidance to any LLM and Vibe Coding App when wo
 
 ## 🏐 Project Overview
 
-VolleySmart is a React-based web application for managing volleyball clubs, teams, and matches. Built with modern TypeScript, Supabase backend, and deployed via Lovable and local machine.
+VolleySmart is a React-based web application for managing volleyball clubs, teams, and matches. Built with modern TypeScript, Supabase backend, and deployed via Cloudflare and local machine.
 
 ### Tech Stack
 
@@ -17,7 +17,7 @@ VolleySmart is a React-based web application for managing volleyball clubs, team
 - **Data Fetching**: @tanstack/react-query
 - **Routing**: React Router v6
 - **Development**: ESLint + Vite SWC
-- **Deployment**: GitHub → Auto-deploy to Lovable
+- **Deployment**: GitHub → Auto-deploy to CLoudflare
 
 ## 🧱 Architecture & File Structure
 
@@ -603,15 +603,15 @@ interface PlayerWithPositions extends Player {
 
 ## 🚀 Deployment & CI/CD
 
-### GitHub → Lovable Flow
+### GitHub → Cloudflare Flow
 
 - **Push to main** triggers auto-deployment
 - **Development builds** available via `npm run build:dev`
-- **Component tagging** via lovable-tagger (currently disabled)
+- **Push to branch** trigger auto-deployment to a staging branch
 
 ### Environment Variables
 
-- Supabase URL and keys managed by Lovable
+- Supabase URL and keys managed by Cloudflare
 - No manual environment setup required
 
 ### Storage Requirements
@@ -643,7 +643,6 @@ npm i                   # Install dependencies
 - **No test framework configured** - project does not include Jest, Vitest, or other testing libraries
 - **ESLint configuration** includes TypeScript rules with relaxed unused variables setting
 - **No TypeScript strict mode** - @typescript-eslint/no-unused-vars is disabled
-- **Component tagging disabled** - lovable-tagger is commented out in vite.config.ts
 
 ## 📋 Best Practices for Claude
 
