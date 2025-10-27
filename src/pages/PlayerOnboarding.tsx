@@ -510,8 +510,8 @@ const PlayerOnboarding = () => {
                       type="button"
                       aria-label="Show positions help"
                       onClick={() => setIsPositionsHelpOpen(true)}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border bg-white text-gray-700
-                   hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring"
+                      style={{ aspectRatio: "1 / 1", flex: "0 0 auto" }}
                     >
                       <HelpCircle className="h-4 w-4" />
                     </button>
@@ -571,8 +571,8 @@ const PlayerOnboarding = () => {
                       type="button"
                       aria-label="Show positions help"
                       onClick={() => setIsPositionsHelpOpen(true)}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border bg-white text-gray-700
-                   hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring"
+                      style={{ aspectRatio: "1 / 1", flex: "0 0 auto" }}
                     >
                       <HelpCircle className="h-4 w-4" />
                     </button>
