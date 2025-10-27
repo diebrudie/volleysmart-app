@@ -27,11 +27,27 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Upload,
+  HelpCircle,
   X,
   ChevronLeft,
   ChevronRight,
   CalendarIcon,
 } from "lucide-react";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
+import {
+  Drawer,
+  DrawerTrigger,
+  DrawerContent,
+  DrawerClose,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 
 interface Position {
   id: string;
@@ -132,6 +148,8 @@ const PlayerOnboarding = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isPositionsHelpOpen, setIsPositionsHelpOpen] =
+    useState<boolean>(false);
 
   const [answers, setAnswers] = useState<OnboardingAnswers>({
     primaryPosition: "",
@@ -480,9 +498,27 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-                What's your main position on the court?
-              </h2>
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  What's your main position on the court?
+                </h2>
+
+                {/* Inline help icon */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Show positions help"
+                      onClick={() => setIsPositionsHelpOpen(true)}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border bg-white text-gray-700
+                   hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Show positions diagram</TooltipContent>
+                </Tooltip>
+              </div>
               <p className="text-gray-600 dark:text-gray-400">
                 This is the position you feel most comfortable playing.
               </p>
@@ -523,9 +559,28 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-                What other positions can you play? *
-              </h2>
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  What other positions can you play? *
+                </h2>
+
+                {/* Inline help icon */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Show positions help"
+                      onClick={() => setIsPositionsHelpOpen(true)}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border bg-white text-gray-700
+                   hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Show positions diagram</TooltipContent>
+                </Tooltip>
+              </div>
+
               <p className="text-gray-600 dark:text-gray-400">
                 Select at least one other position that you're comfortable
                 playing
@@ -1130,6 +1185,54 @@ const PlayerOnboarding = () => {
               </Button>
             )}
           </div>
+
+          {/* Positions Help Drawer (used by steps 1 & 2) */}
+          <TooltipProvider>
+            <Drawer
+              open={isPositionsHelpOpen}
+              onOpenChange={setIsPositionsHelpOpen}
+              shouldScaleBackground
+            >
+              {/* We trigger it programmatically from the icon; no visible trigger here */}
+              <DrawerContent className="pb-6">
+                {/* Close X (top-right) */}
+                <DrawerClose
+                  className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
+                   border bg-white/90 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </DrawerClose>
+
+                <DrawerHeader className="pt-8">
+                  <DrawerTitle>Volleyball court positions</DrawerTitle>
+                  <DrawerDescription>
+                    Reference diagram to pick your positions.
+                  </DrawerDescription>
+                </DrawerHeader>
+
+                {/* Content: responsive image container */}
+                <div className="px-4 pb-2">
+                  <div
+                    className="
+            mx-auto w-full
+            md:max-w-3xl
+          "
+                  >
+                    <img
+                      src="/positions-volleyball-players.png"
+                      alt="Volleyball player positions on court"
+                      className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
+                    />
+                    <p className="mt-3 text-center text-sm text-muted-foreground">
+                      Use this diagram to confirm your primary and secondary
+                      roles.
+                    </p>
+                  </div>
+                </div>
+              </DrawerContent>
+            </Drawer>
+          </TooltipProvider>
 
           {/* Step Indicators (Optional) */}
           <div className="flex justify-center mt-6 space-x-2">
