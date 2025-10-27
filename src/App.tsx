@@ -9,16 +9,19 @@ import { ThemeProvider } from "@/contexts/ThemeContext"; // 🆕 Import ThemePro
 import { useEffect } from "react";
 import { ClubProvider } from "@/contexts/ClubContext";
 import AppRoutes from "@/routes/AppRoutes";
+import AppLiveRefresh from "@/components/common/AppLiveRefresh";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Reduce background refetch noise that competes with image downloads
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
       retry: 1,
-      staleTime: 60_000, // cache data for 1 minute
-      gcTime: 10 * 60_000, // garbage collect after 10 minutes
+      staleTime: 20_000,
+      gcTime: 10 * 60 * 1000,
+    },
+    mutations: {
+      retry: 0,
     },
   },
 });
@@ -91,6 +94,8 @@ const App = () => {
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
+                  {/* Global realtime + focus/online refresh (PWA-friendly) */}
+                  <AppLiveRefresh />
                   <AppRoutes />
                 </BrowserRouter>
               </TooltipProvider>
