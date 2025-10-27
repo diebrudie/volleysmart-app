@@ -144,7 +144,7 @@ const Navbar = () => {
    * Otherwise no tabs are exposed.
    */
   const navItems =
-    isAuthenticated && membershipStatus === "active" && clubId
+    isAuthenticated && initialized && membershipStatus === "active" && clubId
       ? [
           { label: "Dashboard", path: `/dashboard/${clubId}`, visible: true },
           { label: "Archive", path: `/games/${clubId}`, visible: true },
@@ -234,17 +234,20 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {isAuthenticated && membershipStatus === "active" && clubId && (
-              <Button
-                variant="primary"
-                onClick={() => {
-                  // Only reachable when clubId is valid and membership is active
-                  navigate(`/new-game/${clubId}`);
-                }}
-              >
-                Create Game
-              </Button>
-            )}
+            {isAuthenticated &&
+              initialized &&
+              membershipStatus === "active" &&
+              clubId && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    // Only reachable when clubId is valid and membership is active
+                    navigate(`/new-game/${clubId}`);
+                  }}
+                >
+                  Create Game
+                </Button>
+              )}
 
             <ThemeToggle
               className="rounded-md p-2
@@ -432,6 +435,7 @@ const Navbar = () => {
 
                 <div className="p-4 border-t dark:border-gray-700 mt-auto">
                   {isAuthenticated &&
+                    initialized &&
                     membershipStatus === "active" &&
                     clubId && (
                       <SheetClose asChild>

@@ -29,6 +29,7 @@ import InviteMembers from "@/pages/InviteMembers";
 import NewGame from "@/pages/NewGame";
 import Profile from "@/pages/Profile";
 import Clubs from "@/pages/Clubs";
+import ClubGuard from "@/components/routing/ClubGuard";
 
 const HomeRoute = () => {
   const { isAuthenticated } = useAuth();
@@ -124,20 +125,26 @@ const AppRoutes = () => (
       path="/dashboard/:clubId"
       element={
         <ProtectedRoute>
-          <Dashboard />
+          <ClubGuard>
+            <Dashboard />
+          </ClubGuard>
         </ProtectedRoute>
       }
     />
+
     {/* Safety redirect: bare /dashboard → /clubs */}
     <Route path="/dashboard" element={<Navigate to="/clubs" replace />} />
     <Route
       path="/games/:clubId"
       element={
         <ProtectedRoute>
-          <Games />
+          <ClubGuard>
+            <Games />
+          </ClubGuard>
         </ProtectedRoute>
       }
     />
+
     <Route
       path="/game-details/:matchDayId"
       element={
@@ -158,10 +165,13 @@ const AppRoutes = () => (
       path="/members/:clubId"
       element={
         <ProtectedRoute>
-          <Members />
+          <ClubGuard>
+            <Members />
+          </ClubGuard>
         </ProtectedRoute>
       }
     />
+
     <Route
       path="/clubs/:clubId/manage"
       element={

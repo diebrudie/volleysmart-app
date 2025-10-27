@@ -51,22 +51,29 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const membershipCache = useRef<Record<string, MembershipStatus>>({});
+  const CACHE_TTL_MS = 60_000; // 1 minute; adjust as needed
+  type Cached = { status: MembershipStatus; ts: number };
+  const membershipCache = useRef<Record<string, Cached>>({});
 
   /**
-   * Query membership for a given clubId and current user.
-   * Returns the status if a row exists and matches the union, otherwise null.
+   * Query membership for a given clubId and current user, with short TTL caching.
+   * If `force === true`, bypass cache for a fresh read (used on boot).
    */
   const fetchMembershipStatus = useCallback(
-    async (clubIdToCheck: string): Promise<MembershipStatus | null> => {
+    async (
+      clubIdToCheck: string,
+      force = false
+    ): Promise<MembershipStatus | null> => {
       if (!user?.id) return null;
 
-      // 1. Check in-memory cache first
-      if (membershipCache.current[clubIdToCheck]) {
-        return membershipCache.current[clubIdToCheck];
+      if (!force) {
+        const cached = membershipCache.current[clubIdToCheck];
+        const now = Date.now();
+        if (cached && now - cached.ts <= CACHE_TTL_MS) {
+          return cached.status;
+        }
       }
 
-      // 2. Otherwise, query Supabase
       const { data, error } = await supabase
         .from("club_members")
         .select("status")
@@ -74,18 +81,24 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
         .eq("club_id", clubIdToCheck)
         .maybeSingle();
 
-      if (error || !data) return null;
+      if (error || !data) {
+        delete membershipCache.current[clubIdToCheck];
+        return null;
+      }
 
-      // 3. Validate and store in cache
       if (
         data.status === "active" ||
         data.status === "pending" ||
         data.status === "rejected"
       ) {
-        membershipCache.current[clubIdToCheck] = data.status;
+        membershipCache.current[clubIdToCheck] = {
+          status: data.status,
+          ts: Date.now(),
+        };
         return data.status;
       }
 
+      delete membershipCache.current[clubIdToCheck];
       return null;
     },
     [user?.id]
@@ -96,6 +109,7 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
    * Only accept/persist ACTIVE memberships.
    */
   useEffect(() => {
+    // Not authenticated → nothing to validate
     if (!user?.id) {
       localStorage.removeItem("lastVisitedClub");
       setClubIdState(null);
@@ -105,22 +119,23 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const stored = localStorage.getItem("lastVisitedClub");
+
     if (!stored) {
       setClubIdState(null);
       setMembershipStatus(null);
-      setInitialized(true); // ✅ finished initial resolution when no stored club
+      setInitialized(true);
       return;
     }
 
+    // Force a fresh server read on boot to respect revocations immediately
     (async () => {
-      const status = await fetchMembershipStatus(stored);
+      const status = await fetchMembershipStatus(stored, true /* force */);
       if (!mountedRef.current) return;
 
       if (status === "active") {
         setClubIdState(stored);
         setMembershipStatus("active");
       } else {
-        // Pending/rejected/unknown → do not accept this as current club
         localStorage.removeItem("lastVisitedClub");
         setClubIdState(null);
         setMembershipStatus(status);
