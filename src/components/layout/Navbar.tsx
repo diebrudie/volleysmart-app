@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/theme-toggle";
-import { Menu, X, ChevronDown, Settings, User, UserPlus } from "lucide-react";
+import { Menu, ChevronDown, Settings, User, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,13 +17,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetClose,
-} from "@/components/ui/sheet";
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+  DrawerClose,
+  DrawerFooter,
+} from "@/components/ui/drawer";
 
 /**
  * Local types to avoid `any` and satisfy ESLint.
@@ -370,9 +371,9 @@ const Navbar = () => {
   dark:hover:bg-gray-800 dark:focus:bg-gray-800
   transition-colors"
           />
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              {/* Theme-safe, never sticks white after closing */}
+          <Drawer open={isOpen} onOpenChange={setIsOpen}>
+            <DrawerTrigger asChild>
+              {/* Theme-safe trigger; we keep the hamburger here */}
               <Button
                 size="icon"
                 aria-expanded={isOpen}
@@ -382,80 +383,50 @@ const Navbar = () => {
               >
                 <Menu className="h-6 w-6" />
               </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="top"
-              className="w-full h-full p-0 [&>button.absolute]:hidden"
-            >
-              <div className="flex flex-col h-full">
-                <SheetHeader className="h-14 px-4 border-b dark:border-gray-700">
-                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                  <div className="h-full flex items-center justify-between">
-                    <Logo
-                      size="sm"
-                      linkTo={
-                        isAuthenticated &&
-                        membershipStatus === "active" &&
-                        clubId
-                          ? `/dashboard/${clubId}`
-                          : "/clubs"
-                      }
-                    />
-                    <SheetClose asChild>
-                      <button
-                        aria-label="Close menu"
-                        className="p-2 rounded-md hover:bg-muted focus:bg-muted"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </SheetClose>
-                  </div>
-                </SheetHeader>
+            </DrawerTrigger>
 
-                <div className="flex flex-col flex-1 overflow-auto">
+            <DrawerContent
+              /* Full width bottom drawer, rounded top handled by component defaults */
+              className="p-0 bg-background"
+            >
+              <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
+                <DrawerHeader className="h-3 border-border">
+                  <DrawerTitle className="sr-only">Navigation Menu</DrawerTitle>
+                </DrawerHeader>
+
+                {/* Body */}
+                <div className="flex flex-1 flex-col justify-center overflow-auto">
                   {navItems
                     .filter((item) => item.visible)
                     .map((item) => (
-                      <SheetClose asChild key={item.path}>
+                      <DrawerClose asChild key={item.path}>
                         <Link
                           to={item.path}
-                          className="px-4 py-4 text-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-center border-b border-gray-100 dark:border-gray-800 dark:text-gray-100"
+                          className="px-4 py-4 text-lg font-medium hover:bg-muted/50 text-center border-b border-muted dark:text-gray-100"
                           onClick={() => setIsOpen(false)}
                         >
                           {item.label}
                         </Link>
-                      </SheetClose>
+                      </DrawerClose>
                     ))}
 
-                  {accountItems.map((item: AccountMenuItem, index) => {
-                    if (item.disabled) {
-                      return (
-                        <div
-                          key={`account-${index}`}
-                          className="px-4 py-4 text-lg font-medium text-gray-400 border-b border-gray-100 dark:border-gray-800 flex items-center justify-center opacity-60 cursor-not-allowed"
-                        >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.label}</span>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <SheetClose asChild key={`account-${index}`}>
-                        <Link
-                          to={item.path}
-                          className="px-4 py-4 text-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-center border-b border-gray-100 dark:border-gray-800 flex items-center justify-center dark:text-gray-100"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SheetClose>
-                    );
-                  })}
+                  {/* Account section */}
+                  {accountItems.map((item: AccountMenuItem, index) => (
+                    <DrawerClose asChild key={`account-${index}`}>
+                      <Link
+                        to={item.path ?? "#"}
+                        className="px-4 py-4 text-lg font-medium hover:bg-muted/50 text-center border-b border-muted flex items-center justify-center dark:text-gray-100"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </DrawerClose>
+                  ))}
                 </div>
 
-                <div className="p-4 border-t dark:border-gray-700 mt-auto">
+                {/* Footer with safe-area padding; lifts buttons from the bottom */}
+                <DrawerFooter className="mt-auto p-4 pt-6 border-t border-border pb-[calc(env(safe-area-inset-bottom)+24px)]">
                   {isAuthenticated &&
                     initialized &&
                     membershipStatus === "active" &&
@@ -463,7 +434,7 @@ const Navbar = () => {
                     !isValidatingClub && (
                       <Button
                         variant="primary"
-                        className="w-full mb-3"
+                        className="w-full mb-2"
                         onClick={() => {
                           setIsOpen(false);
                           navigate(`/new-game/${clubId}`);
@@ -483,10 +454,10 @@ const Navbar = () => {
                   >
                     Log Out
                   </Button>
-                </div>
+                </DrawerFooter>
               </div>
-            </SheetContent>
-          </Sheet>
+            </DrawerContent>
+          </Drawer>
         </div>
       </nav>
     </header>
@@ -508,9 +479,8 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center space-x-2">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                {/* Light-mode friendly; no sticky white state */}
+            <Drawer open={isOpen} onOpenChange={setIsOpen}>
+              <DrawerTrigger asChild>
                 <Button
                   size="icon"
                   aria-expanded={isOpen}
@@ -520,55 +490,31 @@ const Navbar = () => {
                 >
                   <Menu className="h-6 w-6" />
                 </Button>
-              </SheetTrigger>
+              </DrawerTrigger>
 
-              {/* White background instead of dark overlay */}
-              <SheetContent
-                side="top"
-                className="w-full h-full p-0 bg-white border-gray-200 [&>button.absolute]:hidden"
-              >
-                <div className="flex flex-col h-full">
-                  <SheetHeader className="h-14 px-4">
-                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                    <div className="h-full flex items-center justify-between">
-                      <Link
-                        to="/"
-                        className="inline-block"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <img
-                          src="/logo-lightmode.svg"
-                          alt="VolleySmart"
-                          className="h-8 w-auto"
-                          loading="eager"
-                        />
-                      </Link>
-                      <SheetClose asChild>
-                        <button
-                          aria-label="Close menu"
-                          className="p-2 rounded-md hover:bg-gray-100 focus:bg-gray-100"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </SheetClose>
-                    </div>
-                  </SheetHeader>
+              <DrawerContent className="p-0 bg-background">
+                <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
+                  <DrawerHeader className="h-3 border-border">
+                    <DrawerTitle className="sr-only">
+                      Navigation Menu
+                    </DrawerTitle>
+                  </DrawerHeader>
 
-                  <div className="flex flex-col flex-1 justify-center items-center space-y-6 px-4">
-                    <SheetClose asChild>
+                  <div className="flex flex-1 flex-col items-center justify-center space-y-6 px-4">
+                    <DrawerClose asChild>
                       <Link to="/login" className="w-full max-w-xs">
                         <Button
                           variant="outline"
                           size="lg"
-                          className="w-full border-gray-900 text-gray-900 hover:bg-gray-100 text-xl py-6"
+                          className="w-full border-foreground text-foreground hover:bg-muted text-xl py-6"
                           onClick={() => setIsOpen(false)}
                         >
                           Login
                         </Button>
                       </Link>
-                    </SheetClose>
+                    </DrawerClose>
 
-                    <SheetClose asChild>
+                    <DrawerClose asChild>
                       <Link to="/signup" className="w-full max-w-xs">
                         <Button
                           variant="primary"
@@ -579,11 +525,15 @@ const Navbar = () => {
                           Sign Up
                         </Button>
                       </Link>
-                    </SheetClose>
+                    </DrawerClose>
                   </div>
+
+                  <DrawerFooter className="p-4 pt-0 border-t border-border pb-[calc(env(safe-area-inset-bottom)+24px)]">
+                    {/* Room for any future links or legal text */}
+                  </DrawerFooter>
                 </div>
-              </SheetContent>
-            </Sheet>
+              </DrawerContent>
+            </Drawer>
           </div>
         </div>
       </div>
