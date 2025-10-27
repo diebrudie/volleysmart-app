@@ -25,6 +25,7 @@ export default function RealtimeAppEffect() {
   const navigate = useNavigate();
 
   // Families of query keys we refresh across the app
+  //adding this
   const families = useMemo(
     () =>
       new Set<string>([
