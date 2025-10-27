@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { buildImageUrl } from "@/utils/buildImageUrl";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 // Simple types to avoid complex Supabase type inference
 interface ClubMember {
@@ -782,24 +783,29 @@ const Members = () => {
                     </Select>
 
                     {/* View Toggle */}
-                    <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                      <Button
-                        variant={viewMode === "grid" ? "primary" : "ghost"}
+                    <ToggleGroup
+                      type="single"
+                      value={viewMode}
+                      onValueChange={(v) => {
+                        if (v) setViewMode(v as ViewMode);
+                      }}
+                      className="w-full sm:w-auto flex-shrink-0"
+                    >
+                      <ToggleGroupItem
+                        value="grid"
+                        aria-label="Grid view"
                         size="sm"
-                        onClick={() => setViewMode("grid")}
-                        className="px-3 py-2"
                       >
                         <Grid3X3 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={viewMode === "list" ? "primary" : "ghost"}
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="list"
+                        aria-label="List view"
                         size="sm"
-                        onClick={() => setViewMode("list")}
-                        className="px-3 py-2"
                       >
                         <List className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      </ToggleGroupItem>
+                    </ToggleGroup>
                   </div>
                 </div>
 
