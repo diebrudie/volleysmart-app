@@ -99,8 +99,20 @@ const Navbar = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const { clubId, membershipStatus, initialized, isValidatingClub } = useClub();
 
-  const handleLogout = async (): Promise<void> => {
+  const handleLogout = async () => {
     await logout();
+
+    /*console.log(
+      "[NAV]",
+      "navigating from",
+      location.pathname,
+      "to",
+      "/",
+      "reason: Logging Out"
+    );
+    */
+
+    navigate("/");
   };
 
   // Player profile for avatar + names
