@@ -402,7 +402,6 @@ const Navbar = () => {
                       <DrawerClose asChild key={item.path}>
                         <Link
                           to={item.path}
-                          data-vaul-no-drag
                           className="px-4 py-4 text-lg font-medium hover:bg-muted/50 text-center border-b border-muted dark:text-gray-100"
                           onClick={() => setIsOpen(false)}
                         >
@@ -416,7 +415,6 @@ const Navbar = () => {
                     <DrawerClose asChild key={`account-${index}`}>
                       <Link
                         to={item.path ?? "#"}
-                        data-vaul-no-drag
                         className="px-4 py-4 text-lg font-medium hover:bg-muted/50 text-center border-b border-muted flex items-center justify-center dark:text-gray-100"
                         onClick={() => setIsOpen(false)}
                       >
@@ -435,7 +433,6 @@ const Navbar = () => {
                     clubId &&
                     !isValidatingClub && (
                       <Button
-                        data-vaul-no-drag
                         variant="primary"
                         className="w-full mb-2"
                         onClick={() => {
@@ -448,7 +445,6 @@ const Navbar = () => {
                     )}
 
                   <Button
-                    data-vaul-no-drag
                     variant="outline"
                     className="w-full"
                     onClick={() => {
@@ -508,7 +504,6 @@ const Navbar = () => {
                     <DrawerClose asChild>
                       <Link to="/login" className="w-full max-w-xs">
                         <Button
-                          data-vaul-no-drag
                           variant="outline"
                           size="lg"
                           className="w-full border-foreground text-foreground hover:bg-muted text-xl py-6"
@@ -522,7 +517,6 @@ const Navbar = () => {
                     <DrawerClose asChild>
                       <Link to="/signup" className="w-full max-w-xs">
                         <Button
-                          data-vaul-no-drag
                           variant="primary"
                           size="lg"
                           className="w-full text-xl py-6"
