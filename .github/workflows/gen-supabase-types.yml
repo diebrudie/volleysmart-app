@@ -1,0 +1,54 @@
+name: gen-supabase-types
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC weekly
+  workflow_dispatch:
+
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node with Corepack
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+        # Corepack is built-in in Node 20
+
+      - name: Enable Corepack & use pinned npm
+        run: |
+          corepack enable
+          corepack prepare npm@10.8.2 --activate
+          npm -v
+
+      - name: Generate Supabase types (latest CLI)
+        run: |
+          npx supabase@latest gen types typescript \
+            --project-id hdorkmnfwpegvlxygfwv \
+            --schema public > src/integrations/supabase/types.ts
+
+      - name: Commit changes if any
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git checkout -b chore/update-supabase-types-$(date +%Y%m%d%H%M)
+            git add src/integrations/supabase/types.ts
+            git commit -m "chore(types): refresh Supabase generated types"
+            git push -u origin HEAD
+          fi
+
+      - name: Open PR if branch was pushed
+        if: ${{ success() }}
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(types): refresh Supabase generated types"
+          branch: ${{ github.ref_name }}
+          title: "chore(types): refresh Supabase generated types"
+          body: "Automated types refresh using latest Supabase CLI."
+          base: main
