@@ -421,6 +421,7 @@ const Dashboard = () => {
               onGenerateTeams={handleCreateGame}
               onInviteMembers={handleInviteMembers}
               canInviteMembers={canInviteMembers}
+              memberCount={clubMemberCount}
             />
 
             {/* Club ID (slug) display for empty dashboard */}
