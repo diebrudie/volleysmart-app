@@ -6,6 +6,8 @@ import React, {
   useMemo,
   ReactNode,
 } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Theme types
 type Theme = "light" | "dark" | "system";
@@ -84,6 +86,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     "/players/onboarding",
   ],
 }) => {
+  const { user } = useAuth(); // Auth source of truth
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "/";
 
@@ -93,10 +96,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     [pathname, enforceLightOnRoutes]
   );
 
-  /**
-   * Initialize from localStorage only when we're NOT enforcing light.
-   * Default to light for first-time users.
-   */
+  // Initialize from localStorage only when we're NOT enforcing light.
   const [theme, setThemeState] = useState<Theme>(() => {
     if (enforcingLight) return "light";
     if (typeof window !== "undefined") {
@@ -110,6 +110,37 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return resolveTheme(theme) === "dark" && !enforcingLight;
   });
 
+  // Safely write localStorage
+  const writeLocal = (t: Theme) => {
+    try {
+      localStorage.setItem("volleymatch-theme", t);
+    } catch {
+      // ignore storage errors (private mode, quota, etc.)
+    }
+  };
+
+  // Persist to Supabase user_profiles:
+  // DB allows only 'light' | 'dark' (nullable). We encode:
+  //   - theme === 'system'  -> store NULL
+  //   - theme === 'light'/'dark' -> store same value
+  const persistRemote = async (t: Theme) => {
+    if (!user) return; // only persist when authenticated
+    const dbValue = t === "system" ? null : t;
+    const { error } = await supabase
+      .from("user_profiles")
+      .update({
+        theme: dbValue,
+        theme_updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      // Keep UI responsive even if remote write fails
+      console.error("Theme persistence failed:", error);
+    }
+  };
+
+  // Public setter: updates state + localStorage; remote (fire-and-forget)
   const setTheme = (newTheme: Theme) => {
     if (enforcingLight) {
       // Ignore writes before authenticated/allowed routes
@@ -117,11 +148,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       return;
     }
     setThemeState(newTheme);
-    localStorage.setItem("volleymatch-theme", newTheme);
+    writeLocal(newTheme);
+    // fire-and-forget remote save if authenticated
+    void persistRemote(newTheme);
   };
 
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
+  // Apply to DOM
   useEffect(() => {
     const root = document.documentElement;
 
@@ -157,6 +191,41 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme, enforcingLight]);
+
+  // On auth change (and when not enforcing light), load remote preference
+  // DB: NULL => 'system', 'light'/'dark' => explicit choice
+  useEffect(() => {
+    if (enforcingLight || !user) return;
+
+    let isMounted = true;
+
+    (async () => {
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("theme, theme_updated_at")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.warn("Theme: profile fetch failed/skipped", error);
+        return;
+      }
+      if (!isMounted) return;
+
+      const remoteTheme: Theme =
+        data?.theme === "light" || data?.theme === "dark"
+          ? data.theme
+          : "system";
+
+      setThemeState(remoteTheme);
+      writeLocal(remoteTheme);
+      // DOM class will update via the effect watching `theme`
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, enforcingLight]);
 
   const value: ThemeContextType = {
     theme,
