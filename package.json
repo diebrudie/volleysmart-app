@@ -4,6 +4,17 @@
   "packageManager": "npm@10.8.2",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0 || >=22.12.0"
+  },
+  "overrides": {
+    "fdir": {
+      "picomatch": "^4.0.3"
+    },
+    "tinyglobby": {
+      "picomatch": "^4.0.3"
+    }
+  },
   "scripts": {
     "predev": "npm run gen:types",
     "prebuild": "npm run gen:types",
