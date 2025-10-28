@@ -1,6 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      (function () {
+        try {
+          var key = "volleymatch-theme";
+          var t = localStorage.getItem(key);
+          if (!t) {
+            // legacy keys migration at boot
+            var legacyKeys = ["theme", "vm-theme"];
+            for (var i = 0; i < legacyKeys.length; i++) {
+              var v = localStorage.getItem(legacyKeys[i]);
+              if (v === "light" || v === "dark" || v === "system") {
+                t = v;
+                localStorage.setItem(key, v);
+                localStorage.removeItem(legacyKeys[i]);
+                break;
+              }
+            }
+          }
+          var resolved =
+            t === "system" || !t
+              ? window.matchMedia &&
+                window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light"
+              : t;
+          if (resolved === "dark")
+            document.documentElement.classList.add("dark");
+        } catch (e) {
+          /* ignore */
+        }
+      })();
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VolleySmart</title>

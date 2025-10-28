@@ -32,7 +32,9 @@ import Clubs from "@/pages/Clubs";
 import ClubGuard from "@/components/routing/ClubGuard";
 
 const HomeRoute = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return null;
 
   if (isAuthenticated) {
     return <Navigate to="/clubs" replace />;

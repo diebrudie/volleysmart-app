@@ -2,6 +2,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
   useMemo,
   ReactNode,
@@ -32,6 +33,10 @@ export const useTheme = () => {
   }
   return context;
 };
+
+// Storage keys
+const STORAGE_KEY = "volleymatch-theme";
+const LEGACY_KEYS = ["theme", "vm-theme"];
 
 // Helpers
 const getSystemTheme = (): "light" | "dark" => {
@@ -100,8 +105,26 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   const [theme, setThemeState] = useState<Theme>(() => {
     if (enforcingLight) return "light";
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("volleymatch-theme") as Theme | null;
-      return saved || "light";
+      // Try current key
+      const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
+      if (saved === "light" || saved === "dark" || saved === "system") {
+        return saved;
+      }
+      // Migrate legacy keys (once)
+      for (const k of LEGACY_KEYS) {
+        const legacy = localStorage.getItem(k) as Theme | null;
+        if (legacy === "light" || legacy === "dark" || legacy === "system") {
+          try {
+            localStorage.setItem(STORAGE_KEY, legacy);
+            localStorage.removeItem(k);
+          } catch {
+            /* ignore */
+          }
+          return legacy;
+        }
+      }
+      // Fallback
+      return "light";
     }
     return "light";
   });
@@ -113,9 +136,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   // Safely write localStorage
   const writeLocal = (t: Theme) => {
     try {
-      localStorage.setItem("volleymatch-theme", t);
+      localStorage.setItem(STORAGE_KEY, t);
+      // clean legacy
+      for (const k of LEGACY_KEYS) localStorage.removeItem(k);
     } catch {
-      // ignore storage errors (private mode, quota, etc.)
+      /* ignore */
     }
   };
 
@@ -156,17 +181,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
   // Apply to DOM
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
 
-    // Apply light-only mode when enforced
     if (enforcingLight) {
-      setIsDark(false); // guarantee light
+      setIsDark(false);
       root.classList.remove("dark");
       return;
     }
 
-    // Normal theming rules
     const resolved = resolveTheme(theme);
     setIsDark(resolved === "dark");
 

@@ -3,13 +3,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext"; // 🆕 Import ThemeProvider
 import { useEffect } from "react";
 import { ClubProvider } from "@/contexts/ClubContext";
 import AppRoutes from "@/routes/AppRoutes";
 import AppLiveRefresh from "@/components/common/AppLiveRefresh";
+import RoutePersistence from "@/components/routing/RoutePersistence";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,7 +97,9 @@ const App = () => {
                 <BrowserRouter>
                   {/* Global realtime + focus/online refresh (PWA-friendly) */}
                   <AppLiveRefresh />
-                  <AppRoutes />
+                  <BootGate>
+                    <AppRoutes />
+                  </BootGate>
                 </BrowserRouter>
               </TooltipProvider>
             </ClubProvider>
@@ -128,6 +131,54 @@ const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
     >
       {children}
     </ThemeProvider>
+  );
+};
+
+/**
+ * BootGate:
+ * - While auth is unresolved, render a lightweight splash (no public Home flash).
+ * - If authenticated on "/", restore lastPrivatePath or fall back to lastVisitedClub dashboard, else /clubs.
+ * - Mounts RoutePersistence to keep lastPrivatePath updated.
+ */
+const BootGate = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // 1) While auth is booting, render a minimal splash instead of routes.
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 rounded-full border-2 border-muted border-t-foreground" />
+      </div>
+    );
+  }
+
+  // 2) If authenticated and currently on "/", redirect to last private path (or sensible default).
+  if (isAuthenticated && location.pathname === "/") {
+    const lastPrivatePath = localStorage.getItem("lastPrivatePath");
+    if (lastPrivatePath && lastPrivatePath !== "/") {
+      navigate(lastPrivatePath, { replace: true });
+      return null;
+    }
+
+    // Fallback: send to dashboard of lastVisitedClub if available, otherwise /clubs
+    const lastVisitedClub = localStorage.getItem("lastVisitedClub");
+    if (lastVisitedClub) {
+      navigate(`/dashboard/${lastVisitedClub}`, { replace: true });
+      return null;
+    }
+
+    navigate("/clubs", { replace: true });
+    return null;
+  }
+
+  // 3) Normal render + route persistence when inside app.
+  return (
+    <>
+      <RoutePersistence />
+      {children}
+    </>
   );
 };
 

@@ -92,12 +92,18 @@ function getAvatarAndInitials(
 }
 
 const Navbar = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const { clubId, membershipStatus, initialized, isValidatingClub } = useClub();
+  // --- BOOT GUARD -------------------------------------------------------------
+  // During auth boot, render nothing so the public/home navbar never flashes
+  // for users who are actually logged in. App-level BootGate will handle
+  // the splash and the initial redirect.
+  if (isLoading) return null;
+  // ---------------------------------------------------------------------------
 
   const handleLogout = async () => {
     await logout();
