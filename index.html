@@ -39,6 +39,26 @@
 
   <body>
     <div id="root"></div>
+
+    <!-- Theme pre-hydration script: ensures correct dark/light mode before React loads -->
+    <script>
+      (function () {
+        try {
+          const saved = localStorage.getItem("theme");
+          const prefersDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (saved === "dark" || (!saved && prefersDark)) {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        } catch (e) {
+          console.warn("Theme preload failed:", e);
+        }
+      })();
+    </script>
+
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
