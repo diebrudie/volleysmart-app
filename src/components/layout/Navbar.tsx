@@ -411,18 +411,38 @@ const Navbar = () => {
                     ))}
 
                   {/* Account section */}
-                  {accountItems.map((item: AccountMenuItem, index) => (
-                    <DrawerClose asChild key={`account-${index}`}>
-                      <Link
-                        to={item.path ?? "#"}
-                        className="px-4 py-4 text-lg font-medium hover:bg-muted/50 text-center border-b border-muted flex items-center justify-center dark:text-gray-100"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <item.icon className="mr-2 h-4 w-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </DrawerClose>
-                  ))}
+                  {accountItems.map((item: AccountMenuItem, index) => {
+                    const rowBase =
+                      "px-4 py-4 text-lg font-medium text-center border-b border-border flex items-center justify-center";
+                    if (item.disabled) {
+                      // Visible but disabled: no navigation, reduced opacity, not focusable
+                      return (
+                        <div
+                          key={`account-${index}`}
+                          aria-disabled="true"
+                          className={`${rowBase} opacity-60 cursor-not-allowed select-none dark:text-gray-400`}
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      );
+                    }
+
+                    // Enabled items
+                    return (
+                      <DrawerClose asChild key={`account-${index}`}>
+                        <Link
+                          to={item.path ?? "#"}
+                          data-vaul-no-drag
+                          className={`${rowBase} hover:bg-muted/50 dark:text-gray-100`}
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </DrawerClose>
+                    );
+                  })}
                 </div>
 
                 {/* Footer with safe-area padding; lifts buttons from the bottom */}
