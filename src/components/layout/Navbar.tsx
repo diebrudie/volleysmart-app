@@ -96,8 +96,47 @@ const Navbar = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  //const [isAccountOpen, setIsAccountOpen] = useState(false);
   const { clubId, membershipStatus, initialized, isValidatingClub } = useClub();
+  // Player profile for avatar + names — must be declared BEFORE any early return
+  const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(
+    null
+  );
+
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchPlayer = async () => {
+      if (!user?.id) {
+        if (isActive) setPlayerProfile(null);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("players")
+        .select("first_name,last_name,image_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!isActive) return;
+
+      if (!error && data) {
+        setPlayerProfile({
+          first_name: data.first_name ?? undefined,
+          last_name: data.last_name ?? undefined,
+          image_url: data.image_url ?? undefined,
+        });
+      } else {
+        setPlayerProfile(null);
+      }
+    };
+
+    void fetchPlayer();
+    return () => {
+      isActive = false;
+    };
+  }, [user?.id]);
+
   // --- BOOT GUARD -------------------------------------------------------------
   // During auth boot, render nothing so the public/home navbar never flashes
   // for users who are actually logged in. App-level BootGate will handle
@@ -120,31 +159,6 @@ const Navbar = () => {
 
     navigate("/");
   };
-
-  // Player profile for avatar + names
-  const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(
-    null
-  );
-
-  useEffect(() => {
-    const fetchPlayer = async () => {
-      if (!user?.id) return;
-
-      const { data, error } = await supabase
-        .from("players")
-        .select("first_name,last_name,image_url")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!error && data) {
-        setPlayerProfile(data as PlayerProfile);
-      } else {
-        // keep null; initials fallback will be used
-      }
-    };
-
-    fetchPlayer();
-  }, [user?.id]);
 
   /**
    * Only show restricted tabs if the user is an ACTIVE member of the current club.
