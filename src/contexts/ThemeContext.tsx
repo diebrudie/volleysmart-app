@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocation } from "react-router-dom";
 
 // Theme types
 type Theme = "light" | "dark" | "system";
@@ -92,8 +93,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   ],
 }) => {
   const { user } = useAuth(); // Auth source of truth
-  const pathname =
-    typeof window !== "undefined" ? window.location.pathname : "/";
+  const location = useLocation();
+  const pathname = location.pathname;
 
   // Should we enforce light for this route?
   const enforcingLight = useMemo(
@@ -180,22 +181,19 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
-  // Apply to DOM
-  useLayoutEffect(() => {
-    const root = document.documentElement;
+  // When enforcement turns off (e.g., after redirect into a private route),
+  // re-hydrate the saved theme immediately so the UI updates without a reload.
+  useEffect(() => {
+    if (enforcingLight) return;
 
-    if (enforcingLight) {
-      setIsDark(false);
-      root.classList.remove("dark");
-      return;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
+      if (saved === "light" || saved === "dark" || saved === "system") {
+        setThemeState(saved);
+        // The DOM class will be applied via the useLayoutEffect above.
+      }
     }
-
-    const resolved = resolveTheme(theme);
-    setIsDark(resolved === "dark");
-
-    if (resolved === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-  }, [theme, enforcingLight, isAuthenticated]);
+  }, [enforcingLight]);
 
   // React to system theme changes ONLY when not enforcing light and theme === 'system'
   useEffect(() => {
