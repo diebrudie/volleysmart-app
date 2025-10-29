@@ -189,7 +189,7 @@ const Navbar = () => {
 
   // Homepage/Landing Navbar (when not authenticated)
   const HomepageNav = () => (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass bg-white/70 border-b border-glass-border border-gray-200">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -208,7 +208,7 @@ const Navbar = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-gray-900 text-gray-900 hover:bg-gray-100"
+                className="border-gray-900 bg-white text-gray-900 hover:bg-gray-100 hover:text-gray-900"
               >
                 Login
               </Button>
@@ -505,7 +505,7 @@ const Navbar = () => {
 
   // Mobile homepage nav (white sheet, light logo)
   const MobileHomepageNav = () => (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Force light logo and link to / */}
@@ -532,9 +532,9 @@ const Navbar = () => {
                 </Button>
               </DrawerTrigger>
 
-              <DrawerContent className="p-0 bg-background">
+              <DrawerContent className="p-0 bg-white [&>div:first-child]:bg-gray-200 [&>div:first-child]:h-1.5 [&>div:first-child]:w-24 [&>div:first-child]:rounded-full [&>div:first-child]:mx-auto [&>div:first-child]:mt-3">
                 <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
-                  <DrawerHeader className="h-3 border-border">
+                  <DrawerHeader className="py-3 border-0">
                     <DrawerTitle className="sr-only">
                       Navigation Menu
                     </DrawerTitle>
@@ -546,7 +546,7 @@ const Navbar = () => {
                         <Button
                           variant="outline"
                           size="lg"
-                          className="w-full border-foreground text-foreground hover:bg-muted text-xl py-6"
+                          className="w-full border-black text-black bg-white hover:bg-gray-100 text-xl py-6"
                           onClick={() => setIsOpen(false)}
                         >
                           Login
@@ -568,7 +568,7 @@ const Navbar = () => {
                     </DrawerClose>
                   </div>
 
-                  <DrawerFooter className="p-4 pt-0 border-t border-border pb-[calc(env(safe-area-inset-bottom)+24px)]">
+                  <DrawerFooter className="p-4 pt-0 border-0 border-border pb-[calc(env(safe-area-inset-bottom)+48px)]">
                     {/* Room for any future links or legal text */}
                   </DrawerFooter>
                 </div>
