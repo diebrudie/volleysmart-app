@@ -131,6 +131,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   });
 
   const [isDark, setIsDark] = useState<boolean>(() => {
+    // Detect from <html> on mount for immediate SSR/refresh correctness
+    if (typeof document !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
     return resolveTheme(theme) === "dark" && !enforcingLight;
   });
 
@@ -224,6 +228,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme, enforcingLight]);
+
+  // small sync effect so isDark updates if the DOM or theme changes asynchronously
+  useEffect(() => {
+    const htmlHasDark = document.documentElement.classList.contains("dark");
+    if (htmlHasDark !== isDark) setIsDark(htmlHasDark);
+  }, [theme, enforcingLight, isDark]);
 
   // On auth change (and when not enforcing light), load remote preference
   // DB: NULL => 'system', 'light'/'dark' => explicit choice
