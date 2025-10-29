@@ -133,10 +133,10 @@ export default function HowItWorksSection() {
 
         {/* Video Section */}
         <div className="text-center pt-20 mt-7" id="demo-section">
-          <h3 className="text-3xl font-bold mb-5">See It In Action</h3>
+          <h3 className="text-3xl font-bold mb-9">See It In Action</h3>
 
-          <div className="max-w-4xl mx-auto sm:glass sm:rounded-2xl sm:p-8 sm:hover-lift">
-            <div className="relative aspect-video bg-amber-300 rounded-xl overflow-hidden">
+          <div className="sm:glass sm:rounded-2xl mx-1 sm:p-0 max-w-4xl sm:mx-auto -mx-4">
+            <div className="relative aspect-video bg-amber-300 rounded-xl overflow-hidden border border-transparent transition-colors hover:border-white/40">
               {/* Poster with high-contrast CTA */}
               {!isPlaying && (
                 <div className="absolute inset-0 bg-gradient-to-br from-secondary/25 to-secondary-glow/40 flex items-center justify-center">
