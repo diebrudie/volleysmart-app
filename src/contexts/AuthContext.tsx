@@ -347,6 +347,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       await supabase.auth.signOut();
 
+      // Clear last route so next login uses dashboard/:lastVisitedClub (or /clubs)
+      localStorage.removeItem("lastPrivatePath");
+
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",

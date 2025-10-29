@@ -43,10 +43,10 @@ const FeaturesSection: React.FC = () => {
       <div className="container mx-auto px-6">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
             Everything You Need to <span className="text-gradient">Play</span>
           </h2>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-xl text-gray-500">
             Organize your volleyball games efficiently and fairly. Designed for
             volleyball enthusiasts.
           </p>
@@ -68,8 +68,10 @@ const FeaturesSection: React.FC = () => {
                 />
               </div>
               <div>
-                <h3 className="text-2xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <h3 className="text-2xl font-bold mb-3 text-gray-900">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-500 leading-relaxed">
                   {feature.description}
                 </p>
               </div>

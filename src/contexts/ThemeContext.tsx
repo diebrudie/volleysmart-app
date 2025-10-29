@@ -2,12 +2,14 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
   useMemo,
   ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocation } from "react-router-dom";
 
 // Theme types
 type Theme = "light" | "dark" | "system";
@@ -32,6 +34,10 @@ export const useTheme = () => {
   }
   return context;
 };
+
+// Storage keys
+const STORAGE_KEY = "volleymatch-theme";
+const LEGACY_KEYS = ["theme", "vm-theme"];
 
 // Helpers
 const getSystemTheme = (): "light" | "dark" => {
@@ -87,8 +93,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   ],
 }) => {
   const { user } = useAuth(); // Auth source of truth
-  const pathname =
-    typeof window !== "undefined" ? window.location.pathname : "/";
+  const location = useLocation();
+  const pathname = location.pathname;
 
   // Should we enforce light for this route?
   const enforcingLight = useMemo(
@@ -100,8 +106,26 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   const [theme, setThemeState] = useState<Theme>(() => {
     if (enforcingLight) return "light";
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("volleymatch-theme") as Theme | null;
-      return saved || "light";
+      // Try current key
+      const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
+      if (saved === "light" || saved === "dark" || saved === "system") {
+        return saved;
+      }
+      // Migrate legacy keys (once)
+      for (const k of LEGACY_KEYS) {
+        const legacy = localStorage.getItem(k) as Theme | null;
+        if (legacy === "light" || legacy === "dark" || legacy === "system") {
+          try {
+            localStorage.setItem(STORAGE_KEY, legacy);
+            localStorage.removeItem(k);
+          } catch {
+            /* ignore */
+          }
+          return legacy;
+        }
+      }
+      // Fallback
+      return "light";
     }
     return "light";
   });
@@ -113,9 +137,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   // Safely write localStorage
   const writeLocal = (t: Theme) => {
     try {
-      localStorage.setItem("volleymatch-theme", t);
+      localStorage.setItem(STORAGE_KEY, t);
+      // clean legacy
+      for (const k of LEGACY_KEYS) localStorage.removeItem(k);
     } catch {
-      // ignore storage errors (private mode, quota, etc.)
+      /* ignore */
     }
   };
 
@@ -145,34 +171,41 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     if (enforcingLight) {
       // Ignore writes before authenticated/allowed routes
       setThemeState("light");
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
       return;
     }
+
     setThemeState(newTheme);
+    const resolved = resolveTheme(newTheme);
+    const isDarkResolved = resolved === "dark";
+
+    // update immediately
+    setIsDark(isDarkResolved);
+
+    const root = document.documentElement;
+    if (isDarkResolved) root.classList.add("dark");
+    else root.classList.remove("dark");
+
     writeLocal(newTheme);
-    // fire-and-forget remote save if authenticated
     void persistRemote(newTheme);
   };
 
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
-  // Apply to DOM
+  // When enforcement turns off (e.g., after redirect into a private route),
+  // re-hydrate the saved theme immediately so the UI updates without a reload.
   useEffect(() => {
-    const root = document.documentElement;
+    if (enforcingLight) return;
 
-    // Apply light-only mode when enforced
-    if (enforcingLight) {
-      setIsDark(false); // guarantee light
-      root.classList.remove("dark");
-      return;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
+      if (saved === "light" || saved === "dark" || saved === "system") {
+        setThemeState(saved);
+        // The DOM class will be applied via the useLayoutEffect above.
+      }
     }
-
-    // Normal theming rules
-    const resolved = resolveTheme(theme);
-    setIsDark(resolved === "dark");
-
-    if (resolved === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-  }, [theme, enforcingLight, isAuthenticated]);
+  }, [enforcingLight]);
 
   // React to system theme changes ONLY when not enforcing light and theme === 'system'
   useEffect(() => {

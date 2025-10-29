@@ -92,12 +92,57 @@ function getAvatarAndInitials(
 }
 
 const Navbar = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  //const [isAccountOpen, setIsAccountOpen] = useState(false);
   const { clubId, membershipStatus, initialized, isValidatingClub } = useClub();
+  // Player profile for avatar + names — must be declared BEFORE any early return
+  const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(
+    null
+  );
+
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchPlayer = async () => {
+      if (!user?.id) {
+        if (isActive) setPlayerProfile(null);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("players")
+        .select("first_name,last_name,image_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!isActive) return;
+
+      if (!error && data) {
+        setPlayerProfile({
+          first_name: data.first_name ?? undefined,
+          last_name: data.last_name ?? undefined,
+          image_url: data.image_url ?? undefined,
+        });
+      } else {
+        setPlayerProfile(null);
+      }
+    };
+
+    void fetchPlayer();
+    return () => {
+      isActive = false;
+    };
+  }, [user?.id]);
+
+  // --- BOOT GUARD -------------------------------------------------------------
+  // During auth boot, render nothing so the public/home navbar never flashes
+  // for users who are actually logged in. App-level BootGate will handle
+  // the splash and the initial redirect.
+  if (isLoading) return null;
+  // ---------------------------------------------------------------------------
 
   const handleLogout = async () => {
     await logout();
@@ -114,31 +159,6 @@ const Navbar = () => {
 
     navigate("/");
   };
-
-  // Player profile for avatar + names
-  const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(
-    null
-  );
-
-  useEffect(() => {
-    const fetchPlayer = async () => {
-      if (!user?.id) return;
-
-      const { data, error } = await supabase
-        .from("players")
-        .select("first_name,last_name,image_url")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!error && data) {
-        setPlayerProfile(data as PlayerProfile);
-      } else {
-        // keep null; initials fallback will be used
-      }
-    };
-
-    fetchPlayer();
-  }, [user?.id]);
 
   /**
    * Only show restricted tabs if the user is an ACTIVE member of the current club.
@@ -169,7 +189,7 @@ const Navbar = () => {
 
   // Homepage/Landing Navbar (when not authenticated)
   const HomepageNav = () => (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass bg-white/70 border-b border-glass-border border-gray-200">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -188,13 +208,17 @@ const Navbar = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-gray-900 text-gray-900 hover:bg-gray-100"
+                className="border-gray-900 bg-white text-gray-900 hover:bg-gray-100 hover:text-gray-900"
               >
                 Login
               </Button>
             </Link>
             <Link to="/signup">
-              <Button variant="primary" size="sm">
+              <Button
+                variant="primary"
+                size="sm"
+                className="!bg-[hsl(var(--primary))] !text-white hover:!bg-[hsl(225,80%,28%)]"
+              >
                 Sign Up
               </Button>
             </Link>
@@ -485,7 +509,7 @@ const Navbar = () => {
 
   // Mobile homepage nav (white sheet, light logo)
   const MobileHomepageNav = () => (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Force light logo and link to / */}
@@ -512,9 +536,9 @@ const Navbar = () => {
                 </Button>
               </DrawerTrigger>
 
-              <DrawerContent className="p-0 bg-background">
+              <DrawerContent className="p-0 bg-white [&>div:first-child]:bg-gray-200 [&>div:first-child]:h-1.5 [&>div:first-child]:w-24 [&>div:first-child]:rounded-full [&>div:first-child]:mx-auto [&>div:first-child]:mt-3">
                 <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
-                  <DrawerHeader className="h-3 border-border">
+                  <DrawerHeader className="py-3 border-0">
                     <DrawerTitle className="sr-only">
                       Navigation Menu
                     </DrawerTitle>
@@ -526,7 +550,7 @@ const Navbar = () => {
                         <Button
                           variant="outline"
                           size="lg"
-                          className="w-full border-foreground text-foreground hover:bg-muted text-xl py-6"
+                          className="w-full border-black text-black bg-white hover:bg-gray-100 text-xl py-6"
                           onClick={() => setIsOpen(false)}
                         >
                           Login
@@ -539,7 +563,7 @@ const Navbar = () => {
                         <Button
                           variant="primary"
                           size="lg"
-                          className="w-full text-xl py-6"
+                          className="w-full text-xl py-6 !bg-[hsl(var(--primary))] !text-white hover:!bg-[hsl(225,80%,28%)]"
                           onClick={() => setIsOpen(false)}
                         >
                           Sign Up
@@ -548,7 +572,7 @@ const Navbar = () => {
                     </DrawerClose>
                   </div>
 
-                  <DrawerFooter className="p-4 pt-0 border-t border-border pb-[calc(env(safe-area-inset-bottom)+24px)]">
+                  <DrawerFooter className="p-4 pt-0 border-0 border-border pb-[calc(env(safe-area-inset-bottom)+48px)]">
                     {/* Room for any future links or legal text */}
                   </DrawerFooter>
                 </div>
