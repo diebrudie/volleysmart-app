@@ -214,7 +214,11 @@ const Navbar = () => {
               </Button>
             </Link>
             <Link to="/signup">
-              <Button variant="primary" size="sm">
+              <Button
+                variant="primary"
+                size="sm"
+                className="!bg-[hsl(var(--primary))] !text-white hover:!bg-[hsl(225,80%,28%)]"
+              >
                 Sign Up
               </Button>
             </Link>
@@ -559,7 +563,7 @@ const Navbar = () => {
                         <Button
                           variant="primary"
                           size="lg"
-                          className="w-full text-xl py-6"
+                          className="w-full text-xl py-6 !bg-[hsl(var(--primary))] !text-white hover:!bg-[hsl(225,80%,28%)]"
                           onClick={() => setIsOpen(false)}
                         >
                           Sign Up
