@@ -171,11 +171,23 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     if (enforcingLight) {
       // Ignore writes before authenticated/allowed routes
       setThemeState("light");
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
       return;
     }
+
     setThemeState(newTheme);
+    const resolved = resolveTheme(newTheme);
+    const isDarkResolved = resolved === "dark";
+
+    // update immediately
+    setIsDark(isDarkResolved);
+
+    const root = document.documentElement;
+    if (isDarkResolved) root.classList.add("dark");
+    else root.classList.remove("dark");
+
     writeLocal(newTheme);
-    // fire-and-forget remote save if authenticated
     void persistRemote(newTheme);
   };
 
