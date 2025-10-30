@@ -70,8 +70,11 @@ volleysmart-app/
 │  │  │  ├─ ClubSettingsDialog.tsx
 │  │  │  └─ CopyableClubId.tsx
 │  │  ├─ common/
+│  │  │  └─ AppLiveRefresh.tsx
 │  │  │  └─ Logo.tsx
+│  │  │  └─ RealtimeAppEffect.tsx
 │  │  ├─ forms/
+│  │  │  └─ CityLocationSelector.tsx
 │  │  │  └─ LocationSelector.tsx
 │  │  ├─ home/
 │  │  │  ├─ CtaSection.tsx
@@ -88,6 +91,7 @@ volleysmart-app/
 │  │  │  └─ MemberCard.tsx
 │  │  ├─ routing/
 │  │  │  └─ ClubGuard.tsx
+│  │  │  └─ RoutePersistance.tsx
 │  │  ├─ team-generator/
 │  │  │  ├─ EmptyTeamsState.tsx
 │  │  │  ├─ GeneratedTeams.tsx

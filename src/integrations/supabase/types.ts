@@ -69,31 +69,43 @@ export type Database = {
       }
       clubs: {
         Row: {
+          city: string | null
+          country: string | null
+          country_code: string | null
           created_at: string
           created_by: string
           description: string | null
           id: string
           image_url: string | null
+          is_club_discoverable: boolean
           name: string
           slug: string
           status: Database["public"]["Enums"]["club_status"]
         }
         Insert: {
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           created_by: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_club_discoverable?: boolean
           name: string
           slug: string
           status?: Database["public"]["Enums"]["club_status"]
         }
         Update: {
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_club_discoverable?: boolean
           name?: string
           slug?: string
           status?: Database["public"]["Enums"]["club_status"]

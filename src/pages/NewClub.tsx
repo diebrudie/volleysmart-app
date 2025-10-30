@@ -18,18 +18,38 @@ import { addClubAdmin } from "@/integrations/supabase/club";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useClub } from "@/contexts/ClubContext";
+import CityLocationSelector, {
+  LocationValue,
+} from "@/components/forms/CityLocationSelector";
+import { Controller } from "react-hook-form";
+import { Switch } from "@/components/ui/switch";
+import { HelpCircle } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface NewClubFormData {
   name: string;
   description?: string;
+  city?: string;
+  country?: string;
+  country_code?: string; // ISO-3166-1 alpha-2 (uppercase)
+  is_club_discoverable: boolean;
 }
 
 const NewClub = () => {
   const {
     register,
     handleSubmit,
+    control, // ← needed by Controller
     formState: { errors },
-  } = useForm<NewClubFormData>();
+  } = useForm<NewClubFormData>({
+    defaultValues: {
+      is_club_discoverable: false,
+    },
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Image selection + preview state
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -41,11 +61,22 @@ const NewClub = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [location, setLocation] = useState<LocationValue | null>(null);
 
   const handleBack = () => {
     // Use browser's history to go back to the previous page
     window.history.back();
   };
+
+  const [showManual, setShowManual] = useState(false);
+  const hasMapbox = Boolean(
+    import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
+  );
+
+  // If no Mapbox token, default to manual entry.
+  useEffect(() => {
+    if (!hasMapbox) setShowManual(true);
+  }, [hasMapbox]);
 
   // Generate a random 5 character identifier with capital letters and numbers
   const generateClubIdentifier = () => {
@@ -175,10 +206,14 @@ const NewClub = () => {
         .from("clubs")
         .insert({
           name: data.name,
-          //description: data.description || null,
+          // description: data.description || null,
           image_url: imageUrl,
           created_by: user.id,
           slug: clubIdentifier,
+          city: location?.city ?? (data.city || null),
+          country: location?.country ?? (data.country || null),
+          country_code: location?.countryCode ?? (data.country_code || null),
+          is_club_discoverable: data.is_club_discoverable ?? false,
         })
         .select("id")
         .single();
@@ -257,7 +292,7 @@ const NewClub = () => {
         </Button>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
-          <h1 className="text-2xl font-semibold text-center mb-6 text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-semibold text-left mb-6 text-gray-900 dark:text-gray-100">
             Create a New Club
           </h1>
 
@@ -283,6 +318,121 @@ const NewClub = () => {
                 </p>
               )}
             </div>
+
+            {/* City (autocomplete with Mapbox) */}
+            <div className="space-y-3">
+              <CityLocationSelector
+                value={location}
+                onChange={setLocation}
+                label="City"
+                labelExtra={
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:border-foreground"
+                        aria-label="City selection help"
+                      >
+                        <HelpCircle className="h-3.5 w-3.5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="text-sm max-w-xs">
+                      Please make sure you select a City from the dropdown.
+                    </PopoverContent>
+                  </Popover>
+                }
+                placeholder="Type the city your Club is located…"
+              />
+
+              {/* Manual entry toggle & note */}
+              {!location && (
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    className="text-xs underline text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowManual((v) => !v)}
+                  >
+                    {showManual
+                      ? "Hide manual entry"
+                      : "Can't find your city? Enter manually"}
+                  </button>
+                  {!hasMapbox && (
+                    <span className="text-xs text-muted-foreground">
+                      Mapbox disabled—use manual entry.
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Manual fields (hidden by default) */}
+              {showManual && !location && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <Label>City</Label>
+                    <Input placeholder="e.g., Berlin" {...register("city")} />
+                  </div>
+                  <div>
+                    <Label>Country</Label>
+                    <Input
+                      placeholder="e.g., Germany"
+                      {...register("country")}
+                    />
+                  </div>
+                  <div>
+                    <Label>Country code</Label>
+                    <Input
+                      placeholder="e.g., DE"
+                      {...register("country_code", {
+                        setValueAs: (v) =>
+                          typeof v === "string" ? v.toUpperCase() : v,
+                        maxLength: {
+                          value: 2,
+                          message: "Use 2 letters (ISO alpha-2)",
+                        },
+                      })}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Discoverability toggle */}
+            <Controller
+              name="is_club_discoverable"
+              control={control}
+              render={({ field }) => (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="is_club_discoverable" className="m-0">
+                      Make this club discoverable
+                    </Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:border-foreground"
+                          aria-label="Discoverable help"
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="text-sm max-w-xs">
+                        If enabled, others can find this club on the Discover
+                        page.
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      id="is_club_discoverable"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </div>
+                </div>
+              )}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="club-image">Club Image (optional)</Label>

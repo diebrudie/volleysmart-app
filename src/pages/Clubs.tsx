@@ -40,7 +40,11 @@ interface ClubWithDetails {
   creator_last_name: string;
   role: string;
   description?: string;
-  slug: string; // NEW: 5-char Club ID
+  slug: string;
+  city?: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  is_club_discoverable?: boolean;
 }
 
 type MemberClubRow = {
@@ -53,7 +57,12 @@ type MemberClubRow = {
     created_at: string;
     created_by: string;
     description?: string;
-    slug: string; // ensure presence
+    slug: string;
+    status: string;
+    city?: string | null;
+    country?: string | null;
+    country_code?: string | null;
+    is_club_discoverable?: boolean;
   } | null;
 };
 
@@ -64,7 +73,12 @@ type CreatedClubRow = {
   created_at: string;
   created_by: string;
   description?: string;
-  slug: string; // ensure presence
+  slug: string;
+  status?: string;
+  city?: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  is_club_discoverable?: boolean;
 };
 
 type ClubRow = Database["public"]["Tables"]["clubs"]["Row"];
@@ -115,14 +129,18 @@ const Clubs = () => {
       created_by,
       description,
       slug,
-      status
+      status,
+      city,
+      country,
+      country_code,
+      is_club_discoverable
     )
   `
         )
         .eq("user_id", user.id)
-        .eq("status", "active") // membership is active
-        .eq("is_active", true) // your lifecycle flag
-        .eq("clubs.status", "active"); // club itself is active
+        .eq("status", "active")
+        .eq("is_active", true)
+        .eq("clubs.status", "active");
 
       if (memberError) throw memberError;
 
@@ -141,7 +159,11 @@ const Clubs = () => {
     created_by,
     description,
     slug,
-    status
+    status,
+    city,
+    country,
+    country_code,
+    is_club_discoverable
   `
         )
         .eq("created_by", user.id)
@@ -169,6 +191,10 @@ const Clubs = () => {
             role: member.role,
             description: member.clubs.description,
             slug: member.clubs.slug,
+            city: member.clubs.city ?? null,
+            country: member.clubs.country ?? null,
+            country_code: member.clubs.country_code ?? null,
+            is_club_discoverable: member.clubs.is_club_discoverable ?? false,
           });
         }
       });
@@ -187,6 +213,10 @@ const Clubs = () => {
             role: "admin",
             description: club.description,
             slug: club.slug,
+            city: club.city ?? null,
+            country: club.country ?? null,
+            country_code: club.country_code ?? null,
+            is_club_discoverable: club.is_club_discoverable ?? false,
           });
         }
       });
