@@ -53,6 +53,10 @@ export default function CityLocationSelector({
   const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
   useEffect(() => {
+    setQuery(value?.city ?? "");
+  }, [value?.city]);
+
+  useEffect(() => {
     if (!query || query.length < 2 || !token) {
       setOptions([]);
       return;
@@ -113,11 +117,13 @@ export default function CityLocationSelector({
       <Input
         id={id}
         placeholder={placeholder}
-        value={value?.city ?? query}
+        value={query}
         onChange={(e) => {
-          setQuery(e.target.value);
+          const next = e.target.value;
+          // If there was a selected value, clear it so user can free-type
+          if (value) onChange(null);
+          setQuery(next);
           setOpen(true);
-          if (!e.target.value) onChange(null);
         }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}

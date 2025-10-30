@@ -44,6 +44,28 @@ interface ClubSettingsDialogProps {
   };
 }
 
+// Used to compute hasChanges reliably even after a refresh.
+type InitialSnapshot = {
+  name: string;
+  image_url: string | null;
+  city: string;
+  country: string;
+  country_code: string;
+  is_club_discoverable: boolean;
+  modified_at?: string | null;
+};
+
+type ClubRow = {
+  name: string;
+  image_url: string | null;
+  slug: string;
+  city: string | null;
+  country: string | null;
+  country_code: string | null;
+  is_club_discoverable: boolean | null;
+  modified_at: string | null;
+};
+
 const ClubSettingsDialog = ({
   isOpen,
   onClose,
@@ -85,6 +107,20 @@ const ClubSettingsDialog = ({
     !!club.is_club_discoverable
   );
 
+  // Baseline snapshot of fields as loaded from DB when dialog opens.
+  const [initial, setInitial] = useState<InitialSnapshot>({
+    name: club.name,
+    image_url: club.image_url ?? null,
+    city: club.city ?? "",
+    country: club.country ?? "",
+    country_code: (club.country_code ?? "").toUpperCase(),
+    is_club_discoverable: !!club.is_club_discoverable,
+    // modified_at is optional in props; will be set after fetch
+    modified_at: undefined,
+  });
+
+  const [loadingClub, setLoadingClub] = useState<boolean>(false);
+
   const [showManual, setShowManual] = useState(false);
   const hasMapbox = Boolean(
     import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
@@ -94,40 +130,85 @@ const ClubSettingsDialog = ({
   }, [hasMapbox]);
 
   // Reset form when dialog opens with new club data
-  useEffect(() => {
-    if (isOpen) {
-      setName(club.name);
-      setImageFile(null);
-      setFileName(null);
-      setExistingImageRemoved(false);
-      setImagePreview(club.image_url ?? null);
-      setFileInputKey((k) => k + 1);
 
-      setLocation(
-        club.city && club.country && club.country_code
-          ? {
-              city: club.city,
-              country: club.country,
-              countryCode: (club.country_code || "").toUpperCase(),
-            }
-          : null
-      );
-      setManualCity(club.city ?? "");
-      setManualCountry(club.country ?? "");
-      setManualCountryCode((club.country_code ?? "").toUpperCase());
-      setIsDiscoverable(!!club.is_club_discoverable);
-      setShowManual(!hasMapbox); // open manual by default if no token
-    }
-  }, [
-    isOpen,
-    club.name,
-    club.image_url,
-    club.city,
-    club.country,
-    club.country_code,
-    club.is_club_discoverable,
-    hasMapbox,
-  ]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!isOpen || !club?.id) return;
+
+      setLoadingClub(true);
+      try {
+        const { data, error } = await supabase
+          .from("clubs")
+          .select(
+            "name, image_url, slug, city, country, country_code, is_club_discoverable, modified_at"
+          )
+          .eq("id", club.id)
+          .single();
+
+        const effective: ClubRow =
+          !error && data
+            ? (data as ClubRow)
+            : {
+                name: club.name,
+                image_url: club.image_url ?? null,
+                slug: club.slug,
+                city: club.city ?? null,
+                country: club.country ?? null,
+                country_code: club.country_code ?? null,
+                is_club_discoverable: club.is_club_discoverable ?? false,
+                modified_at: null,
+              };
+
+        if (cancelled) return;
+
+        // Reset UI state from fresh data
+        setName(effective.name);
+        setImageFile(null);
+        setFileName(null);
+        setExistingImageRemoved(false);
+        setImagePreview(effective.image_url ?? null);
+        setFileInputKey((k) => k + 1);
+
+        const hasLoc = Boolean(
+          effective.city && effective.country && effective.country_code
+        );
+        setLocation(
+          hasLoc
+            ? {
+                city: effective.city as string,
+                country: effective.country as string,
+                countryCode: String(effective.country_code).toUpperCase(),
+              }
+            : null
+        );
+        setManualCity(effective.city ?? "");
+        setManualCountry(effective.country ?? "");
+        setManualCountryCode(
+          String(effective.country_code ?? "").toUpperCase()
+        );
+        setIsDiscoverable(Boolean(effective.is_club_discoverable));
+        setShowManual(!hasMapbox && !hasLoc); // manual if no token & no existing loc
+
+        setInitial({
+          name: effective.name,
+          image_url: effective.image_url ?? null,
+          city: effective.city ?? "",
+          country: effective.country ?? "",
+          country_code: String(effective.country_code ?? "").toUpperCase(),
+          is_club_discoverable: Boolean(effective.is_club_discoverable),
+          modified_at: effective.modified_at,
+        });
+      } finally {
+        if (!cancelled) setLoadingClub(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, club?.id, hasMapbox]);
 
   /**
    * Selecting a new file replaces any existing preview and cancels "removed" state.
@@ -169,14 +250,14 @@ const ClubSettingsDialog = ({
 
   // Check if there are any changes
   const hasChanges =
-    name.trim() !== club.name ||
+    name.trim() !== initial.name ||
     imageFile !== null ||
     existingImageRemoved === true ||
-    (location?.city ?? manualCity) !== (club.city ?? "") ||
-    (location?.country ?? manualCountry) !== (club.country ?? "") ||
+    (location?.city ?? manualCity) !== initial.city ||
+    (location?.country ?? manualCountry) !== initial.country ||
     (location?.countryCode ?? manualCountryCode.toUpperCase()) !==
-      (club.country_code ?? "").toUpperCase() ||
-    isDiscoverable !== !!club.is_club_discoverable;
+      initial.country_code ||
+    isDiscoverable !== initial.is_club_discoverable;
 
   const handleSave = async () => {
     if (!user?.id) return;

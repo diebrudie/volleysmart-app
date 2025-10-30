@@ -78,6 +78,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_club_discoverable: boolean
+          modified_at: string | null
           name: string
           slug: string
           status: Database["public"]["Enums"]["club_status"]
@@ -92,6 +93,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_club_discoverable?: boolean
+          modified_at?: string | null
           name: string
           slug: string
           status?: Database["public"]["Enums"]["club_status"]
@@ -106,6 +108,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_club_discoverable?: boolean
+          modified_at?: string | null
           name?: string
           slug?: string
           status?: Database["public"]["Enums"]["club_status"]
