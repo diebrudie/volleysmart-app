@@ -402,6 +402,56 @@ const Dashboard = () => {
 };
 ```
 
+### Mobile & Desktop DnD (dnd-kit) Pattern
+
+**Core**
+
+- Use a **drag handle**: attach `listeners` to the handle only; keep `attributes` on the row/root for ARIA.
+- Add a **body scroll lock** class during drag (e.g. `.vm-scroll-lock { overflow: hidden; touch-action: none; overscroll-behavior: contain; }`).
+- Wrap long lists in a **ScrollArea with max height** so the list scrolls, not the page (e.g. `className="max-h-[60–70vh]"`).
+
+**Sensors**
+
+- Always include `KeyboardSensor` with `sortableKeyboardCoordinates`.
+- For touch devices (coarse pointer), use `PointerSensor` with an activation constraint to avoid accidental drags:
+  ```ts
+  isCoarsePointer()
+    ? { activationConstraint: { delay: 150–200, tolerance: 6–10 } }
+    : { activationConstraint: { distance: 2–6 } }
+  ```
+
+**Modifiers & Collision**
+
+- Touch (mobile/tablet): restrict to vertical axis.
+
+```ts
+const dndModifiers = [restrictToVerticalAxis];
+const collision = closestCenter;
+```
+
+- Desktop (mouse/trackpad): allow free movement (no axis restriction) and use `pointerWithin` for easier cross-list entry.
+
+```ts
+const dndModifiers = [];
+const collision = pointerWithin;
+```
+
+- Apply them conditionally via a simple `isCoarsePointer()` media-query check.
+
+**DndContext**
+
+```ts
+<DndContext
+  sensors={sensors}
+  collisionDetection={collision}
+  modifiers={dndModifiers}
+  onDragStart={() => document.body.classList.add("vm-scroll-lock")}
+  onDragEnd={() => document.body.classList.remove("vm-scroll-lock")}
+>
+  {/* SortableContext per list; cross-list moves supported by onDragOver/onDragEnd */}
+</DndContext>
+```
+
 ### Data Fetching Patterns
 
 ```typescript

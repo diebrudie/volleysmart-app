@@ -103,16 +103,21 @@ export const SortablePlayer = ({
       )}
       {...attributes}
     >
-      {/* Drag Handle */}
-      <div
-        className={cn(
-          "px-1",
-          isEditingPosition ? "cursor-not-allowed opacity-50" : "cursor-grab"
-        )}
+      {/* Drag Handle — only this starts the drag */}
+      <button
+        type="button"
+        aria-label="Drag to reorder"
+        // The handle gets the listeners so ONLY it starts the drag
         {...dragListeners}
+        className={cn(
+          "px-1 touch-none", // touch-none prevents native scroll from stealing the gesture
+          isEditingPosition
+            ? "cursor-not-allowed opacity-50"
+            : "cursor-grab active:cursor-grabbing"
+        )}
       >
         <GripVertical className="h-4 w-4 text-gray-400" />
-      </div>
+      </button>
 
       {/* Player Info */}
       <div className="ml-2 flex-grow flex items-center justify-between">

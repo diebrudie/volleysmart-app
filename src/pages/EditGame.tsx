@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   DndContext,
   closestCenter,
+  pointerWithin,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -41,18 +42,33 @@ import {
   DragOverEvent,
   DragOverlay,
   DragStartEvent,
+  useDroppable,
 } from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useDroppable } from "@dnd-kit/core";
 import { SortablePlayer } from "@/components/team-generator/SortablePlayer";
 import { useQueryClient, useQuery as useRQQuery } from "@tanstack/react-query";
 import { markModifiedBy } from "@/integrations/supabase/matchDays";
 import { formatFirstLastInitial } from "@/lib/formatName";
+
+// Detect coarse pointer (touch) — used to tweak sensor activation
+const isCoarsePointer = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia &&
+  window.matchMedia("(pointer: coarse)").matches;
+
+// On touch devices, restrict to vertical axis; on desktop allow free movement.
+const dndModifiers = isCoarsePointer() ? [restrictToVerticalAxis] : [];
+
+// On desktop, pointerWithin makes cross-list entry easier.
+// On touch (stacked lists), closestCenter is fine.
+const collision = isCoarsePointer() ? closestCenter : pointerWithin;
 
 // Mock positions data
 const mockPositions = [
@@ -353,11 +369,16 @@ const EditGame = () => {
     }
   }, [clubId, setClubId]);
 
+  // On touch, require a brief long-press and small movement before drag starts.
+  // On mouse, allow short distance movement to start drag.
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(
+      PointerSensor,
+      isCoarsePointer()
+        ? { activationConstraint: { delay: 180, tolerance: 8 } }
+        : { activationConstraint: { distance: 4 } }
+    ),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   // Show loading state
@@ -933,12 +954,21 @@ const EditGame = () => {
 
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
+            collisionDetection={collision}
+            modifiers={dndModifiers}
+            onDragStart={(e) => {
+              // Lock page scroll on drag (mobile)
+              document.body.classList.add("vm-scroll-lock");
+              handleDragStart(e);
+            }}
             onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
+            onDragEnd={(e) => {
+              handleDragEnd(e);
+              // Restore page scroll
+              document.body.classList.remove("vm-scroll-lock");
+            }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 overscroll-contain">
               {/* Team A */}
               <DroppableTeam
                 teamId="team-a"
@@ -949,23 +979,25 @@ const EditGame = () => {
                   items={teamAPlayers.map((p) => `A-${p.id}`)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="divide-y">
-                    {teamAPlayers.map((player) => (
-                      <SortablePlayer
-                        key={`A-${player.id}`}
-                        id={`A-${player.id}`}
-                        player={{
-                          id: Number(player.id),
-                          name: player.name,
-                          preferredPosition: player.preferredPosition,
-                          skillRating: player.skillRating,
-                        }}
-                        teamColor="red-600"
-                        onPositionChange={handlePositionChange}
-                        availablePositions={mockPositions}
-                      />
-                    ))}
-                  </div>
+                  <ScrollArea className="max-h-[60vh] md:max-h-[70vh]">
+                    <div className="divide-y">
+                      {teamAPlayers.map((player) => (
+                        <SortablePlayer
+                          key={`A-${player.id}`}
+                          id={`A-${player.id}`}
+                          player={{
+                            id: Number(player.id),
+                            name: player.name,
+                            preferredPosition: player.preferredPosition,
+                            skillRating: player.skillRating,
+                          }}
+                          teamColor="red-600"
+                          onPositionChange={handlePositionChange}
+                          availablePositions={mockPositions}
+                        />
+                      ))}
+                    </div>
+                  </ScrollArea>
                 </SortableContext>
               </DroppableTeam>
 
@@ -979,23 +1011,25 @@ const EditGame = () => {
                   items={teamBPlayers.map((p) => `B-${p.id}`)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="divide-y">
-                    {teamBPlayers.map((player) => (
-                      <SortablePlayer
-                        key={`B-${player.id}`}
-                        id={`B-${player.id}`}
-                        player={{
-                          id: Number(player.id),
-                          name: player.name,
-                          preferredPosition: player.preferredPosition,
-                          skillRating: player.skillRating,
-                        }}
-                        teamColor="green-600"
-                        onPositionChange={handlePositionChange}
-                        availablePositions={mockPositions}
-                      />
-                    ))}
-                  </div>
+                  <ScrollArea className="max-h-[60vh] md:max-h-[70vh]">
+                    <div className="divide-y">
+                      {teamBPlayers.map((player) => (
+                        <SortablePlayer
+                          key={`B-${player.id}`}
+                          id={`B-${player.id}`}
+                          player={{
+                            id: Number(player.id),
+                            name: player.name,
+                            preferredPosition: player.preferredPosition,
+                            skillRating: player.skillRating,
+                          }}
+                          teamColor="green-600"
+                          onPositionChange={handlePositionChange}
+                          availablePositions={mockPositions}
+                        />
+                      ))}
+                    </div>
+                  </ScrollArea>
                 </SortableContext>
               </DroppableTeam>
             </div>
