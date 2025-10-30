@@ -262,3 +262,10 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* Prevent body scroll during active drag on mobile */
+.vm-scroll-lock {
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
