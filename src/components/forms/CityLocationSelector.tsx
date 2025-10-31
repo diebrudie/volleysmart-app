@@ -13,11 +13,12 @@ export interface LocationValue {
 interface CityLocationSelectorProps {
   id?: string;
   label?: string;
-  /** Optional node rendered to the right of the label (e.g., a help icon). */
   labelExtra?: ReactNode;
   placeholder?: string;
   value: LocationValue | null;
   onChange: (val: LocationValue | null) => void;
+  /** Called on free typing (no selection yet). Parent can mirror to manual fields. */
+  onTextChange?: (text: string) => void;
 }
 
 interface MapboxContext {
@@ -46,6 +47,7 @@ export default function CityLocationSelector({
   placeholder = "Start typing a city...",
   value,
   onChange,
+  onTextChange,
 }: CityLocationSelectorProps) {
   const [query, setQuery] = useState<string>(value?.city ?? "");
   const [options, setOptions] = useState<LocationValue[]>([]);
@@ -120,9 +122,9 @@ export default function CityLocationSelector({
         value={query}
         onChange={(e) => {
           const next = e.target.value;
-          // If there was a selected value, clear it so user can free-type
-          if (value) onChange(null);
+          if (value) onChange(null); // clear selected value when user starts typing
           setQuery(next);
+          onTextChange?.(next); // NEW: let parent mirror free text
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}

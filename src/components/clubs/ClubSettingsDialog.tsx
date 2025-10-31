@@ -262,6 +262,16 @@ const ClubSettingsDialog = ({
   const handleSave = async () => {
     if (!user?.id) return;
 
+    // Small helpers to normalize payload
+    const norm = (s: string | null | undefined): string | null => {
+      const v = (s ?? "").trim();
+      return v.length ? v : null;
+    };
+    const normIso2 = (s: string | null | undefined): string | null => {
+      const v = (s ?? "").trim().toUpperCase();
+      return v.length ? v : null;
+    };
+
     setIsLoading(true);
     try {
       let imageUrl: string | null = club.image_url;
@@ -286,7 +296,7 @@ const ClubSettingsDialog = ({
             uploadError.message?.includes("policy")
           ) {
             console.warn("Storage policy warning:", uploadError.message);
-            // Keep previous imageUrl or null if removed; allow save to proceed
+            // allow continue with previous imageUrl/null
           } else {
             throw uploadError;
           }
@@ -294,21 +304,76 @@ const ClubSettingsDialog = ({
           const {
             data: { publicUrl },
           } = supabase.storage.from("club-images").getPublicUrl(storageName);
-
           imageUrl = publicUrl;
         }
       }
 
-      // Persist changes
-      const { error } = await supabase
-        .from("clubs")
-        .update({
-          name,
-          image_url: imageUrl,
-        })
-        .eq("id", club.id);
+      // Build normalized payload for all edited fields
+      const payload = {
+        name: name.trim(),
+        image_url: imageUrl,
+        city: norm(location?.city ?? manualCity),
+        country: norm(location?.country ?? manualCountry),
+        country_code: normIso2(location?.countryCode ?? manualCountryCode),
+        is_club_discoverable: isDiscoverable,
+      };
 
-      if (error) throw error;
+      // Persist and force return of updated row
+      const { data: updated, error: updateError } = await supabase
+        .from("clubs")
+        .update(payload)
+        .eq("id", club.id)
+        .select(
+          "id, name, image_url, city, country, country_code, is_club_discoverable, modified_at"
+        )
+        .maybeSingle();
+
+      if (updateError) throw updateError;
+      if (!updated) {
+        console.warn(
+          "[ClubSettingsDialog] No row updated. Check RLS or id filter.",
+          {
+            clubId: club.id,
+          }
+        );
+        toast({
+          title: "Not saved",
+          description: "No changes were persisted. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Rehydrate local snapshot/UI from DB truth
+      setInitial({
+        name: updated.name,
+        image_url: updated.image_url ?? null,
+        city: updated.city ?? "",
+        country: updated.country ?? "",
+        country_code: String(updated.country_code ?? "").toUpperCase(),
+        is_club_discoverable: Boolean(updated.is_club_discoverable),
+        modified_at: updated.modified_at ?? null,
+      });
+
+      setName(updated.name);
+      setImagePreview(updated.image_url ?? null);
+
+      const hasLoc = Boolean(
+        updated.city && updated.country && updated.country_code
+      );
+      setLocation(
+        hasLoc
+          ? {
+              city: updated.city as string,
+              country: updated.country as string,
+              countryCode: String(updated.country_code).toUpperCase(),
+            }
+          : null
+      );
+      setManualCity(updated.city ?? "");
+      setManualCountry(updated.country ?? "");
+      setManualCountryCode(String(updated.country_code ?? "").toUpperCase());
 
       toast({
         title: "Success",
@@ -316,7 +381,9 @@ const ClubSettingsDialog = ({
         duration: 2000,
       });
 
+      // keep caches in sync
       queryClient.invalidateQueries({ queryKey: ["userClubs"] });
+
       onClose();
     } catch (error) {
       console.error("Error updating club:", error);
@@ -453,8 +520,16 @@ const ClubSettingsDialog = ({
                   setManualCity(val.city);
                   setManualCountry(val.country);
                   setManualCountryCode(val.countryCode.toUpperCase());
+                  // optional: hide manual if we got a proper selection
                   setShowManual(false);
                 }
+              }}
+              onTextChange={(text) => {
+                // user is free-typing, reflect into manual fields so save persists it
+                setLocation(null);
+                setManualCity(text);
+                setManualCountry("");
+                setManualCountryCode("");
               }}
               label="City"
               labelExtra={
