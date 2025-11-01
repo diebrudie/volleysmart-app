@@ -23,7 +23,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, UserPlus, UsersRound, Edit, Trash } from "lucide-react";
+import {
+  MoreVertical,
+  UserPlus,
+  UsersRound,
+  Edit,
+  Trash,
+  MapPin,
+} from "lucide-react";
+
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -40,7 +48,11 @@ interface ClubWithDetails {
   creator_last_name: string;
   role: string;
   description?: string;
-  slug: string; // NEW: 5-char Club ID
+  slug: string;
+  city?: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  is_club_discoverable?: boolean;
 }
 
 type MemberClubRow = {
@@ -53,7 +65,12 @@ type MemberClubRow = {
     created_at: string;
     created_by: string;
     description?: string;
-    slug: string; // ensure presence
+    slug: string;
+    status: string;
+    city?: string | null;
+    country?: string | null;
+    country_code?: string | null;
+    is_club_discoverable?: boolean;
   } | null;
 };
 
@@ -64,7 +81,12 @@ type CreatedClubRow = {
   created_at: string;
   created_by: string;
   description?: string;
-  slug: string; // ensure presence
+  slug: string;
+  status?: string;
+  city?: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  is_club_discoverable?: boolean;
 };
 
 type ClubRow = Database["public"]["Tables"]["clubs"]["Row"];
@@ -115,14 +137,18 @@ const Clubs = () => {
       created_by,
       description,
       slug,
-      status
+      status,
+      city,
+      country,
+      country_code,
+      is_club_discoverable
     )
   `
         )
         .eq("user_id", user.id)
-        .eq("status", "active") // membership is active
-        .eq("is_active", true) // your lifecycle flag
-        .eq("clubs.status", "active"); // club itself is active
+        .eq("status", "active")
+        .eq("is_active", true)
+        .eq("clubs.status", "active");
 
       if (memberError) throw memberError;
 
@@ -141,7 +167,11 @@ const Clubs = () => {
     created_by,
     description,
     slug,
-    status
+    status,
+    city,
+    country,
+    country_code,
+    is_club_discoverable
   `
         )
         .eq("created_by", user.id)
@@ -169,6 +199,10 @@ const Clubs = () => {
             role: member.role,
             description: member.clubs.description,
             slug: member.clubs.slug,
+            city: member.clubs.city ?? null,
+            country: member.clubs.country ?? null,
+            country_code: member.clubs.country_code ?? null,
+            is_club_discoverable: member.clubs.is_club_discoverable ?? false,
           });
         }
       });
@@ -187,6 +221,10 @@ const Clubs = () => {
             role: "admin",
             description: club.description,
             slug: club.slug,
+            city: club.city ?? null,
+            country: club.country ?? null,
+            country_code: club.country_code ?? null,
+            is_club_discoverable: club.is_club_discoverable ?? false,
           });
         }
       });
@@ -522,18 +560,32 @@ const Clubs = () => {
                         </Popover>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      Created on: {formatDate(club.created_at)}
+                    {/* Playing since */}
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      Playing since {formatDate(club.created_at)}
                     </p>
-                    {/* Club ID shown as plain text (non-clickable) */}
-                    {club.slug && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Club ID:{" "}
-                        <span className="font-mono font-semibold">
-                          {club.slug}
+                    <div className="flex justify-between items-center">
+                      {/* Location */}
+                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 mb-1">
+                        <MapPin
+                          className="h-4 w-4 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">
+                          {club.city ? club.city : "Location not set"}
                         </span>
-                      </p>
-                    )}
+                      </div>
+
+                      {/* Club ID shown as plain text (non-clickable) */}
+                      {/* {club.slug && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Club ID:{" "}
+                          <span className="font-mono font-semibold">
+                            {club.slug}
+                          </span>
+                        </p>
+                      )} */}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
