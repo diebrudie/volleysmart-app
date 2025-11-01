@@ -23,7 +23,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, UserPlus, UsersRound, Edit, Trash } from "lucide-react";
+import {
+  MoreVertical,
+  UserPlus,
+  UsersRound,
+  Edit,
+  Trash,
+  MapPin,
+} from "lucide-react";
+
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
