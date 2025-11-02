@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useLocation } from "react-router-dom";
 import { useIsCompact } from "@/hooks/use-compact";
-import { default as MobileChrome } from "./MobileChrome"; // only for PUBLIC_PREFIXES helper? (we won't import it)
 
 const PUBLIC_PREFIXES = [
   "/",
@@ -12,23 +11,38 @@ const PUBLIC_PREFIXES = [
   "/players/onboarding",
 ];
 
+// Routes that should NOT show any mobile chrome or spacer
+const HIDE_SPACER = [
+  /^\/new-game\/[^/]+\/?$/,
+  /^\/edit-game\/[^/]+\/[^/]+\/?$/,
+  /^\/join-club\/?$/,
+  /^\/new-club\/?$/,
+];
+
+const normalize = (p: string) =>
+  p.endsWith("/") && p !== "/" ? p.slice(0, -1) : p;
+
 function isPublic(pathname: string) {
-  const p =
-    pathname.endsWith("/") && pathname !== "/"
-      ? pathname.slice(0, -1)
-      : pathname;
+  const p = normalize(pathname);
   return PUBLIC_PREFIXES.some((prefix) => {
-    const pp =
-      prefix.endsWith("/") && prefix !== "/" ? prefix.slice(0, -1) : prefix;
+    const pp = normalize(prefix);
     return p === pp || p.startsWith(pp + "/");
   });
 }
 
-/** Adds flow-space at page bottom on compact screens so fixed bottom nav doesn't cover content. */
+function shouldHideChrome(pathname: string) {
+  return HIDE_SPACER.some((rx) => rx.test(pathname));
+}
+
+/** Adds vertical space so the fixed bottom nav doesn't overlap content on compact screens. */
 const MobileBottomSpacer: React.FC = () => {
   const isCompact = useIsCompact();
   const { pathname } = useLocation();
-  if (!isCompact || isPublic(pathname)) return null;
+
+  if (!isCompact) return null;
+  if (isPublic(pathname)) return null;
+  if (shouldHideChrome(pathname)) return null;
+
   return <div className="h-24" aria-hidden="true" />;
 };
 

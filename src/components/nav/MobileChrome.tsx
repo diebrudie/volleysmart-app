@@ -1,6 +1,6 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
 import { useIsCompact } from "@/hooks/use-compact";
+import { useLocation } from "react-router-dom";
 import MobileTopBar from "./MobileTopBar";
 import MobileBottomNav from "./MobileBottomNav";
 
@@ -15,6 +15,14 @@ const PUBLIC_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/players/onboarding",
+];
+
+// Routes that must NOT show mobile chrome (top + bottom)
+const HIDE_CHROME = [
+  /^\/new-game\/[^/]+$/, // /new-game/:clubId
+  /^\/edit-game\/[^/]+\/[^/]+\/?$/,
+  /^\/join-club\/?$/, // /join-club
+  /^\/new-club\/?$/, // /new-club
 ];
 
 function isPublic(pathname: string): boolean {
@@ -36,6 +44,9 @@ const MobileChrome: React.FC = () => {
 
   if (!isCompact) return null;
   if (isPublic(pathname)) return null;
+
+  // Suppress chrome on editor/join/new-club pages
+  if (HIDE_CHROME.some((rx) => rx.test(pathname))) return null;
 
   return (
     <>

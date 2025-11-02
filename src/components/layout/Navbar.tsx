@@ -128,6 +128,15 @@ const Navbar = () => {
   const isCompact = useIsCompact();
   const { pathname } = useLocation();
 
+  // Suppress all nav chrome on these routes (desktop too)
+  const HIDE_NAV_ROUTES = [
+    /^\/new-game\/[^/]+$/,
+    /^\/edit-game\/[^/]+$/,
+    /^\/join-club\/?$/,
+    /^\/new-club\/?$/,
+  ];
+  const suppressChrome = HIDE_NAV_ROUTES.some((rx) => rx.test(pathname));
+
   useEffect(() => {
     let isActive = true;
 
@@ -617,6 +626,10 @@ const Navbar = () => {
   // On authenticated routes:
   // - On compact screens, DO NOT render this Navbar (MobileTopBar handles it).
   // - On desktop (>= lg), keep the DesktopNav exactly as today.
+  // Hide navbar entirely on editor/join/new-club routes (desktop too)
+  if (suppressChrome) return null;
+
+  // Authenticated: no legacy navbar on compact; keep desktop
   return isCompact ? null : <DesktopNav />;
 };
 
