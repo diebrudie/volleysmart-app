@@ -291,7 +291,7 @@ const NewClub = () => {
           Back
         </Button>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 pt-6 sm:p-8">
           <h1 className="text-2xl font-semibold text-left mb-6 text-gray-900 dark:text-gray-100">
             Create a New Club
           </h1>
@@ -336,7 +336,13 @@ const NewClub = () => {
                         <HelpCircle className="h-3.5 w-3.5" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="text-sm max-w-xs">
+                    <PopoverContent
+                      align="start"
+                      sideOffset={8}
+                      avoidCollisions
+                      collisionPadding={12}
+                      className="text-sm max-w-xs rounded-md border bg-popover p-3 text-popover-foreground shadow-md"
+                    >
                       Please make sure you select a City from the dropdown.
                     </PopoverContent>
                   </Popover>
@@ -416,7 +422,13 @@ const NewClub = () => {
                           <HelpCircle className="h-3.5 w-3.5" />
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="text-sm max-w-xs">
+                      <PopoverContent
+                        align="start"
+                        sideOffset={8}
+                        avoidCollisions
+                        collisionPadding={12}
+                        className="text-sm max-w-xs rounded-md border bg-popover p-3 text-popover-foreground shadow-md"
+                      >
                         If enabled, others can find this club on the Discover
                         page.
                       </PopoverContent>
@@ -428,6 +440,7 @@ const NewClub = () => {
                       id="is_club_discoverable"
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      className="data-[state=unchecked]:bg-muted data-[state=checked]:bg-primary"
                     />
                   </div>
                 </div>
