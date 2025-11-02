@@ -52,8 +52,11 @@ volleysmart-app/
 │  │  │  ├─ ClubSettingsDialog.tsx
 │  │  │  └─ CopyableClubId.tsx
 │  │  ├─ common/
+│  │  │  └─ AppLiveRefresh.tsx
 │  │  │  └─ Logo.tsx
+│  │  │  └─ RealtimeAppEffect.tsx
 │  │  ├─ forms/
+│  │  │  └─ CityLocationSelector.tsx
 │  │  │  └─ LocationSelector.tsx
 │  │  ├─ home/
 │  │  │  ├─ CtaSection.tsx
@@ -70,6 +73,7 @@ volleysmart-app/
 │  │  │  └─ MemberCard.tsx
 │  │  ├─ routing/
 │  │  │  └─ ClubGuard.tsx
+│  │  │  └─ RoutePersistance.tsx
 │  │  ├─ team-generator/
 │  │  │  ├─ EmptyTeamsState.tsx
 │  │  │  ├─ GeneratedTeams.tsx
@@ -324,7 +328,7 @@ const { data } = useQuery({
 
 ### Database Schema Overview
 
-- **clubs** - Club information and settings
+- **clubs** - Club information and settings (name, image_url, created_by, slug, city, country, country_code, is_club_discoverable)
 - **club_members** - User-club relationships with roles
 - **players** - Player profiles (linked to clubs)
 - **match_days** - Game sessions
