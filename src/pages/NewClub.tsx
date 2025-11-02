@@ -73,6 +73,8 @@ const NewClub = () => {
     import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
   );
 
+  console.log("hasMapbox?", Boolean(import.meta.env.VITE_MAPBOX_TOKEN));
+
   // If no Mapbox token, default to manual entry.
   useEffect(() => {
     if (!hasMapbox) setShowManual(true);
