@@ -25,8 +25,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/layout/Navbar";
-import { Upload, Calendar } from "lucide-react";
+import { Upload, Calendar, HelpCircle, X } from "lucide-react";
 import { buildImageUrl } from "@/utils/buildImageUrl";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerClose,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 
 interface PlayerProfile {
   id: string;
@@ -68,6 +76,7 @@ const Profile = () => {
   >([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
+  const [isPositionsHelpOpen, setIsPositionsHelpOpen] = useState(false);
 
   const isOwnProfile = user?.id === userId;
 
@@ -672,7 +681,20 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-base font-medium">Main Position</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-base font-medium">
+                      Main Position
+                    </Label>
+                    <button
+                      type="button"
+                      aria-label="Show court positions"
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-muted-foreground hover:text-foreground"
+                      onClick={() => setIsPositionsHelpOpen(true)}
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+
                   <Select
                     value={
                       getPrimaryPosition()
@@ -767,6 +789,45 @@ const Profile = () => {
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>
                 )}
+
+                {/* Positions helper drawer */}
+                <Drawer
+                  open={isPositionsHelpOpen}
+                  onOpenChange={setIsPositionsHelpOpen}
+                  shouldScaleBackground
+                >
+                  <DrawerContent className="pb-6">
+                    <DrawerClose
+                      aria-label="Close"
+                      className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
+             border border-border bg-background/90 text-foreground shadow
+             hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <X className="h-4 w-4" />
+                    </DrawerClose>
+
+                    <DrawerHeader className="pt-8">
+                      <DrawerTitle>Volleyball court positions</DrawerTitle>
+                      <DrawerDescription>
+                        Reference diagram to pick your positions.
+                      </DrawerDescription>
+                    </DrawerHeader>
+
+                    <div className="px-4 pb-2">
+                      <div className="mx-auto w-full md:max-w-3xl">
+                        <img
+                          src="/positions-volleyball-players.png"
+                          alt="Volleyball player positions on court"
+                          className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
+                        />
+                        <p className="mt-3 text-center text-sm text-muted-foreground">
+                          Use this diagram to confirm your primary and secondary
+                          roles.
+                        </p>
+                      </div>
+                    </div>
+                  </DrawerContent>
+                </Drawer>
               </CardContent>
             </Card>
           </TabsContent>
