@@ -560,18 +560,32 @@ const Clubs = () => {
                         </Popover>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      Created on: {formatDate(club.created_at)}
+                    {/* Playing since */}
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      Playing since {formatDate(club.created_at)}
                     </p>
-                    {/* Club ID shown as plain text (non-clickable) */}
-                    {club.slug && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Club ID:{" "}
-                        <span className="font-mono font-semibold">
-                          {club.slug}
+                    <div className="flex justify-between items-center">
+                      {/* Location */}
+                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 mb-1">
+                        <MapPin
+                          className="h-4 w-4 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">
+                          {club.city ? club.city : "Location not set"}
                         </span>
-                      </p>
-                    )}
+                      </div>
+
+                      {/* Club ID shown as plain text (non-clickable) */}
+                      {/* {club.slug && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Club ID:{" "}
+                          <span className="font-mono font-semibold">
+                            {club.slug}
+                          </span>
+                        </p>
+                      )} */}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
