@@ -8,6 +8,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useClub } from "@/contexts/ClubContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 /**
  * Fixed bottom tab bar with a prominent center "+" action.
@@ -15,10 +16,14 @@ import { useClub } from "@/contexts/ClubContext";
  * Covers safe area and sits above page content.
  */
 const MobileBottomNav: React.FC = () => {
-  const { clubId } = useClub(); // existing context; we only read id
+  const { clubId } = useClub();
   const disabled = !clubId;
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { isDark } = useTheme();
+
+  // Active color depends on theme:
+  const activeColorClass = isDark ? "text-white" : "text-primary";
 
   const go = (to: string, isDisabled: boolean) => {
     if (isDisabled) return;
@@ -45,6 +50,7 @@ const MobileBottomNav: React.FC = () => {
             active={isActive(/^\/dashboard\//)}
             disabled={disabled}
             onClick={() => go(withClub("/dashboard"), disabled)}
+            activeColor={activeColorClass}
           />
           <TabButton
             icon={<ArchiveIcon className="h-5 w-5" />}
@@ -52,6 +58,7 @@ const MobileBottomNav: React.FC = () => {
             active={isActive(/^\/games\//)}
             disabled={disabled}
             onClick={() => go(withClub("/games"), disabled)}
+            activeColor={activeColorClass}
           />
           {/*  Center empty slot so the FAB doesn't cover any tab */}
           <div aria-hidden className="h-full" />
@@ -77,12 +84,14 @@ const MobileBottomNav: React.FC = () => {
             active={isActive(/^\/members\//)}
             disabled={disabled}
             onClick={() => go(withClub("/members"), disabled)}
+            activeColor={activeColorClass}
           />
           <TabLink
             to="/clubs"
             icon={<Building2 className="h-5 w-5" />}
             label="Clubs"
             active={isActive(/^\/clubs(\/|$)/)}
+            activeColor={activeColorClass}
           />
         </div>
       </div>
@@ -96,6 +105,7 @@ type TabBaseProps = {
   icon: React.ReactNode;
   label: string;
   active: boolean;
+  activeColor: string;
 };
 type TabButtonProps = TabBaseProps & {
   disabled?: boolean;
@@ -107,14 +117,15 @@ const TabButton: React.FC<TabButtonProps> = ({
   icon,
   label,
   active,
+  activeColor,
   disabled,
   onClick,
 }) => (
   <button
     type="button"
     className={`flex flex-col items-center justify-center gap-1 text-xs h-full
-      ${active ? "text-primary" : "text-muted-foreground"}
-      ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-foreground"}`}
+      ${active ? activeColor : "text-muted-foreground"}
+      ${disabled ? "opacity-50 cursor-not-allowed" : "hover:opacity-100"}`}
     onClick={onClick}
     disabled={disabled}
     aria-current={active ? "page" : undefined}
@@ -125,13 +136,17 @@ const TabButton: React.FC<TabButtonProps> = ({
   </button>
 );
 
-const TabLink: React.FC<TabLinkProps> = ({ to, icon, label, active }) => (
+const TabLink: React.FC<TabLinkProps> = ({
+  to,
+  icon,
+  label,
+  active,
+  activeColor,
+}) => (
   <NavLink
     to={to}
     className={`flex flex-col items-center justify-center gap-1 text-xs h-full
-      ${
-        active ? "text-primary" : "text-muted-foreground"
-      } hover:text-foreground`}
+      ${active ? activeColor : "text-muted-foreground"} hover:opacity-100`}
     aria-current={active ? "page" : undefined}
   >
     {icon}

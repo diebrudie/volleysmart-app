@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
   User,
@@ -60,8 +60,10 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
           className="w-screen max-w-none p-0 bg-background z-[60] h-[100dvh]
                  pb-[max(env(safe-area-inset-bottom),0px)]"
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b">
+          <div className="flex items-center justify-between px-4 py-3 border-b h-12">
             <div className="text-base font-medium">Menu</div>
+            {/* A11y: required dialog title for screen readers (visually hidden) */}
+            <SheetTitle className="sr-only">Menu</SheetTitle>
             <Button
               variant="ghost"
               size="icon"
