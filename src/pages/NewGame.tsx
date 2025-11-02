@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarIcon, Search, Plus, Minus, X, Edit2 } from "lucide-react";
+import {
+  CalendarIcon,
+  Search,
+  Plus,
+  Minus,
+  X,
+  Edit2,
+  ChevronLeft,
+} from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
@@ -724,9 +732,19 @@ const NewGame = () => {
 
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-4xl font-serif mb-8 text-gray-900 dark:text-gray-100">
-            Create New Game
-          </h1>
+          <div className="flex items-center mb-7">
+            <Button
+              variant="outline"
+              size="icon"
+              className="mr-4"
+              onClick={() => navigate(`/dashboard/${clubId}`)}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Create New Game
+            </h1>
+          </div>
 
           {isLoadingPlayers ? (
             <div className="flex justify-center py-12">

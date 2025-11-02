@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useIsCompact } from "@/hooks/use-compact";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { Menu, ChevronDown, Settings, User, UserPlus } from "lucide-react";
@@ -56,6 +58,27 @@ interface AccountMenuItem {
   disabled?: boolean;
 }
 
+const PUBLIC_PREFIXES = [
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/players/onboarding",
+];
+
+function isPublic(pathname: string) {
+  const p =
+    pathname.endsWith("/") && pathname !== "/"
+      ? pathname.slice(0, -1)
+      : pathname;
+  return PUBLIC_PREFIXES.some((prefix) => {
+    const pp =
+      prefix.endsWith("/") && prefix !== "/" ? prefix.slice(0, -1) : prefix;
+    return p === pp || p.startsWith(pp + "/");
+  });
+}
+
 /**
  * Compute avatar URL and initials from user + player profile.
  */
@@ -102,6 +125,17 @@ const Navbar = () => {
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(
     null
   );
+  const isCompact = useIsCompact();
+  const { pathname } = useLocation();
+
+  // Suppress all nav chrome on these routes (desktop too)
+  const HIDE_NAV_ROUTES = [
+    /^\/new-game\/[^/]+$/,
+    /^\/edit-game\/[^/]+$/,
+    /^\/join-club\/?$/,
+    /^\/new-club\/?$/,
+  ];
+  const suppressChrome = HIDE_NAV_ROUTES.some((rx) => rx.test(pathname));
 
   useEffect(() => {
     let isActive = true;
@@ -586,10 +620,17 @@ const Navbar = () => {
 
   // Return different navbar based on authentication status
   if (!isAuthenticated) {
-    return isMobile ? <MobileHomepageNav /> : <HomepageNav />;
+    // Homepage must stay unchanged on mobile/desktop
+    return isCompact ? <MobileHomepageNav /> : <HomepageNav />;
   }
+  // On authenticated routes:
+  // - On compact screens, DO NOT render this Navbar (MobileTopBar handles it).
+  // - On desktop (>= lg), keep the DesktopNav exactly as today.
+  // Hide navbar entirely on editor/join/new-club routes (desktop too)
+  if (suppressChrome) return null;
 
-  return isMobile ? <MobileNav /> : <DesktopNav />;
+  // Authenticated: no legacy navbar on compact; keep desktop
+  return isCompact ? null : <DesktopNav />;
 };
 
 export default Navbar;

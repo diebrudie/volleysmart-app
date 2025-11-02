@@ -11,6 +11,9 @@ import { ClubProvider } from "@/contexts/ClubContext";
 import AppRoutes from "@/routes/AppRoutes";
 import AppLiveRefresh from "@/components/common/AppLiveRefresh";
 import RoutePersistence from "@/components/routing/RoutePersistence";
+import MobileChrome from "@/components/nav/MobileChrome";
+import MobileBottomSpacer from "@/components/nav/MobileBottomSpacer";
+import ScrollToTop from "@/components/common/ScrollToTop";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,7 +101,10 @@ const App = () => {
                   {/* Global realtime + focus/online refresh (PWA-friendly) */}
                   <AppLiveRefresh />
                   <BootGate>
+                    <MobileChrome />
+                    <ScrollToTop />
                     <AppRoutes />
+                    <MobileBottomSpacer />
                   </BootGate>
                 </TooltipProvider>
               </ClubProvider>
