@@ -131,7 +131,7 @@ const Navbar = () => {
   // Suppress all nav chrome on these routes (desktop too)
   const HIDE_NAV_ROUTES = [
     /^\/new-game\/[^/]+$/,
-    /^\/edit-game\/[^/]+$/,
+    /^\/edit-game\/[^/]+\/[^/]+\/?$/,
     /^\/join-club\/?$/,
     /^\/new-club\/?$/,
   ];

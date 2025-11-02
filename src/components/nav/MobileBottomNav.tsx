@@ -42,7 +42,7 @@ const MobileBottomNav: React.FC = () => {
       role="navigation"
       aria-label="Primary"
     >
-      <div className="mx-auto max-w-xl px-2">
+      <div className="mx-auto max-w-xl px-2 pb-3">
         <div className="relative grid grid-cols-5 items-center h-16">
           <TabButton
             icon={<LayoutDashboard className="h-5 w-5" />}
