@@ -1,0 +1,48 @@
+import React from "react";
+import { useLocation } from "react-router-dom";
+import { useIsCompact } from "@/hooks/use-compact";
+import MobileTopBar from "./MobileTopBar";
+import MobileBottomNav from "./MobileBottomNav";
+
+/**
+ * Public routes should not show the mobile chrome (top/bottom bars).
+ * Keep in sync with ThemeProvider's enforceLightOnRoutes.
+ */
+const PUBLIC_PREFIXES = [
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/players/onboarding",
+];
+
+function isPublic(pathname: string): boolean {
+  const p =
+    pathname.endsWith("/") && pathname !== "/"
+      ? pathname.slice(0, -1)
+      : pathname;
+  return PUBLIC_PREFIXES.some((prefix) => {
+    const pp =
+      prefix.endsWith("/") && prefix !== "/" ? prefix.slice(0, -1) : prefix;
+    return p === pp || p.startsWith(pp + "/");
+  });
+}
+
+/** Renders TopBar + BottomNav only on compact screens and non-public routes. */
+const MobileChrome: React.FC = () => {
+  const isCompact = useIsCompact();
+  const { pathname } = useLocation();
+
+  if (!isCompact) return null;
+  if (isPublic(pathname)) return null;
+
+  return (
+    <>
+      <MobileTopBar />
+      <MobileBottomNav />
+    </>
+  );
+};
+
+export default MobileChrome;

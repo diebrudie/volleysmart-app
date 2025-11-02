@@ -55,6 +55,7 @@ volleysmart-app/
 │  │  │  └─ AppLiveRefresh.tsx
 │  │  │  └─ Logo.tsx
 │  │  │  └─ RealtimeAppEffect.tsx
+│  │  │  └─ ScrollToTop.tsx
 │  │  ├─ forms/
 │  │  │  └─ CityLocationSelector.tsx
 │  │  │  └─ LocationSelector.tsx
@@ -71,6 +72,13 @@ volleysmart-app/
 │  │  │  └─ SetBox.tsx
 │  │  ├─ members/
 │  │  │  └─ MemberCard.tsx
+│  │  ├─ nav/
+│  │  │  └─ MobileBottomNav.tsx
+│  │  │  └─ MobileBottomSpacer.tsx
+│  │  │  └─ MobileChrome.tsx
+│  │  │  └─ MobileMenuDrawer.tsx
+│  │  │  └─ MobileTopBar.tsx
+│  │  │  └─ ThemePicker.tsx
 │  │  ├─ routing/
 │  │  │  └─ ClubGuard.tsx
 │  │  │  └─ RoutePersistance.tsx
@@ -146,6 +154,7 @@ volleysmart-app/
 │  │  ├─ ClubContext.tsx
 │  │  └─ ThemeContext.tsx
 │  ├─ hooks/
+│  │  ├─ use-compact.tsx
 │  │  ├─ use-mobile.tsx
 │  │  ├─ use-toast.tsx
 │  │  └─ useIsAdmin.ts
