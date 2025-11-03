@@ -7,7 +7,7 @@ import ThemeToggle from "@/components/ui/theme-toggle";
 import { Menu, ChevronDown, Settings, User, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -117,7 +117,7 @@ function getAvatarAndInitials(
 const Navbar = () => {
   const { isAuthenticated, user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+
   const [isOpen, setIsOpen] = useState(false);
   //const [isAccountOpen, setIsAccountOpen] = useState(false);
   const { clubId, membershipStatus, initialized, isValidatingClub } = useClub();
