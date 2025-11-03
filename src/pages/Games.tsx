@@ -413,6 +413,7 @@ const Games = () => {
 
   // Empty state - no matches played yet
   if (matchesData.length === 0) {
+    const memberCount = clubInfo?.memberCount ?? 0;
     const canGenerateTeams = (clubInfo?.memberCount || 0) >= 4;
     const canInviteMembers = clubInfo?.userRole === "admin";
 
@@ -440,6 +441,7 @@ const Games = () => {
               onGenerateTeams={handleCreateGame}
               onInviteMembers={handleInviteMembers}
               canInviteMembers={canInviteMembers}
+              memberCount={memberCount}
             />
           </div>
         </div>
