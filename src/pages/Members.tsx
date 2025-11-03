@@ -893,7 +893,11 @@ const Members = () => {
                         variant={viewMode === "grid" ? "primary" : "ghost"}
                         size="sm"
                         onClick={() => setViewMode("grid")}
-                        className="px-3 py-2"
+                        className={`px-3 py-2 ${
+                          viewMode === "grid"
+                            ? "focus-visible:ring-blue-500"
+                            : ""
+                        }`}
                       >
                         <Grid3X3 className="h-4 w-4" />
                       </Button>
@@ -901,7 +905,11 @@ const Members = () => {
                         variant={viewMode === "list" ? "primary" : "ghost"}
                         size="sm"
                         onClick={() => setViewMode("list")}
-                        className="px-3 py-2"
+                        className={`px-3 py-2 ${
+                          viewMode === "list"
+                            ? "focus-visible:ring-blue-500"
+                            : ""
+                        }`}
                       >
                         <List className="h-4 w-4" />
                       </Button>

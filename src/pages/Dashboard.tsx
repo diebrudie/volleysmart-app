@@ -573,6 +573,20 @@ const Dashboard = () => {
     return date.toLocaleDateString("en-US", options);
   };
 
+  // Mobile-only short date: "Sun, Nov. 2, 2025"
+  const formatDateMobile = (date: Date) => {
+    const weekday = new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+    }).format(date); // e.g., "Sun"
+    const monthShort = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+    }).format(date); // e.g., "Nov"
+    const day = date.getDate();
+    const year = date.getFullYear();
+    // Add a trailing period after the abbreviated month
+    return `${weekday}, ${monthShort}. ${day}, ${year}`;
+  };
+
   // Determine if the match is from today
   const today = new Date();
   const isMatchToday = matchDate.toDateString() === today.toDateString();
@@ -626,19 +640,30 @@ const Dashboard = () => {
               <h1 className="text-4xl font-serif mb-2 text-gray-900 dark:text-gray-100">
                 {headingText}
               </h1>
+
               <div className="flex justify-between items-end">
-                <div className="flex items-center text-gray-600 dark:text-gray-400">
-                  <span>{formatDate(matchDate)}</span>
-                  {latestGame?.locations?.name && (
-                    <>
-                      <span className="mx-2">|</span>
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <span>{latestGame.locations.name}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
+                {/* Desktop layout: Club name + date/location in one row */}
+                {clubDetails?.name && (
+                  <div className="hidden sm:flex flex-row items-center justify-start gap-2 mb-3">
+                    <div className="text-xl font-semibold tracking-tight text-primary dark:text-blue-600">
+                      Club: {clubDetails.name}
+                    </div>
+                    <div className="text-xl flex items-center text-gray-600 dark:text-gray-400 gap-3">
+                      <span>|</span>
+                      <span>{formatDate(matchDate)}</span>
+                      {latestGame?.locations?.name && (
+                        <>
+                          <span>|</span>
+                          <div className="flex items-center">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            <span>{latestGame.locations.name}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {isEditingAllowed && (
                   <Button
                     variant="action"
@@ -657,10 +682,22 @@ const Dashboard = () => {
               <h1 className="text-4xl font-serif mb-2 text-gray-900 dark:text-gray-100">
                 {headingText}
               </h1>
+
+              {/* Club name header (same styling as Members) */}
+              {clubDetails?.name && (
+                <div className="mb-3">
+                  <div className="text-2xl font-semibold tracking-tight border-b border-border pb-2 text-primary dark:text-blue-600">
+                    Club: {clubDetails.name}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center text-gray-600 dark:text-gray-400 gap-x-2 mb-3">
+                {/* Mobile short date */}
                 <span className="whitespace-nowrap">
-                  {formatDate(matchDate)}
+                  {formatDateMobile(matchDate)}
                 </span>
+
                 {latestGame?.locations?.name && (
                   <div className="flex items-center whitespace-nowrap">
                     <span className="mr-2">|</span>
