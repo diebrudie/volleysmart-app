@@ -708,6 +708,15 @@ const Members = () => {
           {/* Table Container */}
           <Card className="border border-gray-200">
             <CardContent className="p-4">
+              {/* Club name header (smaller than H1, bigger than "XX Members") */}
+              {clubMeta?.name && (
+                <div className="mb-4">
+                  <div className="text-2xl font-semibold tracking-tight border-b border-border pb-2 text-primary dark:text-blue-600">
+                    Club: {clubMeta.name}
+                  </div>
+                </div>
+              )}
+
               {/* All Controls in One Row */}
               <div className="mb-6">
                 {/* Desktop Layout - All in one row */}
