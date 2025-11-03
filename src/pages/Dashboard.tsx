@@ -641,29 +641,29 @@ const Dashboard = () => {
                 {headingText}
               </h1>
 
-              {/* Club name header (same styling as Members) */}
-              {clubDetails?.name && (
-                <div className="mb-3">
-                  <div className="text-2xl font-semibold tracking-tight border-b border-border pb-2 text-primary dark:text-blue-600">
-                    Club: {clubDetails.name}
-                  </div>
-                </div>
-              )}
-
               <div className="flex justify-between items-end">
-                <div className="flex items-center text-gray-600 dark:text-gray-400">
-                  <span>{formatDate(matchDate)}</span>
+                {/* Desktop layout: Club name + date/location in one row */}
+                {clubDetails?.name && (
+                  <div className="hidden sm:flex flex-row items-center justify-start gap-2 mb-3">
+                    <div className="text-xl font-semibold tracking-tight text-primary dark:text-blue-600">
+                      Club: {clubDetails.name}
+                    </div>
+                    <div className="text-xl flex items-center text-gray-600 dark:text-gray-400 gap-3">
+                      <span>|</span>
+                      <span>{formatDate(matchDate)}</span>
+                      {latestGame?.locations?.name && (
+                        <>
+                          <span>|</span>
+                          <div className="flex items-center">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            <span>{latestGame.locations.name}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                  {latestGame?.locations?.name && (
-                    <>
-                      <span className="mx-2">|</span>
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <span>{latestGame.locations.name}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
                 {isEditingAllowed && (
                   <Button
                     variant="action"
