@@ -344,11 +344,24 @@ const Games = () => {
   };
 
   const formatDate = (dateString: string) => {
+    // Desktop / tablet (≥ sm): e.g., "October 25, 2025"
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+  };
+
+  const formatDateMobile = (dateString: string) => {
+    // Mobile (< sm): e.g., "Oct. 25, 2025"
+    const d = new Date(dateString);
+    const shortMonth = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+    }).format(d);
+    const day = d.getDate();
+    const year = d.getFullYear();
+    // Always add a trailing period after the abbreviated month
+    return `${shortMonth}. ${day}, ${year}`;
   };
 
   const handleInviteMembers = () => {
@@ -524,7 +537,10 @@ const Games = () => {
                           Winner {getSortIcon("winner")}
                         </button>
                       </TableHead>
-                      <TableHead>Location</TableHead>
+                      <TableHead className="hidden sm:table-cell">
+                        Location
+                      </TableHead>
+
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -555,8 +571,16 @@ const Games = () => {
                             </TableCell>
                           )}
                           <TableCell className="font-medium w-[180px] whitespace-nowrap">
-                            {formatDate(match.date)}
+                            {/* Mobile: short format */}
+                            <span className="sm:hidden">
+                              {formatDateMobile(match.date)}
+                            </span>
+                            {/* ≥ sm: long format */}
+                            <span className="hidden sm:inline">
+                              {formatDate(match.date)}
+                            </span>
                           </TableCell>
+
                           <TableCell className="text-center font-semibold">
                             {match.team_a_wins} - {match.team_b_wins}
                           </TableCell>
@@ -573,7 +597,7 @@ const Games = () => {
                               {match.winner}
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             {match.location_name ? (
                               <div className="flex items-center">
                                 <MapPin className="h-4 w-4 mr-1 text-gray-400" />
@@ -585,6 +609,7 @@ const Games = () => {
                               <span className="text-sm text-gray-400">-</span>
                             )}
                           </TableCell>
+
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Link to={`/game-details/${match.match_day_id}`}>
