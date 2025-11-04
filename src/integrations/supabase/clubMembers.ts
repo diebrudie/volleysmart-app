@@ -99,3 +99,20 @@ export function useMemberCount(
     },
   });
 }
+
+export async function fetchMemberRowBasic(
+  userId: string,
+  clubId: string
+): Promise<{ id: string; role: ClubMemberRole } | null> {
+  const { data, error } = await supabase
+    .from("club_members")
+    .select("id, role")
+    .eq("user_id", userId)
+    .eq("club_id", clubId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data
+    ? { id: String(data.id), role: (data.role as ClubMemberRole) ?? null }
+    : null;
+}
