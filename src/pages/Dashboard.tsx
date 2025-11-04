@@ -18,7 +18,10 @@ import { Pencil, MapPin } from "lucide-react";
 import { useClub } from "@/contexts/ClubContext";
 import { useParams } from "react-router-dom";
 import CopyableClubId from "@/components/clubs/CopyableClubId";
-import { useMemberCount } from "@/integrations/supabase/clubMembers";
+import {
+  fetchUserRole,
+  useMemberCount,
+} from "@/integrations/supabase/clubMembers";
 
 // Define proper interfaces
 interface GamePlayerData {
@@ -99,15 +102,9 @@ const Dashboard = () => {
           localStorage.setItem("lastVisitedClub", userClubId);
 
           // Verify user has access to this club
-          const { data: memberCheck } = await supabase
-            .from("club_members")
-            .select("role")
-            .eq("club_id", userClubId)
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (memberCheck) {
-            setUserRole(memberCheck.role);
+          const memberRole = await fetchUserRole(user.id, userClubId);
+          if (memberRole) {
+            setUserRole(memberRole);
             setIsCheckingClub(false);
             return;
           }
@@ -188,19 +185,8 @@ const Dashboard = () => {
     enabled: !!userClubId && !isCheckingClub,
   });
 
-  // Query to fetch club member count
-  const { data: memberCount } = useQuery({
-    queryKey: ["clubMemberCount", userClubId],
-    queryFn: async () => {
-      if (!userClubId) return 0;
-
-      const { count } = await supabase
-        .from("club_members")
-        .select("*", { count: "exact", head: true })
-        .eq("club_id", userClubId);
-
-      return count || 0;
-    },
+  // Query to fetch club member count (centralized helper)
+  const { data: memberCount } = useMemberCount(userClubId, {
     enabled: !!userClubId && !isCheckingClub,
   });
 

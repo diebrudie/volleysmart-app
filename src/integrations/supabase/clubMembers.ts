@@ -51,10 +51,15 @@ export async function fetchMemberCount(clubId: string): Promise<number> {
 }
 
 /** Hook: membership row (status + is_active) */
-export function useMembership(userId: string | null, clubId: string | null) {
+export function useMembership(
+  userId: string | null,
+  clubId: string | null,
+  opts?: { enabled?: boolean }
+) {
+  const enabled = (opts?.enabled ?? true) && Boolean(userId && clubId);
   return useQuery({
     queryKey: ["club_membership", { userId, clubId }],
-    enabled: Boolean(userId && clubId),
+    enabled,
     staleTime: 5 * 60 * 1000, // 5 min
     queryFn: async () => {
       return userId && clubId ? fetchMembership(userId, clubId) : null;
@@ -63,10 +68,15 @@ export function useMembership(userId: string | null, clubId: string | null) {
 }
 
 /** Hook: user role in a club */
-export function useUserRole(userId: string | null, clubId: string | null) {
+export function useUserRole(
+  userId: string | null,
+  clubId: string | null,
+  opts?: { enabled?: boolean }
+) {
+  const enabled = (opts?.enabled ?? true) && Boolean(userId && clubId);
   return useQuery({
     queryKey: ["club_user_role", { userId, clubId }],
-    enabled: Boolean(userId && clubId),
+    enabled,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       return userId && clubId ? fetchUserRole(userId, clubId) : null;
@@ -74,11 +84,15 @@ export function useUserRole(userId: string | null, clubId: string | null) {
   });
 }
 
-/** Hook: count active members (optionally filter active/pending etc. later) */
-export function useMemberCount(clubId: string | null) {
+/** Hook: count members */
+export function useMemberCount(
+  clubId: string | null,
+  opts?: { enabled?: boolean }
+) {
+  const enabled = (opts?.enabled ?? true) && Boolean(clubId);
   return useQuery({
     queryKey: ["club_member_count", { clubId }],
-    enabled: Boolean(clubId),
+    enabled,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       return clubId ? fetchMemberCount(clubId) : 0;
