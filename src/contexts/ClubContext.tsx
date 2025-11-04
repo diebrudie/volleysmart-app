@@ -9,6 +9,7 @@ import {
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchMembership } from "@/integrations/supabase/clubMembers";
 
 /**
  * ClubContext: holds the "current club" selection.
@@ -23,7 +24,6 @@ interface ClubContextType {
   setClubId: (id: string) => void; // Validates before persisting
   clearClubId: () => void;
   initialized: boolean;
-  isValidatingClub: boolean;
 }
 
 const ClubContext = createContext<ClubContextType | undefined>(undefined);
@@ -42,7 +42,6 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
   const [initialized, setInitialized] = useState(false);
   const [membershipStatus, setMembershipStatus] =
     useState<MembershipStatus | null>(null);
-  const [isValidatingClub, setIsValidatingClub] = useState(false);
 
   // Use a mounted ref instead of a "cancelled" flag to satisfy eslint prefer-const
   const mountedRef = useRef(true);
@@ -76,18 +75,14 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      const { data, error } = await supabase
-        .from("club_members")
-        .select("status")
-        .eq("user_id", user.id)
-        .eq("club_id", clubIdToCheck)
-        .maybeSingle();
+      const data = await fetchMembership(user.id, clubIdToCheck);
 
-      if (error || !data) {
+      if (!data) {
         delete membershipCache.current[clubIdToCheck];
         return null;
       }
 
+      // Only statuses relevant to the context contract
       if (
         data.status === "active" ||
         data.status === "pending" ||
@@ -131,8 +126,6 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
 
     // Force a fresh server read on boot to respect revocations immediately
     (async () => {
-      setIsValidatingClub(true); // ✅ start validation
-
       const status = await fetchMembershipStatus(stored, true /* force */);
       if (!mountedRef.current) return;
 
@@ -144,23 +137,29 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
         setClubIdState(null);
         setMembershipStatus(status);
       }
-
       setInitialized(true);
-      setIsValidatingClub(false); // ✅ end validation
     })();
   }, [user?.id, fetchMembershipStatus]);
 
   /**
-   * Public setter: set clubId and remember it. No async validation here.
-   * Validation is performed on boot (stored club) and revocations are handled
-   * by RealtimeAppEffect → clears context & navigates away if membership is lost.
+   * Public setter: validate before persisting.
+   * Remains a sync signature; async is encapsulated inside.
    */
   const setClubId = (id: string) => {
-    if (clubId === id && membershipStatus === "active") return;
-    localStorage.setItem("lastVisitedClub", id);
-    setClubIdState(id);
-    setMembershipStatus("active");
-    // Do NOT toggle isValidatingClub or run fetches here.
+    (async () => {
+      const status = await fetchMembershipStatus(id);
+      if (!mountedRef.current) return;
+
+      if (status === "active") {
+        localStorage.setItem("lastVisitedClub", id);
+        setClubIdState(id);
+        setMembershipStatus("active");
+      } else {
+        localStorage.removeItem("lastVisitedClub");
+        setClubIdState(null);
+        setMembershipStatus(status);
+      }
+    })();
   };
 
   const clearClubId = () => {
@@ -177,7 +176,6 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
         setClubId,
         clearClubId,
         initialized,
-        isValidatingClub, // NEW
       }}
     >
       {children}

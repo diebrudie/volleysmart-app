@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useClub } from "@/contexts/ClubContext";
 import { useNavigate } from "react-router-dom";
 import type { Database } from "@/integrations/supabase/types";
+import { fetchMembership } from "@/integrations/supabase/clubMembers";
 
 type ClubMembersRow = Database["public"]["Tables"]["club_members"]["Row"];
 type MatchDaysRow = Database["public"]["Tables"]["match_days"]["Row"];
@@ -185,19 +186,14 @@ export default function RealtimeAppEffect() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from("club_members")
-        .select("status,is_active")
-        .eq("user_id", user.id)
-        .eq("club_id", clubId)
-        .maybeSingle();
+      const data = await fetchMembership(user.id, clubId);
 
       if (cancelled) return;
 
       const stillActive =
         !!data && data.status === "active" && data.is_active !== false;
 
-      if (!stillActive || error) {
+      if (!stillActive) {
         clearClubId();
         navigate("/clubs", { replace: true });
         return;
