@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueryClient,
+  UseQueryOptions,
+} from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +18,7 @@ import { Pencil, MapPin } from "lucide-react";
 import { useClub } from "@/contexts/ClubContext";
 import { useParams } from "react-router-dom";
 import CopyableClubId from "@/components/clubs/CopyableClubId";
+import { useMemberCount } from "@/integrations/supabase/clubMembers";
 
 // Define proper interfaces
 interface GamePlayerData {

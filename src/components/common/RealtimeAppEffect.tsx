@@ -160,16 +160,31 @@ export default function RealtimeAppEffect() {
     };
   }, [clubId, invalidateFamilies]);
 
-  // 3) Failsafe: if realtime doesn't deliver removal events due to RLS,
-  // periodically verify membership for the current club and kick out if revoked.
+  // 3) Failsafe: verify membership occasionally when Realtime is quiet.
+  //    - Only runs when online
+  //    - Backs off from 30s → 60s → 120s on stability
+  //    - Resets to 30s after navigation focus/visibility
   useEffect(() => {
     if (!user?.id || !clubId) return;
 
     let cancelled = false;
     let timer: number | undefined;
+    let intervalMs = 30_000; // start modest; will back off
+
+    const scheduleNext = () => {
+      if (cancelled) return;
+      timer = window.setTimeout(check, intervalMs);
+    };
 
     const check = async () => {
-      // Single-row, very cheap guard query
+      if (cancelled) return;
+
+      // Skip if offline to avoid auth refresh noise & console errors
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        scheduleNext();
+        return;
+      }
+
       const { data, error } = await supabase
         .from("club_members")
         .select("status,is_active")
@@ -183,21 +198,24 @@ export default function RealtimeAppEffect() {
         !!data && data.status === "active" && data.is_active !== false;
 
       if (!stillActive || error) {
-        // Lost access → clear context and navigate away
         clearClubId();
         navigate("/clubs", { replace: true });
         return;
       }
 
-      // Schedule next check
-      timer = window.setTimeout(check, 7000); // 7s is a good balance
+      // backoff: 30s → 60s → 120s (cap)
+      intervalMs = Math.min(intervalMs * 2, 120_000);
+      scheduleNext();
     };
 
-    // Initial check immediately
-    void check();
+    // Initial run soon (but not immediately)
+    timer = window.setTimeout(check, 5_000);
 
-    // Also re-check on focus for snappy response
-    const onFocus = () => void check();
+    // Reset backoff on focus/visibility so app feels snappy after returning
+    const onFocus = () => {
+      intervalMs = 30_000;
+      void check();
+    };
     window.addEventListener("visibilitychange", onFocus);
     window.addEventListener("focus", onFocus);
 
