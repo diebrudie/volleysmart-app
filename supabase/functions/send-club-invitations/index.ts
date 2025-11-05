@@ -1,19 +1,55 @@
 /**
  * send-club-invitations
- * Sends club invitations via Gmail SMTP (Cloudflare Email Routing for receiving).
+ * Gmail SMTP sender for club invites (VolleySmart).
+ * Fixes Deno 2 runtime issue by polyfilling Deno.writeAll before importing smtp client.
  *
- * Required function secrets (set via Supabase CLI):
- *  - SMTP_HOST=smtp.gmail.com
- *  - SMTP_PORT=465
- *  - SMTP_USER=isabel.b@diebrudie.com
- *  - SMTP_PASS=<16-char Gmail App Password>
- *  - FROM_EMAIL=noreply@volleysmart.app
- *  - FROM_NAME="VolleySmart App"
+ * Required secrets (project-level):
+ *  SMTP_HOST=smtp.gmail.com
+ *  SMTP_PORT=465
+ *  SMTP_USER=isabel.b@diebrudie.com
+ *  SMTP_PASS=<Gmail App Password>
+ *  FROM_EMAIL=noreply@volleysmart.app
+ *  FROM_NAME="VolleySmart App"
  */
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SmtpClient } from "https://deno.land/x/smtp/mod.ts";
+import { writeAll } from "https://deno.land/std@0.177.0/streams/write_all.ts";
+
+// --------- Polyfill for Deno 2 ----------
+/**
+ * Some third-party libs still call `Deno.writeAll`, which was removed in Deno 2.
+ * We safely attach a polyfill using std/streams/write_all.
+ */
+try {
+  (Deno as unknown as { writeAll?: typeof writeAll }).writeAll = writeAll;
+} catch {
+  // ignore if not allowed – runtime will still have the global polyfilled
+}
+// ----------------------------------------
+
+/**
+ * Dynamic import of the SMTP client *after* polyfilling writeAll.
+ * Minimal interface to avoid `any`.
+ */
+interface ISmtpClient {
+  connectTLS(options: {
+    hostname: string;
+    port: number;
+    username: string;
+    password: string;
+  }): Promise<void>;
+  send(options: {
+    from: string;
+    to: string;
+    subject: string;
+    content: string;
+  }): Promise<void>;
+  close(): Promise<void>;
+}
+
+const { SmtpClient } = await import("https://deno.land/x/smtp/mod.ts");
+const SmtpCtor = SmtpClient as unknown as { new (): ISmtpClient };
 
 // CORS
 const corsHeaders = {
@@ -190,7 +226,7 @@ serve(async (req: Request) => {
     }
 
     // SMTPS 465
-    const smtp = new SmtpClient();
+    const smtp: ISmtpClient = new SmtpCtor();
     await smtp.connectTLS({
       hostname: SMTP_HOST,
       port: SMTP_PORT,
@@ -201,12 +237,15 @@ serve(async (req: Request) => {
     const results: Array<{ email: string; ok: boolean; error?: string }> = [];
     for (const invite of invites) {
       try {
-        const { subject, text } = buildText(invite, clubInfo);
+        const { subject, text } = buildText(
+          invite as Invite,
+          clubInfo as ClubInfo
+        );
         await smtp.send({
           from: `${FROM_NAME} <${FROM_EMAIL}>`,
           to: invite.email,
           subject,
-          content: text, // plaintext for broad deliverability
+          content: text, // plaintext for deliverability
         });
         results.push({ email: invite.email, ok: true });
       } catch (e) {
