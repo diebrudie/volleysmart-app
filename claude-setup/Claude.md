@@ -53,6 +53,7 @@ volleysmart-app/
 │  │  │  └─ CopyableClubId.tsx
 │  │  ├─ common/
 │  │  │  └─ AppLiveRefresh.tsx
+│  │  │  └─ EmptyGameState.tsx
 │  │  │  └─ Logo.tsx
 │  │  │  └─ RealtimeAppEffect.tsx
 │  │  │  └─ ScrollToTop.tsx
@@ -162,6 +163,7 @@ volleysmart-app/
 │  │  └─ supabase/
 │  │     ├─ client.ts
 │  │     ├─ club.ts
+│  │     ├─ clubMembers.ts
 │  │     ├─ matchDays.ts
 │  │     ├─ members.ts
 │  │     ├─ players.ts

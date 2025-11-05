@@ -41,6 +41,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import { LocationSelector } from "@/components/forms/LocationSelector";
 import { formatFirstLastInitial } from "@/lib/formatName";
+import { fetchUserRole } from "@/integrations/supabase/clubMembers";
 
 interface Player {
   id: string;
@@ -242,22 +243,14 @@ const GameDetail = () => {
     }
   }, [matchData]);
 
-  // Check user permissions
+  // Check user permissions (centralized)
   const { data: userPermissions } = useQuery({
     queryKey: ["userPermissions", matchData?.club_id, user?.id],
+    enabled: !!matchData?.club_id && !!user?.id,
     queryFn: async () => {
       if (!matchData?.club_id || !user?.id) return null;
-
-      const { data } = await supabase
-        .from("club_members")
-        .select("role")
-        .eq("club_id", matchData.club_id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      return data?.role || null;
+      return await fetchUserRole(user.id, matchData.club_id);
     },
-    enabled: !!matchData?.club_id && !!user?.id,
   });
 
   const isAdminOrEditor =
