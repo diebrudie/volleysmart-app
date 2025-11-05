@@ -8,6 +8,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+  DrawerClose,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +49,8 @@ const SetBox: React.FC<SetBoxProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
   const teamAInputRef = useRef<HTMLInputElement>(null);
+  const [keyboardInset, setKeyboardInset] = useState<number>(0);
+  const drawerContentRef = useRef<HTMLDivElement>(null);
 
   // Update local state when props change (important for when switching between games)
   useEffect(() => {
@@ -92,20 +102,70 @@ const SetBox: React.FC<SetBoxProps> = ({
     }
   };
 
+  const focusAndCenterFirstInput = () => {
+    // Slight delay so the overlay is mounted
+    window.setTimeout(() => {
+      const el = teamAInputRef.current;
+      if (el) {
+        el.focus();
+        // Center the input in the visible area; smooth keeps it subtle
+        el.scrollIntoView({
+          block: "center",
+          inline: "nearest",
+          behavior: "smooth",
+        });
+      }
+    }, 150);
+  };
+
+  const resetLocalScores = () => {
+    setLocalTeamAScore(teamAScore || 0);
+    setLocalTeamBScore(teamBScore || 0);
+  };
+
   const handleDialogOpen = (open: boolean) => {
     setIsOpen(open);
     if (open) {
-      // Reset local state to current props when opening dialog
-      setLocalTeamAScore(teamAScore || 0);
-      setLocalTeamBScore(teamBScore || 0);
-
-      setTimeout(() => {
-        if (teamAInputRef.current) {
-          teamAInputRef.current.focus();
-        }
-      }, 100);
+      resetLocalScores();
+      focusAndCenterFirstInput();
     }
   };
+
+  /**
+   * Keyboard-avoidance for mobile Drawer using the Visual Viewport API.
+   * We compute an inset so the content sits above the keyboard.
+   */
+  useEffect(() => {
+    if (!isMobile || !isOpen) return;
+
+    const vv: VisualViewport | null =
+      typeof window !== "undefined" ? window.visualViewport ?? null : null;
+    if (!vv) return;
+
+    const onResize = () => {
+      const vh = window.innerHeight;
+      const inset = Math.max(0, vh - vv.height - vv.offsetTop);
+      setKeyboardInset(inset);
+      // Keep the first input centered if keyboard changed size
+      const el = teamAInputRef.current;
+      if (el)
+        el.scrollIntoView({
+          block: "center",
+          inline: "nearest",
+          behavior: "smooth",
+        });
+    };
+
+    vv.addEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    onResize();
+
+    return () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onResize);
+      setKeyboardInset(0);
+    };
+  }, [isMobile, isOpen]);
 
   return (
     <div
@@ -138,67 +198,161 @@ const SetBox: React.FC<SetBoxProps> = ({
       </p>
 
       {isEditingAllowed && (
-        <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
-          <DialogTrigger asChild>
-            <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
-              <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-            </button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="text-center">
-                Update Set {setNumber} Score
-              </DialogTitle>
-            </DialogHeader>
+        <>
+          {/* Desktop / tablet: keep Dialog */}
+          {!isMobile && (
+            <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
+              <DialogTrigger asChild>
+                <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
+                  <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                </button>
+              </DialogTrigger>
+              <DialogContent
+                onOpenAutoFocus={(e) => {
+                  /* we already manage focus */ e.preventDefault();
+                }}
+              >
+                <DialogHeader>
+                  <DialogTitle className="text-center">
+                    Update Set {setNumber} Score
+                  </DialogTitle>
+                </DialogHeader>
 
-            <div className="py-6">
-              <div className="flex items-center justify-center gap-4 mb-6">
-                <div className="text-center">
-                  <p className="text-sm font-medium mb-2 text-red-500">
-                    Team A
-                  </p>
-                  <input
-                    ref={teamAInputRef}
-                    type="number"
-                    min="0"
-                    value={localTeamAScore}
-                    onChange={(e) =>
-                      setLocalTeamAScore(parseInt(e.target.value) || 0)
-                    }
-                    onKeyDown={handleKeyDown}
-                    className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  />
+                <div className="py-6">
+                  <div className="flex items-center justify-center gap-4 mb-6">
+                    <div className="text-center">
+                      <p className="text-sm font-medium mb-2 text-red-500">
+                        Team A
+                      </p>
+                      <input
+                        ref={teamAInputRef}
+                        type="number"
+                        min="0"
+                        value={localTeamAScore}
+                        onChange={(e) =>
+                          setLocalTeamAScore(parseInt(e.target.value, 10) || 0)
+                        }
+                        onKeyDown={handleKeyDown}
+                        className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+
+                    <div className="text-2xl font-medium self-end text-gray-900 dark:text-gray-100">
+                      vs.
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-sm font-medium mb-2 text-emerald-500">
+                        Team B
+                      </p>
+                      <input
+                        type="number"
+                        min="0"
+                        value={localTeamBScore}
+                        onChange={(e) =>
+                          setLocalTeamBScore(parseInt(e.target.value, 10) || 0)
+                        }
+                        onKeyDown={handleKeyDown}
+                        className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <Button variant="primary" onClick={handleSubmit}>
+                      Submit
+                    </Button>
+                  </div>
                 </div>
+              </DialogContent>
+            </Dialog>
+          )}
 
-                <div className="text-2xl font-medium self-end text-gray-900 dark:text-gray-100">
-                  vs.
+          {/* Mobile: Drawer to stay above keyboard */}
+          {isMobile && (
+            <Drawer
+              open={isOpen}
+              onOpenChange={(open) => {
+                setIsOpen(open);
+                if (open) {
+                  resetLocalScores();
+                  focusAndCenterFirstInput();
+                }
+              }}
+            >
+              <DrawerTrigger asChild>
+                <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
+                  <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                </button>
+              </DrawerTrigger>
+              <DrawerContent
+                ref={drawerContentRef}
+                /**
+                 * Safe-area + keyboard inset so content sits above the iOS keyboard.
+                 * The 16px gives a little breathing space over the keyboard.
+                 */
+                style={{
+                  paddingBottom: `calc(${keyboardInset}px + env(safe-area-inset-bottom))`,
+                }}
+                className="max-h-[85vh] overflow-y-auto"
+              >
+                <DrawerHeader className="text-center">
+                  <DrawerTitle>Update Set {setNumber} Score</DrawerTitle>
+                </DrawerHeader>
+
+                <div className="py-4">
+                  <div className="flex items-center justify-center gap-4 mb-6">
+                    <div className="text-center">
+                      <p className="text-sm font-medium mb-2 text-red-500">
+                        Team A
+                      </p>
+                      <input
+                        ref={teamAInputRef}
+                        inputMode="numeric"
+                        type="number"
+                        min="0"
+                        value={localTeamAScore}
+                        onChange={(e) =>
+                          setLocalTeamAScore(parseInt(e.target.value, 10) || 0)
+                        }
+                        className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+
+                    <div className="text-2xl font-medium self-end text-gray-900 dark:text-gray-100">
+                      vs.
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-sm font-medium mb-2 text-emerald-500">
+                        Team B
+                      </p>
+                      <input
+                        inputMode="numeric"
+                        type="number"
+                        min="0"
+                        value={localTeamBScore}
+                        onChange={(e) =>
+                          setLocalTeamBScore(parseInt(e.target.value, 10) || 0)
+                        }
+                        className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center gap-3 pb-2">
+                    <DrawerClose asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </DrawerClose>
+                    <Button variant="primary" onClick={handleSubmit}>
+                      Submit
+                    </Button>
+                  </div>
                 </div>
-
-                <div className="text-center">
-                  <p className="text-sm font-medium mb-2 text-emerald-500">
-                    Team B
-                  </p>
-                  <input
-                    type="number"
-                    min="0"
-                    value={localTeamBScore}
-                    onChange={(e) =>
-                      setLocalTeamBScore(parseInt(e.target.value) || 0)
-                    }
-                    onKeyDown={handleKeyDown}
-                    className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-center">
-                <Button variant="primary" onClick={handleSubmit}>
-                  Submit
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+              </DrawerContent>
+            </Drawer>
+          )}
+        </>
       )}
     </div>
   );
