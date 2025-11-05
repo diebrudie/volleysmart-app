@@ -636,7 +636,7 @@ const Dashboard = () => {
                 {/* Desktop layout: Club name + date/location in one row */}
                 {clubDetails?.name && (
                   <div className="hidden sm:flex flex-row items-center justify-start gap-2 mb-3">
-                    <div className="text-xl font-semibold tracking-tight text-primary dark:text-blue-600">
+                    <div className="text-xl font-semibold text-primary dark:text-blue-600">
                       Club: {clubDetails.name}
                     </div>
                     <div className="text-xl flex items-center text-gray-600 dark:text-gray-400 gap-3">
@@ -645,7 +645,7 @@ const Dashboard = () => {
                       {latestGame?.locations?.name && (
                         <>
                           <span>|</span>
-                          <div className="flex items-center">
+                          <div className="flex items-center ">
                             <MapPin className="h-4 w-4 mr-1" />
                             <span>{latestGame.locations.name}</span>
                           </div>

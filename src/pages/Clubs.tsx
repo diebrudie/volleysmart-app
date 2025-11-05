@@ -31,12 +31,15 @@ import {
   Trash,
   MapPin,
 } from "lucide-react";
-
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
 import { buildImageUrl } from "@/utils/buildImageUrl";
+import {
+  fetchActiveMemberClubsWithDetails,
+  MemberClubWithDetails,
+} from "@/integrations/supabase/clubMembers";
 
 interface ClubWithDetails {
   id: string;
@@ -54,25 +57,6 @@ interface ClubWithDetails {
   country_code?: string | null;
   is_club_discoverable?: boolean;
 }
-
-type MemberClubRow = {
-  club_id: string;
-  role: string;
-  clubs: {
-    id: string;
-    name: string;
-    image_url: string | null;
-    created_at: string;
-    created_by: string;
-    description?: string;
-    slug: string;
-    status: string;
-    city?: string | null;
-    country?: string | null;
-    country_code?: string | null;
-    is_club_discoverable?: boolean;
-  } | null;
-};
 
 type CreatedClubRow = {
   id: string;
@@ -120,37 +104,8 @@ const Clubs = () => {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // Get clubs where user is a member
-      const { data: memberClubs, error: memberError } = await supabase
-        .from("club_members")
-        .select(
-          `
-    club_id,
-    role,
-    status,
-    is_active,
-    clubs!inner (
-      id,
-      name,
-      image_url,
-      created_at,
-      created_by,
-      description,
-      slug,
-      status,
-      city,
-      country,
-      country_code,
-      is_club_discoverable
-    )
-  `
-        )
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .eq("is_active", true)
-        .eq("clubs.status", "active");
-
-      if (memberError) throw memberError;
+      // Get clubs where user is a member (centralized)
+      const memberClubs = await fetchActiveMemberClubsWithDetails(user.id);
 
       /**
        * Only show active clubs created by the user.
@@ -179,7 +134,7 @@ const Clubs = () => {
 
       if (createdError) throw createdError;
 
-      const memberClubsTyped = (memberClubs ?? []) as MemberClubRow[];
+      const memberClubsTyped = (memberClubs ?? []) as MemberClubWithDetails[];
       const createdClubsTyped = (createdClubs ?? []) as CreatedClubRow[];
 
       // Combine and format results

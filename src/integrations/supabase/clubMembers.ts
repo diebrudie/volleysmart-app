@@ -116,3 +116,77 @@ export async function fetchMemberRowBasic(
     ? { id: String(data.id), role: (data.role as ClubMemberRole) ?? null }
     : null;
 }
+
+/**
+ * Fetch active club memberships for a user, with joined club details.
+ * Mirrors the SELECT in Clubs.tsx but centralizes it here.
+ */
+export type MemberClubWithDetails = {
+  club_id: string;
+  role: ClubMemberRole | string; // PostgREST returns string, we narrow upstream
+  status: ClubMemberStatus | string | null;
+  is_active: boolean;
+  clubs: {
+    id: string;
+    name: string;
+    image_url: string | null;
+    created_at: string;
+    created_by: string;
+    description?: string | null;
+    slug: string;
+    status: string | null;
+    city?: string | null;
+    country?: string | null;
+    country_code?: string | null;
+    is_club_discoverable?: boolean | null;
+  } | null;
+};
+
+export async function fetchActiveMemberClubsWithDetails(
+  userId: string
+): Promise<MemberClubWithDetails[]> {
+  const { data, error } = await supabase
+    .from("club_members")
+    .select(
+      `
+      club_id,
+      role,
+      status,
+      is_active,
+      clubs!inner (
+        id,
+        name,
+        image_url,
+        created_at,
+        created_by,
+        description,
+        slug,
+        status,
+        city,
+        country,
+        country_code,
+        is_club_discoverable
+      )
+    `
+    )
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .eq("is_active", true)
+    .eq("clubs.status", "active");
+
+  if (error) throw error;
+  return (data ?? []) as MemberClubWithDetails[];
+}
+
+/**
+ * Lightweight list of club IDs the user belongs to (no extra filters to preserve current behavior).
+ */
+export async function fetchUserClubIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("club_members")
+    .select("club_id")
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  return (data ?? []).map((r) => String(r.club_id));
+}
