@@ -10,6 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  usePendingRequestCount,
+  fetchActiveMembersBasic,
+  deactivateMembersByUserIds,
+} from "@/integrations/supabase/clubMembers";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -130,7 +135,7 @@ const Members = () => {
   });
 
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { data: isAdmin = false } = useIsAdmin(clubId);
 
   /**
    * Count pending membership requests for this club.
@@ -140,20 +145,7 @@ const Members = () => {
     data: pendingRequests = 0,
     isLoading: pendingLoading,
     error: pendingError,
-  } = useQuery({
-    queryKey: ["pendingRequestsCount", clubId, isAdmin],
-    enabled: !!clubId && isAdmin,
-    queryFn: async (): Promise<number> => {
-      const { error, count } = await supabase
-        .from("club_members")
-        .select("id", { count: "exact", head: true })
-        .eq("club_id", clubId!)
-        .eq("status", "pending");
-
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
+  } = usePendingRequestCount(clubId ?? null, { enabled: !!clubId && isAdmin });
 
   // Set context from URL if available
   useEffect(() => {
@@ -161,32 +153,6 @@ const Members = () => {
       setClubId(urlClubId);
     }
   }, [urlClubId, contextClubId, setClubId]);
-
-  // Check if current user is admin
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!clubId || !user?.id) return;
-
-      try {
-        const { data: memberData, error } = await supabase
-          .from("club_members")
-          .select("role")
-          .eq("club_id", clubId)
-          .eq("user_id", user.id)
-          .eq("is_active", true)
-          .single();
-
-        if (!error && memberData) {
-          setIsAdmin(memberData.role === "admin");
-        }
-      } catch (error) {
-        console.error("Error checking admin status:", error);
-        setIsAdmin(false);
-      }
-    };
-
-    checkAdminStatus();
-  }, [clubId, user?.id]);
 
   // Query to fetch club members (keeping your existing logic)
   const {
@@ -203,25 +169,12 @@ const Members = () => {
       }
 
       try {
-        // Step 1: Get club members for the specific club
-        const { data: clubMembersRaw, error: membersError } = await supabase
-          .from("club_members")
-          .select("club_id, id, joined_at, user_id, is_active, role")
-          .eq("club_id", clubId)
-          .eq("is_active", true);
+        // Step 1: Get club members for the specific club (centralized helper)
+        const clubMembers = await fetchActiveMembersBasic(clubId);
 
-        if (membersError) {
-          console.error("❌ Error fetching club members:", membersError);
-          throw membersError;
-        }
-
-        if (!clubMembersRaw || clubMembersRaw.length === 0) {
-          // console.log("⚠️ No members found for club:", clubId);
+        if (!clubMembers || clubMembers.length === 0) {
           return [];
         }
-
-        // Cast to our simple type
-        const clubMembers = clubMembersRaw as ClubMember[];
 
         // Step 2: Get user IDs and fetch corresponding players
         const userIds = clubMembers
@@ -434,13 +387,7 @@ const Members = () => {
     if (selectedMembers.length === 0) return;
 
     try {
-      const { error } = await supabase
-        .from("club_members")
-        .update({ is_active: false })
-        .in("user_id", selectedMembers)
-        .eq("club_id", clubId);
-
-      if (error) throw error;
+      await deactivateMembersByUserIds(clubId!, selectedMembers);
 
       toast({
         title: "Success",

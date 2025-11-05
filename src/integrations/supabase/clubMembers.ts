@@ -190,3 +190,83 @@ export async function fetchUserClubIds(userId: string): Promise<string[]> {
   if (error) throw error;
   return (data ?? []).map((r) => String(r.club_id));
 }
+
+/**
+ * Count pending membership requests for a club.
+ */
+export async function fetchPendingRequestCount(
+  clubId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("club_members")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", clubId)
+    .eq("status", "pending");
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * React Query hook for pending count (optional: pass { enabled } to gate)
+ */
+export function usePendingRequestCount(
+  clubId: string | null,
+  opts?: { enabled?: boolean }
+) {
+  const enabled = (opts?.enabled ?? true) && Boolean(clubId);
+  return useQuery({
+    queryKey: ["pendingRequestsCount", clubId],
+    enabled,
+    staleTime: 60_000, // 1 min is plenty here
+    queryFn: async () => {
+      return clubId ? fetchPendingRequestCount(clubId) : 0;
+    },
+  });
+}
+
+/**
+ * Minimal member row used by Members page to then fetch player data.
+ */
+export type ClubMemberBasic = {
+  club_id: string;
+  id: string;
+  joined_at: string;
+  user_id: string;
+  is_active: boolean;
+  role: ClubMemberRole | string | null;
+};
+
+/**
+ * Fetch active members for a club (basic fields only).
+ */
+export async function fetchActiveMembersBasic(
+  clubId: string
+): Promise<ClubMemberBasic[]> {
+  const { data, error } = await supabase
+    .from("club_members")
+    .select("club_id, id, joined_at, user_id, is_active, role")
+    .eq("club_id", clubId)
+    .eq("is_active", true);
+
+  if (error) throw error;
+  return (data ?? []) as ClubMemberBasic[];
+}
+
+/**
+ * Deactivate multiple members by user_id for a club.
+ * Uses returning minimal semantics (no implicit SELECT).
+ */
+export async function deactivateMembersByUserIds(
+  clubId: string,
+  userIds: string[]
+): Promise<void> {
+  if (!userIds.length) return;
+  const { error } = await supabase
+    .from("club_members")
+    .update({ is_active: false })
+    .in("user_id", userIds)
+    .eq("club_id", clubId);
+
+  if (error) throw error;
+}
