@@ -23,13 +23,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useParams } from "react-router-dom";
+import { fetchActiveMembersBasic } from "@/integrations/supabase/clubMembers";
+import { LocationSelector } from "@/components/forms/LocationSelector";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { LocationSelector } from "@/components/forms/LocationSelector";
 
 interface ClubMember {
   id: string;
@@ -106,18 +107,11 @@ const NewGame = () => {
     queryFn: async () => {
       if (!clubId) return [];
 
-      // Get club members first
-      const { data: clubMembers, error: membersError } = await supabase
-        .from("club_members")
-        .select("user_id")
-        .eq("club_id", clubId)
-        .eq("is_active", true);
+      // Centralized: active members for this club (basic fields)
+      const members = await fetchActiveMembersBasic(clubId);
+      if (!members.length) return [];
 
-      if (membersError) throw membersError;
-
-      if (!clubMembers || clubMembers.length === 0) return [];
-
-      const userIds = clubMembers.map((member) => member.user_id);
+      const userIds = members.map((m) => m.user_id).filter(Boolean);
 
       // Get players for these users with their primary position and attributes
       const { data: playersData, error: playersError } = await supabase
@@ -167,24 +161,6 @@ const NewGame = () => {
       return processedPlayers as ClubMember[];
     },
     enabled: !!clubId,
-  });
-
-  const { data: membershipCheck } = useQuery({
-    queryKey: ["membershipCheck", clubId, user?.id],
-    queryFn: async () => {
-      if (!clubId || !user?.id) return null;
-
-      const { data, error } = await supabase
-        .from("club_members")
-        .select("*")
-        .eq("club_id", clubId)
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .single();
-
-      return data;
-    },
-    enabled: !!clubId && !!user?.id,
   });
 
   // Handle extra players count change
