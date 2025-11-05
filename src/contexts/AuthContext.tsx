@@ -58,21 +58,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      /* console.log(
-        "[Auth] event:",
-        event,
-        "| hasSession:",
-        !!session,
-        "| before setUser:",
-        { hasFetchedProfile: hasFetchedProfile.current }
-      );*/
-
       if (event === "SIGNED_OUT") {
-        // Definitive guest
         hasFetchedProfile.current = false;
         setSession(null);
         setUser(null);
         setIsLoading(false);
+        return;
+      }
+
+      if (event === "TOKEN_REFRESHED") {
+        setSession(session ?? null);
         return;
       }
     });
@@ -86,19 +81,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         error,
       } = await supabase.auth.getSession();
 
-      /*console.log("[Auth] getSession() result:", {
-        hasSession: !!session,
-        error,
-      });
-      */
-
       if (error) {
-        console.error("Session error:", error);
-        await supabase.auth.signOut();
+        // Be lenient: could be transient. Do NOT force sign-out here.
+        console.warn("Session getSession() error (non-fatal):", error);
         setSession(null);
         setUser(null);
-
-        setIsLoading(false); // definitive guest
+        setIsLoading(false);
         return;
       }
 

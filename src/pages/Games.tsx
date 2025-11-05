@@ -37,6 +37,10 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
 import { toast } from "sonner";
+import {
+  fetchUserRole,
+  useMemberCount,
+} from "@/integrations/supabase/clubMembers";
 
 interface MatchData {
   id: string;
@@ -180,43 +184,39 @@ const Games = () => {
     enabled: !!clubId && !!user?.id,
   });
 
-  // Query to check club member count and user role for empty state
+  // Member count via helper (kept separate so we can use it in the Empty state)
+  const { data: memberCount } = useMemberCount(clubId ?? null, {
+    enabled: !!clubId && !!user?.id,
+  });
+
+  // Query to derive userRole + clubName (creator fallback kept)
   const { data: clubInfo } = useQuery({
-    queryKey: ["clubInfo", clubId],
+    queryKey: ["clubInfo-role-and-name", clubId, user?.id],
+    enabled: !!clubId && !!user?.id,
     queryFn: async () => {
       if (!clubId || !user?.id) return null;
 
-      // Get member count
-      const { count: memberCount } = await supabase
-        .from("club_members")
-        .select("*", { count: "exact", head: true })
-        .eq("club_id", clubId);
+      // Derive role via helper
+      const role = await fetchUserRole(user.id, clubId);
 
-      // Get user role
-      const { data: memberData } = await supabase
-        .from("club_members")
-        .select("role")
-        .eq("club_id", clubId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      // Check if user is club creator
-      const { data: clubData } = await supabase
+      // Check creator + fetch name
+      const { data: clubData, error: clubErr } = await supabase
         .from("clubs")
         .select("created_by, name")
         .eq("id", clubId)
         .single();
 
+      if (clubErr) throw clubErr;
+
       const userRole =
-        memberData?.role || (clubData?.created_by === user.id ? "admin" : null);
+        role || (clubData?.created_by === user.id ? "admin" : null);
 
       return {
-        memberCount: memberCount || 0,
+        memberCount: memberCount ?? 0,
         userRole,
         clubName: clubData?.name,
       };
     },
-    enabled: !!clubId && !!user?.id,
   });
 
   // Check if current user is admin

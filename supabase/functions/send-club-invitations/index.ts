@@ -6,6 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface Invite {
@@ -63,12 +64,36 @@ serve(async (req: Request) => {
       });
     }
 
-    // Parse request body
-    const { invites, clubInfo }: RequestBody = await req.json();
+    // Parse and validate request body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (!invites || !clubInfo) {
+    const { invites, clubInfo } = body as Partial<RequestBody>;
+    if (
+      !clubInfo ||
+      typeof clubInfo.id !== "string" ||
+      typeof clubInfo.name !== "string" ||
+      typeof clubInfo.joinCode !== "string" ||
+      !Array.isArray(invites) ||
+      invites.length === 0 ||
+      invites.some(
+        (i) =>
+          !i ||
+          typeof i.name !== "string" ||
+          i.name.trim() === "" ||
+          typeof i.email !== "string" ||
+          i.email.trim() === ""
+      )
+    ) {
       return new Response(
-        JSON.stringify({ error: "Missing invites or club info" }),
+        JSON.stringify({ error: "Missing or invalid invites/club info" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -90,17 +115,22 @@ serve(async (req: Request) => {
       });
     }
 
-    // Check if user is the club creator
+    // Check if user is the club creator OR an active admin
     if (clubData.created_by !== user.id) {
-      // Also check if they are an admin
       const { data: memberData, error: memberError } = await supabaseClient
         .from("club_members")
         .select("role")
         .eq("user_id", user.id)
         .eq("club_id", clubInfo.id)
-        .single();
+        .eq("is_active", true)
+        .eq("status", "active")
+        .maybeSingle();
 
-      if (memberError || !memberData || memberData.role !== "admin") {
+      // Treat 406 (no rows) as "not found"
+      const notAdmin =
+        !!memberError || !memberData || memberData.role !== "admin";
+
+      if (notAdmin) {
         return new Response(
           JSON.stringify({
             error: "Not authorized to invite members to this club",
@@ -136,7 +166,8 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error("Error in send-club-invitations function:", error);
 
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueryClient,
+  UseQueryOptions,
+} from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +18,10 @@ import { Pencil, MapPin } from "lucide-react";
 import { useClub } from "@/contexts/ClubContext";
 import { useParams } from "react-router-dom";
 import CopyableClubId from "@/components/clubs/CopyableClubId";
+import {
+  fetchUserRole,
+  useMemberCount,
+} from "@/integrations/supabase/clubMembers";
 
 // Define proper interfaces
 interface GamePlayerData {
@@ -94,15 +102,9 @@ const Dashboard = () => {
           localStorage.setItem("lastVisitedClub", userClubId);
 
           // Verify user has access to this club
-          const { data: memberCheck } = await supabase
-            .from("club_members")
-            .select("role")
-            .eq("club_id", userClubId)
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (memberCheck) {
-            setUserRole(memberCheck.role);
+          const memberRole = await fetchUserRole(user.id, userClubId);
+          if (memberRole) {
+            setUserRole(memberRole);
             setIsCheckingClub(false);
             return;
           }
@@ -183,19 +185,8 @@ const Dashboard = () => {
     enabled: !!userClubId && !isCheckingClub,
   });
 
-  // Query to fetch club member count
-  const { data: memberCount } = useQuery({
-    queryKey: ["clubMemberCount", userClubId],
-    queryFn: async () => {
-      if (!userClubId) return 0;
-
-      const { count } = await supabase
-        .from("club_members")
-        .select("*", { count: "exact", head: true })
-        .eq("club_id", userClubId);
-
-      return count || 0;
-    },
+  // Query to fetch club member count (centralized helper)
+  const { data: memberCount } = useMemberCount(userClubId, {
     enabled: !!userClubId && !isCheckingClub,
   });
 
@@ -645,7 +636,7 @@ const Dashboard = () => {
                 {/* Desktop layout: Club name + date/location in one row */}
                 {clubDetails?.name && (
                   <div className="hidden sm:flex flex-row items-center justify-start gap-2 mb-3">
-                    <div className="text-xl font-semibold tracking-tight text-primary dark:text-blue-600">
+                    <div className="text-xl font-semibold text-primary dark:text-blue-600">
                       Club: {clubDetails.name}
                     </div>
                     <div className="text-xl flex items-center text-gray-600 dark:text-gray-400 gap-3">
@@ -654,7 +645,7 @@ const Dashboard = () => {
                       {latestGame?.locations?.name && (
                         <>
                           <span>|</span>
-                          <div className="flex items-center">
+                          <div className="flex items-center ">
                             <MapPin className="h-4 w-4 mr-1" />
                             <span>{latestGame.locations.name}</span>
                           </div>

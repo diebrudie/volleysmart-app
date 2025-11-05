@@ -1,4 +1,5 @@
 import { supabase } from "./client";
+import { fetchMemberRowBasic } from "./clubMembers";
 
 /**
  * Creates a club admin record for a given club and user
@@ -12,22 +13,10 @@ export const addClubAdmin = async (
     //console. log(`Adding user ${userId} as admin to club ${clubId}`);
 
     // First, check if the user exists in the club_members table
-    const { data: existingMember, error: checkError } = await supabase
-      .from("club_members")
-      .select("id, role")
-      .eq("club_id", clubId)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error("Error checking existing membership:", checkError);
-      throw checkError;
-    }
+    const existingMember = await fetchMemberRowBasic(userId, clubId);
 
     if (existingMember) {
       // User is already a member, update their role to admin
-      //console. log('User is already a member, updating role to admin');
-
       const { error: updateError } = await supabase
         .from("club_members")
         .update({ role: "admin" })
@@ -37,8 +26,6 @@ export const addClubAdmin = async (
         console.error("Error updating role to admin:", updateError);
         throw updateError;
       }
-
-      //console. log('Successfully updated user role to admin');
       return;
     }
 

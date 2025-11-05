@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
+import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -89,32 +90,28 @@ const Login = () => {
           return;
         }
 
-        const { data: clubMembers, error: clubError } = await supabase
-          .from("club_members")
-          .select("club_id")
-          .eq("user_id", user.id);
+        try {
+          const clubIds = await fetchUserClubIds(user.id);
 
-        if (clubError) {
+          if (clubIds.length === 0) {
+            navigate("/start", { replace: true });
+          } else if (clubIds.length === 1) {
+            navigate(`/dashboard/${clubIds[0]}`, { replace: true });
+          } else {
+            const lastVisitedClubId = localStorage.getItem("lastVisitedClub");
+            const isLastClubValid =
+              !!lastVisitedClubId && clubIds.includes(lastVisitedClubId);
+
+            if (isLastClubValid) {
+              navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
+            } else {
+              navigate("/clubs", { replace: true });
+            }
+          }
+        } catch (clubError) {
           console.error("Error checking club membership:", clubError);
           navigate("/start", { replace: true });
           return;
-        }
-
-        if (!clubMembers || clubMembers.length === 0) {
-          navigate("/start", { replace: true });
-        } else if (clubMembers.length === 1) {
-          navigate(`/dashboard/${clubMembers[0].club_id}`, { replace: true });
-        } else {
-          const lastVisitedClubId = localStorage.getItem("lastVisitedClub");
-          const isLastClubValid =
-            !!lastVisitedClubId &&
-            clubMembers.some((m) => m.club_id === lastVisitedClubId);
-
-          if (isLastClubValid) {
-            navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
-          } else {
-            navigate("/clubs", { replace: true });
-          }
         }
       } catch (err) {
         console.error("Error checking user profile:", err);
