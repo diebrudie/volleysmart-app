@@ -38,7 +38,7 @@ export const EmptyTeamsState = ({
       : "You're ready to create your first Game. If needed, coordinate with your admin.";
 
   return (
-    <div className="h-full flex items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-300 p-12">
+    <div className="h-full flex items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-300 p-6 sm:p-12 pt-10 pb-10">
       <div className="text-center">
         <Users className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-lg font-medium text-gray-900">{title}</h3>

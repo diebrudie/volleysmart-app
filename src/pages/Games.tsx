@@ -36,6 +36,8 @@ import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
+import { EmptyGameState } from "@/components/common/EmptyGameState";
+
 import { toast } from "sonner";
 import {
   fetchUserRole,
@@ -202,7 +204,8 @@ const Games = () => {
       // Check creator + fetch name
       const { data: clubData, error: clubErr } = await supabase
         .from("clubs")
-        .select("created_by, name")
+        .select("created_by, name, slug")
+
         .eq("id", clubId)
         .single();
 
@@ -215,6 +218,7 @@ const Games = () => {
         memberCount: memberCount ?? 0,
         userRole,
         clubName: clubData?.name,
+        clubSlug: clubData?.slug,
       };
     },
   });
@@ -414,36 +418,22 @@ const Games = () => {
   // Empty state - no matches played yet
   if (matchesData.length === 0) {
     const memberCount = clubInfo?.memberCount ?? 0;
-    const canGenerateTeams = (clubInfo?.memberCount || 0) >= 4;
+    const canGenerateTeams = memberCount >= 4;
     const canInviteMembers = clubInfo?.userRole === "admin";
 
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-grow flex flex-col items-center justify-center p-4">
-          <div className="max-w-lg w-full text-center">
-            {clubInfo?.clubName && (
-              <p className="text-lg text-gray-700 mb-4">
-                Welcome to{" "}
-                <span className="font-semibold">{clubInfo.clubName}</span>!
-              </p>
-            )}
-            <h1 className="text-3xl font-bold mb-2">
-              No games have been played yet.
-            </h1>
-            <p className="text-gray-600 mb-8">
-              {canInviteMembers
-                ? "Start by creating your first game or inviting more members:"
-                : "Wait for the club admin to create a game or invite more members:"}
-            </p>
-            <EmptyTeamsState
-              canGenerateTeams={canGenerateTeams}
-              onGenerateTeams={handleCreateGame}
-              onInviteMembers={handleInviteMembers}
-              canInviteMembers={canInviteMembers}
-              memberCount={memberCount}
-            />
-          </div>
+        <div className="flex-grow overflow-y-auto p-4 pt-8">
+          <EmptyGameState
+            clubName={clubInfo?.clubName}
+            clubSlug={clubInfo?.clubSlug}
+            memberCount={memberCount}
+            canGenerateTeams={canGenerateTeams}
+            canInviteMembers={canInviteMembers}
+            onInviteMembers={handleInviteMembers}
+            onCreateGame={handleCreateGame}
+          />
         </div>
       </div>
     );

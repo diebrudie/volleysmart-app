@@ -13,6 +13,7 @@ import SetBox from "@/components/match/SetBox";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
+import { EmptyGameState } from "@/components/common/EmptyGameState";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Pencil, MapPin } from "lucide-react";
 import { useClub } from "@/contexts/ClubContext";
@@ -390,38 +391,17 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        {/* Scrollable main area for mobile visibility */}
-        <div className="flex-grow overflow-y-auto p-4">
-          <div className="max-w-lg w-full mx-auto text-center min-h-[80vh] flex flex-col items-center justify-center">
-            {clubDetails && (
-              <p className="text-lg text-gray-700 dark:text-gray-300 mb-2">
-                Welcome to{" "}
-                <span className="font-semibold">{clubDetails.name}</span>!
-              </p>
-            )}
-            <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-              You haven't played any games yet.
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
-              {canInviteMembers
-                ? "Proceed with inviting other members to your club or creating a game:"
-                : "Wait for the club admin to invite more members or create a game:"}
-            </p>
-            <EmptyTeamsState
-              canGenerateTeams={canGenerateTeams}
-              onGenerateTeams={handleCreateGame}
-              onInviteMembers={handleInviteMembers}
-              canInviteMembers={canInviteMembers}
-              memberCount={clubMemberCount}
-            />
-
-            {/* Club ID (slug) display for empty dashboard */}
-            {clubDetails?.slug && (
-              <div className="mt-10 mb-10 flex justify-end w-full">
-                <CopyableClubId slug={clubDetails.slug} />
-              </div>
-            )}
-          </div>
+        <div className="flex-grow overflow-y-auto p-4 pt-8">
+          <EmptyGameState
+            clubName={clubDetails?.name}
+            clubSlug={clubDetails?.slug}
+            memberCount={clubMemberCount}
+            canGenerateTeams={canGenerateTeams}
+            canInviteMembers={canInviteMembers}
+            onInviteMembers={handleInviteMembers}
+            onCreateGame={handleCreateGame}
+            variant="dashboard"
+          />
         </div>
       </div>
     );
