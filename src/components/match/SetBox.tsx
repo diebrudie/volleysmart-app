@@ -112,6 +112,11 @@ const SetBox: React.FC<SetBoxProps> = ({
     const b = parseInt(localTeamBScore, 10);
     const aVal = Number.isFinite(a) ? a : 0;
     const bVal = Number.isFinite(b) ? b : 0;
+
+    // Blur to prompt keyboard to close before unlock/reenable scroll
+    const active = document.activeElement as HTMLElement | null;
+    active?.blur?.();
+
     onScoreUpdate(setNumber, aVal, bVal);
     setIsOpen(false);
   };
@@ -172,10 +177,8 @@ const SetBox: React.FC<SetBoxProps> = ({
     setIsOpen(open);
     if (open) {
       resetLocalScores();
-      // Lock immediately to stabilize layout (esp. iOS PWA) before focusing
-      if (isMobile) lockBodyScroll();
 
-      // Recompute keyboard inset once after lock (microtask)
+      // Recompute keyboard inset once after open (microtask)
       Promise.resolve().then(() => {
         const vv =
           typeof window !== "undefined" ? window.visualViewport ?? null : null;
@@ -186,8 +189,6 @@ const SetBox: React.FC<SetBoxProps> = ({
       });
 
       focusAndCenterFirstInput();
-    } else {
-      unlockBodyScroll();
     }
   };
 
@@ -257,11 +258,28 @@ const SetBox: React.FC<SetBoxProps> = ({
     };
   }, [isMobile, isOpen]);
 
-  // Lock body scroll while the drawer is open (fixed-position lock works in iOS standalone PWAs)
+  // Lock body scroll while the drawer is open.
+  // - iOS standalone PWA: fixed-position lock (robust)
+  // - Mobile browser: overflow lock (avoids "frozen page" after close)
   useEffect(() => {
     if (!(isMobile && isOpen)) return;
-    lockBodyScroll();
-    return () => unlockBodyScroll();
+
+    if (isStandalone) {
+      // PWA
+      lockBodyScroll();
+      return () => unlockBodyScroll();
+    }
+
+    // Mobile browser overflow lock
+    const prevOverflow = document.body.style.overflow;
+    const prevTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouchAction;
+    };
   }, [isMobile, isOpen]);
 
   return (
