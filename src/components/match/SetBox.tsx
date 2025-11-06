@@ -21,7 +21,6 @@ import { cn } from "@/lib/utils";
 
 // Detect iOS standalone PWA
 interface NavigatorWithStandalone extends Navigator {
-  // Safari exposes this in standalone mode on iOS
   standalone?: boolean;
 }
 const isIOS =
@@ -67,6 +66,9 @@ const SetBox: React.FC<SetBoxProps> = ({
   const teamAInputRef = useRef<HTMLInputElement>(null);
   const [keyboardInset, setKeyboardInset] = useState<number>(0);
   const drawerContentRef = useRef<HTMLDivElement>(null);
+
+  // Tracks the first time the sheet opens on mobile to harden focus timing
+  const firstOpenPrimedRef = useRef<boolean>(false);
 
   // Update local state when props change (important for when switching between games)
   useEffect(() => {
@@ -122,24 +124,43 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const focusAndCenterFirstInput = () => {
-    const delay = isIOS && isStandalone ? 300 : 150; // iOS PWA needs a bit more time
-    window.setTimeout(() => {
-      const el = teamAInputRef.current;
-      if (el) {
-        el.focus();
-        // Ensure caret shows up on iOS
-        try {
-          el.setSelectionRange?.(0, String(el.value ?? "").length);
-        } catch {
-          // ignore selection errors on non-text inputs (iOS Safari quirk)
-        }
-        el.scrollIntoView({
-          block: "center",
-          inline: "nearest",
-          behavior: "smooth",
-        });
+    const el = teamAInputRef.current;
+    if (!el) return;
+
+    const doFocus = () => {
+      el.focus();
+      try {
+        el.setSelectionRange?.(0, String(el.value ?? "").length);
+      } catch {
+        // ignore selection errors on numeric inputs
       }
-    }, delay);
+      el.scrollIntoView({
+        block: "center",
+        inline: "nearest",
+        behavior: "smooth",
+      });
+    };
+
+    // On first ever open on iOS, the initial focus can be ignored during animation.
+    if (!firstOpenPrimedRef.current) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.setTimeout(doFocus, isIOS ? 250 : 120);
+        });
+      });
+
+      const vv =
+        typeof window !== "undefined" ? window.visualViewport ?? null : null;
+      const oneShot = () => {
+        doFocus();
+        vv?.removeEventListener("resize", oneShot);
+      };
+      vv?.addEventListener("resize", oneShot, { once: true });
+
+      firstOpenPrimedRef.current = true;
+    } else {
+      requestAnimationFrame(() => window.setTimeout(doFocus, 100));
+    }
   };
 
   const resetLocalScores = () => {
@@ -147,13 +168,56 @@ const SetBox: React.FC<SetBoxProps> = ({
     setLocalTeamBScore(teamBScore && teamBScore > 0 ? String(teamBScore) : "");
   };
 
-  const handleDialogOpen = (open: boolean) => {
+  const handleOpen = (open: boolean) => {
     setIsOpen(open);
     if (open) {
       resetLocalScores();
+      // Lock immediately to stabilize layout (esp. iOS PWA) before focusing
+      if (isMobile) lockBodyScroll();
+
+      // Recompute keyboard inset once after lock (microtask)
+      Promise.resolve().then(() => {
+        const vv =
+          typeof window !== "undefined" ? window.visualViewport ?? null : null;
+        if (vv) {
+          const vh = window.innerHeight;
+          setKeyboardInset(Math.max(0, vh - vv.height));
+        }
+      });
+
       focusAndCenterFirstInput();
+    } else {
+      unlockBodyScroll();
     }
   };
+
+  // Body scroll lock (works on iOS standalone)
+  const scrollYBeforeLock = useRef<number>(0);
+
+  function lockBodyScroll(): void {
+    if (document.body.style.position === "fixed") return;
+    scrollYBeforeLock.current = window.scrollY;
+    const body = document.body;
+    body.style.position = "fixed";
+    body.style.top = `-${scrollYBeforeLock.current}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overscrollBehaviorY = "contain";
+  }
+
+  function unlockBodyScroll(): void {
+    if (document.body.style.position !== "fixed") return;
+    const body = document.body;
+    const y = scrollYBeforeLock.current;
+    body.style.position = "";
+    body.style.top = "";
+    body.style.left = "";
+    body.style.right = "";
+    body.style.width = "";
+    body.style.overscrollBehaviorY = "";
+    window.scrollTo(0, y);
+  }
 
   /**
    * Keyboard-avoidance for mobile Drawer using the Visual Viewport API.
@@ -168,12 +232,8 @@ const SetBox: React.FC<SetBoxProps> = ({
 
     const onResize = () => {
       const vh = window.innerHeight;
-      // In iOS standalone, offsetTop can be unreliable; prefer a simpler delta.
-      const baseInset = Math.max(0, vh - vv.height);
-      const inset =
-        isIOS && isStandalone
-          ? baseInset
-          : Math.max(0, vh - vv.height - vv.offsetTop);
+      // offsetTop is unstable on iOS; use simple delta everywhere
+      const inset = Math.max(0, vh - vv.height);
       setKeyboardInset(inset);
 
       // Keep the first input centered if keyboard changed size
@@ -197,18 +257,11 @@ const SetBox: React.FC<SetBoxProps> = ({
     };
   }, [isMobile, isOpen]);
 
-  // Lock body scroll while the mobile drawer is open (prevents background scrolling in iOS PWAs)
+  // Lock body scroll while the drawer is open (fixed-position lock works in iOS standalone PWAs)
   useEffect(() => {
     if (!(isMobile && isOpen)) return;
-    const prevOverflow = document.body.style.overflow;
-    const prevTouchAction = document.body.style.touchAction;
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none"; // prevents two-finger scroll behind the drawer
-
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouchAction;
-    };
+    lockBodyScroll();
+    return () => unlockBodyScroll();
   }, [isMobile, isOpen]);
 
   return (
@@ -245,7 +298,7 @@ const SetBox: React.FC<SetBoxProps> = ({
         <>
           {/* Desktop / tablet: keep Dialog */}
           {!isMobile && (
-            <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
+            <Dialog open={isOpen} onOpenChange={handleOpen}>
               <DialogTrigger asChild>
                 <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
                   <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
@@ -314,16 +367,7 @@ const SetBox: React.FC<SetBoxProps> = ({
 
           {/* Mobile: Drawer to stay above keyboard */}
           {isMobile && (
-            <Drawer
-              open={isOpen}
-              onOpenChange={(open) => {
-                setIsOpen(open);
-                if (open) {
-                  resetLocalScores();
-                  focusAndCenterFirstInput();
-                }
-              }}
-            >
+            <Drawer open={isOpen} onOpenChange={handleOpen}>
               <DrawerTrigger asChild>
                 <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
                   <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
@@ -340,7 +384,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                 style={{
                   paddingBottom: `calc(${keyboardInset}px + env(safe-area-inset-bottom))`,
                 }}
-                className="max-h-[85vh] overflow-y-auto"
+                className="max-h-[85svh] overflow-y-auto"
               >
                 <DrawerHeader className="text-center">
                   <DrawerTitle>Update Set {setNumber} Score</DrawerTitle>
