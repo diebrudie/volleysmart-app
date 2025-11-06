@@ -19,6 +19,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+// Detect iOS standalone PWA
+interface NavigatorWithStandalone extends Navigator {
+  // Safari exposes this in standalone mode on iOS
+  standalone?: boolean;
+}
+const isIOS =
+  typeof navigator !== "undefined" &&
+  /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+const isStandalone =
+  typeof window !== "undefined" &&
+  (window.matchMedia?.("(display-mode: standalone)")?.matches === true ||
+    (typeof navigator !== "undefined" &&
+      "standalone" in navigator &&
+      (navigator as NavigatorWithStandalone).standalone === true));
+
 interface SetBoxProps {
   setNumber: number;
   teamAScore?: number | null;
@@ -40,11 +56,11 @@ const SetBox: React.FC<SetBoxProps> = ({
   isLarge = false,
   isEditingAllowed = true,
 }) => {
-  const [localTeamAScore, setLocalTeamAScore] = useState<number>(
-    teamAScore || 0
+  const [localTeamAScore, setLocalTeamAScore] = useState<string>(
+    teamAScore && teamAScore > 0 ? String(teamAScore) : ""
   );
-  const [localTeamBScore, setLocalTeamBScore] = useState<number>(
-    teamBScore || 0
+  const [localTeamBScore, setLocalTeamBScore] = useState<string>(
+    teamBScore && teamBScore > 0 ? String(teamBScore) : ""
   );
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -54,8 +70,8 @@ const SetBox: React.FC<SetBoxProps> = ({
 
   // Update local state when props change (important for when switching between games)
   useEffect(() => {
-    setLocalTeamAScore(teamAScore || 0);
-    setLocalTeamBScore(teamBScore || 0);
+    setLocalTeamAScore(teamAScore && teamAScore > 0 ? String(teamAScore) : "");
+    setLocalTeamBScore(teamBScore && teamBScore > 0 ? String(teamBScore) : "");
   }, [teamAScore, teamBScore]);
 
   const hasBeenPlayed =
@@ -89,10 +105,13 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const handleSubmit = () => {
-    if (onScoreUpdate) {
-      onScoreUpdate(setNumber, localTeamAScore, localTeamBScore);
-      setIsOpen(false);
-    }
+    if (!onScoreUpdate) return;
+    const a = parseInt(localTeamAScore, 10);
+    const b = parseInt(localTeamBScore, 10);
+    const aVal = Number.isFinite(a) ? a : 0;
+    const bVal = Number.isFinite(b) ? b : 0;
+    onScoreUpdate(setNumber, aVal, bVal);
+    setIsOpen(false);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -103,24 +122,29 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const focusAndCenterFirstInput = () => {
-    // Slight delay so the overlay is mounted
+    const delay = isIOS && isStandalone ? 300 : 150; // iOS PWA needs a bit more time
     window.setTimeout(() => {
       const el = teamAInputRef.current;
       if (el) {
         el.focus();
-        // Center the input in the visible area; smooth keeps it subtle
+        // Ensure caret shows up on iOS
+        try {
+          el.setSelectionRange?.(0, String(el.value ?? "").length);
+        } catch {
+          // ignore selection errors on non-text inputs (iOS Safari quirk)
+        }
         el.scrollIntoView({
           block: "center",
           inline: "nearest",
           behavior: "smooth",
         });
       }
-    }, 150);
+    }, delay);
   };
 
   const resetLocalScores = () => {
-    setLocalTeamAScore(teamAScore || 0);
-    setLocalTeamBScore(teamBScore || 0);
+    setLocalTeamAScore(teamAScore && teamAScore > 0 ? String(teamAScore) : "");
+    setLocalTeamBScore(teamBScore && teamBScore > 0 ? String(teamBScore) : "");
   };
 
   const handleDialogOpen = (open: boolean) => {
@@ -144,8 +168,14 @@ const SetBox: React.FC<SetBoxProps> = ({
 
     const onResize = () => {
       const vh = window.innerHeight;
-      const inset = Math.max(0, vh - vv.height - vv.offsetTop);
+      // In iOS standalone, offsetTop can be unreliable; prefer a simpler delta.
+      const baseInset = Math.max(0, vh - vv.height);
+      const inset =
+        isIOS && isStandalone
+          ? baseInset
+          : Math.max(0, vh - vv.height - vv.offsetTop);
       setKeyboardInset(inset);
+
       // Keep the first input centered if keyboard changed size
       const el = teamAInputRef.current;
       if (el)
@@ -164,6 +194,20 @@ const SetBox: React.FC<SetBoxProps> = ({
       vv.removeEventListener("resize", onResize);
       vv.removeEventListener("scroll", onResize);
       setKeyboardInset(0);
+    };
+  }, [isMobile, isOpen]);
+
+  // Lock body scroll while the mobile drawer is open (prevents background scrolling in iOS PWAs)
+  useEffect(() => {
+    if (!(isMobile && isOpen)) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none"; // prevents two-finger scroll behind the drawer
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouchAction;
     };
   }, [isMobile, isOpen]);
 
@@ -227,11 +271,11 @@ const SetBox: React.FC<SetBoxProps> = ({
                       <input
                         ref={teamAInputRef}
                         type="number"
+                        inputMode="numeric"
                         min="0"
+                        placeholder="0"
                         value={localTeamAScore}
-                        onChange={(e) =>
-                          setLocalTeamAScore(parseInt(e.target.value, 10) || 0)
-                        }
+                        onChange={(e) => setLocalTeamAScore(e.target.value)}
                         onKeyDown={handleKeyDown}
                         className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       />
@@ -247,11 +291,11 @@ const SetBox: React.FC<SetBoxProps> = ({
                       </p>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="0"
+                        placeholder="0"
                         value={localTeamBScore}
-                        onChange={(e) =>
-                          setLocalTeamBScore(parseInt(e.target.value, 10) || 0)
-                        }
+                        onChange={(e) => setLocalTeamBScore(e.target.value)}
                         onKeyDown={handleKeyDown}
                         className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       />
@@ -287,6 +331,8 @@ const SetBox: React.FC<SetBoxProps> = ({
               </DrawerTrigger>
               <DrawerContent
                 ref={drawerContentRef}
+                onOpenAutoFocus={(e) => e.preventDefault()}
+                onPointerDownOutside={(e) => e.preventDefault()}
                 /**
                  * Safe-area + keyboard inset so content sits above the iOS keyboard.
                  * The 16px gives a little breathing space over the keyboard.
@@ -308,13 +354,13 @@ const SetBox: React.FC<SetBoxProps> = ({
                       </p>
                       <input
                         ref={teamAInputRef}
-                        inputMode="numeric"
                         type="number"
+                        inputMode="numeric"
                         min="0"
+                        placeholder="0"
                         value={localTeamAScore}
-                        onChange={(e) =>
-                          setLocalTeamAScore(parseInt(e.target.value, 10) || 0)
-                        }
+                        onChange={(e) => setLocalTeamAScore(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       />
                     </div>
@@ -328,13 +374,13 @@ const SetBox: React.FC<SetBoxProps> = ({
                         Team B
                       </p>
                       <input
-                        inputMode="numeric"
                         type="number"
+                        inputMode="numeric"
                         min="0"
+                        placeholder="0"
                         value={localTeamBScore}
-                        onChange={(e) =>
-                          setLocalTeamBScore(parseInt(e.target.value, 10) || 0)
-                        }
+                        onChange={(e) => setLocalTeamBScore(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       />
                     </div>

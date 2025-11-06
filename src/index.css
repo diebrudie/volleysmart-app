@@ -160,6 +160,17 @@
   html {
     scroll-behavior: smooth;
   }
+  /* --- Added for mobile/PWA keyboard & overscroll stability --- */
+  html,
+  body {
+    overscroll-behavior-y: contain;
+  }
+
+  .app-root,
+  body,
+  html {
+    height: 100svh;
+  }
 }
 
 @layer components {
