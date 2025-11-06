@@ -178,6 +178,9 @@ const SetBox: React.FC<SetBoxProps> = ({
     if (open) {
       resetLocalScores();
 
+      // PWA needs fixed-position lock BEFORE focusing to avoid jump.
+      if (isMobile && isStandalone) lockBodyScroll();
+
       // Recompute keyboard inset once after open (microtask)
       Promise.resolve().then(() => {
         const vv =
@@ -189,14 +192,17 @@ const SetBox: React.FC<SetBoxProps> = ({
       });
 
       focusAndCenterFirstInput();
+    } else {
+      if (isStandalone) unlockBodyScroll();
     }
   };
 
   // Body scroll lock (works on iOS standalone)
   const scrollYBeforeLock = useRef<number>(0);
+  const isBodyLockedRef = useRef<boolean>(false);
 
   function lockBodyScroll(): void {
-    if (document.body.style.position === "fixed") return;
+    if (isBodyLockedRef.current) return;
     scrollYBeforeLock.current = window.scrollY;
     const body = document.body;
     body.style.position = "fixed";
@@ -205,10 +211,11 @@ const SetBox: React.FC<SetBoxProps> = ({
     body.style.right = "0";
     body.style.width = "100%";
     body.style.overscrollBehaviorY = "contain";
+    isBodyLockedRef.current = true;
   }
 
   function unlockBodyScroll(): void {
-    if (document.body.style.position !== "fixed") return;
+    if (!isBodyLockedRef.current) return;
     const body = document.body;
     const y = scrollYBeforeLock.current;
     body.style.position = "";
@@ -217,6 +224,7 @@ const SetBox: React.FC<SetBoxProps> = ({
     body.style.right = "";
     body.style.width = "";
     body.style.overscrollBehaviorY = "";
+    isBodyLockedRef.current = false;
     window.scrollTo(0, y);
   }
 
@@ -258,19 +266,12 @@ const SetBox: React.FC<SetBoxProps> = ({
     };
   }, [isMobile, isOpen]);
 
-  // Lock body scroll while the drawer is open.
-  // - iOS standalone PWA: fixed-position lock (robust)
-  // - Mobile browser: overflow lock (avoids "frozen page" after close)
+  // Lock body scroll while the drawer is open in MOBILE BROWSER (non-standalone).
+  // PWA locking is handled in handleOpen via fixed-position lock.
   useEffect(() => {
-    if (!(isMobile && isOpen)) return;
+    if (!isMobile || !isOpen) return;
+    if (isStandalone) return; // skip here; PWA already locked
 
-    if (isStandalone) {
-      // PWA
-      lockBodyScroll();
-      return () => unlockBodyScroll();
-    }
-
-    // Mobile browser overflow lock
     const prevOverflow = document.body.style.overflow;
     const prevTouchAction = document.body.style.touchAction;
     document.body.style.overflow = "hidden";
@@ -279,8 +280,17 @@ const SetBox: React.FC<SetBoxProps> = ({
     return () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.touchAction = prevTouchAction;
+      // Safari sometimes needs a microtask to re-attach scrolling after closing the sheet
+      Promise.resolve().then(() => window.scrollBy(0, 0));
     };
-  }, [isMobile, isOpen]);
+  }, [isMobile, isOpen, isStandalone]);
+
+  // Safety: if component unmounts while PWA is open, ensure unlock
+  useEffect(() => {
+    return () => {
+      if (isStandalone) unlockBodyScroll();
+    };
+  }, []);
 
   return (
     <div
