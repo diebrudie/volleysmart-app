@@ -19,6 +19,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+// Detect iOS standalone PWA
+interface NavigatorWithStandalone extends Navigator {
+  standalone?: boolean;
+}
+const isIOS =
+  typeof navigator !== "undefined" &&
+  /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+const isStandalone =
+  typeof window !== "undefined" &&
+  (window.matchMedia?.("(display-mode: standalone)")?.matches === true ||
+    (typeof navigator !== "undefined" &&
+      "standalone" in navigator &&
+      (navigator as NavigatorWithStandalone).standalone === true));
+
 interface SetBoxProps {
   setNumber: number;
   teamAScore?: number | null;
@@ -40,11 +55,11 @@ const SetBox: React.FC<SetBoxProps> = ({
   isLarge = false,
   isEditingAllowed = true,
 }) => {
-  const [localTeamAScore, setLocalTeamAScore] = useState<number>(
-    teamAScore || 0
+  const [localTeamAScore, setLocalTeamAScore] = useState<string>(
+    teamAScore && teamAScore > 0 ? String(teamAScore) : ""
   );
-  const [localTeamBScore, setLocalTeamBScore] = useState<number>(
-    teamBScore || 0
+  const [localTeamBScore, setLocalTeamBScore] = useState<string>(
+    teamBScore && teamBScore > 0 ? String(teamBScore) : ""
   );
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -52,10 +67,13 @@ const SetBox: React.FC<SetBoxProps> = ({
   const [keyboardInset, setKeyboardInset] = useState<number>(0);
   const drawerContentRef = useRef<HTMLDivElement>(null);
 
+  // Tracks the first time the sheet opens on mobile to harden focus timing
+  const firstOpenPrimedRef = useRef<boolean>(false);
+
   // Update local state when props change (important for when switching between games)
   useEffect(() => {
-    setLocalTeamAScore(teamAScore || 0);
-    setLocalTeamBScore(teamBScore || 0);
+    setLocalTeamAScore(teamAScore && teamAScore > 0 ? String(teamAScore) : "");
+    setLocalTeamBScore(teamBScore && teamBScore > 0 ? String(teamBScore) : "");
   }, [teamAScore, teamBScore]);
 
   const hasBeenPlayed =
@@ -89,10 +107,18 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const handleSubmit = () => {
-    if (onScoreUpdate) {
-      onScoreUpdate(setNumber, localTeamAScore, localTeamBScore);
-      setIsOpen(false);
-    }
+    if (!onScoreUpdate) return;
+    const a = parseInt(localTeamAScore, 10);
+    const b = parseInt(localTeamBScore, 10);
+    const aVal = Number.isFinite(a) ? a : 0;
+    const bVal = Number.isFinite(b) ? b : 0;
+
+    // Blur to prompt keyboard to close before unlock/reenable scroll
+    const active = document.activeElement as HTMLElement | null;
+    active?.blur?.();
+
+    onScoreUpdate(setNumber, aVal, bVal);
+    handleOpen(false);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -103,33 +129,104 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const focusAndCenterFirstInput = () => {
-    // Slight delay so the overlay is mounted
-    window.setTimeout(() => {
-      const el = teamAInputRef.current;
-      if (el) {
-        el.focus();
-        // Center the input in the visible area; smooth keeps it subtle
-        el.scrollIntoView({
-          block: "center",
-          inline: "nearest",
-          behavior: "smooth",
-        });
+    const el = teamAInputRef.current;
+    if (!el) return;
+
+    const doFocus = () => {
+      el.focus();
+      try {
+        el.setSelectionRange?.(0, String(el.value ?? "").length);
+      } catch {
+        // ignore selection errors on numeric inputs
       }
-    }, 150);
+      el.scrollIntoView({
+        block: "center",
+        inline: "nearest",
+        behavior: "smooth",
+      });
+    };
+
+    // On first ever open on iOS, the initial focus can be ignored during animation.
+    if (!firstOpenPrimedRef.current) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.setTimeout(doFocus, isIOS ? 250 : 120);
+        });
+      });
+
+      const vv =
+        typeof window !== "undefined" ? window.visualViewport ?? null : null;
+      const oneShot = () => {
+        doFocus();
+        vv?.removeEventListener("resize", oneShot);
+      };
+      vv?.addEventListener("resize", oneShot, { once: true });
+
+      firstOpenPrimedRef.current = true;
+    } else {
+      requestAnimationFrame(() => window.setTimeout(doFocus, 100));
+    }
   };
 
   const resetLocalScores = () => {
-    setLocalTeamAScore(teamAScore || 0);
-    setLocalTeamBScore(teamBScore || 0);
+    setLocalTeamAScore(teamAScore && teamAScore > 0 ? String(teamAScore) : "");
+    setLocalTeamBScore(teamBScore && teamBScore > 0 ? String(teamBScore) : "");
   };
 
-  const handleDialogOpen = (open: boolean) => {
+  const handleOpen = (open: boolean) => {
     setIsOpen(open);
     if (open) {
       resetLocalScores();
+
+      // PWA needs fixed-position lock BEFORE focusing to avoid jump.
+      if (isMobile && isStandalone) lockBodyScroll();
+
+      // Recompute keyboard inset once after open (microtask)
+      Promise.resolve().then(() => {
+        const vv =
+          typeof window !== "undefined" ? window.visualViewport ?? null : null;
+        if (vv) {
+          const vh = window.innerHeight;
+          setKeyboardInset(Math.max(0, vh - vv.height));
+        }
+      });
+
       focusAndCenterFirstInput();
+    } else {
+      if (isStandalone) unlockBodyScroll();
     }
   };
+
+  // Body scroll lock (works on iOS standalone)
+  const scrollYBeforeLock = useRef<number>(0);
+  const isBodyLockedRef = useRef<boolean>(false);
+
+  function lockBodyScroll(): void {
+    if (isBodyLockedRef.current) return;
+    scrollYBeforeLock.current = window.scrollY;
+    const body = document.body;
+    body.style.position = "fixed";
+    body.style.top = `-${scrollYBeforeLock.current}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overscrollBehaviorY = "contain";
+    isBodyLockedRef.current = true;
+  }
+
+  function unlockBodyScroll(): void {
+    if (!isBodyLockedRef.current) return;
+    const body = document.body;
+    const y = scrollYBeforeLock.current;
+    body.style.position = "";
+    body.style.top = "";
+    body.style.left = "";
+    body.style.right = "";
+    body.style.width = "";
+    body.style.overscrollBehaviorY = "";
+    isBodyLockedRef.current = false;
+    window.scrollTo(0, y);
+  }
 
   /**
    * Keyboard-avoidance for mobile Drawer using the Visual Viewport API.
@@ -144,8 +241,10 @@ const SetBox: React.FC<SetBoxProps> = ({
 
     const onResize = () => {
       const vh = window.innerHeight;
-      const inset = Math.max(0, vh - vv.height - vv.offsetTop);
+      // offsetTop is unstable on iOS; use simple delta everywhere
+      const inset = Math.max(0, vh - vv.height);
       setKeyboardInset(inset);
+
       // Keep the first input centered if keyboard changed size
       const el = teamAInputRef.current;
       if (el)
@@ -166,6 +265,32 @@ const SetBox: React.FC<SetBoxProps> = ({
       setKeyboardInset(0);
     };
   }, [isMobile, isOpen]);
+
+  // Lock body scroll while the drawer is open in MOBILE BROWSER (non-standalone).
+  // PWA locking is handled in handleOpen via fixed-position lock.
+  useEffect(() => {
+    if (!isMobile || !isOpen) return;
+    if (isStandalone) return; // skip here; PWA already locked
+
+    const prevOverflow = document.body.style.overflow;
+    const prevTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouchAction;
+      // Safari sometimes needs a microtask to re-attach scrolling after closing the sheet
+      Promise.resolve().then(() => window.scrollBy(0, 0));
+    };
+  }, [isMobile, isOpen, isStandalone]);
+
+  // Safety: if component unmounts while PWA is open, ensure unlock
+  useEffect(() => {
+    return () => {
+      if (isStandalone) unlockBodyScroll();
+    };
+  }, []);
 
   return (
     <div
@@ -201,7 +326,7 @@ const SetBox: React.FC<SetBoxProps> = ({
         <>
           {/* Desktop / tablet: keep Dialog */}
           {!isMobile && (
-            <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
+            <Dialog open={isOpen} onOpenChange={handleOpen}>
               <DialogTrigger asChild>
                 <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
                   <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
@@ -227,11 +352,11 @@ const SetBox: React.FC<SetBoxProps> = ({
                       <input
                         ref={teamAInputRef}
                         type="number"
+                        inputMode="numeric"
                         min="0"
+                        placeholder="0"
                         value={localTeamAScore}
-                        onChange={(e) =>
-                          setLocalTeamAScore(parseInt(e.target.value, 10) || 0)
-                        }
+                        onChange={(e) => setLocalTeamAScore(e.target.value)}
                         onKeyDown={handleKeyDown}
                         className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       />
@@ -247,11 +372,11 @@ const SetBox: React.FC<SetBoxProps> = ({
                       </p>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="0"
+                        placeholder="0"
                         value={localTeamBScore}
-                        onChange={(e) =>
-                          setLocalTeamBScore(parseInt(e.target.value, 10) || 0)
-                        }
+                        onChange={(e) => setLocalTeamBScore(e.target.value)}
                         onKeyDown={handleKeyDown}
                         className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       />
@@ -270,16 +395,7 @@ const SetBox: React.FC<SetBoxProps> = ({
 
           {/* Mobile: Drawer to stay above keyboard */}
           {isMobile && (
-            <Drawer
-              open={isOpen}
-              onOpenChange={(open) => {
-                setIsOpen(open);
-                if (open) {
-                  resetLocalScores();
-                  focusAndCenterFirstInput();
-                }
-              }}
-            >
+            <Drawer open={isOpen} onOpenChange={handleOpen}>
               <DrawerTrigger asChild>
                 <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
                   <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
@@ -287,6 +403,8 @@ const SetBox: React.FC<SetBoxProps> = ({
               </DrawerTrigger>
               <DrawerContent
                 ref={drawerContentRef}
+                onOpenAutoFocus={(e) => e.preventDefault()}
+                onPointerDownOutside={(e) => e.preventDefault()}
                 /**
                  * Safe-area + keyboard inset so content sits above the iOS keyboard.
                  * The 16px gives a little breathing space over the keyboard.
@@ -294,7 +412,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                 style={{
                   paddingBottom: `calc(${keyboardInset}px + env(safe-area-inset-bottom))`,
                 }}
-                className="max-h-[85vh] overflow-y-auto"
+                className="max-h-[85svh] overflow-y-auto"
               >
                 <DrawerHeader className="text-center">
                   <DrawerTitle>Update Set {setNumber} Score</DrawerTitle>
@@ -308,13 +426,13 @@ const SetBox: React.FC<SetBoxProps> = ({
                       </p>
                       <input
                         ref={teamAInputRef}
-                        inputMode="numeric"
                         type="number"
+                        inputMode="numeric"
                         min="0"
+                        placeholder="0"
                         value={localTeamAScore}
-                        onChange={(e) =>
-                          setLocalTeamAScore(parseInt(e.target.value, 10) || 0)
-                        }
+                        onChange={(e) => setLocalTeamAScore(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         className="w-20 h-14 text-center text-2xl border-2 rounded-md border-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       />
                     </div>
@@ -328,13 +446,13 @@ const SetBox: React.FC<SetBoxProps> = ({
                         Team B
                       </p>
                       <input
-                        inputMode="numeric"
                         type="number"
+                        inputMode="numeric"
                         min="0"
+                        placeholder="0"
                         value={localTeamBScore}
-                        onChange={(e) =>
-                          setLocalTeamBScore(parseInt(e.target.value, 10) || 0)
-                        }
+                        onChange={(e) => setLocalTeamBScore(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         className="w-20 h-14 text-center text-2xl border-2 rounded-md border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       />
                     </div>

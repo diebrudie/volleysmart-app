@@ -19,6 +19,8 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
 import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
+// uncomment to force a repaint at the right moments on the login screen
+// import { useIosPwaKeyboardRepaint } from "@/hooks/use-ios-pwa-keyboard-repaint";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -36,6 +38,10 @@ const Login = () => {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
+
+  // Only need this on login-like screens with text/email/password inputs
+  // uncomment to force a repaint at the right moments on the login screen
+  //useIosPwaKeyboardRepaint(true);
 
   // Get the intended destination from location state, or default to dashboard
   const from = location.state?.from?.pathname as string | undefined;
