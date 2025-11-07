@@ -53,12 +53,14 @@ const Signup = () => {
     <AuthLayout>
       <div className="flex min-h-screen items-center justify-center bg-gray-100">
         <div className="w-full max-w-lg px-6 sm:px-8 md:px-12">
-          <img
-            src="/volleyball.svg"
-            alt="VolleySmart"
-            className="h-10 w-auto"
-            loading="eager"
-          />
+          <Link to="/" className="inline-block">
+            <img
+              src="/volleyball.svg"
+              alt="VolleySmart"
+              className="h-10 w-auto"
+              loading="eager"
+            />
+          </Link>
 
           <h1 className="mt-10 text-3xl font-semibold tracking-tight">
             Welcome to Volleysmart
