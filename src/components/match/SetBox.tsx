@@ -118,7 +118,7 @@ const SetBox: React.FC<SetBoxProps> = ({
     active?.blur?.();
 
     onScoreUpdate(setNumber, aVal, bVal);
-    setIsOpen(false);
+    handleOpen(false);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
