@@ -70,31 +70,288 @@ export class TeamGenerator {
     players: PlayerWithPositions[],
     teamSize: number
   ) {
+    // We’ll build ONE high-quality, role-seeded split and then optionally
+    // produce a couple of small variations (shuffle remaining pool) if needed.
+    const actualTeamSize = Math.min(teamSize, Math.floor(players.length / 2));
+    const base = this.seedSplitByRoles(players, actualTeamSize);
+
+    // If we couldn’t produce a sensible split, fall back to previous logic
+    if (!base) {
+      return [
+        {
+          teamA: [...players].slice(0, actualTeamSize),
+          teamB: [...players].slice(actualTeamSize, actualTeamSize * 2),
+        },
+      ];
+    }
+
     const combinations: Array<{
       teamA: PlayerWithPositions[];
       teamB: PlayerWithPositions[];
-    }> = [];
-    const maxCombinations = Math.min(20, Math.pow(2, players.length - 1));
+    }> = [base];
 
-    for (let i = 0; i < maxCombinations; i++) {
-      let shuffled = [...players];
+    // Optionally create up to two light variations by swapping last slots
+    // if the pool allows; this gives the scorer a few options.
+    const { teamA, teamB } = base;
+    const poolA = [...teamA];
+    const poolB = [...teamB];
 
-      // Apply position-based sorting for better balance (normalized)
-      shuffled = this.sortPlayersByPositionPriority(shuffled);
-
-      // Randomize
-      shuffled = shuffled.sort(() => Math.random() - 0.5);
-
-      const actualTeamSize = Math.min(teamSize, Math.floor(players.length / 2));
-      const teamA = shuffled.slice(0, actualTeamSize);
-      const teamB = shuffled.slice(actualTeamSize, actualTeamSize * 2);
-
-      if (teamB.length > 0) {
-        combinations.push({ teamA, teamB });
+    if (poolA.length === actualTeamSize && poolB.length === actualTeamSize) {
+      const variations = 2;
+      for (let v = 0; v < variations; v++) {
+        const a = [...poolA];
+        const b = [...poolB];
+        if (a.length && b.length) {
+          // swap last players as a tiny perturbation
+          const ap = a.pop()!;
+          const bp = b.pop()!;
+          a.push(bp);
+          b.push(ap);
+          combinations.push({ teamA: a, teamB: b });
+        }
       }
     }
 
     return combinations;
+  }
+
+  /**
+   * Build two teams by filling role slots symmetrically BEFORE splitting,
+   * using fallback mappings when buckets are scarce.
+   */
+  private seedSplitByRoles(
+    players: PlayerWithPositions[],
+    teamSize: number
+  ): { teamA: PlayerWithPositions[]; teamB: PlayerWithPositions[] } | null {
+    // Normalize once
+    const normalized = players.map((p) => ({
+      ...p,
+      _primary: normalizeRole(p.preferredPosition),
+    }));
+
+    // Buckets by primary role
+    const bucket: Record<CanonicalRole, PlayerWithPositions[]> = {
+      Setter: [],
+      "Middle Blocker": [],
+      "Outside Hitter": [],
+      Opposite: [],
+      Libero: [],
+    };
+    for (const p of normalized) {
+      bucket[p._primary].push(p);
+    }
+
+    // Sort each bucket by skill desc for better matching
+    (Object.keys(bucket) as CanonicalRole[]).forEach((r) => {
+      bucket[r].sort((a, b) => (b.skillRating ?? 0) - (a.skillRating ?? 0));
+    });
+
+    // Desired per-team role counts
+    const targetPerTeam: Partial<Record<CanonicalRole, number>> = {
+      Setter: 1,
+      "Middle Blocker": 2,
+      "Outside Hitter": 2,
+      Opposite: 1,
+      // Libero optional
+    };
+
+    const teamA: Array<
+      PlayerWithPositions & { preferredPosition: CanonicalRole }
+    > = [];
+    const teamB: Array<
+      PlayerWithPositions & { preferredPosition: CanonicalRole }
+    > = [];
+
+    // Track gender & skill for balancing while pairing
+    const state = {
+      aSkillSum: 0,
+      bSkillSum: 0,
+      aMale: 0,
+      bMale: 0,
+      aFemale: 0,
+      bFemale: 0,
+    };
+    const trackAdd = (side: "A" | "B", p: PlayerWithPositions) => {
+      const s = p.skillRating ?? 0;
+
+      if (side === "A") {
+        state.aSkillSum += s;
+      } else {
+        state.bSkillSum += s;
+      }
+
+      if (p.gender === "male") {
+        if (side === "A") {
+          state.aMale++;
+        } else {
+          state.bMale++;
+        }
+      } else if (p.gender === "female") {
+        if (side === "A") {
+          state.aFemale++;
+        } else {
+          state.bFemale++;
+        }
+      }
+    };
+
+    // Helper: choose two candidates for a role with fallbacks
+    const takePairForRole = (
+      role: CanonicalRole
+    ): [PlayerWithPositions | null, PlayerWithPositions | null] => {
+      const primary = bucket[role];
+
+      // Enough primaries?
+      if (primary.length >= 2) {
+        return [primary.shift()!, primary.shift()!];
+      }
+
+      // If only one primary, we’ll use a fallback for the second
+      if (primary.length === 1) {
+        const one = primary.shift()!;
+        const alt = this.takeFallback(role, bucket);
+        return [one, alt];
+      }
+
+      // No primary: try both from fallbacks
+      const f1 = this.takeFallback(role, bucket);
+      const f2 = this.takeFallback(role, bucket);
+      return [f1, f2];
+    };
+
+    // For each role, fill required slots symmetrically (pair A/B)
+    const roleOrder: CanonicalRole[] = [
+      "Setter",
+      "Middle Blocker",
+      "Outside Hitter",
+      "Opposite",
+    ];
+
+    for (const role of roleOrder) {
+      const needed = targetPerTeam[role] ?? 0;
+      for (let k = 0; k < needed; k++) {
+        const [p1, p2] = takePairForRole(role);
+
+        // If both missing, we skip this pair (will fill later)
+        if (!p1 && !p2) continue;
+
+        // Skill-balance assignment: place the higher-skill to the currently weaker team,
+        // but respect gender balance (try to keep |diff| <= 1 when possible).
+        const pair = [p1, p2].filter(Boolean) as PlayerWithPositions[];
+        pair.sort((a, b) => (b.skillRating ?? 0) - (a.skillRating ?? 0));
+
+        for (const cand of pair) {
+          const assignToA =
+            state.aSkillSum <= state.bSkillSum
+              ? // A is weaker; but check gender diff: prefer side that reduces |diff|
+                this.prefersSideAByGender(state, cand)
+              : // B is weaker
+                !this.prefersSideAByGender(state, cand);
+
+          if (assignToA && teamA.length < teamSize) {
+            teamA.push({ ...cand, preferredPosition: role });
+            trackAdd("A", cand);
+          } else if (teamB.length < teamSize) {
+            teamB.push({ ...cand, preferredPosition: role });
+            trackAdd("B", cand);
+          } else if (teamA.length < teamSize) {
+            teamA.push({ ...cand, preferredPosition: role });
+            trackAdd("A", cand);
+          }
+        }
+      }
+    }
+
+    // Fill remaining slots (if any) up to teamSize with best remaining players,
+    // prioritizing skill balance and small gender difference.
+    const remaining: PlayerWithPositions[] = [];
+    (Object.keys(bucket) as CanonicalRole[]).forEach((r) =>
+      remaining.push(...bucket[r])
+    );
+
+    // Add also any unassigned primaries we pulled as fallbacks but didn’t use
+    // (already covered: we mutate buckets when we shift() out)
+
+    remaining.sort((a, b) => (b.skillRating ?? 0) - (a.skillRating ?? 0));
+
+    for (const cand of remaining) {
+      if (teamA.length >= teamSize && teamB.length >= teamSize) break;
+      const role = normalizeRole(cand.preferredPosition);
+      const assignToA =
+        state.aSkillSum <= state.bSkillSum
+          ? this.prefersSideAByGender(state, cand)
+          : !this.prefersSideAByGender(state, cand);
+
+      if (assignToA && teamA.length < teamSize) {
+        teamA.push({ ...cand, preferredPosition: role });
+        trackAdd("A", cand);
+      } else if (teamB.length < teamSize) {
+        teamB.push({ ...cand, preferredPosition: role });
+        trackAdd("B", cand);
+      }
+    }
+
+    if (!teamA.length || !teamB.length) return null;
+
+    return { teamA, teamB };
+  }
+
+  /**
+   * Gender heuristic: returns true if adding the candidate to A is better or equal
+   * for keeping |#male - #female| differences small.
+   */
+  private prefersSideAByGender(
+    s: { aMale: number; bMale: number; aFemale: number; bFemale: number },
+    p: PlayerWithPositions
+  ): boolean {
+    const aDiff = Math.abs(
+      (p.gender === "male" ? s.aMale + 1 : s.aMale) -
+        s.aFemale -
+        (p.gender === "female" ? 1 : 0)
+    );
+    const bDiff = Math.abs(
+      (p.gender === "male" ? s.bMale + 1 : s.bMale) -
+        s.bFemale -
+        (p.gender === "female" ? 1 : 0)
+    );
+    return aDiff <= bDiff;
+  }
+
+  /**
+   * Fallback mapping for scarce roles.
+   * - Setter → Opposite
+   * - Middle Blocker → Opposite
+   * - Outside Hitter → Libero, else allow extra OH later
+   * - Opposite → take from OH or MB as last resort (rare)
+   */
+  private takeFallback(
+    role: CanonicalRole,
+    bucket: Record<CanonicalRole, PlayerWithPositions[]>
+  ): PlayerWithPositions | null {
+    const pull = (r: CanonicalRole): PlayerWithPositions | null => {
+      const arr = bucket[r];
+      return arr.length ? arr.shift()! : null;
+    };
+
+    if (role === "Setter") {
+      return (
+        pull("Opposite") ??
+        pull("Outside Hitter") ??
+        pull("Middle Blocker") ??
+        pull("Libero")
+      );
+    }
+    if (role === "Middle Blocker") {
+      return pull("Opposite") ?? pull("Outside Hitter") ?? pull("Libero");
+    }
+    if (role === "Outside Hitter") {
+      return pull("Libero") ?? pull("Opposite") ?? pull("Middle Blocker");
+    }
+    if (role === "Opposite") {
+      return pull("Outside Hitter") ?? pull("Middle Blocker") ?? pull("Libero");
+    }
+    // Libero not explicitly targeted here
+    return null;
   }
 
   private sortPlayersByPositionPriority(
