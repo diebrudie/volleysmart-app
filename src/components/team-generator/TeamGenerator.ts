@@ -4,13 +4,17 @@ import {
   PlayerWithPositions,
   GeneratedTeam,
 } from "./types";
+import { normalizeRole, CANONICAL_ORDER } from "../../features/teams/positions";
+import type { CanonicalRole } from "../../features/teams/positions";
 
 export class TeamGenerator {
-  private readonly IDEAL_POSITIONS = {
+  // Ideal distribution for 6 v 6 according to your spec
+  private readonly IDEAL_POSITIONS: Partial<Record<CanonicalRole, number>> = {
     Setter: 1,
     "Middle Blocker": 2,
     "Outside Hitter": 2,
     Opposite: 1,
+    // Libero is optional; intentionally omitted
   };
 
   async generateTeams(config: TeamGenerationConfig): Promise<TeamSuggestion[]> {
@@ -20,8 +24,6 @@ export class TeamGenerator {
       throw new Error("Need at least 4 players to generate teams");
     }
 
-    //console. log("Generating teams for", availablePlayers.length, "players");
-
     // Generate multiple team combinations
     const combinations = this.generateTeamCombinations(
       availablePlayers,
@@ -30,9 +32,24 @@ export class TeamGenerator {
     const suggestions: TeamSuggestion[] = [];
 
     for (const combination of combinations.slice(0, 3)) {
-      // Top 3 suggestions
-      const teamA = this.createTeam(combination.teamA);
-      const teamB = this.createTeam(combination.teamB);
+      // Assign roles per team BEFORE creating team stats
+      const assignedA = this.assignRolesForTeam(combination.teamA);
+      const assignedB = this.assignRolesForTeam(combination.teamB);
+
+      // Project to UI/data model by overriding preferredPosition with assigned role
+      const teamAPlayers = assignedA.map((p) => ({
+        ...p,
+        preferredPosition: p.assignedRole,
+      })) as PlayerWithPositions[];
+
+      const teamBPlayers = assignedB.map((p) => ({
+        ...p,
+        preferredPosition: p.assignedRole,
+      })) as PlayerWithPositions[];
+
+      // Build teams (averages, coverage, warnings) from the assigned players
+      const teamA = this.createTeam(teamAPlayers);
+      const teamB = this.createTeam(teamBPlayers);
 
       const balanceScore = this.calculateOverallBalance(teamA, teamB);
       const reasoning = this.generateReasoning(teamA, teamB, balanceScore);
@@ -53,16 +70,19 @@ export class TeamGenerator {
     players: PlayerWithPositions[],
     teamSize: number
   ) {
-    const combinations = [];
+    const combinations: Array<{
+      teamA: PlayerWithPositions[];
+      teamB: PlayerWithPositions[];
+    }> = [];
     const maxCombinations = Math.min(20, Math.pow(2, players.length - 1));
 
     for (let i = 0; i < maxCombinations; i++) {
       let shuffled = [...players];
 
-      // Apply position-based sorting for better balance
+      // Apply position-based sorting for better balance (normalized)
       shuffled = this.sortPlayersByPositionPriority(shuffled);
 
-      // Add randomization
+      // Randomize
       shuffled = shuffled.sort(() => Math.random() - 0.5);
 
       const actualTeamSize = Math.min(teamSize, Math.floor(players.length / 2));
@@ -80,18 +100,126 @@ export class TeamGenerator {
   private sortPlayersByPositionPriority(
     players: PlayerWithPositions[]
   ): PlayerWithPositions[] {
-    const positionPriority = {
+    // Lower number = higher priority during initial split
+    const positionPriority: Partial<Record<CanonicalRole, number>> = {
       Setter: 1,
       "Middle Blocker": 2,
       Opposite: 3,
       "Outside Hitter": 4,
+      // Libero intentionally omitted; defaults to low priority via ?? 99
     };
 
     return players.sort((a, b) => {
-      const aPriority = positionPriority[a.preferredPosition] || 99;
-      const bPriority = positionPriority[b.preferredPosition] || 99;
+      const aRole = normalizeRole(a.preferredPosition);
+      const bRole = normalizeRole(b.preferredPosition);
+      const aPriority = positionPriority[aRole] ?? 99;
+      const bPriority = positionPriority[bRole] ?? 99;
       return aPriority - bPriority;
     });
+  }
+
+  /**
+   * Assign roles for a single team, honoring:
+   * Ideal: 1 S, 2 MB, 2 OH, 1 OPP (Libero optional, not constrained here)
+   * Fallback minimum (if team has < 6 or limited roles): ensure at least 1 S, 1 MB, 1 OH.
+   *
+   * We build preference lists from player.preferredPosition (primary) plus optional secondaryPositions (if present).
+   */
+  private assignRolesForTeam(
+    team: PlayerWithPositions[]
+  ): Array<PlayerWithPositions & { assignedRole: CanonicalRole }> {
+    type PlayerWithPrefs = PlayerWithPositions & {
+      _prefers: CanonicalRole[]; // normalized preferences, primary first
+    };
+
+    // Build normalized preference lists
+    const withPrefs: PlayerWithPrefs[] = team.map((p) => {
+      const primary = normalizeRole(p.preferredPosition);
+      const secondaries = (
+        (p as unknown as { secondaryPositions?: string[] })
+          .secondaryPositions ?? []
+      ).map(normalizeRole);
+
+      // Remove duplicates while preserving order
+      const seen = new Set<CanonicalRole>();
+      const prefs = [primary, ...secondaries].filter((r) => {
+        if (seen.has(r)) return false;
+        seen.add(r);
+        return true;
+      });
+
+      // If no prefs somehow, default to Opposite to keep it stable
+      return { ...p, _prefers: prefs.length ? prefs : ["Opposite"] };
+    });
+
+    // Target counts for a 6-player lineup
+    const targets: Partial<Record<CanonicalRole, number>> = {
+      Setter: 1,
+      Opposite: 1,
+      "Middle Blocker": 2,
+      "Outside Hitter": 2,
+    };
+
+    const result: Array<PlayerWithPositions & { assignedRole: CanonicalRole }> =
+      [];
+    const available = new Set(withPrefs.map((p) => p.id));
+
+    const takeForRole = (role: CanonicalRole, count: number) => {
+      for (let k = 0; k < count; k++) {
+        let bestIdx = -1;
+        let bestScore = Number.POSITIVE_INFINITY; // lower index in _prefers is better
+        for (let i = 0; i < withPrefs.length; i++) {
+          const p = withPrefs[i];
+          if (!available.has(p.id)) continue;
+          const idx = p._prefers.indexOf(role);
+          if (idx === -1) continue;
+          if (idx < bestScore) {
+            bestScore = idx;
+            bestIdx = i;
+          }
+        }
+        if (bestIdx >= 0) {
+          const p = withPrefs[bestIdx];
+          result.push({ ...p, assignedRole: role });
+          available.delete(p.id);
+        } else {
+          break; // can't fill more of this role
+        }
+      }
+    };
+
+    // Try to satisfy ideal
+    takeForRole("Setter", targets.Setter ?? 0);
+    takeForRole("Opposite", targets.Opposite ?? 0);
+    takeForRole("Middle Blocker", targets["Middle Blocker"] ?? 0);
+    takeForRole("Outside Hitter", targets["Outside Hitter"] ?? 0);
+
+    // Fallback minimums
+    const ensureAtLeast = (role: CanonicalRole) => {
+      if (!result.some((r) => r.assignedRole === role)) {
+        takeForRole(role, 1);
+      }
+    };
+    ensureAtLeast("Setter");
+    ensureAtLeast("Middle Blocker");
+    ensureAtLeast("Outside Hitter");
+
+    // Fill remaining spots up to 6 with best remaining preference
+    for (const p of withPrefs) {
+      if (result.length >= 6) break;
+      if (!available.has(p.id)) continue;
+      const best = p._prefers[0] ?? "Opposite";
+      result.push({ ...p, assignedRole: best });
+      available.delete(p.id);
+    }
+
+    // Stable output order for nicer UX in edit dialogs, etc.
+    result.sort(
+      (a, b) =>
+        CANONICAL_ORDER.indexOf(a.assignedRole) -
+        CANONICAL_ORDER.indexOf(b.assignedRole)
+    );
+    return result;
   }
 
   private createTeam(players: PlayerWithPositions[]): GeneratedTeam {
@@ -107,7 +235,7 @@ export class TeamGenerator {
 
     // Calculate position coverage and gender balance
     players.forEach((player) => {
-      const primaryPos = player.preferredPosition || "Unknown";
+      const primaryPos = normalizeRole(player.preferredPosition);
       team.positionCoverage[primaryPos] =
         (team.positionCoverage[primaryPos] || 0) + 1;
 
@@ -153,8 +281,9 @@ export class TeamGenerator {
     let balance = 100;
 
     Object.entries(this.IDEAL_POSITIONS).forEach(([position, ideal]) => {
-      const countA = teamA.positionCoverage[position] || 0;
-      const countB = teamB.positionCoverage[position] || 0;
+      const key = position as CanonicalRole;
+      const countA = teamA.positionCoverage[key] || 0;
+      const countB = teamB.positionCoverage[key] || 0;
 
       balance -= Math.abs(countA - ideal) * 8;
       balance -= Math.abs(countB - ideal) * 8;
@@ -166,11 +295,12 @@ export class TeamGenerator {
 
   private addPositionWarnings(team: GeneratedTeam): void {
     Object.entries(this.IDEAL_POSITIONS).forEach(([position, ideal]) => {
-      const count = team.positionCoverage[position] || 0;
+      const key = position as CanonicalRole;
+      const count = team.positionCoverage[key] || 0;
       if (count === 0) {
-        team.warnings.push(`No ${position}`);
+        team.warnings.push(`No ${key}`);
       } else if (count > ideal + 1) {
-        team.warnings.push(`Too many ${position}s (${count})`);
+        team.warnings.push(`Too many ${key}s (${count})`);
       }
     });
   }
