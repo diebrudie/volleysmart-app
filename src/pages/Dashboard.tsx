@@ -23,6 +23,9 @@ import {
   fetchUserRole,
   useMemberCount,
 } from "@/integrations/supabase/clubMembers";
+import { formatShortName } from "@/lib/formatName";
+import { normalizeRole, CANONICAL_ORDER } from "@/features/teams/positions";
+import type { CanonicalRole } from "@/features/teams/positions";
 
 // Define proper interfaces
 interface GamePlayerData {
@@ -408,28 +411,42 @@ const Dashboard = () => {
   }
 
   // Process the game players to extract teams
-  let teamAPlayers: Array<{ id: string; name: string; position: string }> = [];
-  let teamBPlayers: Array<{ id: string; name: string; position: string }> = [];
+  let teamAPlayers: Array<{
+    id: string;
+    name: string;
+    position: CanonicalRole;
+  }> = [];
+  let teamBPlayers: Array<{
+    id: string;
+    name: string;
+    position: CanonicalRole;
+  }> = [];
 
   if (latestGame?.game_players) {
     // console. log(("=== GAME PLAYERS DEBUG ===");
     // console. log(("Game players:", latestGame.game_players);
 
+    const mapPlayer = (gp: GamePlayerData) => ({
+      id: gp.player_id,
+      name: formatShortName(gp.players.first_name, gp.players.last_name),
+      position: normalizeRole(gp.position_name),
+    });
+
+    const sortByCanonical = (
+      a: { position: CanonicalRole },
+      b: { position: CanonicalRole }
+    ) =>
+      CANONICAL_ORDER.indexOf(a.position) - CANONICAL_ORDER.indexOf(b.position);
+
     teamAPlayers = latestGame.game_players
       .filter((gp) => gp.team_name === "team_a")
-      .map((gp) => ({
-        id: gp.player_id,
-        name: `${gp.players.first_name} ${gp.players.last_name.charAt(0)}.`,
-        position: gp.position_name || "No Position",
-      }));
+      .map(mapPlayer)
+      .sort(sortByCanonical);
 
     teamBPlayers = latestGame.game_players
       .filter((gp) => gp.team_name === "team_b")
-      .map((gp) => ({
-        id: gp.player_id,
-        name: `${gp.players.first_name} ${gp.players.last_name.charAt(0)}.`,
-        position: gp.position_name || "No Position",
-      }));
+      .map(mapPlayer)
+      .sort(sortByCanonical);
 
     // console. log(("Team A players:", teamAPlayers);
     // console. log(("Team B players:", teamBPlayers);
