@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -24,8 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import Navbar from "@/components/layout/Navbar";
-import { Upload, Calendar, HelpCircle, X } from "lucide-react";
+import { ChevronLeft, Upload, Calendar, HelpCircle, X } from "lucide-react";
 import { buildImageUrl } from "@/utils/buildImageUrl";
 import {
   Drawer,
@@ -79,6 +78,28 @@ const Profile = () => {
   const [isPositionsHelpOpen, setIsPositionsHelpOpen] = useState(false);
 
   const isOwnProfile = user?.id === userId;
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  /**
+   * Go back logic:
+   * - If browser history is available → navigate(-1)
+   * - Else use lastPrivatePath from RoutePersistence
+   * - Else fallback to /clubs
+   */
+  const handleBack = () => {
+    const last = localStorage.getItem("lastPrivatePath");
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    if (last && last !== location.pathname) {
+      navigate(last);
+      return;
+    }
+    navigate("/clubs");
+  };
 
   // Track changes for Personal Info
   const hasPersonalInfoChanges = () => {
@@ -401,10 +422,19 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navbar />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-gray-900 dark:text-gray-100">
-            Loading...
+        <div className="max-w-4xl mx-auto py-6 px-4">
+          <Button
+            variant="outline"
+            size="icon"
+            className="mr-4"
+            onClick={handleBack}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-gray-900 dark:text-gray-100">
+              Loading...
+            </div>
           </div>
         </div>
       </div>
@@ -414,10 +444,19 @@ const Profile = () => {
   if (!profile) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navbar />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-gray-900 dark:text-gray-100">
-            Profile not found
+        <div className="max-w-4xl mx-auto py-6 px-4">
+          <Button
+            variant="outline"
+            size="icon"
+            className="mr-4"
+            onClick={handleBack}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-gray-900 dark:text-gray-100">
+              Profile not found
+            </div>
           </div>
         </div>
       </div>
@@ -426,22 +465,36 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
       <div className="max-w-4xl mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            {profile.first_name} {profile.last_name}
-          </h1>
-          {userCreatedAt && (
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Member since {formatMemberSince(userCreatedAt)}
-            </p>
-          )}
-          {!isOwnProfile && (
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Viewing player profile
-            </p>
-          )}
+        <div className="flex flex-col mb-3">
+          <div className="flex items-center mb-9">
+            <Button
+              variant="outline"
+              size="icon"
+              className="mr-4"
+              onClick={handleBack}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Profile
+            </h1>
+          </div>
+          <div className="mb-8">
+            <h2 className="text-3xl font-serif text-gray-900 dark:text-gray-100">
+              {profile.first_name} {profile.last_name}
+            </h2>
+            {userCreatedAt && (
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                Member since {formatMemberSince(userCreatedAt)}
+              </p>
+            )}
+            {!isOwnProfile && (
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                Viewing player profile
+              </p>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="personal" className="space-y-6">
