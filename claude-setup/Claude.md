@@ -154,6 +154,10 @@ volleysmart-app/
 │  │  ├─ AuthContext.tsx
 │  │  ├─ ClubContext.tsx
 │  │  └─ ThemeContext.tsx
+│  ├─ features/
+│  │  └─ teams/
+│  │     └─ positions.ts
+│  │     └─ assignLineup.ts
 │  ├─ hooks/
 │  │  ├─ use-compact.tsx
 │  │  ├─ use-ios-pwa-keyboard-repaint.ts

@@ -76,7 +76,8 @@ const mockPositions = [
   { id: "2", name: "Outside Hitter" },
   { id: "3", name: "Middle Blocker" },
   { id: "4", name: "Opposite Hitter" },
-  { id: "5", name: "Libero" },
+  { id: "5", name: "Opposite" },
+  { id: "6", name: "Libero" },
 ];
 
 interface EditPlayer {
@@ -345,8 +346,48 @@ const EditGame = () => {
           skillRating: 7, // Default skill rating
         }));
 
-      setTeamAPlayers(teamA);
-      setTeamBPlayers(teamB);
+      const DASH_CANONICAL_ORDER = [
+        "Setter",
+        "Middle Blocker",
+        "Middle Blocker / Opposite Blocker",
+        "Outside Hitter",
+        "Opposite",
+        "Libero",
+      ] as const;
+
+      const normalizeForSort = (pos?: string | null) => {
+        // same rule as Dashboard’s normalizeRole for sort ONLY
+        // (if you already export normalizeRole, you can import & reuse it here)
+        const map: Record<string, string> = {
+          "Opposite Hitter": "Opposite", // sort as Opposite, but display remains Opposite Hitter
+          "MB/OPP": "Middle Blocker / Opposite Blocker",
+          "Middle/Opposite": "Middle Blocker / Opposite Blocker",
+          "M/O": "Middle Blocker / Opposite Blocker",
+          OH: "Outside Hitter",
+          MB: "Middle Blocker",
+          S: "Setter",
+          L: "Libero",
+        };
+        const raw = (pos ?? "").trim();
+        const canon = (map[raw] ?? raw) || "Opposite";
+        return canon as (typeof DASH_CANONICAL_ORDER)[number];
+      };
+
+      const sortByCanon = (a: EditPlayer, b: EditPlayer) => {
+        const ai = DASH_CANONICAL_ORDER.indexOf(
+          normalizeForSort(a.preferredPosition)
+        );
+        const bi = DASH_CANONICAL_ORDER.indexOf(
+          normalizeForSort(b.preferredPosition)
+        );
+        return ai - bi;
+      };
+
+      const teamASorted = [...teamA].sort(sortByCanon);
+      const teamBSorted = [...teamB].sort(sortByCanon);
+
+      setTeamAPlayers(teamASorted);
+      setTeamBPlayers(teamBSorted);
 
       // Set the date from game data
       if (gameData.date) {
@@ -789,7 +830,7 @@ const EditGame = () => {
 
       // Insert updated team assignments
       const allPlayers = [
-        ...teamAPlayers.map((player) => ({
+        ...teamAPlayers.map((player, idx) => ({
           match_day_id: gameId,
           player_id: player.id,
           team_name: "team_a",
@@ -797,12 +838,13 @@ const EditGame = () => {
             player.preferredPosition === "No Position"
               ? null
               : player.preferredPosition,
+          order_index: idx, // <<<<<<
           manually_adjusted: true,
           adjusted_by: user?.id,
           adjusted_at: new Date().toISOString(),
           adjustment_reason: "Manual team edit",
         })),
-        ...teamBPlayers.map((player) => ({
+        ...teamBPlayers.map((player, idx) => ({
           match_day_id: gameId,
           player_id: player.id,
           team_name: "team_b",
@@ -810,6 +852,7 @@ const EditGame = () => {
             player.preferredPosition === "No Position"
               ? null
               : player.preferredPosition,
+          order_index: idx, // <<<<<<
           manually_adjusted: true,
           adjusted_by: user?.id,
           adjusted_at: new Date().toISOString(),

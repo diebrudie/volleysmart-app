@@ -124,6 +124,7 @@ export type Database = {
           id: string
           manually_adjusted: boolean | null
           match_day_id: string
+          order_index: number | null
           original_team_name: string | null
           player_id: string
           position_played: string | null
@@ -139,6 +140,7 @@ export type Database = {
           id?: string
           manually_adjusted?: boolean | null
           match_day_id: string
+          order_index?: number | null
           original_team_name?: string | null
           player_id: string
           position_played?: string | null
@@ -154,6 +156,7 @@ export type Database = {
           id?: string
           manually_adjusted?: boolean | null
           match_day_id?: string
+          order_index?: number | null
           original_team_name?: string | null
           player_id?: string
           position_played?: string | null
@@ -341,6 +344,7 @@ export type Database = {
           birthday: string | null
           club_id: string | null
           competition_level: string | null
+          created_at: string
           first_name: string
           game_performance: string | null
           gender: string
@@ -359,6 +363,7 @@ export type Database = {
           skill_rating: number | null
           total_matches_played: number | null
           training_status: string | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -366,6 +371,7 @@ export type Database = {
           birthday?: string | null
           club_id?: string | null
           competition_level?: string | null
+          created_at?: string
           first_name: string
           game_performance?: string | null
           gender?: string
@@ -384,6 +390,7 @@ export type Database = {
           skill_rating?: number | null
           total_matches_played?: number | null
           training_status?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -391,6 +398,7 @@ export type Database = {
           birthday?: string | null
           club_id?: string | null
           competition_level?: string | null
+          created_at?: string
           first_name?: string
           game_performance?: string | null
           gender?: string
@@ -409,6 +417,7 @@ export type Database = {
           skill_rating?: number | null
           total_matches_played?: number | null
           training_status?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -433,6 +442,111 @@ export type Database = {
         Update: {
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      tmp_player_positions_backup: {
+        Row: {
+          id: string | null
+          is_primary: boolean | null
+          player_id: string | null
+          position_id: string | null
+        }
+        Insert: {
+          id?: string | null
+          is_primary?: boolean | null
+          player_id?: string | null
+          position_id?: string | null
+        }
+        Update: {
+          id?: string | null
+          is_primary?: boolean | null
+          player_id?: string | null
+          position_id?: string | null
+        }
+        Relationships: []
+      }
+      tmp_players_backup: {
+        Row: {
+          bio: string | null
+          birthday: string | null
+          club_id: string | null
+          competition_level: string | null
+          created_at: string | null
+          first_name: string | null
+          game_performance: string | null
+          gender: string | null
+          general_skill_level: string | null
+          height_cm: number | null
+          id: string | null
+          image_url: string | null
+          is_active: boolean | null
+          is_temporary: boolean | null
+          last_name: string | null
+          last_rating_update: string | null
+          match_experience: string | null
+          member_association: boolean | null
+          profile_completed: boolean | null
+          rating_history: Json | null
+          skill_rating: number | null
+          total_matches_played: number | null
+          training_status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          birthday?: string | null
+          club_id?: string | null
+          competition_level?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          game_performance?: string | null
+          gender?: string | null
+          general_skill_level?: string | null
+          height_cm?: number | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          is_temporary?: boolean | null
+          last_name?: string | null
+          last_rating_update?: string | null
+          match_experience?: string | null
+          member_association?: boolean | null
+          profile_completed?: boolean | null
+          rating_history?: Json | null
+          skill_rating?: number | null
+          total_matches_played?: number | null
+          training_status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          birthday?: string | null
+          club_id?: string | null
+          competition_level?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          game_performance?: string | null
+          gender?: string | null
+          general_skill_level?: string | null
+          height_cm?: number | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          is_temporary?: boolean | null
+          last_name?: string | null
+          last_rating_update?: string | null
+          match_experience?: string | null
+          member_association?: boolean | null
+          profile_completed?: boolean | null
+          rating_history?: Json | null
+          skill_rating?: number | null
+          total_matches_played?: number | null
+          training_status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -545,6 +659,14 @@ export type Database = {
       }
       request_join_by_slug: { Args: { p_slug: string }; Returns: string }
       request_membership: { Args: { p_club_id: string }; Returns: string }
+      set_player_positions_replace: {
+        Args: {
+          p_player_id: string
+          p_primary_position_id: string
+          p_secondary_position_ids: string[]
+        }
+        Returns: undefined
+      }
       user_can_view_club_members: {
         Args: { p_club_id: string }
         Returns: boolean
