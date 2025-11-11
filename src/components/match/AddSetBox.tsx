@@ -23,15 +23,23 @@ export default function AddSetBox({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "h-full w-full rounded-lg border border-dashed border-gray-300 bg-gray-50",
-        "flex items-center justify-center p-6 hover:bg-gray-100 transition-colors",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500",
+        // Base box
+        "h-full w-full rounded-lg border border-dashed",
+        // Light
+        "border-gray-300 bg-gray-50 hover:bg-gray-100",
+        // Dark
+        "dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800",
+        // Layout/interaction
+        "flex items-center justify-center p-6 transition-colors",
+        // Focus (theme-aware)
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-900",
+        // Disabled
         "disabled:opacity-50 disabled:cursor-not-allowed",
         className
       )}
       aria-label="Add Set"
     >
-      <div className="flex items-center gap-2 text-gray-600">
+      <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
         <Plus className="h-5 w-5" />
         <span className="font-medium">Add Set</span>
       </div>
