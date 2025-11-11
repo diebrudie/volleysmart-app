@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import SetBox from "@/components/match/SetBox";
+import AddSetBox from "@/components/match/AddSetBox";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
@@ -523,6 +524,29 @@ const Dashboard = () => {
     teamB: match.team_b_score,
   }));
 
+  // Convenience maps for quick lookup
+  const scoresByNumber = new Map<
+    number,
+    { teamA: number | null; teamB: number | null }
+  >();
+  for (const s of scores)
+    scoresByNumber.set(s.gameNumber, {
+      teamA: s.teamA ?? null,
+      teamB: s.teamB ?? null,
+    });
+
+  // Extra sets (>5), sorted ascending
+  const extraSets = [...latestGame.matches]
+    .filter((m) => m.game_number > 5)
+    .sort((a, b) => a.game_number - b.game_number);
+
+  // Next set number: first extra is 6, then 7, 8...
+  const nextSetNumber = (() => {
+    const existing = latestGame.matches.map((m) => m.game_number);
+    const currentMax = existing.length ? Math.max(...existing) : 5;
+    return Math.max(5, currentMax) + 1;
+  })();
+
   // Calculate the match result
   const teamAWins = scores.filter(
     (game) =>
@@ -605,6 +629,56 @@ const Dashboard = () => {
       // console. log(("Queries invalidated successfully");
     } catch (error) {
       console.error("Error in handleSetScoreUpdate:", error);
+    }
+  };
+
+  // Insert a new set (match row) for this match day
+  const handleAddSet = async () => {
+    if (!latestGame?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from("matches")
+        .insert({
+          match_day_id: latestGame.id, // FK
+          game_number: nextSetNumber,
+          team_a_score: null,
+          team_b_score: null,
+        })
+        .select();
+
+      if (error) {
+        console.error("Error adding new set:", error);
+        return;
+      }
+      await queryClient.invalidateQueries({
+        queryKey: ["latestGame", userClubId],
+      });
+    } catch (e) {
+      console.error("Error in handleAddSet:", e);
+    }
+  };
+
+  // Delete an extra set (>5) by setNumber
+  const handleDeleteSet = async (setNumber: number) => {
+    if (setNumber <= 5) return; // guard
+    try {
+      const matchToDelete = latestGame?.matches?.find(
+        (m) => m.game_number === setNumber
+      );
+      if (!matchToDelete) return;
+      const { error } = await supabase
+        .from("matches")
+        .delete()
+        .eq("id", matchToDelete.id);
+      if (error) {
+        console.error("Error deleting set:", error);
+        return;
+      }
+      await queryClient.invalidateQueries({
+        queryKey: ["latestGame", userClubId],
+      });
+    } catch (e) {
+      console.error("Error in handleDeleteSet:", e);
     }
   };
 
@@ -853,12 +927,8 @@ const Dashboard = () => {
               <SetBox
                 key={1}
                 setNumber={1}
-                teamAScore={
-                  scores.find((score) => score.gameNumber === 1)?.teamA
-                }
-                teamBScore={
-                  scores.find((score) => score.gameNumber === 1)?.teamB
-                }
+                teamAScore={scoresByNumber.get(1)?.teamA ?? null}
+                teamBScore={scoresByNumber.get(1)?.teamB ?? null}
                 onScoreUpdate={handleSetScoreUpdate}
                 isLarge={true}
                 isEditingAllowed={isEditingAllowed}
@@ -870,12 +940,8 @@ const Dashboard = () => {
               <SetBox
                 key={2}
                 setNumber={2}
-                teamAScore={
-                  scores.find((score) => score.gameNumber === 2)?.teamA
-                }
-                teamBScore={
-                  scores.find((score) => score.gameNumber === 2)?.teamB
-                }
+                teamAScore={scoresByNumber.get(2)?.teamA ?? null}
+                teamBScore={scoresByNumber.get(2)?.teamB ?? null}
                 onScoreUpdate={handleSetScoreUpdate}
                 isEditingAllowed={isEditingAllowed}
               />
@@ -886,12 +952,8 @@ const Dashboard = () => {
               <SetBox
                 key={3}
                 setNumber={3}
-                teamAScore={
-                  scores.find((score) => score.gameNumber === 3)?.teamA
-                }
-                teamBScore={
-                  scores.find((score) => score.gameNumber === 3)?.teamB
-                }
+                teamAScore={scoresByNumber.get(3)?.teamA ?? null}
+                teamBScore={scoresByNumber.get(3)?.teamB ?? null}
                 onScoreUpdate={handleSetScoreUpdate}
                 isEditingAllowed={isEditingAllowed}
               />
@@ -902,12 +964,8 @@ const Dashboard = () => {
               <SetBox
                 key={4}
                 setNumber={4}
-                teamAScore={
-                  scores.find((score) => score.gameNumber === 4)?.teamA
-                }
-                teamBScore={
-                  scores.find((score) => score.gameNumber === 4)?.teamB
-                }
+                teamAScore={scoresByNumber.get(4)?.teamA ?? null}
+                teamBScore={scoresByNumber.get(4)?.teamB ?? null}
                 onScoreUpdate={handleSetScoreUpdate}
                 isEditingAllowed={isEditingAllowed}
               />
@@ -918,15 +976,31 @@ const Dashboard = () => {
               <SetBox
                 key={5}
                 setNumber={5}
-                teamAScore={
-                  scores.find((score) => score.gameNumber === 5)?.teamA
-                }
-                teamBScore={
-                  scores.find((score) => score.gameNumber === 5)?.teamB
-                }
+                teamAScore={scoresByNumber.get(5)?.teamA ?? null}
+                teamBScore={scoresByNumber.get(5)?.teamB ?? null}
                 onScoreUpdate={handleSetScoreUpdate}
                 isEditingAllowed={isEditingAllowed}
               />
+            </div>
+
+            {/* Extra sets (>5) */}
+            {extraSets.map((m) => (
+              <div key={m.id} className="order-6">
+                <SetBox
+                  setNumber={m.game_number}
+                  teamAScore={m.team_a_score}
+                  teamBScore={m.team_b_score}
+                  onScoreUpdate={handleSetScoreUpdate}
+                  onDelete={handleDeleteSet}
+                  isEditingAllowed={isEditingAllowed}
+                  isDeletable={m.game_number > 5}
+                />
+              </div>
+            ))}
+
+            {/* Add Set dashed box – always last, same grid footprint */}
+            <div className="order-7">
+              <AddSetBox onClick={handleAddSet} />
             </div>
           </div>
         </div>
