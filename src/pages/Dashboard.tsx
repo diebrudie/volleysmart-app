@@ -636,13 +636,26 @@ const Dashboard = () => {
   const handleAddSet = async () => {
     if (!latestGame?.id) return;
     try {
+      // Ensure we have the current user id for added_by_user_id
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      if (userErr) {
+        console.error("Error getting auth user:", userErr);
+        return;
+      }
+      const uid = userRes?.user?.id;
+      if (!uid) {
+        console.error("No authenticated user. Cannot add set.");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("matches")
         .insert({
-          match_day_id: latestGame.id, // FK
+          added_by_user_id: uid, // REQUIRED by types/RLS
+          match_day_id: latestGame.id, // FK to match_days
           game_number: nextSetNumber,
-          team_a_score: null,
-          team_b_score: null,
+          team_a_score: 0, // must be number, not null
+          team_b_score: 0, // must be number, not null
         })
         .select();
 
