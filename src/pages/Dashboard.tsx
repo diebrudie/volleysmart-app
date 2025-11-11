@@ -32,12 +32,35 @@ interface GamePlayerData {
   player_id: string;
   team_name: string;
   position_name: string;
+  order_index?: number | null;
   players: {
     id: string;
     first_name: string;
     last_name: string;
   };
 }
+
+type UIPlayer = {
+  id: string;
+  name: string;
+  position: string; // display label exactly as stored (e.g. "Opposite Hitter")
+  sortRole: CanonicalRole; // normalized only for sorting fallback
+  orderIndex?: number | null;
+};
+
+const sortByOrderThenCanonical = (a: UIPlayer, b: UIPlayer) => {
+  const ao = a.orderIndex;
+  const bo = b.orderIndex;
+  // If both have manual order, use it
+  if (ao != null && bo != null) return ao - bo;
+  // If one has manual order, prefer it
+  if (ao != null) return -1;
+  if (bo != null) return 1;
+  // Fallback: canonical order
+  return (
+    CANONICAL_ORDER.indexOf(a.sortRole) - CANONICAL_ORDER.indexOf(b.sortRole)
+  );
+};
 
 interface MatchData {
   id: string;
@@ -275,13 +298,47 @@ const Dashboard = () => {
       }
 
       // Get game players
-      const { data: gamePlayersRaw, error: gamePlayersError } = await supabase
-        .from("game_players")
-        .select("player_id, team_name, position_played")
-        .eq("match_day_id", selectedMatchDay.id);
+      // Try WITH order_index first
+      let gamePlayersRaw:
+        | {
+            player_id: string;
+            team_name: string;
+            position_played: string | null;
+            order_index: number | null;
+          }[]
+        | null = null;
 
-      if (gamePlayersError) {
-        console.error("Game players error:", gamePlayersError);
+      let gamePlayersError: unknown = null;
+
+      // Attempt #1: with order_index
+      {
+        const { data, error } = await supabase
+          .from("game_players")
+          .select("player_id, team_name, position_played, order_index")
+          .eq("match_day_id", selectedMatchDay.id)
+          .order("team_name", { ascending: true })
+          .order("order_index", { ascending: true, nullsFirst: true });
+
+        if (!error) {
+          gamePlayersRaw = data;
+        } else {
+          // If the column doesn't exist, fall back to query without it
+          gamePlayersError = error;
+          const { data: dataNoOrder, error: errNoOrder } = await supabase
+            .from("game_players")
+            .select("player_id, team_name, position_played")
+            .eq("match_day_id", selectedMatchDay.id);
+
+          if (!errNoOrder) {
+            // normalize to same shape (order_index absent)
+            gamePlayersRaw = (dataNoOrder ?? []).map((gp) => ({
+              ...gp,
+              order_index: null as number | null,
+            }));
+          } else {
+            gamePlayersError = errNoOrder;
+          }
+        }
       }
 
       let gamePlayers: GamePlayerData[] = [];
@@ -308,6 +365,7 @@ const Dashboard = () => {
               player_id: gp.player_id,
               team_name: gp.team_name,
               position_name: gp.position_played || "No Position",
+              order_index: gp.order_index ?? null, // typed, no `any`
               players: player || {
                 id: gp.player_id,
                 first_name: "Unknown",
@@ -414,39 +472,40 @@ const Dashboard = () => {
   let teamAPlayers: Array<{
     id: string;
     name: string;
-    position: CanonicalRole;
+    position: string;
+    sortRole: CanonicalRole;
   }> = [];
   let teamBPlayers: Array<{
     id: string;
     name: string;
-    position: CanonicalRole;
+    position: string;
+    sortRole: CanonicalRole;
   }> = [];
 
   if (latestGame?.game_players) {
     // console. log(("=== GAME PLAYERS DEBUG ===");
     // console. log(("Game players:", latestGame.game_players);
 
-    const mapPlayer = (gp: GamePlayerData) => ({
-      id: gp.player_id,
-      name: formatShortName(gp.players.first_name, gp.players.last_name),
-      position: normalizeRole(gp.position_name),
-    });
-
-    const sortByCanonical = (
-      a: { position: CanonicalRole },
-      b: { position: CanonicalRole }
-    ) =>
-      CANONICAL_ORDER.indexOf(a.position) - CANONICAL_ORDER.indexOf(b.position);
+    const toUI = (gp: GamePlayerData): UIPlayer => {
+      const display = gp.position_name ?? "No Position";
+      return {
+        id: gp.player_id,
+        name: formatShortName(gp.players.first_name, gp.players.last_name),
+        position: display, // keep exact label for UI
+        sortRole: normalizeRole(gp.position_name), // only for sorting
+        orderIndex: gp.order_index ?? null, // manual order if present
+      };
+    };
 
     teamAPlayers = latestGame.game_players
       .filter((gp) => gp.team_name === "team_a")
-      .map(mapPlayer)
-      .sort(sortByCanonical);
+      .map(toUI)
+      .sort(sortByOrderThenCanonical);
 
     teamBPlayers = latestGame.game_players
       .filter((gp) => gp.team_name === "team_b")
-      .map(mapPlayer)
-      .sort(sortByCanonical);
+      .map(toUI)
+      .sort(sortByOrderThenCanonical);
 
     // console. log(("Team A players:", teamAPlayers);
     // console. log(("Team B players:", teamBPlayers);

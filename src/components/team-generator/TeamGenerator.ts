@@ -146,6 +146,10 @@ export class TeamGenerator {
       bucket[r].sort((a, b) => (b.skillRating ?? 0) - (a.skillRating ?? 0));
     });
 
+    // Soft gender target: not a hard rule, just guidance for the heuristic
+    const totalFemale = normalized.filter((p) => p.gender === "female").length;
+    const targetFemalePerTeam = Math.ceil(totalFemale / 2);
+
     // Desired per-team role counts
     const targetPerTeam: Partial<Record<CanonicalRole, number>> = {
       Setter: 1,
@@ -244,9 +248,9 @@ export class TeamGenerator {
           const assignToA =
             state.aSkillSum <= state.bSkillSum
               ? // A is weaker; but check gender diff: prefer side that reduces |diff|
-                this.prefersSideAByGender(state, cand)
+                this.prefersSideAByGender(state, cand, targetFemalePerTeam)
               : // B is weaker
-                !this.prefersSideAByGender(state, cand);
+                !this.prefersSideAByGender(state, cand, targetFemalePerTeam);
 
           if (assignToA && teamA.length < teamSize) {
             teamA.push({ ...cand, preferredPosition: role });
@@ -279,8 +283,8 @@ export class TeamGenerator {
       const role = normalizeRole(cand.preferredPosition);
       const assignToA =
         state.aSkillSum <= state.bSkillSum
-          ? this.prefersSideAByGender(state, cand)
-          : !this.prefersSideAByGender(state, cand);
+          ? this.prefersSideAByGender(state, cand, targetFemalePerTeam)
+          : !this.prefersSideAByGender(state, cand, targetFemalePerTeam);
 
       if (assignToA && teamA.length < teamSize) {
         teamA.push({ ...cand, preferredPosition: role });
@@ -302,19 +306,35 @@ export class TeamGenerator {
    */
   private prefersSideAByGender(
     s: { aMale: number; bMale: number; aFemale: number; bFemale: number },
-    p: PlayerWithPositions
+    p: PlayerWithPositions,
+    targetFemalePerTeam: number
   ): boolean {
-    const aDiff = Math.abs(
-      (p.gender === "male" ? s.aMale + 1 : s.aMale) -
-        s.aFemale -
-        (p.gender === "female" ? 1 : 0)
-    );
-    const bDiff = Math.abs(
-      (p.gender === "male" ? s.bMale + 1 : s.bMale) -
-        s.bFemale -
-        (p.gender === "female" ? 1 : 0)
-    );
-    return aDiff <= bDiff;
+    const addF = p.gender === "female" ? 1 : 0;
+    const addM = p.gender === "male" ? 1 : 0;
+
+    // Hypothetical counts after placing p on A
+    const aFemA = s.aFemale + addF;
+    const aMaleA = s.aMale + addM;
+    const aGapA = Math.abs(aFemA - aMaleA);
+
+    // Hypothetical counts after placing p on B
+    const bFemB = s.bFemale + addF;
+    const bMaleB = s.bMale + addM;
+    const bGapB = Math.abs(bFemB - bMaleB);
+
+    if (aGapA !== bGapB) {
+      return aGapA < bGapB; // prefer side that reduces gap more
+    }
+
+    // Gentle nudge toward target female per team (soft bias only)
+    if (p.gender === "female") {
+      const aOver = Math.abs(aFemA - targetFemalePerTeam);
+      const bOver = Math.abs(bFemB - targetFemalePerTeam);
+      if (aOver !== bOver) return aOver < bOver;
+    }
+
+    // no clear gender preference
+    return true;
   }
 
   /**
