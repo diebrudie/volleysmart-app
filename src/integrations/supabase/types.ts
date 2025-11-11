@@ -269,7 +269,7 @@ export type Database = {
       }
       matches: {
         Row: {
-          added_by_user_id: string
+          added_by_user_id: string | null
           game_number: number
           id: string
           match_day_id: string
@@ -277,15 +277,15 @@ export type Database = {
           team_b_score: number
         }
         Insert: {
-          added_by_user_id: string
+          added_by_user_id?: string | null
           game_number: number
           id?: string
           match_day_id: string
-          team_a_score: number
-          team_b_score: number
+          team_a_score?: number
+          team_b_score?: number
         }
         Update: {
-          added_by_user_id?: string
+          added_by_user_id?: string | null
           game_number?: number
           id?: string
           match_day_id?: string

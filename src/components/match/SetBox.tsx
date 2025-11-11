@@ -1,5 +1,5 @@
 import React, { useState, KeyboardEvent, useRef, useEffect } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Dialog,
@@ -43,8 +43,10 @@ interface SetBoxProps {
     teamAScore: number,
     teamBScore: number
   ) => void;
+  onDelete?: (setNumber: number) => void; // only for >5
   isLarge?: boolean;
   isEditingAllowed?: boolean;
+  isDeletable?: boolean; // when setNumber > 5
 }
 
 const SetBox: React.FC<SetBoxProps> = ({
@@ -52,8 +54,10 @@ const SetBox: React.FC<SetBoxProps> = ({
   teamAScore = null,
   teamBScore = null,
   onScoreUpdate,
+  onDelete,
   isLarge = false,
   isEditingAllowed = true,
+  isDeletable = false,
 }) => {
   const [localTeamAScore, setLocalTeamAScore] = useState<string>(
     teamAScore && teamAScore > 0 ? String(teamAScore) : ""
@@ -327,11 +331,30 @@ const SetBox: React.FC<SetBoxProps> = ({
           {/* Desktop / tablet: keep Dialog */}
           {!isMobile && (
             <Dialog open={isOpen} onOpenChange={handleOpen}>
-              <DialogTrigger asChild>
-                <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
-                  <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                </button>
-              </DialogTrigger>
+              <div className="absolute top-2 right-2 flex items-center gap-1">
+                {isDeletable && onDelete && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(setNumber);
+                    }}
+                    className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors"
+                    aria-label={`Delete Set ${setNumber}`}
+                  >
+                    <Trash2 className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                  </button>
+                )}
+                <DialogTrigger asChild>
+                  <button
+                    className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors"
+                    aria-label={`Edit Set ${setNumber}`}
+                  >
+                    <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                  </button>
+                </DialogTrigger>
+              </div>
+
               <DialogContent
                 onOpenAutoFocus={(e) => {
                   /* we already manage focus */ e.preventDefault();
@@ -396,11 +419,30 @@ const SetBox: React.FC<SetBoxProps> = ({
           {/* Mobile: Drawer to stay above keyboard */}
           {isMobile && (
             <Drawer open={isOpen} onOpenChange={handleOpen}>
-              <DrawerTrigger asChild>
-                <button className="absolute top-2 right-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors">
-                  <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                </button>
-              </DrawerTrigger>
+              <div className="absolute top-2 right-2 flex items-center gap-1">
+                {isDeletable && onDelete && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(setNumber);
+                    }}
+                    className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors"
+                    aria-label={`Delete Set ${setNumber}`}
+                  >
+                    <Trash2 className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                  </button>
+                )}
+                <DrawerTrigger asChild>
+                  <button
+                    className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors"
+                    aria-label={`Edit Set ${setNumber}`}
+                  >
+                    <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                  </button>
+                </DrawerTrigger>
+              </div>
+
               <DrawerContent
                 ref={drawerContentRef}
                 onOpenAutoFocus={(e) => e.preventDefault()}
