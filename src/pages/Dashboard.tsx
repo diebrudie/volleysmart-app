@@ -639,28 +639,15 @@ const Dashboard = () => {
   // Insert a new set (match row) for this match day
   const handleAddSet = async () => {
     if (!latestGame?.id) return;
-    if (!canAddAnotherSet) return;
+    if (!canAddAnotherSet) return; // guard to avoid 23514
     try {
-      // Ensure we have the current user id for added_by_user_id
-      const { data: userRes, error: userErr } = await supabase.auth.getUser();
-      if (userErr) {
-        console.error("Error getting auth user:", userErr);
-        return;
-      }
-      const uid = userRes?.user?.id;
-      if (!uid) {
-        console.error("No authenticated user. Cannot add set.");
-        return;
-      }
-
       const { data, error } = await supabase
         .from("matches")
         .insert({
-          added_by_user_id: uid, // REQUIRED by types/RLS
-          match_day_id: latestGame.id, // FK to match_days
+          match_day_id: latestGame.id,
           game_number: nextSetNumber,
-          team_a_score: 0, // must be number, not null
-          team_b_score: 0, // must be number, not null
+          team_a_score: 0,
+          team_b_score: 0,
         })
         .select();
 
@@ -1018,7 +1005,7 @@ const Dashboard = () => {
 
             {/* Add Set dashed box – always last, same grid footprint */}
             <div className="order-7">
-              <AddSetBox onClick={handleAddSet} />
+              <AddSetBox onClick={handleAddSet} disabled={!canAddAnotherSet} />
             </div>
           </div>
         </div>
