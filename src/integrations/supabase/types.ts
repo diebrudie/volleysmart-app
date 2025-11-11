@@ -281,8 +281,8 @@ export type Database = {
           game_number: number
           id?: string
           match_day_id: string
-          team_a_score: number
-          team_b_score: number
+          team_a_score?: number
+          team_b_score?: number
         }
         Update: {
           added_by_user_id?: string

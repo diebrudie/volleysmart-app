@@ -632,9 +632,14 @@ const Dashboard = () => {
     }
   };
 
+  // OPTIONAL: clamp to your DB constraint (1..9)
+  const MAX_SETS = 9; // keep in sync with DB constraint
+  const canAddAnotherSet = nextSetNumber <= MAX_SETS;
+
   // Insert a new set (match row) for this match day
   const handleAddSet = async () => {
     if (!latestGame?.id) return;
+    if (!canAddAnotherSet) return;
     try {
       // Ensure we have the current user id for added_by_user_id
       const { data: userRes, error: userErr } = await supabase.auth.getUser();
