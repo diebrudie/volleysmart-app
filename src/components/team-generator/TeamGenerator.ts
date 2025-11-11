@@ -532,21 +532,30 @@ export class TeamGenerator {
     teamA: GeneratedTeam,
     teamB: GeneratedTeam
   ): number {
+    // We compute three components on a 0–100 scale, then weight them:
+    // positions 50%, skill 30%, gender 20%.
+    // - Position: use existing 0..100 from calculatePositionBalance
+    // - Skill: shrink penalty to max 30
+    // - Gender: shrink penalty to max 20
+
     let score = 100;
 
-    // Skill balance (40% of score)
+    // Skill balance (30% of score)
     const skillDiff = Math.abs(teamA.averageSkill - teamB.averageSkill);
-    score -= Math.min(40, skillDiff * 8);
+    // Previously: Math.min(40, diff*8)
+    // Now: cap at 30; tune multiplier to taste. 6 makes ~5 pts diff ≈ -30
+    score -= Math.min(30, skillDiff * 6);
 
-    // Gender balance (30% of score)
+    // Gender balance (20% of score)
     const teamGenderDiff = Math.abs(
       teamA.genderBalance.male - teamB.genderBalance.male
     );
-    score -= Math.min(30, teamGenderDiff * 10);
+    // Previously max 30 (diff*10). Now cap at 20.
+    score -= Math.min(20, teamGenderDiff * 10);
 
-    // Position balance (30% of score)
-    const positionScore = this.calculatePositionBalance(teamA, teamB);
-    score -= (100 - positionScore) * 0.3;
+    // Position balance (50% of score)
+    const positionScore = this.calculatePositionBalance(teamA, teamB); // 0..100
+    score -= (100 - positionScore) * 0.5; // 50% weight
 
     return Math.max(0, Math.min(100, score));
   }
