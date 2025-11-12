@@ -11,16 +11,11 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Plus, Minus, Edit2, X } from "lucide-react";
+import { Search, Plus, Minus, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchActiveMembersBasic } from "@/integrations/supabase/clubMembers";
@@ -246,31 +241,9 @@ export function PlayersEditModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
-      <DialogContent className="max-w-2xl p-0">
-        {/* Top-right close (X) only */}
-        <DialogClose asChild>
-          <button
-            aria-label="Close"
-            className="absolute right-3 top-3 rounded-md p-1 hover:bg-accent"
-            onClick={onCancel}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </DialogClose>
-
+      <DialogContent className="max-w-2xl p-0 rounded-2xl [&>button:has(span.sr-only)]:hidden">
         {/* Full-bleed yellow header */}
-        <div className="bg-amber-500 relative rounded-md">
-          {/* Close button sits in the top area of the bar */}
-          <DialogClose asChild>
-            <button
-              aria-label="Close"
-              className="absolute right-3 top-3 rounded-md p-1 hover:bg-black/10"
-              onClick={onCancel}
-            >
-              <X className="h-4 w-4 text-black" />
-            </button>
-          </DialogClose>
-
+        <div className="bg-amber-500 relative rounded-t-md">
           {/* Controls row: title (mobile hides on search), search, select-all */}
           <div className="flex items-center justify-between px-4 sm:px-6 pt-10 pb-3">
             <h3
@@ -316,8 +289,8 @@ export function PlayersEditModal({
         </div>
 
         {/* Add guests row directly under header, flush edges but padded inside */}
-        <div className="px-4 sm:px-6 py-3 border-b bg-card">
-          <div className="flex items-center justify-between">
+        <div className="mx-4 sm:mx-6 py-3 border-b bg-card rounded">
+          <div className="px-2 sm:px-5 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Add guests</span>
             <div className="flex items-center gap-2">
               <Button
@@ -423,6 +396,9 @@ export function PlayersEditModal({
         </div>
 
         <DialogFooter className="px-4 sm:px-6 py-4">
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
           <Button
             onClick={() =>
               onSave({
