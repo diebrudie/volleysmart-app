@@ -258,10 +258,21 @@ export function PlayersEditModal({
           </button>
         </DialogClose>
 
-        {/* Yellow header like new-game (title + collapsible search + select all) */}
-        <div className="mx-6 mt-6 overflow-hidden">
-          <div className="flex items-center justify-between bg-amber-500 px-4 py-3">
-            {/* On mobile: hide title when search is expanded; keep always visible on sm+ */}
+        {/* Full-bleed yellow header */}
+        <div className="bg-amber-500 relative rounded-md">
+          {/* Close button sits in the top area of the bar */}
+          <DialogClose asChild>
+            <button
+              aria-label="Close"
+              className="absolute right-3 top-3 rounded-md p-1 hover:bg-black/10"
+              onClick={onCancel}
+            >
+              <X className="h-4 w-4 text-black" />
+            </button>
+          </DialogClose>
+
+          {/* Controls row: title (mobile hides on search), search, select-all */}
+          <div className="flex items-center justify-between px-4 sm:px-6 pt-10 pb-3">
             <h3
               className={cn(
                 "text-base font-semibold text-black",
@@ -281,7 +292,7 @@ export function PlayersEditModal({
                   onBlur={() => {
                     if (!searchTerm) setIsSearchExpanded(false);
                   }}
-                  className="h-8 w-48"
+                  className="h-8 w-40 sm:w-56"
                 />
               ) : (
                 <button
@@ -292,6 +303,7 @@ export function PlayersEditModal({
                   <Search className="h-4 w-4 text-black" />
                 </button>
               )}
+
               {filtered.length > 0 && (
                 <Checkbox
                   checked={allFilteredSelected}
@@ -301,119 +313,116 @@ export function PlayersEditModal({
               )}
             </div>
           </div>
+        </div>
 
-          {/* Add guests row (flat, no rounded corners) */}
-          <div className="px-4 py-3 border-b bg-card">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Add guests</span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={removeExtra}
-                  disabled={extraPlayers.length === 0}
-                  className="h-8 w-8"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-6 text-center">{extraPlayers.length}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={addExtra}
-                  className="h-8 w-8"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+        {/* Add guests row directly under header, flush edges but padded inside */}
+        <div className="px-4 sm:px-6 py-3 border-b bg-card">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Add guests</span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={removeExtra}
+                disabled={extraPlayers.length === 0}
+                className="h-8 w-8"
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="w-6 text-center">{extraPlayers.length}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={addExtra}
+                className="h-8 w-8"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
-          </div>
-
-          {/* Scrollable list under yellow header */}
-          <div className="max-h-[60vh] overflow-y-auto divide-y divide-border bg-card">
-            {isLoading ? (
-              <div className="py-12 flex items-center justify-center text-sm text-muted-foreground">
-                Loading…
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                No players found.
-              </div>
-            ) : (
-              filtered.map((p) => {
-                const checked = selectedIds.includes(p.id);
-                return (
-                  <div
-                    key={p.id}
-                    className={cn(
-                      "px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-accent/30"
-                    )}
-                    onClick={() => toggleSelect(p.id)}
-                  >
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        {isExtra(p) && editingExtraId === p.id ? (
-                          <Input
-                            value={p.name}
-                            onChange={(e) => setExtraName(p.id, e.target.value)}
-                            onBlur={() => setEditingExtraId(null)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") setEditingExtraId(null);
-                            }}
-                            autoFocus
-                            className="h-8 w-[200px]"
-                          />
-                        ) : (
-                          <>
-                            <span
-                              className={cn(
-                                "font-medium",
-                                isExtra(p) && "text-blue-700 dark:text-blue-300"
-                              )}
-                            >
-                              {isExtra(p)
-                                ? p.name
-                                : `${p.first_name} ${p.last_name.charAt(0)}.`}
-                            </span>
-                            {isExtra(p) && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-5 w-5"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingExtraId(p.id);
-                                }}
-                                aria-label="Rename guest"
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {isExtra(p)
-                          ? `${p.position} (Level ${p.skill_rating}) • Guest`
-                          : p.primary_position_name ?? "No Position"}
-                      </span>
-                    </div>
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={() => toggleSelect(p.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                );
-              })
-            )}
           </div>
         </div>
 
-        <DialogFooter className="px-6 py-4">
-          <div className="mr-auto text-sm text-muted-foreground">
-            Selected: <span className="font-medium">{selectedIds.length}</span>
-          </div>
+        {/* Scrollable list; no outer padding, inner horizontal padding for rows */}
+        <div className="max-h-[60vh] overflow-y-auto divide-y divide-border bg-card">
+          {isLoading ? (
+            <div className="py-12 flex items-center justify-center text-sm text-muted-foreground">
+              Loading…
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              No players found.
+            </div>
+          ) : (
+            filtered.map((p) => {
+              const checked = selectedIds.includes(p.id);
+              return (
+                <div
+                  key={p.id}
+                  className={cn(
+                    "px-4 sm:px-6 py-3 flex items-center justify-between cursor-pointer hover:bg-accent/30"
+                  )}
+                  onClick={() => toggleSelect(p.id)}
+                >
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      {isExtra(p) && editingExtraId === p.id ? (
+                        <Input
+                          value={p.name}
+                          onChange={(e) => setExtraName(p.id, e.target.value)}
+                          onBlur={() => setEditingExtraId(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") setEditingExtraId(null);
+                          }}
+                          autoFocus
+                          className="h-8 w-[200px]"
+                        />
+                      ) : (
+                        <>
+                          <span
+                            className={cn(
+                              "font-medium",
+                              isExtra(p) && "text-blue-700 dark:text-blue-300"
+                            )}
+                          >
+                            {isExtra(p)
+                              ? p.name
+                              : `${p.first_name} ${p.last_name.charAt(0)}.`}
+                          </span>
+                          {isExtra(p) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingExtraId(p.id);
+                              }}
+                              aria-label="Rename guest"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {isExtra(p)
+                        ? `${p.position} (Level ${p.skill_rating}) • Guest`
+                        : p.primary_position_name ?? "No Position"}
+                    </span>
+                  </div>
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={() => toggleSelect(p.id)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <DialogFooter className="px-4 sm:px-6 py-4">
           <Button
             onClick={() =>
               onSave({
