@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -116,6 +116,26 @@ export function PlayersEditModal({
   const [selectedIds, setSelectedIds] = useState<string[]>(
     initialSelectedPlayerIds
   );
+
+  const headerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isSearchExpanded) return;
+
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setIsSearchExpanded(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isSearchExpanded]);
 
   useEffect(() => {
     setSelectedIds(initialSelectedPlayerIds);
@@ -266,7 +286,7 @@ export function PlayersEditModal({
         </DialogDescription>
 
         {/* Full-bleed yellow header with fixed height */}
-        <div className="bg-amber-500 relative rounded-t-md">
+        <div ref={headerRef} className="bg-amber-500 relative rounded-t-md">
           {/* Keep a constant height so it doesn't grow/shrink when search toggles */}
           <div className="flex items-center justify-between px-4 sm:px-6 h-14">
             {/* Keep title space occupied even when search is open on mobile */}
