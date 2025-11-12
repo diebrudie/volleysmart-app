@@ -88,6 +88,7 @@ volleysmart-app/
 │  │  │  ├─ EmptyTeamsState.tsx
 │  │  │  ├─ GeneratedTeams.tsx
 │  │  │  ├─ PlayerItem.tsx
+│  │  │  ├─ PlayersEditModal.tsx
 │  │  │  ├─ PlayersSelection.tsx
 │  │  │  ├─ SaveMatchDialog.tsx
 │  │  │  ├─ SortablePlayer.tsx

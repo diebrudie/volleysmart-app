@@ -6,6 +6,7 @@ import {
   Shuffle,
   Save,
   ChevronLeft,
+  UserCog,
 } from "lucide-react";
 import { LocationSelector } from "@/components/forms/LocationSelector";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +22,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  PlayersEditModal,
+  PlayersEditResult,
+} from "@/components/team-generator/PlayersEditModal";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -176,6 +182,7 @@ const EditGame = () => {
   const [teamAPlayers, setTeamAPlayers] = useState<EditPlayer[]>([]);
   const [teamBPlayers, setTeamBPlayers] = useState<EditPlayer[]>([]);
   const [activePlayer, setActivePlayer] = useState<EditPlayer | null>(null);
+  const [playersModalOpen, setPlayersModalOpen] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<
     string | undefined
   >();
@@ -262,6 +269,26 @@ const EditGame = () => {
     },
     enabled: !!gameId,
   });
+
+  // Assign a new player to a team: fewer players -> that team; equal -> random
+  const assignNewPlayerToTeam = (p: EditPlayer) => {
+    const a = teamAPlayers.length;
+    const b = teamBPlayers.length;
+    if (a < b) setTeamAPlayers((prev) => [...prev, p]);
+    else if (b < a) setTeamBPlayers((prev) => [...prev, p]);
+    else {
+      (Math.random() < 0.5 ? setTeamAPlayers : setTeamBPlayers)((prev) => [
+        ...prev,
+        p,
+      ]);
+    }
+  };
+
+  // Remove a player id from both teams
+  const removePlayerFromTeams = (playerId: string) => {
+    setTeamAPlayers((prev) => prev.filter((p) => p.id !== playerId));
+    setTeamBPlayers((prev) => prev.filter((p) => p.id !== playerId));
+  };
 
   // Load who last modified the game (any change on Edit Game page)
   const { data: auditInfo } = useRQQuery({
@@ -983,6 +1010,25 @@ const EditGame = () => {
                 />
               )}
 
+              {/* Edit Players Button */}
+              <Button
+                variant="action"
+                icon={
+                  // Prefer UserPen if available; else fallback to UserCog
+                  // import { UserPen, UserCog } from "lucide-react"
+                  // Use UserPen; if your lucide version lacks it, swap to <UserCog ... />
+                  // Keeping it small for density with other controls
+                  <svg className="h-4 w-4" viewBox="0 0 24 24">
+                    <path d="M0 0h24v24H0z" fill="none" />
+                    <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm-7 9a7 7 0 0 1 14 0zM20.7 8.35l-1.05-1.05a.5.5 0 0 0-.7 0l-2.12 2.12a.5.5 0 0 0 0 .71l1.05 1.05a.5.5 0 0 0 .71 0l2.11-2.12a.5.5 0 0 0 0-.71z" />
+                  </svg>
+                }
+                onClick={() => setPlayersModalOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                Edit Players
+              </Button>
+
               {/* Shuffle Teams Button */}
               <Button
                 variant="action"
@@ -1098,6 +1144,123 @@ const EditGame = () => {
                 <span className="font-medium">{auditInfo.label}</span>
               </div>
             </div>
+          )}
+
+          {/* Edit Players Modal */}
+          {clubId && (
+            <PlayersEditModal
+              clubId={clubId}
+              open={playersModalOpen}
+              initialSelectedPlayerIds={[...teamAPlayers, ...teamBPlayers].map(
+                (p) => p.id
+              )}
+              onCancel={() => setPlayersModalOpen(false)}
+              onSave={async ({
+                selectedRegularIds,
+                guestDrafts,
+              }: PlayersEditResult) => {
+                try {
+                  // Current ids
+                  const currentIds = new Set(
+                    [...teamAPlayers, ...teamBPlayers].map((p) => p.id)
+                  );
+                  const targetIds = new Set<string>(selectedRegularIds);
+
+                  // 1) Handle guests: create temp players and add their ids to targetIds
+                  for (const g of guestDrafts) {
+                    // Split best-effort first/last
+                    const parts = g.name.trim().split(" ");
+                    const firstName = parts[0] || "Guest";
+                    const lastName =
+                      parts.length > 1 ? parts.slice(1).join(" ") : "Player";
+
+                    const { data: tempPlayer, error: tempErr } = await supabase
+                      .from("players")
+                      .insert({
+                        first_name: firstName,
+                        last_name: lastName,
+                        user_id: null,
+                        skill_rating: g.skill_rating,
+                        is_temporary: true,
+                        is_active: true,
+                        member_association: false,
+                        gender: "other",
+                      })
+                      .select()
+                      .single();
+
+                    if (tempErr) throw tempErr;
+                    if (tempPlayer?.id) targetIds.add(tempPlayer.id);
+
+                    // Immediately add to local UI with a generic stub
+                    if (tempPlayer?.id) {
+                      assignNewPlayerToTeam({
+                        id: tempPlayer.id,
+                        name: `${firstName} ${lastName.charAt(0)}.`,
+                        preferredPosition: g.position ?? "No Position",
+                        skillRating: g.skill_rating ?? 5,
+                      });
+                    }
+                  }
+
+                  // 2) Compute diff vs current
+                  const toRemove = [...currentIds].filter(
+                    (id) => !targetIds.has(id)
+                  );
+                  const toAdd = [...targetIds].filter(
+                    (id) => !currentIds.has(id)
+                  );
+
+                  // 3) Remove deselected
+                  for (const id of toRemove) removePlayerFromTeams(id);
+
+                  // 4) Add new regulars (append to team preserving current team composition)
+                  if (toAdd.length > 0) {
+                    // We need names for UI; fetch those player rows
+                    const { data: added, error: addErr } = await supabase
+                      .from("players")
+                      .select("id, first_name, last_name")
+                      .in("id", toAdd);
+                    if (addErr) throw addErr;
+
+                    (added ?? []).forEach((row) => {
+                      assignNewPlayerToTeam({
+                        id: row.id,
+                        name: `${row.first_name ?? "Player"} ${(
+                          row.last_name ?? "X"
+                        ).charAt(0)}.`,
+                        preferredPosition: "No Position",
+                        skillRating: 7,
+                      });
+                    });
+                  }
+
+                  // Audit mark (UI-only edit for now)
+                  if (user?.id && gameId) {
+                    await markModifiedBy(gameId);
+                    await queryClient.invalidateQueries({
+                      queryKey: ["matchDayAudit", gameId],
+                    });
+                  }
+
+                  setPlayersModalOpen(false);
+                  toast({
+                    title: "Players updated",
+                    description:
+                      "Teams were kept intact. Click Save to persist changes.",
+                    duration: 1500,
+                  });
+                } catch (e) {
+                  console.error("Edit Players apply error:", e);
+                  toast({
+                    title: "Error",
+                    description: "Could not update players. Please try again.",
+                    variant: "destructive",
+                    duration: 2000,
+                  });
+                }
+              }}
+            />
           )}
 
           {/* Save Button */}
