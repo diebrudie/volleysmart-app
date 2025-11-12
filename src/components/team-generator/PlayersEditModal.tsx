@@ -258,37 +258,19 @@ export function PlayersEditModal({
           </button>
         </DialogClose>
 
-        {/* Add guests wrapper (like new-game) */}
-        <div className="mx-6 mt-6 mb-4 rounded-2xl border bg-muted/40 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Add guests</span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={removeExtra}
-                disabled={extraPlayers.length === 0}
-                className="h-8 w-8"
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="w-6 text-center">{extraPlayers.length}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={addExtra}
-                className="h-8 w-8"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
         {/* Yellow header like new-game (title + collapsible search + select all) */}
-        <div className="mx-6 rounded-2xl overflow-hidden">
+        <div className="mx-6 mt-6 overflow-hidden">
           <div className="flex items-center justify-between bg-amber-500 px-4 py-3">
-            <h3 className="text-base font-semibold text-black">Edit Players</h3>
+            {/* On mobile: hide title when search is expanded; keep always visible on sm+ */}
+            <h3
+              className={cn(
+                "text-base font-semibold text-black",
+                isSearchExpanded ? "hidden sm:block" : "block"
+              )}
+            >
+              Edit Players
+            </h3>
+
             <div className="flex items-center gap-3">
               {isSearchExpanded ? (
                 <Input
@@ -317,6 +299,33 @@ export function PlayersEditModal({
                   className="data-[state=checked]:bg-black data-[state=checked]:border-black"
                 />
               )}
+            </div>
+          </div>
+
+          {/* Add guests row (flat, no rounded corners) */}
+          <div className="px-4 py-3 border-b bg-card">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Add guests</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={removeExtra}
+                  disabled={extraPlayers.length === 0}
+                  className="h-8 w-8"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="w-6 text-center">{extraPlayers.length}</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={addExtra}
+                  className="h-8 w-8"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
