@@ -248,7 +248,16 @@ export function PlayersEditModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
-      <DialogContent className="max-w-2xl p-0 rounded-2xl [&>button:has(span.sr-only)]:hidden">
+      <DialogContent
+        className={cn(
+          // Make the dialog itself a column flexbox so header, list, footer stay inside
+          "p-0 [&>button:has(span.sr-only)]:hidden flex flex-col",
+          // Mobile: true fullscreen
+          "w-[100vw] max-w-[100vw] h-[100dvh] max-h-[100dvh] rounded-none",
+          // Desktop: fixed viewport height so footer cannot overflow outside the card
+          "sm:rounded-2xl sm:w-full sm:max-w-2xl sm:h-[85vh]"
+        )}
+      >
         {/* A11y-only title/description to satisfy Radix requirements without changing the visual header */}
         <DialogTitle className="sr-only">Edit Players</DialogTitle>
         <DialogDescription className="sr-only">
@@ -259,7 +268,7 @@ export function PlayersEditModal({
         {/* Full-bleed yellow header */}
         <div className="bg-amber-500 relative rounded-t-md">
           {/* Controls row: title (mobile hides on search), search, select-all */}
-          <div className="flex items-center justify-between px-4 sm:px-6 pt-10 pb-3">
+          <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-3">
             <h3
               className={cn(
                 "text-base font-semibold text-black",
@@ -336,7 +345,7 @@ export function PlayersEditModal({
         </div>
 
         {/* Scrollable list; no outer padding, inner horizontal padding for rows */}
-        <div className="max-h-[60vh] overflow-y-auto divide-y divide-border bg-card">
+        <div className="flex-1 overflow-y-auto divide-y divide-border bg-card">
           {isLoading ? (
             <div className="py-12 flex items-center justify-center text-sm text-muted-foreground">
               Loading…
@@ -415,7 +424,7 @@ export function PlayersEditModal({
           )}
         </div>
 
-        <DialogFooter className="px-4 sm:px-6 pt-3 pb-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+        <DialogFooter className="px-4 sm:px-6 pt-3 pb-[calc(theme(spacing.6)+env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
