@@ -1025,7 +1025,7 @@ const EditGame = () => {
                 onClick={() => setPlayersModalOpen(true)}
                 className="w-full sm:w-auto text-foreground"
               >
-                Edit Players!
+                Edit Players
               </Button>
 
               {/* Shuffle Teams Button */}
