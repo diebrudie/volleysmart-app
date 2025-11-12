@@ -288,12 +288,15 @@ export function PlayersEditModal({
           </div>
         </div>
 
-        {/* Add guests row directly under header, flush edges but padded inside */}
-        <div className="mx-4 sm:mx-6 py-3 border-b bg-card rounded">
-          <div className="px-2 sm:px-5 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Add guests</span>
-            <div className="flex items-center gap-2">
+        {/* Add guests row with the same look as NewGame (contrast in dark) */}
+        <div className="mx-4 sm:mx-6 py-3 border-b bg-card">
+          <div className="bg-white dark:bg-gray-800 h-12 px-4 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Add guests
+            </span>
+            <div className="flex items-center gap-3">
               <Button
+                type="button"
                 variant="outline"
                 size="icon"
                 onClick={removeExtra}
@@ -302,8 +305,11 @@ export function PlayersEditModal({
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              <span className="w-6 text-center">{extraPlayers.length}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100 min-w-[2rem] text-center">
+                {extraPlayers.length}
+              </span>
               <Button
+                type="button"
                 variant="outline"
                 size="icon"
                 onClick={addExtra}
@@ -395,7 +401,7 @@ export function PlayersEditModal({
           )}
         </div>
 
-        <DialogFooter className="px-4 sm:px-6 py-4">
+        <DialogFooter className="px-4 sm:px-6 pt-3 pb-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
