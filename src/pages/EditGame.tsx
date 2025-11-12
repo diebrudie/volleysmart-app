@@ -1159,15 +1159,26 @@ const EditGame = () => {
                 guestDrafts,
               }: PlayersEditResult) => {
                 try {
-                  // Current ids
+                  // Helper: defensive de-duplication by id
+                  const uniqById = <T extends { id: string }>(arr: T[]) => {
+                    const seen = new Set<string>();
+                    return arr.filter((x) =>
+                      seen.has(x.id) ? false : (seen.add(x.id), true)
+                    );
+                  };
+                  const hasPlayer = (id: string) =>
+                    teamAPlayers.some((p) => p.id === id) ||
+                    teamBPlayers.some((p) => p.id === id);
+
+                  // Capture current state before applying modal result
                   const currentIds = new Set(
                     [...teamAPlayers, ...teamBPlayers].map((p) => p.id)
                   );
                   const targetIds = new Set<string>(selectedRegularIds);
 
-                  // 1) Handle guests: create temp players and add their ids to targetIds
+                  // 1) Create guests (do NOT add to teams here)
+                  const createdGuestIds: string[] = [];
                   for (const g of guestDrafts) {
-                    // Split best-effort first/last
                     const parts = g.name.trim().split(" ");
                     const firstName = parts[0] || "Guest";
                     const lastName =
@@ -1185,24 +1196,17 @@ const EditGame = () => {
                         member_association: false,
                         gender: "other",
                       })
-                      .select()
+                      .select("id, first_name, last_name")
                       .single();
 
                     if (tempErr) throw tempErr;
-                    if (tempPlayer?.id) targetIds.add(tempPlayer.id);
-
-                    // Immediately add to local UI with a generic stub
-                    if (tempPlayer?.id) {
-                      assignNewPlayerToTeam({
-                        id: tempPlayer.id,
-                        name: `${firstName} ${lastName.charAt(0)}.`,
-                        preferredPosition: g.position ?? "No Position",
-                        skillRating: g.skill_rating ?? 5,
-                      });
-                    }
+                    if (tempPlayer?.id) createdGuestIds.push(tempPlayer.id);
                   }
 
-                  // 2) Compute diff vs current
+                  // Add newly created guests to the target set once
+                  for (const gid of createdGuestIds) targetIds.add(gid);
+
+                  // 2) Compute delta vs the captured current set
                   const toRemove = [...currentIds].filter(
                     (id) => !targetIds.has(id)
                   );
@@ -1210,12 +1214,18 @@ const EditGame = () => {
                     (id) => !currentIds.has(id)
                   );
 
-                  // 3) Remove deselected
-                  for (const id of toRemove) removePlayerFromTeams(id);
+                  // 3) Remove deselected from both teams
+                  if (toRemove.length) {
+                    setTeamAPlayers((prev) =>
+                      prev.filter((p) => !toRemove.includes(p.id))
+                    );
+                    setTeamBPlayers((prev) =>
+                      prev.filter((p) => !toRemove.includes(p.id))
+                    );
+                  }
 
-                  // 4) Add new regulars (append to team preserving current team composition)
-                  if (toAdd.length > 0) {
-                    // We need names for UI; fetch those player rows
+                  // 4) Add new players (regulars + all new guests) exactly once
+                  if (toAdd.length) {
                     const { data: added, error: addErr } = await supabase
                       .from("players")
                       .select("id, first_name, last_name")
@@ -1223,6 +1233,7 @@ const EditGame = () => {
                     if (addErr) throw addErr;
 
                     (added ?? []).forEach((row) => {
+                      if (hasPlayer(row.id)) return; // guard against double append
                       assignNewPlayerToTeam({
                         id: row.id,
                         name: `${row.first_name ?? "Player"} ${(
@@ -1234,7 +1245,19 @@ const EditGame = () => {
                     });
                   }
 
-                  // Audit mark (UI-only edit for now)
+                  // 5) Defensive: ensure no dups within/between teams
+                  setTeamAPlayers((prev) => uniqById(prev));
+                  setTeamBPlayers((prev) => {
+                    const bUniq = uniqById(prev);
+                    const idsA = new Set(
+                      (typeof window === "undefined" ? [] : teamAPlayers).map(
+                        (p) => p.id
+                      )
+                    );
+                    return bUniq.filter((p) => !idsA.has(p.id));
+                  });
+
+                  // 6) Audit mark (UI-only edit for now)
                   if (user?.id && gameId) {
                     await markModifiedBy(gameId);
                     await queryClient.invalidateQueries({
