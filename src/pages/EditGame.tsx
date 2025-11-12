@@ -22,12 +22,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  PlayersEditModal,
+  PlayersEditResult,
+} from "@/components/team-generator/PlayersEditModal";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -176,6 +173,7 @@ const EditGame = () => {
   const [teamAPlayers, setTeamAPlayers] = useState<EditPlayer[]>([]);
   const [teamBPlayers, setTeamBPlayers] = useState<EditPlayer[]>([]);
   const [activePlayer, setActivePlayer] = useState<EditPlayer | null>(null);
+  const [playersModalOpen, setPlayersModalOpen] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<
     string | undefined
   >();
@@ -262,6 +260,26 @@ const EditGame = () => {
     },
     enabled: !!gameId,
   });
+
+  // Assign a new player to a team: fewer players -> that team; equal -> random
+  const assignNewPlayerToTeam = (p: EditPlayer) => {
+    const a = teamAPlayers.length;
+    const b = teamBPlayers.length;
+    if (a < b) setTeamAPlayers((prev) => [...prev, p]);
+    else if (b < a) setTeamBPlayers((prev) => [...prev, p]);
+    else {
+      (Math.random() < 0.5 ? setTeamAPlayers : setTeamBPlayers)((prev) => [
+        ...prev,
+        p,
+      ]);
+    }
+  };
+
+  // Remove a player id from both teams
+  const removePlayerFromTeams = (playerId: string) => {
+    setTeamAPlayers((prev) => prev.filter((p) => p.id !== playerId));
+    setTeamBPlayers((prev) => prev.filter((p) => p.id !== playerId));
+  };
 
   // Load who last modified the game (any change on Edit Game page)
   const { data: auditInfo } = useRQQuery({
@@ -983,6 +1001,33 @@ const EditGame = () => {
                 />
               )}
 
+              {/* Edit Players Button */}
+              <Button
+                variant="action"
+                icon={
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.75}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    {/* user circle + shoulders */}
+                    <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Z" />
+                    <path d="M5 21a7 7 0 0 1 14 0" />
+                    {/* small pen overlay */}
+                    <path d="M19.65 7.3l-3.17 3.18 1.05 1.05 3.17-3.17a.75.75 0 0 0 0-1.06l-.99-.99a.75.75 0 0 0-1.06 0Z" />
+                  </svg>
+                }
+                onClick={() => setPlayersModalOpen(true)}
+                className="w-full sm:w-auto text-foreground"
+              >
+                Edit Players
+              </Button>
+
               {/* Shuffle Teams Button */}
               <Button
                 variant="action"
@@ -1098,6 +1143,146 @@ const EditGame = () => {
                 <span className="font-medium">{auditInfo.label}</span>
               </div>
             </div>
+          )}
+
+          {/* Edit Players Modal */}
+          {clubId && (
+            <PlayersEditModal
+              clubId={clubId}
+              open={playersModalOpen}
+              initialSelectedPlayerIds={[...teamAPlayers, ...teamBPlayers].map(
+                (p) => p.id
+              )}
+              onCancel={() => setPlayersModalOpen(false)}
+              onSave={async ({
+                selectedRegularIds,
+                guestDrafts,
+              }: PlayersEditResult) => {
+                try {
+                  // Helper: defensive de-duplication by id
+                  const uniqById = <T extends { id: string }>(arr: T[]) => {
+                    const seen = new Set<string>();
+                    return arr.filter((x) =>
+                      seen.has(x.id) ? false : (seen.add(x.id), true)
+                    );
+                  };
+                  const hasPlayer = (id: string) =>
+                    teamAPlayers.some((p) => p.id === id) ||
+                    teamBPlayers.some((p) => p.id === id);
+
+                  // Capture current state before applying modal result
+                  const currentIds = new Set(
+                    [...teamAPlayers, ...teamBPlayers].map((p) => p.id)
+                  );
+                  const targetIds = new Set<string>(selectedRegularIds);
+
+                  // 1) Create guests (do NOT add to teams here)
+                  const createdGuestIds: string[] = [];
+                  for (const g of guestDrafts) {
+                    const parts = g.name.trim().split(" ");
+                    const firstName = parts[0] || "Guest";
+                    const lastName =
+                      parts.length > 1 ? parts.slice(1).join(" ") : "Player";
+
+                    const { data: tempPlayer, error: tempErr } = await supabase
+                      .from("players")
+                      .insert({
+                        first_name: firstName,
+                        last_name: lastName,
+                        user_id: null,
+                        skill_rating: g.skill_rating,
+                        is_temporary: true,
+                        is_active: true,
+                        member_association: false,
+                        gender: "other",
+                      })
+                      .select("id, first_name, last_name")
+                      .single();
+
+                    if (tempErr) throw tempErr;
+                    if (tempPlayer?.id) createdGuestIds.push(tempPlayer.id);
+                  }
+
+                  // Add newly created guests to the target set once
+                  for (const gid of createdGuestIds) targetIds.add(gid);
+
+                  // 2) Compute delta vs the captured current set
+                  const toRemove = [...currentIds].filter(
+                    (id) => !targetIds.has(id)
+                  );
+                  const toAdd = [...targetIds].filter(
+                    (id) => !currentIds.has(id)
+                  );
+
+                  // 3) Remove deselected from both teams
+                  if (toRemove.length) {
+                    setTeamAPlayers((prev) =>
+                      prev.filter((p) => !toRemove.includes(p.id))
+                    );
+                    setTeamBPlayers((prev) =>
+                      prev.filter((p) => !toRemove.includes(p.id))
+                    );
+                  }
+
+                  // 4) Add new players (regulars + all new guests) exactly once
+                  if (toAdd.length) {
+                    const { data: added, error: addErr } = await supabase
+                      .from("players")
+                      .select("id, first_name, last_name")
+                      .in("id", toAdd);
+                    if (addErr) throw addErr;
+
+                    (added ?? []).forEach((row) => {
+                      if (hasPlayer(row.id)) return; // guard against double append
+                      assignNewPlayerToTeam({
+                        id: row.id,
+                        name: `${row.first_name ?? "Player"} ${(
+                          row.last_name ?? "X"
+                        ).charAt(0)}.`,
+                        preferredPosition: "No Position",
+                        skillRating: 7,
+                      });
+                    });
+                  }
+
+                  // 5) Defensive: ensure no dups within/between teams
+                  setTeamAPlayers((prev) => uniqById(prev));
+                  setTeamBPlayers((prev) => {
+                    const bUniq = uniqById(prev);
+                    const idsA = new Set(
+                      (typeof window === "undefined" ? [] : teamAPlayers).map(
+                        (p) => p.id
+                      )
+                    );
+                    return bUniq.filter((p) => !idsA.has(p.id));
+                  });
+
+                  // 6) Audit mark (UI-only edit for now)
+                  if (user?.id && gameId) {
+                    await markModifiedBy(gameId);
+                    await queryClient.invalidateQueries({
+                      queryKey: ["matchDayAudit", gameId],
+                    });
+                  }
+
+                  setPlayersModalOpen(false);
+                  toast({
+                    title: "Players updated",
+                    description:
+                      "Teams were kept intact. Click Save to persist changes.",
+                    duration: 1500,
+                  });
+                } catch (e) {
+                  console.error("Edit Players apply error:", e);
+                  toast({
+                    title: "Error",
+                    description: "Could not update players. Please try again.",
+                    variant: "destructive",
+                    duration: 2000,
+                  });
+                }
+              }}
+            />
           )}
 
           {/* Save Button */}
