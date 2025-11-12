@@ -14,29 +14,45 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Plus, Minus, Edit2, X } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchActiveMembersBasic } from "@/integrations/supabase/clubMembers";
+
+// Minimal shape for a joined row from players -> player_positions -> positions
+type PlayerPositionsRow = {
+  is_primary: boolean;
+  position_id: string;
+  positions: { id: string; name: string };
+};
+
+type PlayersSelectRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  user_id: string | null;
+  skill_rating: number | null;
+  gender: string | null;
+  height_cm: number | null;
+  player_positions?: PlayerPositionsRow[];
+};
 
 type ClubMember = {
   id: string;
   first_name: string;
   last_name: string;
   user_id: string;
-  primary_position_id?: string | null;
-  primary_position_name?: string;
-  skill_rating?: number;
-  gender?: string;
-  height_cm?: number;
+  primary_position_id: string | null;
+  primary_position_name: string;
+  skill_rating: number;
+  gender: string;
+  height_cm: number | null;
   isExtraPlayer: false;
 };
 
@@ -44,9 +60,21 @@ type ExtraPlayerDraft = {
   id: string; // local temp id: "extra-..."
   name: string;
   skill_rating: number;
-  position: string;
+  position:
+    | "Setter"
+    | "Outside Hitter"
+    | "Middle Blocker"
+    | "Opposite"
+    | "Libero";
   isExtraPlayer: true;
 };
+
+// Discriminated union for list rendering
+type PlayerDisplay = ClubMember | ExtraPlayerDraft;
+
+function isExtra(p: PlayerDisplay): p is ExtraPlayerDraft {
+  return p.isExtraPlayer === true;
+}
 
 export type PlayersEditResult = {
   selectedRegularIds: string[];
@@ -117,15 +145,20 @@ export function PlayersEditModal({
 
         if (playersError) throw playersError;
 
-        const processed: ClubMember[] = (playersData ?? []).map((p) => {
-          const primary = p.player_positions?.find((pp: any) => pp.is_primary);
+        const processed: ClubMember[] = (
+          (playersData as PlayersSelectRow[] | null) ?? []
+        ).map((p) => {
+          const primary =
+            (p.player_positions ?? []).find((pp) => pp.is_primary) ?? null;
           return {
             id: p.id,
-            first_name: p.first_name,
-            last_name: p.last_name,
-            user_id: p.user_id,
-            primary_position_id: primary?.position_id ?? null,
-            primary_position_name: primary?.positions?.name ?? "No Position",
+            first_name: p.first_name ?? "Player",
+            last_name: p.last_name ?? "X",
+            user_id: p.user_id ?? "",
+            primary_position_id: primary ? primary.position_id : null,
+            primary_position_name: primary
+              ? primary.positions.name
+              : "No Position",
             skill_rating: p.skill_rating ?? 50,
             gender: p.gender ?? "other",
             height_cm: p.height_cm,
@@ -143,19 +176,18 @@ export function PlayersEditModal({
     };
   }, [clubId, open]);
 
-  const allDisplay = useMemo(() => {
+  const allDisplay: PlayerDisplay[] = useMemo(() => {
     return [...members, ...extraPlayers];
   }, [members, extraPlayers]);
 
-  const filtered = useMemo(() => {
+  const filtered: PlayerDisplay[] = useMemo(() => {
     const t = searchTerm.trim().toLowerCase();
     if (!t) return allDisplay;
     return allDisplay.filter((p) => {
-      if ((p as any).isExtraPlayer) {
-        return (p as ExtraPlayerDraft).name.toLowerCase().includes(t);
+      if (isExtra(p)) {
+        return p.name.toLowerCase().includes(t);
       }
-      const m = p as ClubMember;
-      return `${m.first_name} ${m.last_name}`.toLowerCase().includes(t);
+      return `${p.first_name} ${p.last_name}`.toLowerCase().includes(t);
     });
   }, [allDisplay, searchTerm]);
 
@@ -215,160 +247,164 @@ export function PlayersEditModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
       <DialogContent className="max-w-2xl p-0">
-        <DialogHeader className="px-6 pt-6">
-          <DialogTitle>Edit Players</DialogTitle>
-        </DialogHeader>
+        {/* Top-right close (X) only */}
+        <DialogClose asChild>
+          <button
+            aria-label="Close"
+            className="absolute right-3 top-3 rounded-md p-1 hover:bg-accent"
+            onClick={onCancel}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </DialogClose>
 
-        {/* Toolbar */}
-        <div className="px-6 pb-3 flex items-center justify-between gap-3">
-          {/* Search */}
-          {isSearchExpanded ? (
-            <Input
-              placeholder="Search players…"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              autoFocus
-              onBlur={() => {
-                if (!searchTerm) setIsSearchExpanded(false);
-              }}
-              className="w-56"
-            />
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSearchExpanded(true)}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          )}
-
-          {/* Guests control */}
-          <div className="flex items-center gap-2">
+        {/* Add guests wrapper (like new-game) */}
+        <div className="mx-6 mt-6 mb-4 rounded-2xl border bg-muted/40 p-4">
+          <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Add guests</span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={removeExtra}
-              disabled={extraPlayers.length === 0}
-              className="h-8 w-8"
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <span className="w-6 text-center">{extraPlayers.length}</span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={addExtra}
-              className="h-8 w-8"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Select-all for filtered */}
-          {filtered.length > 0 && (
             <div className="flex items-center gap-2">
-              <Checkbox
-                checked={allFilteredSelected}
-                onCheckedChange={handleSelectAllFiltered}
-              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={removeExtra}
+                disabled={extraPlayers.length === 0}
+                className="h-8 w-8"
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="w-6 text-center">{extraPlayers.length}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={addExtra}
+                className="h-8 w-8"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* List */}
-        <div className="max-h-[60vh] overflow-y-auto divide-y">
-          {isLoading ? (
-            <div className="py-12 flex items-center justify-center">
-              <Spinner className="h-6 w-6" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              No players found.
-            </div>
-          ) : (
-            filtered.map((p) => {
-              const isExtra = (p as any).isExtraPlayer === true;
-              const checked = selectedIds.includes(p.id);
-              return (
-                <div
-                  key={p.id}
-                  className={cn(
-                    "px-6 py-3 flex items-center justify-between cursor-pointer hover:bg-accent/30",
-                    isExtra &&
-                      "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 dark:border-blue-500"
-                  )}
-                  onClick={() => toggleSelect(p.id)}
+        {/* Yellow header like new-game (title + collapsible search + select all) */}
+        <div className="mx-6 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between bg-amber-500 px-4 py-3">
+            <h3 className="text-base font-semibold text-black">Edit Players</h3>
+            <div className="flex items-center gap-3">
+              {isSearchExpanded ? (
+                <Input
+                  placeholder="Search players…"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoFocus
+                  onBlur={() => {
+                    if (!searchTerm) setIsSearchExpanded(false);
+                  }}
+                  className="h-8 w-48"
+                />
+              ) : (
+                <button
+                  className="rounded p-1 hover:bg-black/10"
+                  onClick={() => setIsSearchExpanded(true)}
+                  aria-label="Search"
                 >
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      {isExtra && editingExtraId === p.id ? (
-                        <Input
-                          value={(p as ExtraPlayerDraft).name}
-                          onChange={(e) => setExtraName(p.id, e.target.value)}
-                          onBlur={() => setEditingExtraId(null)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") setEditingExtraId(null);
-                          }}
-                          autoFocus
-                          className="h-8 w-[200px]"
-                        />
-                      ) : (
-                        <>
-                          <span
-                            className={cn(
-                              "font-medium",
-                              isExtra && "text-blue-700 dark:text-blue-300"
-                            )}
-                          >
-                            {isExtra
-                              ? (p as ExtraPlayerDraft).name
-                              : `${(p as ClubMember).first_name} ${(
-                                  p as ClubMember
-                                ).last_name.charAt(0)}.`}
-                          </span>
-                          {isExtra && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingExtraId(p.id);
-                              }}
+                  <Search className="h-4 w-4 text-black" />
+                </button>
+              )}
+              {filtered.length > 0 && (
+                <Checkbox
+                  checked={allFilteredSelected}
+                  onCheckedChange={handleSelectAllFiltered}
+                  className="data-[state=checked]:bg-black data-[state=checked]:border-black"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Scrollable list under yellow header */}
+          <div className="max-h-[60vh] overflow-y-auto divide-y divide-border bg-card">
+            {isLoading ? (
+              <div className="py-12 flex items-center justify-center text-sm text-muted-foreground">
+                Loading…
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                No players found.
+              </div>
+            ) : (
+              filtered.map((p) => {
+                const checked = selectedIds.includes(p.id);
+                return (
+                  <div
+                    key={p.id}
+                    className={cn(
+                      "px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-accent/30"
+                    )}
+                    onClick={() => toggleSelect(p.id)}
+                  >
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        {isExtra(p) && editingExtraId === p.id ? (
+                          <Input
+                            value={p.name}
+                            onChange={(e) => setExtraName(p.id, e.target.value)}
+                            onBlur={() => setEditingExtraId(null)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") setEditingExtraId(null);
+                            }}
+                            autoFocus
+                            className="h-8 w-[200px]"
+                          />
+                        ) : (
+                          <>
+                            <span
+                              className={cn(
+                                "font-medium",
+                                isExtra(p) && "text-blue-700 dark:text-blue-300"
+                              )}
                             >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </>
-                      )}
+                              {isExtra(p)
+                                ? p.name
+                                : `${p.first_name} ${p.last_name.charAt(0)}.`}
+                            </span>
+                            {isExtra(p) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingExtraId(p.id);
+                                }}
+                                aria-label="Rename guest"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {isExtra(p)
+                          ? `${p.position} (Level ${p.skill_rating}) • Guest`
+                          : p.primary_position_name ?? "No Position"}
+                      </span>
                     </div>
-                    <span className={cn("text-xs text-muted-foreground")}>
-                      {isExtra
-                        ? `${(p as ExtraPlayerDraft).position} (Level ${
-                            (p as ExtraPlayerDraft).skill_rating
-                          }) • Guest`
-                        : (p as ClubMember).primary_position_name ??
-                          "No Position"}
-                    </span>
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={() => toggleSelect(p.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </div>
-                  <Checkbox
-                    checked={checked}
-                    onCheckedChange={() => toggleSelect(p.id)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
 
         <DialogFooter className="px-6 py-4">
-          <Button variant="outline" onClick={onCancel}>
-            Close
-            <X className="h-4 w-4 ml-1" />
-          </Button>
+          <div className="mr-auto text-sm text-muted-foreground">
+            Selected: <span className="font-medium">{selectedIds.length}</span>
+          </div>
           <Button
             onClick={() =>
               onSave({
@@ -381,7 +417,7 @@ export function PlayersEditModal({
               })
             }
           >
-            Save
+            Save ({selectedIds.length})
           </Button>
         </DialogFooter>
       </DialogContent>
