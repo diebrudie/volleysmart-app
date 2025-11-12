@@ -11,7 +11,14 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -242,6 +249,13 @@ export function PlayersEditModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
       <DialogContent className="max-w-2xl p-0 rounded-2xl [&>button:has(span.sr-only)]:hidden">
+        {/* A11y-only title/description to satisfy Radix requirements without changing the visual header */}
+        <DialogTitle className="sr-only">Edit Players</DialogTitle>
+        <DialogDescription className="sr-only">
+          Edit the list of players for this game. Search, select or deselect
+          players, and add guests.
+        </DialogDescription>
+
         {/* Full-bleed yellow header */}
         <div className="bg-amber-500 relative rounded-t-md">
           {/* Controls row: title (mobile hides on search), search, select-all */}

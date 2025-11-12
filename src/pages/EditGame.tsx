@@ -6,7 +6,6 @@ import {
   Shuffle,
   Save,
   ChevronLeft,
-  UserCog,
 } from "lucide-react";
 import { LocationSelector } from "@/components/forms/LocationSelector";
 import { useQuery } from "@tanstack/react-query";
@@ -26,14 +25,6 @@ import {
   PlayersEditModal,
   PlayersEditResult,
 } from "@/components/team-generator/PlayersEditModal";
-import { Spinner } from "@/components/ui/spinner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -1014,17 +1005,25 @@ const EditGame = () => {
               <Button
                 variant="action"
                 icon={
-                  // Prefer UserPen if available; else fallback to UserCog
-                  // import { UserPen, UserCog } from "lucide-react"
-                  // Use UserPen; if your lucide version lacks it, swap to <UserCog ... />
-                  // Keeping it small for density with other controls
-                  <svg className="h-4 w-4" viewBox="0 0 24 24">
-                    <path d="M0 0h24v24H0z" fill="none" />
-                    <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm-7 9a7 7 0 0 1 14 0zM20.7 8.35l-1.05-1.05a.5.5 0 0 0-.7 0l-2.12 2.12a.5.5 0 0 0 0 .71l1.05 1.05a.5.5 0 0 0 .71 0l2.11-2.12a.5.5 0 0 0 0-.71z" />
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.75}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    {/* user circle + shoulders */}
+                    <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Z" />
+                    <path d="M5 21a7 7 0 0 1 14 0" />
+                    {/* small pen overlay */}
+                    <path d="M19.65 7.3l-3.17 3.18 1.05 1.05 3.17-3.17a.75.75 0 0 0 0-1.06l-.99-.99a.75.75 0 0 0-1.06 0Z" />
                   </svg>
                 }
                 onClick={() => setPlayersModalOpen(true)}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto text-foreground"
               >
                 Edit Players
               </Button>
