@@ -265,48 +265,67 @@ export function PlayersEditModal({
           players, and add guests.
         </DialogDescription>
 
-        {/* Full-bleed yellow header */}
+        {/* Full-bleed yellow header with fixed height */}
         <div className="bg-amber-500 relative rounded-t-md">
-          {/* Controls row: title (mobile hides on search), search, select-all */}
-          <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-3">
+          {/* Keep a constant height so it doesn't grow/shrink when search toggles */}
+          <div className="flex items-center justify-between px-4 sm:px-6 h-14">
+            {/* Keep title space occupied even when search is open on mobile */}
             <h3
               className={cn(
-                "text-base font-semibold text-black",
-                isSearchExpanded ? "hidden sm:block" : "block"
+                "text-base font-semibold text-black transition-opacity",
+                // Use 'invisible' (not 'hidden') so the left block still takes space
+                isSearchExpanded ? "invisible sm:visible" : "visible"
               )}
+              aria-hidden={isSearchExpanded}
             >
               Edit Players
             </h3>
 
-            <div className="flex items-center gap-3">
-              {isSearchExpanded ? (
-                <Input
-                  placeholder="Search players…"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  autoFocus
-                  onBlur={() => {
-                    if (!searchTerm) setIsSearchExpanded(false);
-                  }}
-                  className="h-8 w-40 sm:w-56"
-                />
-              ) : (
+            {/* Right controls get a fixed width so alignment stays put */}
+            <div className="relative flex items-center justify-end w-[180px] sm:w-[240px]">
+              {/* Search input is absolutely positioned within this fixed-width area */}
+              <Input
+                placeholder="Search players..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                autoFocus={isSearchExpanded}
+                onBlur={() => {
+                  if (!searchTerm) setIsSearchExpanded(false);
+                }}
+                className={cn(
+                  "h-8 w-full absolute right-0 top-1/2 -translate-y-1/2 transition-opacity",
+                  isSearchExpanded
+                    ? "opacity-100 visible"
+                    : "opacity-0 invisible"
+                )}
+              />
+
+              {/* When search is closed, show the icons; they occupy same area */}
+              <div
+                className={cn(
+                  "flex items-center gap-3 transition-opacity",
+                  isSearchExpanded
+                    ? "opacity-0 invisible"
+                    : "opacity-100 visible"
+                )}
+              >
                 <button
                   className="rounded p-1 hover:bg-black/10"
                   onClick={() => setIsSearchExpanded(true)}
                   aria-label="Search"
                 >
-                  <Search className="h-4 w-4 text-black" />
+                  <Search className="h-4 w-4 text-black dark:text-black/90" />
                 </button>
-              )}
 
-              {filtered.length > 0 && (
-                <Checkbox
-                  checked={allFilteredSelected}
-                  onCheckedChange={handleSelectAllFiltered}
-                  className="data-[state=checked]:bg-black data-[state=checked]:border-black"
-                />
-              )}
+                {filtered.length > 0 && (
+                  <Checkbox
+                    checked={allFilteredSelected}
+                    onCheckedChange={handleSelectAllFiltered}
+                    className="data-[state=checked]:bg-black data-[state=checked]:border-black"
+                    aria-label="Select all filtered"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
