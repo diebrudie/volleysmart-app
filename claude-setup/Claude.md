@@ -32,190 +32,310 @@ VolleySmart is a React-based web application for managing volleyball clubs, team
 ### Project Structure
 
 ```
+/apps
+  /web     # Vite + React (PWA)
+  /mobile  # Expo + React Native
+/packages
+  /core    # shared types, queries, hooks
+/supabase  # DB, RLS, functions, migrations
+```
+
+```
 volleysmart-app/
-...
-├─ index.html
-...
-├─ src/
-│  ├─ App.css
-│  ├─ App.tsx
-│  ├─ index.css
-│  ├─ main.tsx
-│  ├─ vite-env.d.ts
-│  ├─ components/
-│  │  ├─ admin/
-│  │  │  └─ UserRoleManager.tsx
-│  │  ├─ auth/
-│  │  │  ├─ AuthLayout.tsx
-│  │  │  └─ ProtectedRoute.tsx
-│  │  ├─ clubs/
-│  │  │  ├─ ClubSettingsDialog.tsx
-│  │  │  └─ CopyableClubId.tsx
-│  │  ├─ common/
-│  │  │  └─ AppLiveRefresh.tsx
-│  │  │  └─ EmptyGameState.tsx
-│  │  │  └─ Logo.tsx
-│  │  │  └─ RealtimeAppEffect.tsx
-│  │  │  └─ ScrollToTop.tsx
-│  │  ├─ forms/
-│  │  │  └─ CityLocationSelector.tsx
-│  │  │  └─ LocationSelector.tsx
-│  │  ├─ home/
-│  │  │  ├─ CtaSection.tsx
-│  │  │  ├─ FeaturesSection.tsx
-│  │  │  ├─ HeroSection.tsx
-│  │  │  ├─ HowItWorksSection.tsx
-│  │  │  └─ TestimonialCard.tsx
-│  │  ├─ layout/
-│  │  │  ├─ Footer.tsx
-│  │  │  └─ Navbar.tsx
-│  │  ├─ match/
-│  │  │  └─ AddSetBox.tsx
-│  │  │  └─ SetBox.tsx
-│  │  ├─ members/
-│  │  │  └─ MemberCard.tsx
-│  │  ├─ nav/
-│  │  │  └─ MobileBottomNav.tsx
-│  │  │  └─ MobileBottomSpacer.tsx
-│  │  │  └─ MobileChrome.tsx
-│  │  │  └─ MobileMenuDrawer.tsx
-│  │  │  └─ MobileTopBar.tsx
-│  │  │  └─ ThemePicker.tsx
-│  │  ├─ routing/
-│  │  │  └─ ClubGuard.tsx
-│  │  │  └─ RoutePersistance.tsx
-│  │  ├─ team-generator/
-│  │  │  ├─ EmptyTeamsState.tsx
-│  │  │  ├─ GeneratedTeams.tsx
-│  │  │  ├─ PlayerItem.tsx
-│  │  │  ├─ PlayersEditModal.tsx
-│  │  │  ├─ PlayersSelection.tsx
-│  │  │  ├─ SaveMatchDialog.tsx
-│  │  │  ├─ SortablePlayer.tsx
-│  │  │  ├─ Star.tsx
-│  │  │  ├─ TeamEditDialog.tsx
-│  │  │  ├─ TeamGenerator.ts
-│  │  │  ├─ TeamTable.tsx
-│  │  │  ├─ mockData.ts
-│  │  │  ├─ queries.ts
-│  │  │  └─ types.ts
-│  │  └─ ui/
-│  │     ├─ accordion.tsx
-│  │     ├─ alert-dialog.tsx
-│  │     ├─ alert.tsx
-│  │     ├─ aspect-ratio.tsx
-│  │     ├─ avatar.tsx
-│  │     ├─ badge.tsx
-│  │     ├─ breadcrumb.tsx
-│  │     ├─ button.tsx
-│  │     ├─ calendar.tsx
-│  │     ├─ card.tsx
-│  │     ├─ carousel.tsx
-│  │     ├─ chart.tsx
-│  │     ├─ checkbox.tsx
-│  │     ├─ collapsible.tsx
-│  │     ├─ command.tsx
-│  │     ├─ context-menu.tsx
-│  │     ├─ dialog.tsx
-│  │     ├─ drawer.tsx
-│  │     ├─ dropdown-menu.tsx
-│  │     ├─ file-input.tsx
-│  │     ├─ form.tsx
-│  │     ├─ hover-card.tsx
-│  │     ├─ input-otp.tsx
-│  │     ├─ input.tsx
-│  │     ├─ label.tsx
-│  │     ├─ menubar.tsx
-│  │     ├─ navigation-menu.tsx
-│  │     ├─ pagination.tsx
-│  │     ├─ popover.tsx
-│  │     ├─ progress.tsx
-│  │     ├─ radio-group.tsx
-│  │     ├─ resizable.tsx
-│  │     ├─ scroll-area.tsx
-│  │     ├─ select.tsx
-│  │     ├─ separator.tsx
-│  │     ├─ sheet.tsx
-│  │     ├─ sidebar.tsx
-│  │     ├─ skeleton.tsx
-│  │     ├─ slider.tsx
-│  │     ├─ sonner.tsx
-│  │     ├─ spinner.tsx
-│  │     ├─ switch.tsx
-│  │     ├─ table.tsx
-│  │     ├─ tabs.tsx
-│  │     ├─ textarea.tsx
-│  │     ├─ theme-toggle.tsx
-│  │     ├─ toast.tsx
-│  │     ├─ toaster.tsx
-│  │     ├─ toggle-group.tsx
-│  │     ├─ toggle.tsx
-│  │     ├─ tooltip.tsx
-│  │     └─ use-toast.ts
-│  ├─ contexts/
-│  │  ├─ AuthContext.tsx
-│  │  ├─ ClubContext.tsx
-│  │  └─ ThemeContext.tsx
-│  ├─ features/
-│  │  └─ teams/
-│  │     └─ positions.ts
-│  │     └─ assignLineup.ts
-│  ├─ hooks/
-│  │  ├─ use-compact.tsx
-│  │  ├─ use-ios-pwa-keyboard-repaint.ts
-│  │  ├─ use-mobile.tsx
-│  │  ├─ use-toast.tsx
-│  │  └─ useIsAdmin.ts
-│  ├─ integrations/
-│  │  └─ supabase/
-│  │     ├─ client.ts
-│  │     ├─ club.ts
-│  │     ├─ clubMembers.ts
-│  │     ├─ matchDays.ts
-│  │     ├─ members.ts
-│  │     ├─ players.ts
-│  │     ├─ positions.ts
-│  │     ├─ profiles.ts
-│  │     ├─ schemas.sql
-│  │     ├─ storage.ts
-│  │     └─ types.ts
-│  ├─ lib/
-│  │  ├─ formatName.ts
-│  │  └─ utils.ts
-│  ├─ pages/
-│  │  ├─ Admin.tsx
-│  │  ├─ Clubs.tsx
-│  │  ├─ Dashboard.tsx
-│  │  ├─ EditGame.tsx
-│  │  ├─ ForgotPassword.tsx
-│  │  ├─ GameDetail.tsx
-│  │  ├─ Games.tsx
-│  │  ├─ Home.tsx
-│  │  ├─ InviteMembers.tsx
-│  │  ├─ JoinClub.tsx
-│  │  ├─ Login.tsx
-│  │  ├─ ManageMembers.tsx
-│  │  ├─ Members.tsx
-│  │  ├─ NewClub.tsx
-│  │  ├─ NewGame.tsx
-│  │  ├─ NotFound.tsx
-│  │  ├─ PlayerDetail.tsx
-│  │  ├─ PlayerOnboarding.tsx
-│  │  ├─ Players.tsx
-│  │  ├─ Profile.tsx
-│  │  ├─ ResetPassword.tsx
-│  │  ├─ Signup.tsx
-│  │  ├─ Start.tsx
-│  │  ├─ TeamGenerator.tsx
-│  │  └─ VerifyEmail.tsx
-│  ├─ routes/
-│  │  └─ AppRoutes.tsx
-│  ├─ types/
-│  │  └─ supabase.ts
-│  └─ utils/
-│     └─ buildImageUrl.ts
-│
-...
+├── .DS_Store
+├── .gitignore
+├── .nvmrc
+├── apps
+│   ├── mobile
+│   │   ├── .gitignore
+│   │   ├── .vscode
+│   │   ├── app
+│   │   ├── app.json
+│   │   ├── assets
+│   │   ├── components
+│   │   ├── constants
+│   │   ├── eslint.config.js
+│   │   ├── hooks
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   ├── scripts
+│   │   └── tsconfig.json
+│   └── web
+│       ├── .env
+│       ├── components.json
+│       ├── eslint.config.js
+│       ├── index.html
+│       ├── package.json
+│       ├── postcss.config.js
+│       ├─ public/
+│       │  ├─ _headers
+│       │  ├─ avatar-placeholder.svg
+│       │  ├─ favicon.ico
+│       │  ├─ favicon.png
+│       │  ├─ favicon.svg
+│       │  ├─ img-appScreen-dashboard-GameAndScoreTracking.png
+│       │  ├─ img-appScreen-editGame-SmartTeamGeneration.png
+│       │  ├─ img-appScreen-members-PlayersAndClubsManagement.png
+│       │  ├─ img-home-manageClubs-v1.png
+│       │  ├─ img-home-scoreboard-v1.png
+│       │  ├─ img-home-teamCelebrating.png
+│       │  ├─ img-open-graph.png
+│       │  ├─ img-volleyball-ball-login-screen.jpg
+│       │  ├─ img-volleyball-net.avif
+│       │  ├─ img-volleyball-net.jpg
+│       │  ├─ img-volleyball-team-v1.png
+│       │  ├─ img-volleyball-team-v2.png
+│       │  ├─ img-volleyball-team-v3.jpg
+│       │  ├─ logo-darkmode.svg
+│       │  ├─ logo-lightmode.svg
+│       │  ├─ logo-volleySmart - email lightmode.png
+│       │  ├─ lovable-uploads/
+│       │  │  └─ e54f46fd-5eab-4f09-94df-48c27897b119.png
+│       │  ├─ manifest.webmanifest
+│       │  ├─ placeholder.svg
+│       │  ├─ positions-volleyball-players.png
+│       │  ├─ robots.txt
+│       │  ├─ sw.js
+│       │  ├─ volleyball.svg
+│       │  └─ icons/
+│       │     ├─ apple-touch-icon.png
+│       │     ├─ favicon-96x96.png
+│       │     ├─ favicon.ico
+│       │     ├─ favicon.svg
+│       │     ├─ icon-192.png
+│       │     ├─ icon-512.png
+│       │     ├─ site.webmanifest
+│       │     ├─ web-app-manifest-192x192.png
+│       │     └─ web-app-manifest-512x512.png
+│       ├── src
+│       │   ├─ App.css
+│       │   ├─ App.tsx
+│       │   ├─ index.css
+│       │   ├─ main.tsx
+│       │   ├─ vite-env.d.ts
+│       │   ├─ components/
+│       │   │  ├─ admin/
+│       │   │  │   └─ UserRoleManager.tsx
+│       │   │  ├─ auth/
+│       │   │  │   ├─ AuthLayout.tsx
+│       │   │  │   └─ ProtectedRoute.tsx
+│       │   │  ├─ clubs/
+│       │   │  │   ├─ ClubSettingsDialog.tsx
+│       │   │  │   └─ CopyableClubId.tsx
+│       │   │  ├─ common/
+│       │   │  │   ├─ AppLiveRefresh.tsx
+│       │   │  │   ├─ EmptyGameState.tsx
+│       │   │  │   ├─ Logo.tsx
+│       │   │  │   ├─ RealtimeAppEffect.tsx
+│       │   │  │   └─ ScrollToTop.tsx
+│       │   │  ├─ forms/
+│       │   │  │   ├─ CityLocationSelector.tsx
+│       │   │  │   └─ LocationSelector.tsx
+│       │   │  ├─ home/
+│       │   │  │   ├─ CtaSection.tsx
+│       │   │  │   ├─ FeaturesSection.tsx
+│       │   │  │   ├─ HeroSection.tsx
+│       │   │  │   ├─ HowItWorksSection.tsx
+│       │   │  │   └─ TestimonialCard.tsx
+│       │   │  ├─ layout/
+│       │   │  │   ├─ Footer.tsx
+│       │   │  │   └─ Navbar.tsx
+│       │   │  ├─ match/
+│       │   │  │   ├─ AddSetBox.tsx
+│       │   │  │   └─ SetBox.tsx
+│       │   │  ├─ members/
+│       │   │  │   └─ MemberCard.tsx
+│       │   │  ├─ nav/
+│       │   │  │   ├─ MobileBottomNav.tsx
+│       │   │  │   ├─ MobileBottomSpacer.tsx
+│       │   │  │   ├─ MobileChrome.tsx
+│       │   │  │   ├─ MobileMenuDrawer.tsx
+│       │   │  │   ├─ MobileTopBar.tsx
+│       │   │  │   └─ ThemePicker.tsx
+│       │   │  ├─ routing/
+│       │   │  │   ├─ ClubGuard.tsx
+│       │   │  │   └─ RoutePersistance.tsx
+│       │   │  ├─ team-generator/
+│       │   │  │   ├─ EmptyTeamsState.tsx
+│       │   │  │   ├─ GeneratedTeams.tsx
+│       │   │  │   ├─ PlayerItem.tsx
+│       │   │  │   ├─ PlayersEditModal.tsx
+│       │   │  │   ├─ PlayersSelection.tsx
+│       │   │  │   ├─ SaveMatchDialog.tsx
+│       │   │  │   ├─ SortablePlayer.tsx
+│       │   │  │   ├─ Star.tsx
+│       │   │  │   ├─ TeamEditDialog.tsx
+│       │   │  │   ├─ TeamGenerator.ts
+│       │   │  │   ├─ TeamTable.tsx
+│       │   │  │   ├─ mockData.ts
+│       │   │  │   ├─ queries.ts
+│       │   │  │   └─ types.ts
+│       │   │  └─ ui/
+│       │   │      ├─ accordion.tsx
+│       │   │      ├─ alert-dialog.tsx
+│       │   │      ├─ alert.tsx
+│       │   │      ├─ aspect-ratio.tsx
+│       │   │      ├─ avatar.tsx
+│       │   │      ├─ badge.tsx
+│       │   │      ├─ breadcrumb.tsx
+│       │   │      ├─ button.tsx
+│       │   │      ├─ calendar.tsx
+│       │   │      ├─ card.tsx
+│       │   │      ├─ carousel.tsx
+│       │   │      ├─ chart.tsx
+│       │   │      ├─ checkbox.tsx
+│       │   │      ├─ collapsible.tsx
+│       │   │      ├─ command.tsx
+│       │   │      ├─ context-menu.tsx
+│       │   │      ├─ dialog.tsx
+│       │   │      ├─ drawer.tsx
+│       │   │      ├─ dropdown-menu.tsx
+│       │   │      ├─ file-input.tsx
+│       │   │      ├─ form.tsx
+│       │   │      ├─ hover-card.tsx
+│       │   │      ├─ input-otp.tsx
+│       │   │      ├─ input.tsx
+│       │   │      ├─ label.tsx
+│       │   │      ├─ menubar.tsx
+│       │   │      ├─ navigation-menu.tsx
+│       │   │      ├─ pagination.tsx
+│       │   │      ├─ popover.tsx
+│       │   │      ├─ progress.tsx
+│       │   │      ├─ radio-group.tsx
+│       │   │      ├─ resizable.tsx
+│       │   │      ├─ scroll-area.tsx
+│       │   │      ├─ select.tsx
+│       │   │      ├─ separator.tsx
+│       │   │      ├─ sheet.tsx
+│       │   │      ├─ sidebar.tsx
+│       │   │      ├─ skeleton.tsx
+│       │   │      ├─ slider.tsx
+│       │   │      ├─ sonner.tsx
+│       │   │      ├─ spinner.tsx
+│       │   │      ├─ switch.tsx
+│       │   │      ├─ table.tsx
+│       │   │      ├─ tabs.tsx
+│       │   │      ├─ textarea.tsx
+│       │   │      ├─ theme-toggle.tsx
+│       │   │      ├─ toast.tsx
+│       │   │      ├─ toaster.tsx
+│       │   │      ├─ toggle-group.tsx
+│       │   │      ├─ toggle.tsx
+│       │   │      ├─ tooltip.tsx
+│       │   │      └─ use-toast.ts
+│       │   ├─ contexts/
+│       │   │   ├─ AuthContext.tsx
+│       │   │   ├─ ClubContext.tsx
+│       │   │   └─ ThemeContext.tsx
+│       │   ├─ features/
+│       │   │   └─ teams/
+│       │   │      └─ positions.ts
+│       │   │      └─ assignLineup.ts
+│       │   ├─ hooks/
+│       │   │   ├─ use-compact.tsx
+│       │   │   ├─ use-ios-pwa-keyboard-repaint.ts
+│       │   │   ├─ use-mobile.tsx
+│       │   │   ├─ use-toast.tsx
+│       │   │   └─ useIsAdmin.ts
+│       │   ├─ integrations/
+│       │   │   └─ supabase/
+│       │   │      ├─ client.ts
+│       │   │      ├─ club.ts
+│       │   │      ├─ clubMembers.ts
+│       │   │      ├─ matchDays.ts
+│       │   │      ├─ members.ts
+│       │   │      ├─ players.ts
+│       │   │      ├─ positions.ts
+│       │   │      ├─ profiles.ts
+│       │   │      ├─ schemas.sql
+│       │   │      ├─ storage.ts
+│       │   │      └─ types.ts
+│       │   ├─ lib/
+│       │   │   ├─ formatName.ts
+│       │   │   └─ utils.ts
+│       │   ├─ pages/
+│       │   │   ├─ Admin.tsx
+│       │   │   ├─ Clubs.tsx
+│       │   │   ├─ Dashboard.tsx
+│       │   │   ├─ EditGame.tsx
+│       │   │   ├─ ForgotPassword.tsx
+│       │   │   ├─ GameDetail.tsx
+│       │   │   ├─ Games.tsx
+│       │   │   ├─ Home.tsx
+│       │   │   ├─ InviteMembers.tsx
+│       │   │   ├─ JoinClub.tsx
+│       │   │   ├─ Login.tsx
+│       │   │   ├─ ManageMembers.tsx
+│       │   │   ├─ Members.tsx
+│       │   │   ├─ NewClub.tsx
+│       │   │   ├─ NewGame.tsx
+│       │   │   ├─ NotFound.tsx
+│       │   │   ├─ PlayerDetail.tsx
+│       │   │   ├─ PlayerOnboarding.tsx
+│       │   │   ├─ Players.tsx
+│       │   │   ├─ Profile.tsx
+│       │   │   ├─ ResetPassword.tsx
+│       │   │   ├─ Signup.tsx
+│       │   │   ├─ Start.tsx
+│       │   │   ├─ TeamGenerator.tsx
+│       │   │   └─ VerifyEmail.tsx
+│       │   ├─ routes/
+│       │   │   └─ AppRoutes.tsx
+│       │   ├─ types/
+│       │   │   └─ upabase.ts
+│       │   ├─ utils/
+│       │   │   └─ buildImageUrl.ts
+│       ├── tailwind.config.ts
+│       ├── tsconfig.app.json
+│       ├── tsconfig.json
+│       ├── tsconfig.node.json
+│       └── vite.config.ts
+├── claude-setup
+│   ├── .claude
+│   │   ├── commands
+│       │   ├─ analyze-performance.md
+│       │   ├─ execute-parallel.md
+│       │   ├─ execute-prp.md
+│       │   ├─ fix-github-issue.md
+│       │   ├─ generate-prp.md
+│       │   ├─ prep-parallel.md
+│       │   └─ primer.md
+│   │   └── settings.local.json
+│   ├── Claude.md
+│   └── project-structure.tree
+├── package-lock.json
+├── package.json
+├── packages
+│   └── core
+│       ├── package.json
+│       ├── src
+│       │   └─ index.ts
+│       └── tsconfig.json
+├── project-plan
+│   ├── API-design.md
+│   ├── API-endpoints-overview.md
+│   ├── prd-product-requirements-document.md
+│   ├── roadmap.md
+│   ├── srs-software-requirements-specification.md
+│   └── supabase-schema.md
+├── README.md
+└── supabase
+    ├── .temp
+    │   ├── cli-latest
+    │   ├── gotrue-version
+    │   ├── pooler-url
+    │   ├── postgres-version
+    │   ├── project-ref
+    │   ├── rest-version
+    │   ├── storage-migration
+    │   └── storage-version
+    ├── config.toml
+    ├── functions
+    │   └── send-club-invitations
+    │       └─ index.ts
+    └── migrations
+        └── 20251017113742_b86b220e-81cc-47ec-9c41-415df62a13d2.sql
+
 ```
 
 ## Auth & Routing — Source of Truth and Invariants
@@ -297,6 +417,7 @@ volleysmart-app/
 - **ProtectedRoute** component handles route-level authorization
 - **Role-based access**: admin, editor, member, user
 - **Session persistence** via Supabase Auth with localStorage
+- **Mobile OAuth**: expo-auth-session + custom scheme `volleysmart://auth-callback`; Supabase onAuthStateChange drives routing to (tabs).
 
 ### Key Auth Patterns
 
