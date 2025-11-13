@@ -8,7 +8,7 @@ This file provides comprehensive guidance to any LLM and Vibe Coding App when wo
 
 VolleySmart is a React-based web application for managing volleyball clubs, teams, and matches. Built with modern TypeScript, Supabase backend, and deployed via Cloudflare and local machine.
 
-### Tech Stack
+### Tech Stack (Will updated)
 
 - **Frontend**: React 18 + TypeScript + Vite
 - **UI Framework**: shadcn/ui + Tailwind CSS + Radix UI primitives
