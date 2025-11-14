@@ -71,6 +71,22 @@ Top-level:
 /supabase  # DB, RLS, functions, migrations
 ```
 
+## React Version Standardization
+
+The monorepo is fully standardized on:
+
+- **React 19.1.0**
+- **React DOM 19.1.0**
+
+Both the web app and the mobile app use the same React version, ensuring:
+
+- No duplicated React copies
+- No Metro/Fabric renderer conflicts
+- No Vite dedupe issues
+- Consistent behavior across shared packages
+
+`packages/core` lists React and React DOM as peerDependencies to prevent accidental duplication.
+
 ```txt
 volleysmart-app/
 ├── .DS_Store
@@ -419,6 +435,46 @@ Path alias:
 ```
 
 > Rule: keep `@volleysmart/core` React-agnostic or treat React as a _peer dependency_, never bundle a second React instance.
+
+### Routing Requirements for Apps
+
+To ensure the app renders correctly:
+
+- The main app layout must be in:
+  apps/mobile/app/\_layout.tsx
+
+- Tab navigation must live inside:
+  apps/mobile/app/(tabs)/\_layout.tsx
+
+- The default tab screen must be:
+  apps/mobile/app/(tabs)/index.tsx
+
+If `index.tsx` is renamed or removed, Expo Router cannot mount the app and the splash screen will remain visible.
+
+## Mobile App (Expo)
+
+The mobile app lives in /apps/mobile with Expo Router, React Native, and shared code from packages/core.
+
+### Environment Variables (Expo)
+
+Expo does not read .env files from the project root.
+
+All mobile environment variables must be placed in:
+
+```bash
+apps/mobile/.env
+
+Required keys:
+
+EXPO_PUBLIC_SUPABASE_URL=<your supabase url>
+EXPO_PUBLIC_SUPABASE_ANON_KEY=<your supabase anon key>
+
+Notes:
+- Only variables prefixed with `EXPO_PUBLIC_` are available in the app.
+- `VITE_` variables from the web app do NOT work in mobile.
+- `apps/mobile/.env` is gitignored and must not be committed.
+
+```
 
 ## 🔧 Tooling & Build System
 
