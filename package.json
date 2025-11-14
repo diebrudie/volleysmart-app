@@ -17,8 +17,8 @@
     "dev:mobile": "npm run start -w @volleysmart/mobile"
   },
   "overrides": {
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "rollup": "^4.24.0"
   },
   "devDependencies": {
