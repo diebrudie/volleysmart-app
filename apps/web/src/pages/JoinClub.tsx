@@ -26,6 +26,7 @@ const JoinClub = () => {
   const [clubIdInput, setClubIdInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [userCreatedClubs, setUserCreatedClubs] = useState<Club[]>([]);
+  const [isAssociationMember, setIsAssociationMember] = useState(false);
 
   // Fetch clubs created by the current user
   useEffect(() => {
@@ -104,6 +105,7 @@ const JoinClub = () => {
       // Not visible -> likely not a member; proceed to RPC
       const { error: rpcErr } = await supabase.rpc("request_join_by_slug", {
         p_slug: slug,
+        p_member_association: isAssociationMember,
       });
 
       if (rpcErr) {
@@ -195,6 +197,21 @@ const JoinClub = () => {
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 pt-2 pb-4">
+                  <input
+                    id="assoc-member"
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={isAssociationMember}
+                    onChange={(e) => setIsAssociationMember(e.target.checked)}
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    I am a member of this association.
+                  </span>
+                </div>
+              </div>
+
               <Button
                 variant="primary"
                 type="submit"

@@ -160,6 +160,18 @@ const DroppableTeam = ({
   );
 };
 
+// Fisher–Yates shuffle for local use in EditGame shuffling.
+function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = result[i];
+    result[i] = result[j];
+    result[j] = tmp;
+  }
+  return result;
+}
+
 const EditGame = () => {
   const { clubId, gameId } = useParams(); // gameId is actually match_day_id
   const navigate = useNavigate();

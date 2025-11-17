@@ -70,10 +70,11 @@ export class TeamGenerator {
   }
 
   /**
-   * Build candidate team pairs from a seeded split.
+   * Build candidate team pairs.
    *
-   * - strict: small perturbations around the seeded optimum
-   * - loose: more candidates + more swaps → bigger changes, more variety
+   * - strict: start from a seeded split by roles, then make small perturbations.
+   * - loose: ignore seeding, generate many random splits and let the scoring
+   *          pick the best ones. This yields much more variety between shuffles.
    */
   private generateTeamCombinations(
     config: TeamGenerationConfig,
@@ -81,38 +82,66 @@ export class TeamGenerator {
   ): TeamPair[] {
     const { availablePlayers, targetTeamSize } = config;
 
-    const seeded = this.seedSplitByRoles(
-      availablePlayers,
-      targetTeamSize,
-      mode
-    );
+    if (availablePlayers.length < targetTeamSize * 2) {
+      throw new Error(
+        `Not enough players to build two teams of size ${targetTeamSize}. Got ${availablePlayers.length}.`
+      );
+    }
 
-    const basePair: TeamPair = {
-      teamA: seeded.teamA,
-      teamB: seeded.teamB,
-    };
+    // STRICT MODE: current behaviour (seeding + a few swaps)
+    if (mode === "strict") {
+      const seeded = this.seedSplitByRoles(
+        availablePlayers,
+        targetTeamSize,
+        "strict"
+      );
 
-    const combinations: TeamPair[] = [basePair];
+      const basePair: TeamPair = {
+        teamA: seeded.teamA,
+        teamB: seeded.teamB,
+      };
 
-    const candidateCount = mode === "strict" ? 3 : 10;
-    const minSwaps = mode === "strict" ? 1 : 2;
-    const maxSwaps =
-      mode === "strict" ? 2 : Math.max(3, Math.floor(targetTeamSize / 2)); // allow bigger changes
+      const combinations: TeamPair[] = [basePair];
 
-    for (let i = 0; i < candidateCount; i++) {
-      const teamA = [...basePair.teamA];
-      const teamB = [...basePair.teamB];
+      const candidateCount = 3;
+      const minSwaps = 1;
+      const maxSwaps = 2;
 
-      const swaps =
-        minSwaps + Math.floor(Math.random() * (maxSwaps - minSwaps + 1));
+      for (let i = 0; i < candidateCount; i++) {
+        const teamA = [...basePair.teamA];
+        const teamB = [...basePair.teamB];
 
-      for (let s = 0; s < swaps; s++) {
-        const idxA = Math.floor(Math.random() * teamA.length);
-        const idxB = Math.floor(Math.random() * teamB.length);
+        const swaps =
+          minSwaps + Math.floor(Math.random() * (maxSwaps - minSwaps + 1));
 
-        const temp = teamA[idxA];
-        teamA[idxA] = teamB[idxB];
-        teamB[idxB] = temp;
+        for (let s = 0; s < swaps; s++) {
+          const idxA = Math.floor(Math.random() * teamA.length);
+          const idxB = Math.floor(Math.random() * teamB.length);
+
+          const temp = teamA[idxA];
+          teamA[idxA] = teamB[idxB];
+          teamB[idxB] = temp;
+        }
+
+        combinations.push({ teamA, teamB });
+      }
+
+      return combinations;
+    }
+
+    // LOOSE MODE: many random splits → much more variety
+    const combinations: TeamPair[] = [];
+    const candidateCountLoose = 40; // you can tweak this for more/less variety
+
+    for (let i = 0; i < candidateCountLoose; i++) {
+      const shuffled = [...availablePlayers].sort(() => Math.random() - 0.5);
+
+      const teamA = shuffled.slice(0, targetTeamSize);
+      const teamB = shuffled.slice(targetTeamSize, targetTeamSize * 2);
+
+      if (teamB.length < targetTeamSize) {
+        // Not enough players to fill two full teams in this candidate
+        continue;
       }
 
       combinations.push({ teamA, teamB });
@@ -502,57 +531,63 @@ export class TeamGenerator {
   }
 
   /**
-   * Calculate an overall balance score between 0 and 100.
+   * Calculate an overall balance score between 0 and 100 by combining:
+   * - positionScore  (0..100)
+   * - skillScore     (0..100)
+   * - genderScore    (0..100)
    *
-   * - Strict mode: used for the very first generation.
-   *   Focus on: positions (strong), gender (strong), skill (medium).
+   * STRICT (initial generation):
+   *   Positions: 65%
+   *   Skill:     20%
+   *   Gender:    15%
    *
-   * - Loose mode: used for shuffles.
-   *   Focus on: positions (strong), gender (still strong), skill (soft),
-   *   so we get more variety and are less sensitive to noisy skill ratings.
+   * LOOSE (shuffles):
+   *   Positions: 70%
+   *   Skill:     10%  (so "fake" skill ratings hurt less)
+   *   Gender:    20%
    */
   private calculateOverallBalance(
     teamA: GeneratedTeam,
     teamB: GeneratedTeam,
     mode: "strict" | "loose" = "strict"
   ): number {
-    // Start from the position coverage score (0..100).
-    // This keeps positions as the main driver of balance.
-    const positionScore = this.calculatePositionBalance(teamA, teamB);
-
-    let score = positionScore;
+    const positionScore = this.calculatePositionBalance(teamA, teamB); // 0..100
 
     const skillDiff = Math.abs(teamA.averageSkill - teamB.averageSkill);
     const genderDiff = Math.abs(
       teamA.genderBalance.female - teamB.genderBalance.female
     );
 
+    // Normalize skill difference: assume relevant range ~0..5
+    const maxSkillDiff = 5;
+    const skillPenaltyRatio = Math.min(1, skillDiff / maxSkillDiff);
+
+    // Normalize gender difference: assume relevant range ~0..3
+    const maxGenderDiff = 3;
+    const genderPenaltyRatio = Math.min(1, genderDiff / maxGenderDiff);
+
+    // Component scores 0..100 (higher is better)
+    const strictSkillScore = Math.max(0, 100 - skillPenaltyRatio * 100);
+    const strictGenderScore = Math.max(0, 100 - genderPenaltyRatio * 100);
+
+    const looseSkillScore = Math.max(0, 100 - skillPenaltyRatio * 60); // softer
+    const looseGenderScore = Math.max(0, 100 - genderPenaltyRatio * 80);
+
     if (mode === "strict") {
-      // STRICT: used for the initial generation = "best we can do".
-      // Skill is relevant, but not allowed to dominate.
-      const skillPenalty = Math.min(20, skillDiff * 4); // was 30, diff * 6
+      // 65 / 20 / 15 – sums to 100
+      const weighted =
+        0.65 * positionScore +
+        0.2 * strictSkillScore +
+        0.15 * strictGenderScore;
 
-      // Gender is important: we weight it more heavily than skill
-      // and hit harder when the difference grows.
-      const genderPenalty = Math.min(30, genderDiff * 15);
-
-      score -= skillPenalty + genderPenalty;
+      return Math.round(Math.max(0, Math.min(100, weighted)));
     } else {
-      // LOOSE: used when shuffling.
-      // We keep gender quite important, but make skill very soft so
-      // that a single over-rated player does not freeze the teams.
-      const skillPenalty = Math.min(10, skillDiff * 2);
+      // 70 / 10 / 20 – sums to 100, softer on skill
+      const weighted =
+        0.7 * positionScore + 0.1 * looseSkillScore + 0.2 * looseGenderScore;
 
-      let genderPenalty = Math.min(25, genderDiff * 12);
-      // Extra hit when the difference is more than 1 player.
-      if (genderDiff > 1) {
-        genderPenalty += 10;
-      }
-
-      score -= skillPenalty + genderPenalty;
+      return Math.round(Math.max(0, Math.min(100, weighted)));
     }
-
-    return Math.max(0, Math.round(score));
   }
 
   private calculatePositionBalance(

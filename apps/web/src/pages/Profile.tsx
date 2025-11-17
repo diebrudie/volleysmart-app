@@ -45,7 +45,6 @@ interface PlayerProfile {
   bio: string | null;
   image_url: string | null;
   skill_rating: number | null;
-  member_association: boolean | null;
 }
 
 interface PlayerPosition {
@@ -119,13 +118,8 @@ const Profile = () => {
   const hasSkillsChanges = () => {
     if (!profile || !originalProfile) return false;
 
-    // Check skill rating and association change
+    // Check skill rating change
     if (profile.skill_rating !== originalProfile.skill_rating) return true;
-    if (
-      (profile.member_association ?? false) !==
-      (originalProfile.member_association ?? false)
-    )
-      return true;
 
     // Check positions changes
     if (playerPositions.length !== originalPlayerPositions.length) return true;
@@ -339,7 +333,6 @@ const Profile = () => {
         .from("players")
         .update({
           skill_rating: profile.skill_rating,
-          member_association: profile.member_association ?? false,
         })
         .eq("id", profile.id);
 
@@ -349,7 +342,6 @@ const Profile = () => {
       setOriginalProfile({
         ...originalProfile!,
         skill_rating: profile.skill_rating,
-        member_association: profile.member_association ?? false,
       });
       setOriginalPlayerPositions([...playerPositions]);
 
@@ -697,41 +689,6 @@ const Profile = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Association membership */}
-                <div className="space-y-2">
-                  <Label className="text-base font-medium">
-                    Volleyball Association
-                  </Label>
-                  <div
-                    className={`flex items-center p-3 border rounded-lg ${
-                      profile.member_association
-                        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700"
-                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      id="member-association"
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded mr-3"
-                      checked={!!profile.member_association}
-                      onChange={(e) =>
-                        isOwnProfile &&
-                        setProfile({
-                          ...profile,
-                          member_association: e.target.checked,
-                        })
-                      }
-                      disabled={!isOwnProfile}
-                    />
-                    <Label
-                      htmlFor="member-association"
-                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                    >
-                      I am a member of a Volleyball Association
-                    </Label>
-                  </div>
-                </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
