@@ -651,7 +651,7 @@ const EditGame = () => {
     // Combine all players from both teams
     const allPlayers = [...teamAPlayers, ...teamBPlayers];
 
-    // Generate balanced teams using the same smart algorithm as NewGame
+    // Generate teams with strong position balance but much more randomness.
     const generateBalancedTeams = () => {
       // Prepare all players with their positions and skills
       const allPlayersWithPositions = allPlayers.map((player) => ({
@@ -676,21 +676,21 @@ const EditGame = () => {
         playersByPosition[player.position].push(player);
       });
 
-      // Sort players within each position by skill (highest first)
-      Object.keys(playersByPosition).forEach((position) => {
-        playersByPosition[position].sort(
-          (a, b) => b.skill_rating - a.skill_rating
-        );
-      });
-
-      // Distribute positions using snake draft method
+      // Teams we will build
       const teamA: typeof allPlayersWithPositions = [];
       const teamB: typeof allPlayersWithPositions = [];
 
+      // For each position, shuffle players and then distribute them,
+      // trying to keep counts for that position similar across both teams.
       Object.entries(playersByPosition).forEach(
         ([position, positionPlayers]) => {
-          positionPlayers.forEach((player, index) => {
-            // Snake draft: alternate high-skill players between teams
+          // New random order on every shuffle
+          const shuffledGroup = shuffleArray(positionPlayers);
+
+          // Randomly decide which team gets the "first pick" for this position
+          const startWithA = Math.random() < 0.5;
+
+          shuffledGroup.forEach((player, index) => {
             const teamACount = teamA.filter(
               (p) => p.position === position
             ).length;
@@ -698,30 +698,33 @@ const EditGame = () => {
               (p) => p.position === position
             ).length;
 
-            if (index % 2 === 0) {
-              if (teamACount <= teamBCount) {
-                teamA.push(player);
-              } else {
-                teamB.push(player);
-              }
+            // If one team has fewer of this position, prefer that team
+            if (teamACount < teamBCount) {
+              teamA.push(player);
+            } else if (teamBCount < teamACount) {
+              teamB.push(player);
             } else {
-              if (teamBCount <= teamACount) {
-                teamB.push(player);
-              } else {
+              // Same count: alternate, but with random starting side
+              const goToA = startWithA ? index % 2 === 0 : index % 2 === 1;
+              if (goToA) {
                 teamA.push(player);
+              } else {
+                teamB.push(player);
               }
             }
           });
         }
       );
 
-      // Balance teams by size if needed
+      // Balance teams by size if needed (may happen if positions are uneven)
       while (Math.abs(teamA.length - teamB.length) > 1) {
         if (teamA.length > teamB.length) {
-          const playerToMove = teamA.pop();
+          const idx = Math.floor(Math.random() * teamA.length);
+          const [playerToMove] = teamA.splice(idx, 1);
           if (playerToMove) teamB.push(playerToMove);
         } else {
-          const playerToMove = teamB.pop();
+          const idx = Math.floor(Math.random() * teamB.length);
+          const [playerToMove] = teamB.splice(idx, 1);
           if (playerToMove) teamA.push(playerToMove);
         }
       }
@@ -751,13 +754,12 @@ const EditGame = () => {
         );
       });
 
-      return { newTeamA, newTeamB };
+      setTeamAPlayers(newTeamA);
+      setTeamBPlayers(newTeamB);
     };
 
-    const { newTeamA, newTeamB } = generateBalancedTeams();
-
-    setTeamAPlayers(newTeamA);
-    setTeamBPlayers(newTeamB);
+    // Rebuild both teams with a fresh random, position-aware shuffle
+    generateBalancedTeams();
 
     (async () => {
       if (user?.id && gameId) {
