@@ -21,6 +21,7 @@ export type Database = {
           id: string
           is_active: boolean
           joined_at: string | null
+          member_association: boolean
           rejected_at: string | null
           removed_at: string | null
           removed_by: string | null
@@ -35,6 +36,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           joined_at?: string | null
+          member_association?: boolean
           rejected_at?: string | null
           removed_at?: string | null
           removed_by?: string | null
@@ -49,6 +51,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           joined_at?: string | null
+          member_association?: boolean
           rejected_at?: string | null
           removed_at?: string | null
           removed_by?: string | null
@@ -346,6 +349,7 @@ export type Database = {
           competition_level: string | null
           created_at: string
           first_name: string
+          first_name_ci: string | null
           game_performance: string | null
           gender: string
           general_skill_level: string | null
@@ -355,9 +359,9 @@ export type Database = {
           is_active: boolean
           is_temporary: boolean | null
           last_name: string
+          last_name_ci: string | null
           last_rating_update: string | null
           match_experience: string | null
-          member_association: boolean
           profile_completed: boolean | null
           rating_history: Json | null
           skill_rating: number | null
@@ -373,6 +377,7 @@ export type Database = {
           competition_level?: string | null
           created_at?: string
           first_name: string
+          first_name_ci?: string | null
           game_performance?: string | null
           gender?: string
           general_skill_level?: string | null
@@ -382,9 +387,9 @@ export type Database = {
           is_active?: boolean
           is_temporary?: boolean | null
           last_name: string
+          last_name_ci?: string | null
           last_rating_update?: string | null
           match_experience?: string | null
-          member_association: boolean
           profile_completed?: boolean | null
           rating_history?: Json | null
           skill_rating?: number | null
@@ -400,6 +405,7 @@ export type Database = {
           competition_level?: string | null
           created_at?: string
           first_name?: string
+          first_name_ci?: string | null
           game_performance?: string | null
           gender?: string
           general_skill_level?: string | null
@@ -409,9 +415,9 @@ export type Database = {
           is_active?: boolean
           is_temporary?: boolean | null
           last_name?: string
+          last_name_ci?: string | null
           last_rating_update?: string | null
           match_experience?: string | null
-          member_association?: boolean
           profile_completed?: boolean | null
           rating_history?: Json | null
           skill_rating?: number | null
@@ -657,7 +663,12 @@ export type Database = {
           status: string
         }[]
       }
-      request_join_by_slug: { Args: { p_slug: string }; Returns: string }
+      request_join_by_slug:
+        | {
+            Args: { p_member_association?: boolean; p_slug: string }
+            Returns: undefined
+          }
+        | { Args: { p_slug: string }; Returns: string }
       request_membership: { Args: { p_club_id: string }; Returns: string }
       set_player_positions_replace: {
         Args: {

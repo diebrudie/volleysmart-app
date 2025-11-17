@@ -34,12 +34,6 @@ import { Search, Grid3X3, List, Users, Plus, X, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import CopyableClubId from "@/components/clubs/CopyableClubId";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { buildImageUrl } from "@/utils/buildImageUrl";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -51,6 +45,8 @@ interface ClubMember {
   joined_at: string;
   user_id: string;
   is_active: boolean;
+  role?: string; // membership role in the club
+  member_association?: boolean | null;
 }
 
 interface Player {
@@ -59,7 +55,6 @@ interface Player {
   last_name: string;
   image_url: string | null;
   user_id: string;
-  member_association: boolean;
   player_positions: Array<{
     is_primary: boolean | null;
     positions: {
@@ -71,16 +66,6 @@ interface Player {
 interface MemberWithPlayer {
   member: ClubMember;
   player: Player | null;
-}
-
-// Update ClubMember interface to include role
-interface ClubMember {
-  club_id: string;
-  id: string;
-  joined_at: string;
-  user_id: string;
-  is_active: boolean;
-  role?: string; // Add role field
 }
 
 type SortOption =
@@ -190,7 +175,6 @@ const Members = () => {
               last_name,
               image_url,
               user_id,
-              member_association,
               player_positions (
                 is_primary,
                 positions (
@@ -489,7 +473,7 @@ const Members = () => {
                     </p>
                   </div>
 
-                  {player.member_association && (
+                  {memberData.member.member_association && (
                     <div className="w-5 h-5 flex-shrink-0">
                       <img
                         src="/volleyball.svg"

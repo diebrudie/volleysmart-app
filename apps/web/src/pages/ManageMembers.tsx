@@ -9,17 +9,9 @@ import {
   rejectMembership,
   removeMember,
   changeMemberRole,
-  type ManageMemberRow,
 } from "@/integrations/supabase/members";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,8 +24,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-
-type Role = ManageMemberRow["role"];
 
 export default function ManageMembers() {
   const { clubId: clubIdFromCtx, setClubId } = useClub();

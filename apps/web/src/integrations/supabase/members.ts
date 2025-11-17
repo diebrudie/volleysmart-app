@@ -16,6 +16,7 @@ export type ManageMemberRow = {
   removed_at: string | null;
   rejected_at: string | null;
   removed_by: string | null; // kept if your UI uses it; server doesn’t return it, so it will be null
+  member_association: boolean | null;
 };
 
 /** Generic RPC caller that sidesteps generated RPC name unions */
