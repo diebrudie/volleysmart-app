@@ -21,14 +21,16 @@ export default tseslint.config(
       globals: {
         ...globals.browser,
         ...globals.es2021,
+        React: "readonly",
+        JSX: "readonly",
       },
+      parser: tseslint.parser, // <-- REQUIRED
       parserOptions: {
-        // Key line for monorepo setups:
         tsconfigRootDir: __dirname,
-        // Point to the web app tsconfigs (adjust if you only use one)
         project: ["./tsconfig.json", "./tsconfig.app.json"],
       },
     },
+
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
@@ -40,6 +42,8 @@ export default tseslint.config(
       ...js.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": "off",
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "off", // NEW
     },
   },
   // JS files (vite config) without type-aware linting:

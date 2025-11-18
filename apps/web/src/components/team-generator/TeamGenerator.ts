@@ -7,6 +7,11 @@ import {
 import { normalizeRole, CANONICAL_ORDER } from "../../features/teams/positions";
 import type { CanonicalRole } from "../../features/teams/positions";
 
+type TeamPair = {
+  teamA: PlayerWithPositions[];
+  teamB: PlayerWithPositions[];
+};
+
 export class TeamGenerator {
   // Ideal distribution for 6 v 6 according to your spec
   private readonly IDEAL_POSITIONS: Partial<Record<CanonicalRole, number>> = {
@@ -25,10 +30,8 @@ export class TeamGenerator {
     }
 
     // Generate multiple team combinations
-    const combinations = this.generateTeamCombinations(
-      availablePlayers,
-      targetTeamSize
-    );
+    const combinations = this.generateTeamCombinations(config, "strict");
+
     const suggestions: TeamSuggestion[] = [];
 
     for (const combination of combinations.slice(0, 3)) {
@@ -51,7 +54,7 @@ export class TeamGenerator {
       const teamA = this.createTeam(teamAPlayers);
       const teamB = this.createTeam(teamBPlayers);
 
-      const balanceScore = this.calculateOverallBalance(teamA, teamB);
+      const balanceScore = this.calculateOverallBalance(teamA, teamB, "strict");
       const reasoning = this.generateReasoning(teamA, teamB, balanceScore);
 
       suggestions.push({
@@ -66,236 +69,235 @@ export class TeamGenerator {
     return suggestions.sort((a, b) => b.balanceScore - a.balanceScore);
   }
 
+  /**
+   * Build candidate team pairs.
+   *
+   * - strict: start from a seeded split by roles, then make small perturbations.
+   * - loose: ignore seeding, generate many random splits and let the scoring
+   *          pick the best ones. This yields much more variety between shuffles.
+   */
   private generateTeamCombinations(
-    players: PlayerWithPositions[],
-    teamSize: number
-  ) {
-    // We’ll build ONE high-quality, role-seeded split and then optionally
-    // produce a couple of small variations (shuffle remaining pool) if needed.
-    const actualTeamSize = Math.min(teamSize, Math.floor(players.length / 2));
-    const base = this.seedSplitByRoles(players, actualTeamSize);
+    config: TeamGenerationConfig,
+    mode: "strict" | "loose" = "strict"
+  ): TeamPair[] {
+    const { availablePlayers, targetTeamSize } = config;
 
-    // If we couldn’t produce a sensible split, fall back to previous logic
-    if (!base) {
-      return [
-        {
-          teamA: [...players].slice(0, actualTeamSize),
-          teamB: [...players].slice(actualTeamSize, actualTeamSize * 2),
-        },
-      ];
+    if (availablePlayers.length < targetTeamSize * 2) {
+      throw new Error(
+        `Not enough players to build two teams of size ${targetTeamSize}. Got ${availablePlayers.length}.`
+      );
     }
 
-    const combinations: Array<{
-      teamA: PlayerWithPositions[];
-      teamB: PlayerWithPositions[];
-    }> = [base];
+    // STRICT MODE: current behaviour (seeding + a few swaps)
+    if (mode === "strict") {
+      const seeded = this.seedSplitByRoles(
+        availablePlayers,
+        targetTeamSize,
+        "strict"
+      );
 
-    // Optionally create up to two light variations by swapping last slots
-    // if the pool allows; this gives the scorer a few options.
-    const { teamA, teamB } = base;
-    const poolA = [...teamA];
-    const poolB = [...teamB];
+      const basePair: TeamPair = {
+        teamA: seeded.teamA,
+        teamB: seeded.teamB,
+      };
 
-    if (poolA.length === actualTeamSize && poolB.length === actualTeamSize) {
-      const variations = 2;
-      for (let v = 0; v < variations; v++) {
-        const a = [...poolA];
-        const b = [...poolB];
-        if (a.length && b.length) {
-          // swap last players as a tiny perturbation
-          const ap = a.pop()!;
-          const bp = b.pop()!;
-          a.push(bp);
-          b.push(ap);
-          combinations.push({ teamA: a, teamB: b });
+      const combinations: TeamPair[] = [basePair];
+
+      const candidateCount = 3;
+      const minSwaps = 1;
+      const maxSwaps = 2;
+
+      for (let i = 0; i < candidateCount; i++) {
+        const teamA = [...basePair.teamA];
+        const teamB = [...basePair.teamB];
+
+        const swaps =
+          minSwaps + Math.floor(Math.random() * (maxSwaps - minSwaps + 1));
+
+        for (let s = 0; s < swaps; s++) {
+          const idxA = Math.floor(Math.random() * teamA.length);
+          const idxB = Math.floor(Math.random() * teamB.length);
+
+          const temp = teamA[idxA];
+          teamA[idxA] = teamB[idxB];
+          teamB[idxB] = temp;
         }
+
+        combinations.push({ teamA, teamB });
       }
+
+      return combinations;
+    }
+
+    // LOOSE MODE: many random splits → much more variety
+    const combinations: TeamPair[] = [];
+    const candidateCountLoose = 40; // you can tweak this for more/less variety
+
+    for (let i = 0; i < candidateCountLoose; i++) {
+      const shuffled = [...availablePlayers].sort(() => Math.random() - 0.5);
+
+      const teamA = shuffled.slice(0, targetTeamSize);
+      const teamB = shuffled.slice(targetTeamSize, targetTeamSize * 2);
+
+      if (teamB.length < targetTeamSize) {
+        // Not enough players to fill two full teams in this candidate
+        continue;
+      }
+
+      combinations.push({ teamA, teamB });
     }
 
     return combinations;
   }
 
   /**
-   * Build two teams by filling role slots symmetrically BEFORE splitting,
-   * using fallback mappings when buckets are scarce.
+   * Seed teams by roles.
+   *
+   * - strict mode: use the primary / preferred position.
+   * - loose mode: allow secondary positions to drive bucket selection by
+   *   randomly choosing from [primary + secondaries].
    */
   private seedSplitByRoles(
     players: PlayerWithPositions[],
-    teamSize: number
-  ): { teamA: PlayerWithPositions[]; teamB: PlayerWithPositions[] } | null {
-    // Normalize once
-    const normalized = players.map((p) => ({
-      ...p,
-      _primary: normalizeRole(p.preferredPosition),
-    }));
+    teamSize: number,
+    mode: "strict" | "loose" = "strict"
+  ): TeamPair {
+    const totalPlayers = players.length;
+    const teamCount = 2;
+    const totalNeeded = teamSize * teamCount;
 
-    // Buckets by primary role
-    const bucket: Record<CanonicalRole, PlayerWithPositions[]> = {
-      Setter: [],
-      "Middle Blocker": [],
-      "Outside Hitter": [],
-      Opposite: [],
-      Libero: [],
-    };
-    for (const p of normalized) {
-      bucket[p._primary].push(p);
+    if (totalPlayers < totalNeeded) {
+      throw new Error(
+        `Not enough players to seed two teams of size ${teamSize}. Got ${totalPlayers}.`
+      );
     }
 
-    // Sort each bucket by skill desc for better matching
-    (Object.keys(bucket) as CanonicalRole[]).forEach((r) => {
-      bucket[r].sort((a, b) => (b.skillRating ?? 0) - (a.skillRating ?? 0));
+    type PlayerWithSecondaries = PlayerWithPositions & {
+      _normalizedSecondaries: CanonicalRole[];
+    };
+
+    // Normalize players: preferredPosition + optional secondaryPositions
+    const normalizedPlayers: PlayerWithSecondaries[] = players.map((p) => {
+      const rawSecondaries =
+        (p as unknown as { secondaryPositions?: string[] })
+          .secondaryPositions ?? [];
+
+      const normalizedSecondaries = rawSecondaries
+        .map(normalizeRole)
+        .filter((role): role is CanonicalRole => !!role);
+
+      return {
+        ...p,
+        _normalizedSecondaries: normalizedSecondaries,
+      };
     });
 
-    // Soft gender target: not a hard rule, just guidance for the heuristic
-    const totalFemale = normalized.filter((p) => p.gender === "female").length;
-    const targetFemalePerTeam = Math.ceil(totalFemale / 2);
-
-    // Desired per-team role counts
-    const targetPerTeam: Partial<Record<CanonicalRole, number>> = {
-      Setter: 1,
-      "Middle Blocker": 2,
-      "Outside Hitter": 2,
-      Opposite: 1,
-      // Libero optional
-    };
-
-    const teamA: Array<
-      PlayerWithPositions & { preferredPosition: CanonicalRole }
-    > = [];
-    const teamB: Array<
-      PlayerWithPositions & { preferredPosition: CanonicalRole }
-    > = [];
-
-    // Track gender & skill for balancing while pairing
-    const state = {
-      aSkillSum: 0,
-      bSkillSum: 0,
-      aMale: 0,
-      bMale: 0,
-      aFemale: 0,
-      bFemale: 0,
-    };
-    const trackAdd = (side: "A" | "B", p: PlayerWithPositions) => {
-      const s = p.skillRating ?? 0;
-
-      if (side === "A") {
-        state.aSkillSum += s;
-      } else {
-        state.bSkillSum += s;
-      }
-
-      if (p.gender === "male") {
-        if (side === "A") {
-          state.aMale++;
-        } else {
-          state.bMale++;
-        }
-      } else if (p.gender === "female") {
-        if (side === "A") {
-          state.aFemale++;
-        } else {
-          state.bFemale++;
-        }
-      }
-    };
-
-    // Helper: choose two candidates for a role with fallbacks
-    const takePairForRole = (
-      role: CanonicalRole
-    ): [PlayerWithPositions | null, PlayerWithPositions | null] => {
-      const primary = bucket[role];
-
-      // Enough primaries?
-      if (primary.length >= 2) {
-        return [primary.shift()!, primary.shift()!];
-      }
-
-      // If only one primary, we’ll use a fallback for the second
-      if (primary.length === 1) {
-        const one = primary.shift()!;
-        const alt = this.takeFallback(role, bucket);
-        return [one, alt];
-      }
-
-      // No primary: try both from fallbacks
-      const f1 = this.takeFallback(role, bucket);
-      const f2 = this.takeFallback(role, bucket);
-      return [f1, f2];
-    };
-
-    // For each role, fill required slots symmetrically (pair A/B)
-    const roleOrder: CanonicalRole[] = [
-      "Setter",
-      "Middle Blocker",
-      "Outside Hitter",
-      "Opposite",
-    ];
-
-    for (const role of roleOrder) {
-      const needed = targetPerTeam[role] ?? 0;
-      for (let k = 0; k < needed; k++) {
-        const [p1, p2] = takePairForRole(role);
-
-        // If both missing, we skip this pair (will fill later)
-        if (!p1 && !p2) continue;
-
-        // Skill-balance assignment: place the higher-skill to the currently weaker team,
-        // but respect gender balance (try to keep |diff| <= 1 when possible).
-        const pair = [p1, p2].filter(Boolean) as PlayerWithPositions[];
-        pair.sort((a, b) => (b.skillRating ?? 0) - (a.skillRating ?? 0));
-
-        for (const cand of pair) {
-          const assignToA =
-            state.aSkillSum <= state.bSkillSum
-              ? // A is weaker; but check gender diff: prefer side that reduces |diff|
-                this.prefersSideAByGender(state, cand, targetFemalePerTeam)
-              : // B is weaker
-                !this.prefersSideAByGender(state, cand, targetFemalePerTeam);
-
-          if (assignToA && teamA.length < teamSize) {
-            teamA.push({ ...cand, preferredPosition: role });
-            trackAdd("A", cand);
-          } else if (teamB.length < teamSize) {
-            teamB.push({ ...cand, preferredPosition: role });
-            trackAdd("B", cand);
-          } else if (teamA.length < teamSize) {
-            teamA.push({ ...cand, preferredPosition: role });
-            trackAdd("A", cand);
-          }
-        }
-      }
-    }
-
-    // Fill remaining slots (if any) up to teamSize with best remaining players,
-    // prioritizing skill balance and small gender difference.
-    const remaining: PlayerWithPositions[] = [];
-    (Object.keys(bucket) as CanonicalRole[]).forEach((r) =>
-      remaining.push(...bucket[r])
+    // Sort by skill desc so stronger players are distributed more evenly
+    const sorted = [...normalizedPlayers].sort(
+      (a, b) => (b.skillRating ?? 5) - (a.skillRating ?? 5)
     );
 
-    // Add also any unassigned primaries we pulled as fallbacks but didn’t use
-    // (already covered: we mutate buckets when we shift() out)
+    const buckets: Record<CanonicalRole, PlayerWithSecondaries[]> = {
+      Setter: [],
+      Opposite: [],
+      "Middle Blocker": [],
+      "Outside Hitter": [],
+      Libero: [],
+    };
 
-    remaining.sort((a, b) => (b.skillRating ?? 0) - (a.skillRating ?? 0));
+    for (const p of sorted) {
+      const primaryRole =
+        normalizeRole(p.preferredPosition) ??
+        ("Outside Hitter" as CanonicalRole);
 
-    for (const cand of remaining) {
-      if (teamA.length >= teamSize && teamB.length >= teamSize) break;
-      const role = normalizeRole(cand.preferredPosition);
-      const assignToA =
-        state.aSkillSum <= state.bSkillSum
-          ? this.prefersSideAByGender(state, cand, targetFemalePerTeam)
-          : !this.prefersSideAByGender(state, cand, targetFemalePerTeam);
+      if (mode === "strict" || p._normalizedSecondaries.length === 0) {
+        // Strict: only primary drives bucket choice.
+        buckets[primaryRole].push({
+          ...p,
+          preferredPosition: primaryRole,
+        });
+      } else {
+        // Loose: allow secondary positions to influence bucket choice.
+        // We randomly pick any of [primary + secondaries] and treat that as
+        // the "working primary" for this seeding pass.
+        const allRoles: CanonicalRole[] = [
+          primaryRole,
+          ...p._normalizedSecondaries.filter((r) => r !== primaryRole),
+        ];
 
-      if (assignToA && teamA.length < teamSize) {
-        teamA.push({ ...cand, preferredPosition: role });
-        trackAdd("A", cand);
-      } else if (teamB.length < teamSize) {
-        teamB.push({ ...cand, preferredPosition: role });
-        trackAdd("B", cand);
+        const chosenRole =
+          allRoles[Math.floor(Math.random() * allRoles.length)] ?? primaryRole;
+
+        buckets[chosenRole].push({
+          ...p,
+          preferredPosition: chosenRole,
+        });
       }
     }
 
-    if (!teamA.length || !teamB.length) return null;
+    // Target counts per team: 6v6 indoor defaults, but we use teamSize.
+    const baseDemand: CanonicalRole[] = [
+      "Setter",
+      "Middle Blocker",
+      "Opposite",
+      "Outside Hitter",
+      "Outside Hitter",
+      "Libero",
+    ];
+
+    const demandForTeam = baseDemand.slice(0, teamSize);
+
+    const teamA: PlayerWithPositions[] = [];
+    const teamB: PlayerWithPositions[] = [];
+
+    const pickFromBucket = (
+      role: CanonicalRole
+    ): PlayerWithPositions | null => {
+      const bucket = buckets[role];
+      if (!bucket?.length) return null;
+      return bucket.shift() ?? null;
+    };
+
+    // First, try to fill required roles for both teams
+    for (const role of demandForTeam) {
+      const playerA = pickFromBucket(role);
+      const playerB = pickFromBucket(role);
+
+      if (playerA) teamA.push(playerA);
+      if (playerB) teamB.push(playerB);
+    }
+
+    // Collect remaining players from all buckets for generic filling
+    const remaining: PlayerWithPositions[] = Object.values(buckets).flat();
+
+    // Fill up remaining slots with a simple gender-aware heuristic
+    const fillTeam = (team: PlayerWithPositions[]) => {
+      while (team.length < teamSize && remaining.length > 0) {
+        const teamFemales = team.filter((p) => p.gender === "female").length;
+        const teamMales = team.filter((p) => p.gender === "male").length;
+
+        const candidates = [...remaining].sort((a, b) => {
+          const score = (p: PlayerWithPositions) => {
+            if (p.gender === "female" && teamFemales <= teamMales) return 2;
+            if (p.gender === "male" && teamMales <= teamFemales) return 2;
+            return 1;
+          };
+          return score(b) - score(a);
+        });
+
+        const picked = candidates[0];
+        const idx = remaining.findIndex((p) => p.id === picked.id);
+        if (idx >= 0) {
+          remaining.splice(idx, 1);
+          team.push(picked);
+        } else {
+          team.push(remaining.pop() as PlayerWithPositions);
+        }
+      }
+    };
+
+    fillTeam(teamA);
+    fillTeam(teamB);
 
     return { teamA, teamB };
   }
@@ -528,36 +530,64 @@ export class TeamGenerator {
     return team;
   }
 
+  /**
+   * Calculate an overall balance score between 0 and 100 by combining:
+   * - positionScore  (0..100)
+   * - skillScore     (0..100)
+   * - genderScore    (0..100)
+   *
+   * STRICT (initial generation):
+   *   Positions: 65%
+   *   Skill:     20%
+   *   Gender:    15%
+   *
+   * LOOSE (shuffles):
+   *   Positions: 70%
+   *   Skill:     10%  (so "fake" skill ratings hurt less)
+   *   Gender:    20%
+   */
   private calculateOverallBalance(
     teamA: GeneratedTeam,
-    teamB: GeneratedTeam
+    teamB: GeneratedTeam,
+    mode: "strict" | "loose" = "strict"
   ): number {
-    // We compute three components on a 0–100 scale, then weight them:
-    // positions 50%, skill 30%, gender 20%.
-    // - Position: use existing 0..100 from calculatePositionBalance
-    // - Skill: shrink penalty to max 30
-    // - Gender: shrink penalty to max 20
-
-    let score = 100;
-
-    // Skill balance (30% of score)
-    const skillDiff = Math.abs(teamA.averageSkill - teamB.averageSkill);
-    // Previously: Math.min(40, diff*8)
-    // Now: cap at 30; tune multiplier to taste. 6 makes ~5 pts diff ≈ -30
-    score -= Math.min(30, skillDiff * 6);
-
-    // Gender balance (20% of score)
-    const teamGenderDiff = Math.abs(
-      teamA.genderBalance.male - teamB.genderBalance.male
-    );
-    // Previously max 30 (diff*10). Now cap at 20.
-    score -= Math.min(20, teamGenderDiff * 10);
-
-    // Position balance (50% of score)
     const positionScore = this.calculatePositionBalance(teamA, teamB); // 0..100
-    score -= (100 - positionScore) * 0.5; // 50% weight
 
-    return Math.max(0, Math.min(100, score));
+    const skillDiff = Math.abs(teamA.averageSkill - teamB.averageSkill);
+    const genderDiff = Math.abs(
+      teamA.genderBalance.female - teamB.genderBalance.female
+    );
+
+    // Normalize skill difference: assume relevant range ~0..5
+    const maxSkillDiff = 5;
+    const skillPenaltyRatio = Math.min(1, skillDiff / maxSkillDiff);
+
+    // Normalize gender difference: assume relevant range ~0..3
+    const maxGenderDiff = 3;
+    const genderPenaltyRatio = Math.min(1, genderDiff / maxGenderDiff);
+
+    // Component scores 0..100 (higher is better)
+    const strictSkillScore = Math.max(0, 100 - skillPenaltyRatio * 100);
+    const strictGenderScore = Math.max(0, 100 - genderPenaltyRatio * 100);
+
+    const looseSkillScore = Math.max(0, 100 - skillPenaltyRatio * 60); // softer
+    const looseGenderScore = Math.max(0, 100 - genderPenaltyRatio * 80);
+
+    if (mode === "strict") {
+      // 65 / 20 / 15 – sums to 100
+      const weighted =
+        0.65 * positionScore +
+        0.2 * strictSkillScore +
+        0.15 * strictGenderScore;
+
+      return Math.round(Math.max(0, Math.min(100, weighted)));
+    } else {
+      // 70 / 10 / 20 – sums to 100, softer on skill
+      const weighted =
+        0.7 * positionScore + 0.1 * looseSkillScore + 0.2 * looseGenderScore;
+
+      return Math.round(Math.max(0, Math.min(100, weighted)));
+    }
   }
 
   private calculatePositionBalance(
@@ -628,13 +658,69 @@ export class TeamGenerator {
     return reasoning;
   }
 
+  /**
+   * Regenerate teams with a looser balance logic:
+   * - still cares about positions & gender
+   * - downweights skill
+   * - uses more random swaps and also secondary positions when seeding
+   *
+   * This should yield noticeably different combinations between shuffles,
+   * especially for 10–14 players, while staying "fair enough".
+   */
   async regenerateTeams(
     config: TeamGenerationConfig
   ): Promise<TeamSuggestion[]> {
-    const shuffledPlayers = [...config.availablePlayers].sort(
+    const { availablePlayers, targetTeamSize } = config;
+
+    if (availablePlayers.length < 4) {
+      throw new Error("Need at least 4 players to generate teams");
+    }
+
+    // Shuffle players a bit to introduce additional randomness
+    const shuffledPlayers = [...availablePlayers].sort(
       () => Math.random() - 0.5
     );
-    const newConfig = { ...config, availablePlayers: shuffledPlayers };
-    return this.generateTeams(newConfig);
+
+    const looseConfig: TeamGenerationConfig = {
+      ...config,
+      availablePlayers: shuffledPlayers,
+      targetTeamSize,
+    };
+
+    const combinations = this.generateTeamCombinations(looseConfig, "loose");
+
+    const suggestions: TeamSuggestion[] = [];
+
+    for (const combination of combinations.slice(0, 3)) {
+      // Assign roles per team BEFORE creating team stats
+      const assignedA = this.assignRolesForTeam(combination.teamA);
+      const assignedB = this.assignRolesForTeam(combination.teamB);
+
+      const teamAPlayers = assignedA.map((p) => ({
+        ...p,
+        preferredPosition: p.assignedRole,
+      })) as PlayerWithPositions[];
+
+      const teamBPlayers = assignedB.map((p) => ({
+        ...p,
+        preferredPosition: p.assignedRole,
+      })) as PlayerWithPositions[];
+
+      const teamA = this.createTeam(teamAPlayers);
+      const teamB = this.createTeam(teamBPlayers);
+
+      const balanceScore = this.calculateOverallBalance(teamA, teamB, "loose");
+      const reasoning = this.generateReasoning(teamA, teamB, balanceScore);
+
+      suggestions.push({
+        teamA,
+        teamB,
+        balanceScore,
+        overallWarnings: [...teamA.warnings, ...teamB.warnings],
+        reasoning,
+      });
+    }
+
+    return suggestions.sort((a, b) => b.balanceScore - a.balanceScore);
   }
 }

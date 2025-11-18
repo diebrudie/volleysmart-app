@@ -235,6 +235,7 @@ export type ClubMemberBasic = {
   user_id: string;
   is_active: boolean;
   role: ClubMemberRole | string | null;
+  member_association: boolean | null;
 };
 
 /**
@@ -245,7 +246,9 @@ export async function fetchActiveMembersBasic(
 ): Promise<ClubMemberBasic[]> {
   const { data, error } = await supabase
     .from("club_members")
-    .select("club_id, id, joined_at, user_id, is_active, role")
+    .select(
+      "club_id, id, joined_at, user_id, is_active, role, member_association"
+    )
     .eq("club_id", clubId)
     .eq("is_active", true);
 

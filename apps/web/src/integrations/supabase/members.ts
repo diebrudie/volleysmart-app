@@ -16,6 +16,7 @@ export type ManageMemberRow = {
   removed_at: string | null;
   rejected_at: string | null;
   removed_by: string | null; // kept if your UI uses it; server doesn’t return it, so it will be null
+  member_association: boolean | null;
 };
 
 /** Generic RPC caller that sidesteps generated RPC name unions */
@@ -69,5 +70,15 @@ export async function changeMemberRole(
   await callRpc<null>("change_member_role", {
     p_membership_id: membershipId,
     p_new_role: newRole,
+  });
+}
+
+export async function updateMemberAssociation(
+  membershipId: string,
+  memberAssociation: boolean
+) {
+  await callRpc<null>("update_member_association", {
+    p_membership_id: membershipId,
+    p_member_association: memberAssociation,
   });
 }
