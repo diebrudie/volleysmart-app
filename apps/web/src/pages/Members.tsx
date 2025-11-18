@@ -474,7 +474,7 @@ const Members = () => {
                   </div>
 
                   {memberData.member.member_association && (
-                    <div className="w-5 h-5 flex-shrink-0">
+                    <div className="w-5 h-5 mb-4 flex-shrink-0">
                       <img
                         src="/volleyball.svg"
                         alt="Club member"
@@ -874,19 +874,19 @@ const Members = () => {
                         />
 
                         {isAssociationMember && (
-                          <div className="pointer-events-none absolute top-2 right-2 w-6 h-6">
+                          <div className="pointer-events-none absolute bottom-4 right-4 w-6 h-6">
                             <img
-                              src="/public/volleyball.svg"
+                              src="/volleyball.svg"
                               alt="Association member"
                               className="w-full h-full drop-shadow-sm"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = "none";
                                 target.parentElement!.innerHTML = `
-                    <div class="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-                      <span class="text-white text-xs font-bold">V</span>
-                    </div>
-                  `;
+          <div class="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+            <span class="text-white text-xs font-bold">V</span>
+          </div>
+        `;
                               }}
                             />
                           </div>
