@@ -72,3 +72,13 @@ export async function changeMemberRole(
     p_new_role: newRole,
   });
 }
+
+export async function updateMemberAssociation(
+  membershipId: string,
+  memberAssociation: boolean
+) {
+  await callRpc<null>("update_member_association", {
+    p_membership_id: membershipId,
+    p_member_association: memberAssociation,
+  });
+}

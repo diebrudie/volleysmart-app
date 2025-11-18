@@ -9,6 +9,7 @@ import {
   rejectMembership,
   removeMember,
   changeMemberRole,
+  updateMemberAssociation,
 } from "@/integrations/supabase/members";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,6 +109,16 @@ export default function ManageMembers() {
     onError: (e) => onUnknownError(e, "Remove failed"),
   });
 
+  const associationMut = useMutation({
+    mutationFn: (p: { id: string; member_association: boolean }) =>
+      updateMemberAssociation(p.id, p.member_association),
+    onSuccess: async () => {
+      await invalidateAll();
+      toast({ title: "Paid membership updated", duration: 1500 });
+    },
+    onError: (e) => onUnknownError(e, "Paid membership update failed"),
+  });
+
   const roleMut = useMutation({
     mutationFn: (p: { id: string; role: "admin" | "editor" | "member" }) =>
       changeMemberRole(p.id, p.role),
@@ -191,6 +202,7 @@ export default function ManageMembers() {
                       <tr>
                         <th className="py-2 pt-5 text-left">Name</th>
                         <th className="py-2 pt-5 text-left">Status</th>
+                        <th className="py-2 pt-5 text-left">M. Association</th>
                         <th className="py-2 pt-5 text-left">Actions</th>
                       </tr>
                     </thead>
@@ -220,6 +232,26 @@ export default function ManageMembers() {
                             >
                               {m.status}
                             </span>
+                          </td>
+
+                          {/* Paid member toggle / Member Association */}
+                          <td className="py-2 pr-4 sm:pr-6">
+                            <label className="inline-flex items-center gap-2 text-xs sm:text-sm">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4"
+                                checked={Boolean(m.member_association)}
+                                onChange={(e) =>
+                                  associationMut.mutate({
+                                    id: m.membership_id,
+                                    member_association: e.target.checked,
+                                  })
+                                }
+                              />
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {m.member_association ? "Yes" : "No"}
+                              </span>
+                            </label>
                           </td>
 
                           {/* Actions */}
@@ -261,16 +293,9 @@ export default function ManageMembers() {
                         </tr>
                       ))}
 
-                      {rows.length === 0 && (
-                        <tr>
-                          <td
-                            className="py-6 text-center opacity-60"
-                            colSpan={3}
-                          >
-                            No memberships found for this club.
-                          </td>
-                        </tr>
-                      )}
+                      <td className="py-6 text-center opacity-60" colSpan={4}>
+                        No memberships found for this club.
+                      </td>
                     </tbody>
                   </table>
                 </div>
