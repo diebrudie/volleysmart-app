@@ -634,12 +634,16 @@ const Dashboard = () => {
 
   // OPTIONAL: clamp to your DB constraint (1..9)
   const MAX_SETS = 9; // keep in sync with DB constraint
-  const canAddAnotherSet = nextSetNumber <= MAX_SETS;
+  // You can only add another set if:
+  //  - the game is still editable
+  //  - and we haven't reached the max number of sets
+  const canAddAnotherSet = isEditingAllowed && nextSetNumber <= MAX_SETS;
 
   // Insert a new set (match row) for this match day
   const handleAddSet = async () => {
     if (!latestGame?.id) return;
-    if (!canAddAnotherSet) return; // guard to avoid 23514
+    if (!isEditingAllowed) return; // extra safety
+    if (!canAddAnotherSet) return; // guard to avoid 23514 / max-cap
     try {
       const { data, error } = await supabase
         .from("matches")
@@ -665,6 +669,7 @@ const Dashboard = () => {
 
   // Delete an extra set (>5) by setNumber
   const handleDeleteSet = async (setNumber: number) => {
+    if (!isEditingAllowed) return; // don't allow deletion when game is locked
     if (setNumber <= 5) return; // guard
     try {
       const matchToDelete = latestGame?.matches?.find(
@@ -996,17 +1001,23 @@ const Dashboard = () => {
                   teamAScore={m.team_a_score}
                   teamBScore={m.team_b_score}
                   onScoreUpdate={handleSetScoreUpdate}
-                  onDelete={handleDeleteSet}
+                  // Only allow deletion when game is editable
+                  onDelete={isEditingAllowed ? handleDeleteSet : undefined}
                   isEditingAllowed={isEditingAllowed}
-                  isDeletable={m.game_number > 5}
+                  isDeletable={m.game_number > 5 && isEditingAllowed}
                 />
               </div>
             ))}
 
-            {/* Add Set dashed box – always last, same grid footprint */}
-            <div className="order-7">
-              <AddSetBox onClick={handleAddSet} disabled={!canAddAnotherSet} />
-            </div>
+            {/* Add Set dashed box – only when game is editable */}
+            {isEditingAllowed && (
+              <div className="order-7">
+                <AddSetBox
+                  onClick={handleAddSet}
+                  disabled={!canAddAnotherSet}
+                />
+              </div>
+            )}
           </div>
         </div>
       </main>
