@@ -1,69 +1,129 @@
-# My Hobby Side-Project App
+# VolleySmart
 
-## Project info
+VolleySmart is a modern volleyball team-management app designed to make organizing games effortless.  
+It builds balanced teams in seconds, tracks scores, and keeps a full match history — so you can spend less time organizing and more time playing.
 
-I created VolleySmart to make volleyball gatherings easier. The app builds fair, balanced teams in seconds, tracks scores, and keeps match history so you can focus on playing.
+Live App: https://volleysmart.app/
 
-### A Bit of Background
+---
 
-Every week I play volleyball with a mixed group of friends. We all have different skill levels, positions, and styles of play — which makes creating fair teams a challenge. On top of that, we never really tracked scores or remembered how past matches went.
+## Why I Built This
 
-That’s why I built VolleySmart. It takes the stress out of organizing games. Based on who’s playing that day, the app automatically generates balanced teams by skill level, gender, and preferred positions. If needed, you can still tweak the lineups manually — but most of the work is already done for you.
+Every week I play with a mixed group of friends, all with different skills, positions, and playing styles.  
+Creating fair teams was always a challenge — and remembering past matches or scores was nearly impossible.
 
-With VolleySmart, you can also record set scores, keep a full history of matches, and manage your club in one place. The goal is simple: spend less time organizing and more time playing the game we all love.
+VolleySmart solves this:
 
-Go and check it out here:
-**URL**: [https://volleysmart.app/](https://volleysmart.app/)
+- Automatically generates fair, balanced teams
+- Lets you adjust lineups manually
+- Tracks full match days and set scores
+- Centralizes club management
+- Provides a clean mobile-first PWA experience
 
-## Information
+The goal is simple: **make game organization stress-free**.
 
-Storage buckets (`player-images` and `club-images`) must be created manually in Supabase. Dynamic creation is disabled due to RLS.
+---
 
-## Check the App using a Test Account\*\*
+## Try VolleySmart (No Setup Needed)
 
-Since the app works best when the user belongs to a Club, you can simply sollow these steps:
+Because the app is designed around **clubs** and **membership**, the best way to explore it is through the onboarding and test flow:
 
-1. Signup using your email address.
-2. Complete the onboarding to get a Score.
-3. When landing on the `/start` page, select `Join a Club`
-4. Enter the following ClubId = `AOJKT`
-5. Navigate and play around with the app.
-6. Enjoy!
+1. Sign up using your email
+2. Complete the onboarding to receive your skill score
+3. On the `/start` page, choose **Join a Club**
+4. Enter the demo Club ID: `AOJKT`
+5. Your request will be sent to the club admin.  
+   You will see the club only **after the admin approves your membership**.
 
-**Use your preferred IDE**
+If you prefer immediate access, you can also:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes.
+- Create your **own club**
+- Invite friends or teammates to join
+- Explore all features without waiting for approval
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Once inside a club, feel free to generate teams, track matches, and navigate through the app.
 
-Follow these steps:
+Enjoy!
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## About This Repository
 
-# Step 3: Install the necessary dependencies.
-npm i
+This repository contains the full source code for VolleySmart.  
+**It is not intended for plug-and-play local use.**
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+Running this project locally requires:
+
+- A Supabase project
+- Database schema & migrations
+- RLS policies
+- Storage buckets
+- Environment variables for web and mobile
+- Supabase Edge Functions
+- Correct project configuration across the monorepo
+
+Because of this, **local development is only recommended for contributors** or developers familiar with Supabase and monorepo setups.
+
+If you simply want to use or evaluate the product, please use the hosted app instead:
+
+**https://volleysmart.app**
+
+---
+
+## Tech Stack
+
+VolleySmart is built using:
+
+### Web App (PWA)
+
+- React 18
+- TypeScript
+- Vite 7 + SWC
+- React Router v6
+- shadcn/ui
+- Radix UI primitives
+- Tailwind CSS
+- TanStack React Query
+- Supabase (Auth, DB, Storage, RLS)
+- React Context (Auth, Club, Theme)
+- Cloudflare Pages (CI/CD & hosting)
+
+### Mobile App (Early Development)
+
+- Expo (React Native)
+- Expo Router
+- Shared logic and types with the web app via the monorepo
+
+### Monorepo Structure
+
+```bash
+apps/
+web/ → Production PWA (React + Vite)
+mobile/ → Expo app (React Native)
+packages/
+core/ → Shared logic, utilities, types
+supabase/ → DB schema, migrations, RLS, functions
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Contributing
 
-## What technologies are used for this project?
+If you are interested in contributing or reviewing the codebase:
 
-This project is built with:
+- The `/supabase` folder contains the full schema and migrations
+- The monorepo uses npm workspaces
+- Web build command: `npm run build -w @volleysmart/web`
+- The project expects Supabase environments variables and matching backend configuration
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+If you’d like access for contribution or internal review, feel free to contact me.
+
+---
+
+## License
+
+This project is developed as a personal side project.  
+No license is granted for commercial use.  
+Contact me if you have questions.
+
+---
