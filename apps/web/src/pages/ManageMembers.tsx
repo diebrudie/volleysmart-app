@@ -13,6 +13,7 @@ import {
 } from "@/integrations/supabase/members";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -200,12 +201,26 @@ export default function ManageMembers() {
                   <table className="min-w-full text-sm">
                     <thead className="border-b">
                       <tr>
-                        <th className="py-2 pt-5 text-left">Name</th>
-                        <th className="py-2 pt-5 text-left">Status</th>
-                        <th className="py-2 pt-5 text-left">M. Association</th>
-                        <th className="py-2 pt-5 text-left">Actions</th>
+                        <th className="py-2 pt-5 text-left w-1/3">Name</th>
+
+                        {/* Status column: fixed width */}
+                        <th className="py-2 pt-5 text-left w-32">Status</th>
+
+                        {/* Mobile header */}
+                        <th className="py-2 pt-5 text-center align-middle w-20 min-w-[4.5rem] table-cell sm:hidden">
+                          M. Ass.
+                        </th>
+
+                        {/* Desktop header */}
+                        <th className="py-2 pt-5 text-center align-middle w-32 hidden sm:table-cell">
+                          Association
+                        </th>
+
+                        {/* Actions column: slightly wider for buttons */}
+                        <th className="py-2 pt-5 text-left w-40">Actions</th>
                       </tr>
                     </thead>
+
                     <tbody>
                       {rows.map((m) => (
                         <tr
@@ -235,23 +250,20 @@ export default function ManageMembers() {
                           </td>
 
                           {/* Paid member toggle / Member Association */}
-                          <td className="py-2 pr-4 sm:pr-6">
-                            <label className="inline-flex items-center gap-2 text-xs sm:text-sm">
-                              <input
-                                type="checkbox"
+                          <td className="py-2 px-2 w-20 sm:w-32 min-w-[4.5rem]">
+                            <div className="flex justify-center">
+                              <Checkbox
                                 className="h-4 w-4"
-                                checked={Boolean(m.member_association)}
-                                onChange={(e) =>
+                                checked={m.member_association ?? false}
+                                onCheckedChange={(checked) =>
                                   associationMut.mutate({
                                     id: m.membership_id,
-                                    member_association: e.target.checked,
+                                    member_association: Boolean(checked),
                                   })
                                 }
+                                aria-label="Toggle paid association membership"
                               />
-                              <span className="text-gray-700 dark:text-gray-300">
-                                {m.member_association ? "Yes" : "No"}
-                              </span>
-                            </label>
+                            </div>
                           </td>
 
                           {/* Actions */}
@@ -293,9 +305,16 @@ export default function ManageMembers() {
                         </tr>
                       ))}
 
-                      <td className="py-6 text-center opacity-60" colSpan={4}>
-                        No memberships found for this club.
-                      </td>
+                      {rows.length === 0 && (
+                        <tr>
+                          <td
+                            className="py-6 text-center opacity-60"
+                            colSpan={4}
+                          >
+                            No memberships found for this club.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
