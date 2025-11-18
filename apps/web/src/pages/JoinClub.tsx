@@ -10,6 +10,11 @@ import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useClub } from "@/contexts/ClubContext";
 import type { PostgrestError } from "@supabase/supabase-js";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Club {
   id: string;
@@ -209,6 +214,26 @@ const JoinClub = () => {
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     I am a member of this association.
                   </span>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-xs text-gray-600 dark:border-gray-600 dark:text-gray-300"
+                        aria-label="What does member association mean?"
+                      >
+                        ?
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      side="top"
+                      align="center"
+                      className="max-w-xs text-sm leading-snug text-gray-800 dark:text-gray-100"
+                    >
+                      Member Association means you are a paid member of the
+                      club. If you are not sure, leave this unchecked.
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 

@@ -19,12 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, Upload, Calendar, HelpCircle, X } from "lucide-react";
+import { ChevronLeft, Upload, HelpCircle, X } from "lucide-react";
 import { buildImageUrl } from "@/utils/buildImageUrl";
 import {
   Drawer,
@@ -376,13 +375,6 @@ const Profile = () => {
       : "";
   };
 
-  const getSecondaryPositions = () => {
-    return playerPositions
-      .filter((pos) => !pos.is_primary)
-      .map((pos) => positions.find((p) => p.id === pos.position_id)?.name)
-      .filter(Boolean);
-  };
-
   const updatePrimaryPosition = (positionId: string) => {
     const newPositions = playerPositions.filter((pos) => !pos.is_primary);
     newPositions.push({ position_id: positionId, is_primary: true });
@@ -689,7 +681,6 @@ const Profile = () => {
                     </div>
                   </div>
                 )}
-
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Label className="text-base font-medium">

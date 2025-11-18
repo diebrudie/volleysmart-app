@@ -10,17 +10,10 @@ import {
   removeMember,
   changeMemberRole,
   updateMemberAssociation,
-  type ManageMemberRow,
 } from "@/integrations/supabase/members";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,8 +26,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-
-type Role = ManageMemberRow["role"];
 
 export default function ManageMembers() {
   const { clubId: clubIdFromCtx, setClubId } = useClub();
@@ -117,6 +108,16 @@ export default function ManageMembers() {
       toast({ title: "Member removed", duration: 1500 });
     },
     onError: (e) => onUnknownError(e, "Remove failed"),
+  });
+
+  const associationMut = useMutation({
+    mutationFn: (p: { id: string; member_association: boolean }) =>
+      updateMemberAssociation(p.id, p.member_association),
+    onSuccess: async () => {
+      await invalidateAll();
+      toast({ title: "Paid membership updated", duration: 1500 });
+    },
+    onError: (e) => onUnknownError(e, "Paid membership update failed"),
   });
 
   const roleMut = useMutation({
@@ -210,12 +211,23 @@ export default function ManageMembers() {
                   <table className="min-w-full text-sm">
                     <thead className="border-b">
                       <tr>
-                        <th className="py-2 pt-5 text-left">Name</th>
-                        <th className="py-2 pt-5 text-left">Status</th>
-                        <th className="py-2 pt-5 text-left">
-                          Member Association
+                        <th className="py-2 pt-5 text-left w-1/3">Name</th>
+
+                        {/* Status column: fixed width */}
+                        <th className="py-2 pt-5 text-left w-32">Status</th>
+
+                        {/* Mobile header */}
+                        <th className="py-2 pt-5 text-center align-middle w-20 min-w-[4.5rem] table-cell sm:hidden">
+                          M. Ass.
                         </th>
-                        <th className="py-2 pt-5 text-left">Actions</th>
+
+                        {/* Desktop header */}
+                        <th className="py-2 pt-5 text-center align-middle w-32 hidden sm:table-cell">
+                          Association
+                        </th>
+
+                        {/* Actions column: slightly wider for buttons */}
+                        <th className="py-2 pt-5 text-left w-40">Actions</th>
                       </tr>
                     </thead>
 
@@ -247,24 +259,21 @@ export default function ManageMembers() {
                             </span>
                           </td>
 
-                          {/* Paid member */}
-                          <td className="py-2 pr-4">
-                            <label className="inline-flex items-center gap-2">
-                              <input
-                                type="checkbox"
+                          {/* Paid member toggle / Member Association */}
+                          <td className="py-2 px-2 w-20 sm:w-32 min-w-[4.5rem]">
+                            <div className="flex justify-center">
+                              <Checkbox
                                 className="h-4 w-4"
-                                checked={!!m.member_association}
-                                onChange={(e) =>
+                                checked={m.member_association ?? false}
+                                onCheckedChange={(checked) =>
                                   associationMut.mutate({
                                     id: m.membership_id,
-                                    memberAssociation: e.target.checked,
+                                    member_association: Boolean(checked),
                                   })
                                 }
+                                aria-label="Toggle paid association membership"
                               />
-                              <span className="text-xs text-gray-700 dark:text-gray-300">
-                                Paid
-                              </span>
-                            </label>
+                            </div>
                           </td>
 
                           {/* Actions */}

@@ -3,26 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -41,7 +24,6 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Drawer,
-  DrawerTrigger,
   DrawerContent,
   DrawerClose,
   DrawerHeader,
@@ -81,7 +63,6 @@ interface OnboardingAnswers {
   birthday: string;
   height?: number;
   gender: GenderType;
-  memberAssociation: boolean;
 }
 
 // Updated skill calculation function for 1-100 scale
@@ -161,11 +142,10 @@ const PlayerOnboarding = () => {
     matchExperience: "",
     birthday: "2000-01-01",
     gender: "other",
-    memberAssociation: false,
   });
 
-  // Total number of steps
-  const totalSteps = 13;
+  // Total number of steps (association membership removed)
+  const totalSteps = 12;
 
   useEffect(() => {
     fetchPositions();
@@ -282,8 +262,6 @@ const PlayerOnboarding = () => {
       case 10:
         return true; // Gender has default
       case 11:
-        return true; // Association membership is optional
-      case 12:
         return true; // Photo is optional
       default:
         return true;
@@ -402,7 +380,6 @@ const PlayerOnboarding = () => {
           competition_level: answers.competitionLevel,
           game_performance: answers.gamePerformance,
           match_experience: answers.matchExperience,
-          member_association: answers.memberAssociation,
           gender: answers.gender,
           birthday: answers.birthday || null,
           height_cm: answers.height || null,
@@ -1004,41 +981,6 @@ const PlayerOnboarding = () => {
         );
 
       case 11:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-                Volleyball Association Membership
-              </h2>
-            </div>
-            <div className="max-w-sm mx-auto">
-              <label
-                className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  answers.memberAssociation
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400"
-                    : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={answers.memberAssociation}
-                  onChange={(e) =>
-                    setAnswers((prev) => ({
-                      ...prev,
-                      memberAssociation: e.target.checked,
-                    }))
-                  }
-                  className="mr-3"
-                />
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  I am a member of the Volleyball Association
-                </span>
-              </label>
-            </div>
-          </div>
-        );
-
-      case 12:
         return (
           <div className="space-y-6">
             <div className="text-center">
