@@ -130,16 +130,6 @@ export default function ManageMembers() {
     onError: (e) => onUnknownError(e, "Role update failed"),
   });
 
-  const associationMut = useMutation({
-    mutationFn: (p: { id: string; memberAssociation: boolean }) =>
-      updateMemberAssociation(p.id, p.memberAssociation),
-    onSuccess: async () => {
-      await invalidateAll();
-      toast({ title: "Membership updated", duration: 1500 });
-    },
-    onError: (e) => onUnknownError(e, "Association update failed"),
-  });
-
   const rows = useMemo(() => {
     // Hide removed members and the current user (admin)
     // Sort priority:
