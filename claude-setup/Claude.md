@@ -676,7 +676,7 @@ const { data, error } = await supabase
     )
   `
   )
-  .eq("club_id", clubId);
+  .eq("user_id", userId);
 
 if (error) {
   console.error("Supabase error:", error);

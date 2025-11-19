@@ -184,6 +184,45 @@ export type Database = {
           },
         ]
       }
+      guests: {
+        Row: {
+          club_id: string
+          created_at: string
+          first_name_ci: string
+          last_name_ci: string
+          player_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          first_name_ci: string
+          last_name_ci: string
+          player_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          first_name_ci?: string
+          last_name_ci?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guests_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guests_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           club_id: string | null
@@ -599,6 +638,10 @@ export type Database = {
         Returns: boolean
       }
       club_has_members: { Args: { club_uuid: string }; Returns: boolean }
+      create_or_reuse_guest: {
+        Args: { p_club_id: string; p_first_name: string; p_last_name: string }
+        Returns: string
+      }
       delete_match_day_with_matches: {
         Args: { match_day_id: string }
         Returns: undefined
@@ -638,6 +681,7 @@ export type Database = {
           club_id: string
           first_name: string
           last_name: string
+          member_association: boolean
           membership_id: string
           rejected_at: string
           removed_at: string
@@ -663,12 +707,10 @@ export type Database = {
           status: string
         }[]
       }
-      request_join_by_slug:
-        | {
-            Args: { p_member_association?: boolean; p_slug: string }
-            Returns: undefined
-          }
-        | { Args: { p_slug: string }; Returns: string }
+      request_join_by_slug: {
+        Args: { p_member_association?: boolean; p_slug: string }
+        Returns: undefined
+      }
       request_membership: { Args: { p_club_id: string }; Returns: string }
       set_player_positions_replace: {
         Args: {
@@ -676,6 +718,10 @@ export type Database = {
           p_primary_position_id: string
           p_secondary_position_ids: string[]
         }
+        Returns: undefined
+      }
+      update_member_association: {
+        Args: { p_member_association: boolean; p_membership_id: string }
         Returns: undefined
       }
       user_can_view_club_members: {

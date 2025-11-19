@@ -53,6 +53,7 @@ import { SortablePlayer } from "@/components/team-generator/SortablePlayer";
 import { useQueryClient, useQuery as useRQQuery } from "@tanstack/react-query";
 import { markModifiedBy } from "@/integrations/supabase/matchDays";
 import { formatFirstLastInitial } from "@/lib/formatName";
+import { createOrReuseGuestByName } from "@/integrations/supabase/players";
 
 // Detect coarse pointer (touch) — used to tweak sensor activation
 const isCoarsePointer = () =>
@@ -1190,7 +1191,7 @@ const EditGame = () => {
                   );
                   const targetIds = new Set<string>(selectedRegularIds);
 
-                  // 1) Create guests (do NOT add to teams here)
+                  // 1) Create or reuse guests (do NOT add to teams here)
                   const createdGuestIds: string[] = [];
                   for (const g of guestDrafts) {
                     const parts = g.name.trim().split(" ");
@@ -1198,27 +1199,19 @@ const EditGame = () => {
                     const lastName =
                       parts.length > 1 ? parts.slice(1).join(" ") : "Player";
 
-                    const { data: tempPlayer, error: tempErr } = await supabase
-                      .from("players")
-                      .insert({
-                        first_name: firstName,
-                        last_name: lastName,
-                        user_id: null,
-                        skill_rating: g.skill_rating,
-                        is_temporary: true,
-                        is_active: true,
-                        member_association: false,
-                        gender: "other",
-                      })
-                      .select("id, first_name, last_name")
-                      .single();
+                    const guest = await createOrReuseGuestByName(
+                      clubId!,
+                      firstName,
+                      lastName
+                    );
 
-                    if (tempErr) throw tempErr;
-                    if (tempPlayer?.id) createdGuestIds.push(tempPlayer.id);
+                    createdGuestIds.push(guest.id);
                   }
 
-                  // Add newly created guests to the target set once
-                  for (const gid of createdGuestIds) targetIds.add(gid);
+                  // Add newly created/reused guests to the target set once
+                  for (const gid of createdGuestIds) {
+                    targetIds.add(gid);
+                  }
 
                   // 2) Compute delta vs the captured current set
                   const toRemove = [...currentIds].filter(

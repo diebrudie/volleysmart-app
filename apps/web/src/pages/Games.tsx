@@ -35,7 +35,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
-import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
 import { EmptyGameState } from "@/components/common/EmptyGameState";
 
 import { toast } from "sonner";

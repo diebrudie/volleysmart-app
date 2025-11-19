@@ -31,6 +31,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import {
+  createOrReuseGuestByName,
+  getLastPositionForPlayerInClub,
+} from "@/integrations/supabase/players";
 
 interface ClubMember {
   id: string;
@@ -407,44 +411,42 @@ const NewGame = () => {
         id.startsWith("extra-")
       );
 
-      // 4. Create temporary player records for extra players
-      const extraPlayerRecords = [];
+      // 4. Create or reuse guest player records for extra players
+      const extraPlayerRecords: {
+        tempPlayerId: string;
+        originalExtraId: string;
+        position: string;
+      }[] = [];
+
       for (const extraId of extraPlayerIds) {
         const extraPlayer = updatedExtraPlayers.find((ep) => ep.id === extraId);
-        if (extraPlayer) {
-          // Split the custom name intelligently
-          const nameParts = extraPlayer.name.trim().split(" ");
-          const firstName = nameParts[0] || "Extra";
-          const lastName =
-            nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Player";
+        if (!extraPlayer) continue;
 
-          // Create a temporary player record in the players table
-          const { data: tempPlayer, error: tempPlayerError } = await supabase
-            .from("players")
-            .insert({
-              first_name: firstName,
-              last_name: lastName,
-              user_id: null, // Now nullable
-              skill_rating: extraPlayer.skill_rating,
-              is_temporary: true,
-              is_active: true,
-              member_association: false,
-              gender: "other",
-            })
-            .select()
-            .single();
+        // Split the custom name intelligently
+        const nameParts = extraPlayer.name.trim().split(" ");
+        const firstName = nameParts[0] || "Extra";
+        const lastName =
+          nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Player";
 
-          if (tempPlayerError) {
-            console.error("Error creating temp player:", tempPlayerError);
-            throw tempPlayerError;
-          }
+        // Reuse or create a guest player scoped to this club
+        const guestPlayer = await createOrReuseGuestByName(
+          clubId!, // safe because we early-return if !clubId
+          firstName,
+          lastName
+        );
 
-          extraPlayerRecords.push({
-            tempPlayerId: tempPlayer.id,
-            originalExtraId: extraId,
-            position: extraPlayer.position,
-          });
-        }
+        // Try to reuse the last position this guest played in this club.
+        // If none exists yet, fall back to the auto-assigned position.
+        const lastPos = await getLastPositionForPlayerInClub(
+          clubId!,
+          guestPlayer.id
+        );
+
+        extraPlayerRecords.push({
+          tempPlayerId: guestPlayer.id,
+          originalExtraId: extraId,
+          position: lastPos ?? extraPlayer.position,
+        });
       }
 
       // 5. Generate balanced teams using smart algorithm
