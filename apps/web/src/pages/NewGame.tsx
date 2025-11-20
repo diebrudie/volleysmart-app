@@ -426,7 +426,7 @@ const NewGame = () => {
         const nameParts = extraPlayer.name.trim().split(" ");
         const firstName = nameParts[0] || "Extra";
         const lastName =
-          nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Player";
+          nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Guest";
 
         // Reuse or create a guest player scoped to this club
         const guestPlayer = await createOrReuseGuestByName(

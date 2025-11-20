@@ -1191,21 +1191,38 @@ const EditGame = () => {
                   );
                   const targetIds = new Set<string>(selectedRegularIds);
 
-                  // 1) Create or reuse guests (do NOT add to teams here)
+                  /**
+                   * 1) Create or reuse guests in Supabase and collect the *player* ids.
+                   * - Enforce naming constraint: only first token is used as first_name, last_name always "Guest".
+                   * - Support RPCs that return either { player_id } (guests table row) or { id } (players row).
+                   */
+                  type GuestRpcResult = {
+                    id?: string;
+                    player_id?: string;
+                  };
+
                   const createdGuestIds: string[] = [];
                   for (const g of guestDrafts) {
-                    const parts = g.name.trim().split(" ");
-                    const firstName = parts[0] || "Guest";
-                    const lastName =
-                      parts.length > 1 ? parts.slice(1).join(" ") : "Player";
+                    const raw = g.name.trim();
+                    const [firstToken] = raw.split(/\s+/);
+                    const firstName = firstToken || "Guest";
 
-                    const guest = await createOrReuseGuestByName(
+                    const rpcResult = (await createOrReuseGuestByName(
                       clubId!,
                       firstName,
-                      lastName
-                    );
+                      "Guest"
+                    )) as GuestRpcResult;
 
-                    createdGuestIds.push(guest.id);
+                    const guestPlayerId =
+                      rpcResult.player_id ?? rpcResult.id ?? null;
+
+                    if (!guestPlayerId) {
+                      throw new Error(
+                        "createOrReuseGuestByName did not return a player_id or id"
+                      );
+                    }
+
+                    createdGuestIds.push(guestPlayerId);
                   }
 
                   // Add newly created/reused guests to the target set once

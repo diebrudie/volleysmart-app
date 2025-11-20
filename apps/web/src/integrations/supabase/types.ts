@@ -638,10 +638,58 @@ export type Database = {
         Returns: boolean
       }
       club_has_members: { Args: { club_uuid: string }; Returns: boolean }
-      create_or_reuse_guest: {
-        Args: { p_club_id: string; p_first_name: string; p_last_name: string }
-        Returns: string
-      }
+      create_or_reuse_guest:
+        | {
+            Args: {
+              p_club_id: string
+              p_first_name: string
+              p_gender?: string
+              p_last_name: string
+              p_skill_rating?: number
+            }
+            Returns: {
+              bio: string | null
+              birthday: string | null
+              club_id: string | null
+              competition_level: string | null
+              created_at: string
+              first_name: string
+              first_name_ci: string | null
+              game_performance: string | null
+              gender: string
+              general_skill_level: string | null
+              height_cm: number | null
+              id: string
+              image_url: string | null
+              is_active: boolean
+              is_temporary: boolean | null
+              last_name: string
+              last_name_ci: string | null
+              last_rating_update: string | null
+              match_experience: string | null
+              profile_completed: boolean | null
+              rating_history: Json | null
+              skill_rating: number | null
+              total_matches_played: number | null
+              training_status: string | null
+              updated_at: string
+              user_id: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "players"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_club_id: string
+              p_first_name: string
+              p_last_name: string
+            }
+            Returns: string
+          }
       delete_match_day_with_matches: {
         Args: { match_day_id: string }
         Returns: undefined

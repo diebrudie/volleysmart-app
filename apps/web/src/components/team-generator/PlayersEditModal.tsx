@@ -144,59 +144,96 @@ export function PlayersEditModal({
   useEffect(() => {
     if (!open) return;
     let active = true;
+
     (async () => {
       setIsLoading(true);
       try {
-        const m = await fetchActiveMembersBasic(clubId);
+        const membershipRows = await fetchActiveMembersBasic(clubId);
         if (!active) return;
 
-        // resolve players attributes
-        const userIds = m.map((mm) => mm.user_id).filter(Boolean);
-        if (userIds.length === 0) {
-          setMembers([]);
-          return;
+        // 1) Load active club members via user_id → players
+        const userIds = membershipRows.map((mm) => mm.user_id).filter(Boolean);
+        let processed: ClubMember[] = [];
+
+        if (userIds.length > 0) {
+          const { data: playersData, error: playersError } = await supabase
+            .from("players")
+            .select(
+              `id, first_name, last_name, user_id, skill_rating, gender, height_cm,
+               player_positions!inner (is_primary, position_id, positions (id, name))`
+            )
+            .in("user_id", userIds);
+
+          if (playersError) throw playersError;
+
+          processed = ((playersData as PlayersSelectRow[] | null) ?? []).map(
+            (p) => {
+              const primary =
+                (p.player_positions ?? []).find((pp) => pp.is_primary) ?? null;
+
+              return {
+                id: p.id,
+                first_name: p.first_name ?? "Player",
+                last_name: p.last_name ?? "X",
+                user_id: p.user_id ?? "",
+                primary_position_id: primary ? primary.position_id : null,
+                primary_position_name: primary
+                  ? primary.positions.name
+                  : "No Position",
+                skill_rating: p.skill_rating ?? 50,
+                gender: p.gender ?? "other",
+                height_cm: p.height_cm,
+                isExtraPlayer: false,
+              };
+            }
+          );
         }
 
-        const { data: playersData, error: playersError } = await supabase
-          .from("players")
-          .select(
-            `id, first_name, last_name, user_id, skill_rating, gender, height_cm,
-             player_positions!inner (is_primary, position_id, positions (id, name))`
-          )
-          .in("user_id", userIds);
+        // 2) Also include any players that are currently in the game
+        //    but not part of the active members list (typically guests).
+        const memberIds = new Set(processed.map((m) => m.id));
+        const guestIds = initialSelectedPlayerIds.filter(
+          (id) => !memberIds.has(id)
+        );
 
-        if (playersError) throw playersError;
+        if (guestIds.length > 0) {
+          const { data: guestPlayers, error: guestError } = await supabase
+            .from("players")
+            .select(
+              `id, first_name, last_name, user_id, skill_rating, gender, height_cm`
+            )
+            .in("id", guestIds);
 
-        const processed: ClubMember[] = (
-          (playersData as PlayersSelectRow[] | null) ?? []
-        ).map((p) => {
-          const primary =
-            (p.player_positions ?? []).find((pp) => pp.is_primary) ?? null;
-          return {
+          if (guestError) throw guestError;
+
+          const guestMembers: ClubMember[] = (
+            (guestPlayers ?? []) as PlayersSelectRow[]
+          ).map((p) => ({
             id: p.id,
-            first_name: p.first_name ?? "Player",
-            last_name: p.last_name ?? "X",
+            first_name: p.first_name ?? "Guest",
+            last_name: p.last_name ?? "Guest",
             user_id: p.user_id ?? "",
-            primary_position_id: primary ? primary.position_id : null,
-            primary_position_name: primary
-              ? primary.positions.name
-              : "No Position",
-            skill_rating: p.skill_rating ?? 50,
+            primary_position_id: null,
+            primary_position_name: "Guest",
+            skill_rating: p.skill_rating ?? 5,
             gender: p.gender ?? "other",
             height_cm: p.height_cm,
             isExtraPlayer: false,
-          };
-        });
+          }));
+
+          processed = [...processed, ...guestMembers];
+        }
 
         setMembers(processed);
       } finally {
         if (active) setIsLoading(false);
       }
     })();
+
     return () => {
       active = false;
     };
-  }, [clubId, open]);
+  }, [clubId, open, initialSelectedPlayerIds]);
 
   const allDisplay: PlayerDisplay[] = useMemo(() => {
     return [...members, ...extraPlayers];
