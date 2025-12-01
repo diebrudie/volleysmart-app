@@ -191,6 +191,7 @@ export type Database = {
           first_name_ci: string
           last_name_ci: string
           player_id: string
+          reused_at: string | null
         }
         Insert: {
           club_id: string
@@ -198,6 +199,7 @@ export type Database = {
           first_name_ci: string
           last_name_ci: string
           player_id: string
+          reused_at?: string | null
         }
         Update: {
           club_id?: string
@@ -205,6 +207,7 @@ export type Database = {
           first_name_ci?: string
           last_name_ci?: string
           player_id?: string
+          reused_at?: string | null
         }
         Relationships: [
           {

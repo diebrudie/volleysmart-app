@@ -1203,14 +1203,21 @@ const EditGame = () => {
 
                   const createdGuestIds: string[] = [];
                   for (const g of guestDrafts) {
+                    // If this extra refers to an existing guest player, just reuse that id.
+                    if (g.existingPlayerId) {
+                      createdGuestIds.push(g.existingPlayerId);
+                      continue;
+                    }
+
+                    // Otherwise, treat it as a new guest: first_name without spaces, last_name = "Player".
                     const raw = g.name.trim();
-                    const [firstToken] = raw.split(/\s+/);
-                    const firstName = firstToken || "Guest";
+                    const noSpaces = raw.replace(/\s+/g, "");
+                    const firstName = noSpaces || "Guest";
 
                     const rpcResult = (await createOrReuseGuestByName(
                       clubId!,
                       firstName,
-                      "Guest"
+                      "Player"
                     )) as GuestRpcResult;
 
                     const guestPlayerId =

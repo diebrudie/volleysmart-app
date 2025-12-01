@@ -16,6 +16,14 @@ export interface PlayerData {
   birthday?: string | Date; // Updated to allow both string and Date
 }
 
+export type GuestSummary = {
+  player_id: string;
+  first_name: string;
+  last_name: string;
+  created_at: string;
+  reused_at: string | null;
+};
+
 export async function createPlayer(userId: string, playerData: PlayerData) {
   // Format birthday as ISO string if it's a Date object
   const formattedBirthday =
@@ -303,4 +311,51 @@ export async function getLastPositionForPlayerInClub(
   }
 
   return null;
+}
+
+/**
+ * Fetch all guests for a given club, joined with their players row.
+ * Used for guest autocomplete in NewGame and PlayersEditModal.
+ */
+export async function getGuestsForClub(
+  clubId: string
+): Promise<GuestSummary[]> {
+  if (!clubId) return [];
+
+  const { data, error } = await supabase
+    .from("guests")
+    .select(
+      `
+      player_id,
+      created_at,
+      reused_at,
+      players!inner (
+        first_name,
+        last_name
+      )
+    `
+    )
+    .eq("club_id", clubId)
+    .order("reused_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching guests for club:", error);
+    throw error;
+  }
+
+  const rows = (data ?? []) as {
+    player_id: string;
+    created_at: string;
+    reused_at: string | null;
+    players: { first_name: string | null; last_name: string | null };
+  }[];
+
+  return rows.map((row) => ({
+    player_id: row.player_id,
+    first_name: row.players.first_name ?? "Guest",
+    last_name: row.players.last_name ?? "Player",
+    created_at: row.created_at,
+    reused_at: row.reused_at,
+  }));
 }

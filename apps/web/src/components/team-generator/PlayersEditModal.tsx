@@ -26,6 +26,10 @@ import { Search, Plus, Minus, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchActiveMembersBasic } from "@/integrations/supabase/clubMembers";
+import {
+  GuestNameSelector,
+  GuestSummary,
+} from "@/components/forms/GuestNameSelector";
 
 // Minimal shape for a joined row from players -> player_positions -> positions
 type PlayerPositionsRow = {
@@ -60,7 +64,7 @@ type ClubMember = {
 
 type ExtraPlayerDraft = {
   id: string; // local temp id: "extra-..."
-  name: string;
+  name: string; // guest first_name (no spaces)
   skill_rating: number;
   position:
     | "Setter"
@@ -69,6 +73,11 @@ type ExtraPlayerDraft = {
     | "Opposite"
     | "Libero";
   isExtraPlayer: true;
+  /**
+   * If set, this extra refers to an existing guest player's id (UUID) and should NOT call createOrReuseGuestByName.
+   * If undefined/null, the name should be treated as a new guest first_name with last_name = "Player".
+   */
+  existingPlayerId?: string | null;
 };
 
 // Discriminated union for list rendering
@@ -112,12 +121,27 @@ export function PlayersEditModal({
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   const [extraPlayers, setExtraPlayers] = useState<ExtraPlayerDraft[]>([]);
-  const [editingExtraId, setEditingExtraId] = useState<string | null>(null);
+
   const [selectedIds, setSelectedIds] = useState<string[]>(
     initialSelectedPlayerIds
   );
 
   const headerRef = useRef<HTMLDivElement | null>(null);
+
+  const setExtraFromExisting = (id: string, guest: GuestSummary) => {
+    const sanitizedFirst = guest.first_name.replace(/\s+/g, "");
+    setExtraPlayers((cur) =>
+      cur.map((e) =>
+        e.id === id
+          ? {
+              ...e,
+              name: sanitizedFirst,
+              existingPlayerId: guest.player_id,
+            }
+          : e
+      )
+    );
+  };
 
   useEffect(() => {
     if (!isSearchExpanded) return;
@@ -275,16 +299,22 @@ export function PlayersEditModal({
 
   const addExtra = () => {
     const id = `extra-${Date.now()}-${Math.random()}`;
-    setExtraPlayers((cur) => [
-      ...cur,
-      {
-        id,
-        name: "Guest Player",
-        skill_rating: 5,
-        position: "Outside Hitter",
-        isExtraPlayer: true,
-      },
-    ]);
+    setExtraPlayers((cur) => {
+      const nextIndex = cur.length + 1;
+      const defaultName = `Guest${nextIndex}`; // no spaces, will map to first_name = Guest{n}
+
+      return [
+        ...cur,
+        {
+          id,
+          name: defaultName,
+          skill_rating: 5,
+          position: "Outside Hitter",
+          isExtraPlayer: true,
+          existingPlayerId: null,
+        },
+      ];
+    });
     setSelectedIds((cur) => [...cur, id]);
   };
 
@@ -298,8 +328,11 @@ export function PlayersEditModal({
   };
 
   const setExtraName = (id: string, name: string) => {
+    const sanitized = name.replace(/\s+/g, "");
     setExtraPlayers((cur) =>
-      cur.map((e) => (e.id === id ? { ...e, name } : e))
+      cur.map((e) =>
+        e.id === id ? { ...e, name: sanitized, existingPlayerId: null } : e
+      )
     );
   };
 
@@ -443,46 +476,25 @@ export function PlayersEditModal({
                 >
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      {isExtra(p) && editingExtraId === p.id ? (
-                        <Input
+                      {isExtra(p) ? (
+                        <GuestNameSelector
+                          clubId={clubId}
                           value={p.name}
-                          onChange={(e) => setExtraName(p.id, e.target.value)}
-                          onBlur={() => setEditingExtraId(null)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") setEditingExtraId(null);
-                          }}
-                          autoFocus
-                          className="h-8 w-[200px]"
+                          onValueChange={(newName) =>
+                            setExtraName(p.id, newName)
+                          }
+                          onExistingGuestSelected={(guest) =>
+                            setExtraFromExisting(p.id, guest)
+                          }
+                          className="max-w-[220px]"
                         />
                       ) : (
-                        <>
-                          <span
-                            className={cn(
-                              "font-medium",
-                              isExtra(p) && "text-blue-700 dark:text-blue-300"
-                            )}
-                          >
-                            {isExtra(p)
-                              ? p.name
-                              : `${p.first_name} ${p.last_name.charAt(0)}.`}
-                          </span>
-                          {isExtra(p) && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingExtraId(p.id);
-                              }}
-                              aria-label="Rename guest"
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </>
+                        <span className="font-medium">
+                          {`${p.first_name} ${p.last_name.charAt(0)}.`}
+                        </span>
                       )}
                     </div>
+
                     <span className="text-xs text-muted-foreground">
                       {isExtra(p)
                         ? `${p.position} (Level ${p.skill_rating}) • Guest`
