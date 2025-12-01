@@ -177,7 +177,7 @@ export function PlayersEditModal({
 
         // 1) Load active club members via user_id → players
         const userIds = membershipRows.map((mm) => mm.user_id).filter(Boolean);
-        let processed: ClubMember[] = [];
+        let processedMembers: ClubMember[] = [];
 
         if (userIds.length > 0) {
           const { data: playersData, error: playersError } = await supabase
@@ -190,65 +190,63 @@ export function PlayersEditModal({
 
           if (playersError) throw playersError;
 
-          processed = ((playersData as PlayersSelectRow[] | null) ?? []).map(
-            (p) => {
-              const primary =
-                (p.player_positions ?? []).find((pp) => pp.is_primary) ?? null;
+          processedMembers = (
+            (playersData as PlayersSelectRow[] | null) ?? []
+          ).map((p) => {
+            const primary =
+              (p.player_positions ?? []).find((pp) => pp.is_primary) ?? null;
 
-              return {
-                id: p.id,
-                first_name: p.first_name ?? "Player",
-                last_name: p.last_name ?? "X",
-                user_id: p.user_id ?? "",
-                primary_position_id: primary ? primary.position_id : null,
-                primary_position_name: primary
-                  ? primary.positions.name
-                  : "No Position",
-                skill_rating: p.skill_rating ?? 50,
-                gender: p.gender ?? "other",
-                height_cm: p.height_cm,
-                isExtraPlayer: false,
-              };
-            }
-          );
+            return {
+              id: p.id,
+              first_name: p.first_name ?? "Player",
+              last_name: p.last_name ?? "X",
+              user_id: p.user_id ?? "",
+              primary_position_id: primary ? primary.position_id : null,
+              primary_position_name: primary
+                ? primary.positions.name
+                : "No Position",
+              skill_rating: p.skill_rating ?? 50,
+              gender: p.gender ?? "other",
+              height_cm: p.height_cm,
+              isExtraPlayer: false,
+            };
+          });
         }
 
-        // 2) Also include any players that are currently in the game
-        //    but not part of the active members list (typically guests).
-        const memberIds = new Set(processed.map((m) => m.id));
+        // 2) Selected players that are NOT active members are treated as guests (extra rows)
+        const memberIds = new Set(processedMembers.map((m) => m.id));
         const guestIds = initialSelectedPlayerIds.filter(
           (id) => !memberIds.has(id)
         );
+
+        let existingGuestExtras: ExtraPlayerDraft[] = [];
 
         if (guestIds.length > 0) {
           const { data: guestPlayers, error: guestError } = await supabase
             .from("players")
             .select(
-              `id, first_name, last_name, user_id, skill_rating, gender, height_cm`
+              `id, first_name, last_name, skill_rating, gender, height_cm`
             )
             .in("id", guestIds);
 
           if (guestError) throw guestError;
 
-          const guestMembers: ClubMember[] = (
+          existingGuestExtras = (
             (guestPlayers ?? []) as PlayersSelectRow[]
-          ).map((p) => ({
-            id: p.id,
-            first_name: p.first_name ?? "Guest",
-            last_name: p.last_name ?? "Guest",
-            user_id: p.user_id ?? "",
-            primary_position_id: null,
-            primary_position_name: "Guest",
+          ).map((p, index) => ({
+            id: p.id, // use real player id as the row id
+            name: (p.first_name ?? `Guest${index + 1}`).replace(/\s+/g, ""),
             skill_rating: p.skill_rating ?? 5,
-            gender: p.gender ?? "other",
-            height_cm: p.height_cm,
-            isExtraPlayer: false,
+            position: "Outside Hitter",
+            isExtraPlayer: true,
+            existingPlayerId: p.id,
           }));
-
-          processed = [...processed, ...guestMembers];
         }
 
-        setMembers(processed);
+        if (!active) return;
+
+        setMembers(processedMembers);
+        setExtraPlayers(existingGuestExtras);
       } finally {
         if (active) setIsLoading(false);
       }
