@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
+import { useIsCompact } from "@/hooks/use-compact";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
@@ -29,11 +30,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Grid3X3, List, Users, Plus, X, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import CopyableClubId from "@/components/clubs/CopyableClubId";
+import { ClubInviteSharePanel } from "@/components/clubs/ClubInviteSharePanel";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { buildImageUrl } from "@/utils/buildImageUrl";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -93,12 +102,10 @@ const Members = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("first_name_asc");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const isCompact = useIsCompact();
 
-  // Modal state
+  // Invite modal state
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [inviteName, setInviteName] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Use URL clubId first, fallback to context
   const clubId = urlClubId || contextClubId;
@@ -207,104 +214,6 @@ const Members = () => {
     },
     enabled: !!clubId,
   });
-
-  // Handle invite submission
-  const handleInviteSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!inviteName.trim() || !inviteEmail.trim()) {
-      toast({
-        title: "Missing information",
-        description: "Please provide both name and email",
-        variant: "destructive",
-        duration: 2000,
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Get club information to include in the invitation
-      const { data: clubData, error: clubError } = await supabase
-        .from("clubs")
-        .select("name, slug")
-        .eq("id", clubId)
-        .single();
-
-      if (clubError) throw clubError;
-
-      // Call edge function to send invitation email
-      const response = await fetch(
-        `https://hdorkmnfwpegvlxygfwv.supabase.co/functions/v1/send-club-invitations`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${
-              (
-                await supabase.auth.getSession()
-              ).data.session?.access_token
-            }`,
-          },
-          body: JSON.stringify({
-            invites: [{ name: inviteName.trim(), email: inviteEmail.trim() }],
-            clubInfo: {
-              id: clubId,
-              name: clubData.name,
-              joinCode: clubData.slug,
-            },
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to send invitation");
-        } else {
-          throw new Error(
-            `Failed to send invitation: ${response.status} ${response.statusText}`
-          );
-        }
-      }
-
-      toast({
-        title: "Invitation sent!",
-        description: `Invitation has been sent to ${inviteEmail}`,
-        duration: 1500,
-      });
-
-      // Reset form and close modal
-      setInviteName("");
-      setInviteEmail("");
-      setIsInviteModalOpen(false);
-
-      // Refresh members list
-      refetch();
-    } catch (error: unknown) {
-      console.error("Error sending invitation:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to send invitation. Please try again.",
-        variant: "destructive",
-        duration: 2000,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Reset form when modal closes
-  const handleModalClose = () => {
-    setIsInviteModalOpen(false);
-    setInviteName("");
-    setInviteEmail("");
-  };
 
   // Filtered and sorted members using useMemo for performance
   const processedMembers = useMemo(() => {
@@ -560,80 +469,56 @@ const Members = () => {
               )}
 
             {/* Keep the Invite dialog mounted so it can be opened from the button */}
-            <Dialog
-              open={isInviteModalOpen}
-              onOpenChange={setIsInviteModalOpen}
-            >
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader className="mb-4 mt-4 text-left">
-                  <div className="flex items-end justify-between gap-4">
-                    <div>
-                      <DialogTitle>Invite New Member</DialogTitle>
-                    </div>
-                    {clubMeta?.slug && (
-                      <div className="shrink-0">
-                        <CopyableClubId slug={clubMeta.slug} compact />
-                      </div>
+            {isCompact ? (
+              <Drawer
+                open={isInviteModalOpen}
+                onOpenChange={setIsInviteModalOpen}
+              >
+                <DrawerContent className="pb-6">
+                  <DrawerHeader className="text-left">
+                    <DrawerTitle>Invite your teammates</DrawerTitle>
+                    <DrawerDescription>
+                      Share your Club ID with them so they can join this club.
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  <div className="px-4 pt-2 pb-2 flex justify-center">
+                    {clubMeta?.slug ? (
+                      <ClubInviteSharePanel joinCode={clubMeta.slug} />
+                    ) : (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                        We could not load your club join code. Please reload the
+                        page and try again.
+                      </p>
                     )}
                   </div>
-                </DialogHeader>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Dialog
+                open={isInviteModalOpen}
+                onOpenChange={setIsInviteModalOpen}
+              >
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader className="mb-4 mt-4 text-center">
+                    <DialogTitle>Invite your teammates</DialogTitle>
+                    <DialogDescription className="mt-1">
+                      Share your Club ID with them so they can join this club.
+                    </DialogDescription>
+                  </DialogHeader>
 
-                {/* Existing invite form unchanged */}
-                <form onSubmit={handleInviteSubmit} className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="member-name"
-                      className="block text-sm font-medium mb-2"
-                    >
-                      Name
-                    </label>
-                    <Input
-                      id="member-name"
-                      placeholder="Maxi"
-                      value={inviteName}
-                      onChange={(e) => setInviteName(e.target.value)}
-                      disabled={isSubmitting}
-                      required
-                    />
+                  <div className="flex justify-center">
+                    {clubMeta?.slug ? (
+                      <ClubInviteSharePanel joinCode={clubMeta.slug} />
+                    ) : (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                        We could not load your club join code. Please reload the
+                        page and try again.
+                      </p>
+                    )}
                   </div>
-
-                  <div>
-                    <label
-                      htmlFor="member-email"
-                      className="block text-sm font-medium mb-2"
-                    >
-                      Email Address
-                    </label>
-                    <Input
-                      id="member-email"
-                      type="email"
-                      placeholder="maxi.mustermann@email.com"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="bg-[#243F8D] hover:bg-[#1e3470]"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Spinner className="mr-2 h-4 w-4" />
-                          Sending...
-                        </>
-                      ) : (
-                        "Send Invitation"
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           {/* Table Container */}
@@ -936,6 +821,68 @@ const Members = () => {
           </Card>
         </div>
       </main>
+    </div>
+  );
+};
+
+const SocialShareButtons = ({ joinCode }: { joinCode: string }) => {
+  const clubLink = `https://volleysmart.app/?ci=${encodeURIComponent(
+    joinCode
+  )}`;
+
+  const inviteMessage = [
+    "Hey, let's play Volleyball Smartly together. Register for free, and join my Club using this Club ID",
+    `*${joinCode}*`,
+    clubLink,
+  ].join("\n");
+
+  const encodedMessage = encodeURIComponent(inviteMessage);
+  const encodedClubLink = encodeURIComponent(clubLink);
+
+  const openShareUrl = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleShareWhatsApp = () => {
+    openShareUrl(`https://wa.me/?text=${encodedMessage}`);
+  };
+
+  const handleShareTelegram = () => {
+    openShareUrl(
+      `https://t.me/share/url?url=${encodedClubLink}&text=${encodedMessage}`
+    );
+  };
+
+  const handleShareMessenger = () => {
+    openShareUrl(`fb-messenger://share?link=${encodedClubLink}`);
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        className="flex-1"
+        onClick={handleShareWhatsApp}
+      >
+        Share via WhatsApp
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        className="flex-1"
+        onClick={handleShareTelegram}
+      >
+        Share via Telegram
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        className="flex-1"
+        onClick={handleShareMessenger}
+      >
+        Share via Messenger
+      </Button>
     </div>
   );
 };

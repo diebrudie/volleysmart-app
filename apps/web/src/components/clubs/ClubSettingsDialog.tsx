@@ -621,7 +621,8 @@ const ClubSettingsDialog = ({
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="text-sm max-w-xs">
-                  If enabled, others can find this club on the Discover page.
+                  If enabled, others can find this club on the Discovery page.
+                  Coming soon!
                 </PopoverContent>
               </Popover>
             </div>

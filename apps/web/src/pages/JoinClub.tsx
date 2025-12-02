@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -28,10 +28,38 @@ const JoinClub = () => {
   const { setClubId: setGlobalClubId } = useClub();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const PENDING_CLUB_JOIN_KEY = "pendingClubJoinSlug";
+
   const [clubIdInput, setClubIdInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [userCreatedClubs, setUserCreatedClubs] = useState<Club[]>([]);
   const [isAssociationMember, setIsAssociationMember] = useState(false);
+
+  /**
+   * Prefill the Club ID input from:
+   * 1. URL query param `cid` (if present)
+   * 2. Otherwise from localStorage `pendingClubJoinSlug`
+   *
+   * This allows users to:
+   * - Click invite link
+   * - Sign up / login / complete onboarding
+   * - Then go to /join-club and see the Club ID already filled in.
+   */
+  useEffect(() => {
+    const cidFromUrl = (searchParams.get("cid") ?? "").trim();
+    const storedCid = (
+      localStorage.getItem(PENDING_CLUB_JOIN_KEY) ?? ""
+    ).trim();
+    const slug = cidFromUrl || storedCid;
+
+    if (slug) {
+      setClubIdInput(slug);
+    }
+
+    // We intentionally only run this once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch clubs created by the current user
   useEffect(() => {
@@ -98,6 +126,9 @@ const JoinClub = () => {
         .maybeSingle();
 
       if (!visibleErr && visibleClub?.id) {
+        // Invite has effectively been "used" — clear pending slug.
+        localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
+
         toast({
           title: "Already a member",
           description: "You are already a member of this club.",
@@ -152,10 +183,14 @@ const JoinClub = () => {
       }
 
       // Success — keep message generic (no UUIDs)
+      // Clear pending invite, since the join request has been created.
+      localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
+
       toast({
         title: "Request sent",
-        description: "Your request was sent to the club admins.",
-        duration: 2500,
+        description:
+          "Your request was sent to the club admins. You'll have to wait for approval.",
+        duration: 3500,
       });
       navigate("/clubs");
     } catch (err) {
