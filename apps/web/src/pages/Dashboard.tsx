@@ -19,7 +19,6 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Pencil, MapPin } from "lucide-react";
 import { useClub } from "@/contexts/ClubContext";
 import { useParams } from "react-router-dom";
-import CopyableClubId from "@/components/clubs/CopyableClubId";
 import {
   fetchUserRole,
   useMemberCount,
@@ -27,6 +26,22 @@ import {
 import { formatShortName } from "@/lib/formatName";
 import { normalizeRole, CANONICAL_ORDER } from "@/features/teams/positions";
 import type { CanonicalRole } from "@/features/teams/positions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { useIsCompact } from "@/hooks/use-compact";
+import { ClubInviteSharePanel } from "@/components/clubs/ClubInviteSharePanel";
 
 // Define proper interfaces
 interface GamePlayerData {
@@ -105,6 +120,8 @@ const Dashboard = () => {
   const [isCheckingClub, setIsCheckingClub] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [clubMemberCount, setClubMemberCount] = useState(0);
+  const isCompact = useIsCompact();
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
   const { setClubId } = useClub();
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const queryClient = useQueryClient();
@@ -394,17 +411,8 @@ const Dashboard = () => {
   });
 
   const handleInviteMembers = () => {
-    if (userClubId) {
-      /*console.log(
-        "[DASHBOARD]",
-        "navigating from",
-        location.pathname,
-        "to",
-        "/invite-members",
-        "reason: Inviting members to the club"
-      );*/
-      navigate(`/invite-members/${userClubId}`);
-    }
+    if (!userClubId) return;
+    setIsInviteOpen(true);
   };
 
   const handleCreateGame = () => {
@@ -465,6 +473,54 @@ const Dashboard = () => {
             variant="dashboard"
           />
         </div>
+
+        {/* Invite members drawer/dialog (same as Members page) */}
+        {isCompact ? (
+          <Drawer open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+            <DrawerContent className="pb-6">
+              <DrawerHeader className="text-left">
+                <DrawerTitle>Invite your friends</DrawerTitle>
+                <DrawerDescription>
+                  Share your Club ID with your teammates so they can join this
+                  club.
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="px-4 pt-2 pb-2 flex justify-center">
+                {clubDetails?.slug ? (
+                  <ClubInviteSharePanel joinCode={clubDetails.slug} />
+                ) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                    We could not load your club join code. Please reload the
+                    page and try again.
+                  </p>
+                )}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader className="mb-4 mt-4 text-center">
+                <DialogTitle>Invite your friends</DialogTitle>
+                <DialogDescription className="mt-1">
+                  Share your Club ID with your teammates so they can join this
+                  club.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="flex justify-center">
+                {clubDetails?.slug ? (
+                  <ClubInviteSharePanel joinCode={clubDetails.slug} />
+                ) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                    We could not load your club join code. Please reload the
+                    page and try again.
+                  </p>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     );
   }

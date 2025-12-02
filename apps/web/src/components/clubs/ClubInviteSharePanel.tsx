@@ -105,7 +105,7 @@ export const ClubInviteSharePanel = ({
               alt="Messenger"
               className={imgClasses}
             />
-            <span>Messenger</span>
+            <span className="text-xs">Messenger</span>
           </button>
         </div>
       </div>
