@@ -53,6 +53,10 @@ import { SortablePlayer } from "@/components/team-generator/SortablePlayer";
 import { useQueryClient, useQuery as useRQQuery } from "@tanstack/react-query";
 import { markModifiedBy } from "@/integrations/supabase/matchDays";
 import { formatFirstLastInitial } from "@/lib/formatName";
+import {
+  createOrReuseGuestByName,
+  getLastPositionForPlayerInClub,
+} from "@/integrations/supabase/players";
 
 // Detect coarse pointer (touch) — used to tweak sensor activation
 const isCoarsePointer = () =>
@@ -1180,9 +1184,6 @@ const EditGame = () => {
                       seen.has(x.id) ? false : (seen.add(x.id), true)
                     );
                   };
-                  const hasPlayer = (id: string) =>
-                    teamAPlayers.some((p) => p.id === id) ||
-                    teamBPlayers.some((p) => p.id === id);
 
                   // Capture current state before applying modal result
                   const currentIds = new Set(
@@ -1190,35 +1191,51 @@ const EditGame = () => {
                   );
                   const targetIds = new Set<string>(selectedRegularIds);
 
-                  // 1) Create guests (do NOT add to teams here)
+                  /**
+                   * 1) Create or reuse guests in Supabase and collect the *player* ids.
+                   * - Enforce naming constraint: only first token is used as first_name, last_name always "Guest".
+                   * - Support RPCs that return either { player_id } (guests table row) or { id } (players row).
+                   */
+                  type GuestRpcResult = {
+                    id?: string;
+                    player_id?: string;
+                  };
+
                   const createdGuestIds: string[] = [];
                   for (const g of guestDrafts) {
-                    const parts = g.name.trim().split(" ");
-                    const firstName = parts[0] || "Guest";
-                    const lastName =
-                      parts.length > 1 ? parts.slice(1).join(" ") : "Player";
+                    // If this extra refers to an existing guest player, just reuse that id.
+                    if (g.existingPlayerId) {
+                      createdGuestIds.push(g.existingPlayerId);
+                      continue;
+                    }
 
-                    const { data: tempPlayer, error: tempErr } = await supabase
-                      .from("players")
-                      .insert({
-                        first_name: firstName,
-                        last_name: lastName,
-                        user_id: null,
-                        skill_rating: g.skill_rating,
-                        is_temporary: true,
-                        is_active: true,
-                        member_association: false,
-                        gender: "other",
-                      })
-                      .select("id, first_name, last_name")
-                      .single();
+                    // Otherwise, treat it as a new guest: first_name without spaces, last_name = "Player".
+                    const raw = g.name.trim();
+                    const noSpaces = raw.replace(/\s+/g, "");
+                    const firstName = noSpaces || "Guest";
 
-                    if (tempErr) throw tempErr;
-                    if (tempPlayer?.id) createdGuestIds.push(tempPlayer.id);
+                    const rpcResult = (await createOrReuseGuestByName(
+                      clubId!,
+                      firstName,
+                      "Player"
+                    )) as GuestRpcResult;
+
+                    const guestPlayerId =
+                      rpcResult.player_id ?? rpcResult.id ?? null;
+
+                    if (!guestPlayerId) {
+                      throw new Error(
+                        "createOrReuseGuestByName did not return a player_id or id"
+                      );
+                    }
+
+                    createdGuestIds.push(guestPlayerId);
                   }
 
-                  // Add newly created guests to the target set once
-                  for (const gid of createdGuestIds) targetIds.add(gid);
+                  // Add newly created/reused guests to the target set once
+                  for (const gid of createdGuestIds) {
+                    targetIds.add(gid);
+                  }
 
                   // 2) Compute delta vs the captured current set
                   const toRemove = [...currentIds].filter(
@@ -1228,48 +1245,126 @@ const EditGame = () => {
                     (id) => !currentIds.has(id)
                   );
 
-                  // 3) Remove deselected from both teams
-                  if (toRemove.length) {
-                    setTeamAPlayers((prev) =>
-                      prev.filter((p) => !toRemove.includes(p.id))
-                    );
-                    setTeamBPlayers((prev) =>
-                      prev.filter((p) => !toRemove.includes(p.id))
-                    );
-                  }
+                  // 3) Build nextTeamA / nextTeamB in-memory (apply removals first)
+                  let nextTeamA = teamAPlayers.filter(
+                    (p) => !toRemove.includes(p.id)
+                  );
+                  let nextTeamB = teamBPlayers.filter(
+                    (p) => !toRemove.includes(p.id)
+                  );
 
-                  // 4) Add new players (regulars + all new guests) exactly once
+                  // Helper to check presence in the *future* state
+                  const hasInNext = (id: string) =>
+                    nextTeamA.some((p) => p.id === id) ||
+                    nextTeamB.some((p) => p.id === id);
+
+                  // 4) Add new players (regulars + all new guests) exactly once,
+                  //    using nextTeamA/nextTeamB so multiple adds in one save stay balanced.
                   if (toAdd.length) {
                     const { data: added, error: addErr } = await supabase
                       .from("players")
-                      .select("id, first_name, last_name")
+                      .select(
+                        `
+      id,
+      first_name,
+      last_name,
+      player_positions (
+        is_primary,
+        positions ( name )
+      )
+    `
+                      )
                       .in("id", toAdd);
+
                     if (addErr) throw addErr;
 
-                    (added ?? []).forEach((row) => {
-                      if (hasPlayer(row.id)) return; // guard against double append
-                      assignNewPlayerToTeam({
+                    for (const row of (added ?? []) as {
+                      id: string;
+                      first_name: string | null;
+                      last_name: string | null;
+                      player_positions?: {
+                        is_primary: boolean;
+                        positions: { name: string | null };
+                      }[];
+                    }[]) {
+                      // Skip if already present in the future state
+                      if (hasInNext(row.id)) continue;
+
+                      //
+                      // 1. Resolve primary position for REGULAR members
+                      //
+                      let primaryPosition: string | null = null;
+
+                      if (row.player_positions?.length) {
+                        const primary =
+                          row.player_positions.find((pp) => pp.is_primary) ??
+                          row.player_positions[0]; // fallback to first position
+
+                        primaryPosition = primary?.positions?.name ?? null;
+                      }
+
+                      //
+                      // 2. Guests → reuse last position or fallback later
+                      //
+                      let resolvedPosition =
+                        primaryPosition ?? "Outside Hitter";
+
+                      if (createdGuestIds.includes(row.id) && clubId) {
+                        try {
+                          const lastPos = await getLastPositionForPlayerInClub(
+                            clubId,
+                            row.id
+                          );
+                          if (lastPos) resolvedPosition = lastPos;
+                        } catch (err) {
+                          console.warn(
+                            "Failed to read last position for guest:",
+                            err
+                          );
+                        }
+                      }
+
+                      //
+                      // 3. Create the EditPlayer payload
+                      //
+                      const newPlayer: EditPlayer = {
                         id: row.id,
                         name: `${row.first_name ?? "Player"} ${(
                           row.last_name ?? "X"
                         ).charAt(0)}.`,
-                        preferredPosition: "No Position",
+                        preferredPosition: resolvedPosition,
                         skillRating: 7,
-                      });
-                    });
+                      };
+
+                      //
+                      // 4. Distribute into teams based on *current* nextTeamA/nextTeamB sizes
+                      //
+                      if (nextTeamA.length < nextTeamB.length) {
+                        nextTeamA = [...nextTeamA, newPlayer];
+                      } else if (nextTeamB.length < nextTeamA.length) {
+                        nextTeamB = [...nextTeamB, newPlayer];
+                      } else {
+                        // Equal size → random side for this player
+                        if (Math.random() < 0.5) {
+                          nextTeamA = [...nextTeamA, newPlayer];
+                        } else {
+                          nextTeamB = [...nextTeamB, newPlayer];
+                        }
+                      }
+                    }
                   }
 
                   // 5) Defensive: ensure no dups within/between teams
-                  setTeamAPlayers((prev) => uniqById(prev));
-                  setTeamBPlayers((prev) => {
-                    const bUniq = uniqById(prev);
-                    const idsA = new Set(
-                      (typeof window === "undefined" ? [] : teamAPlayers).map(
-                        (p) => p.id
-                      )
-                    );
-                    return bUniq.filter((p) => !idsA.has(p.id));
-                  });
+                  nextTeamA = uniqById(nextTeamA);
+                  nextTeamB = uniqById(nextTeamB);
+
+                  // Make sure nobody appears in both teams:
+                  const idsA = new Set(nextTeamA.map((p) => p.id));
+                  nextTeamB = nextTeamB.filter((p) => !idsA.has(p.id));
+
+                  // Commit final state
+                  setTeamAPlayers(nextTeamA);
+                  setTeamBPlayers(nextTeamB);
 
                   // 6) Audit mark (UI-only edit for now)
                   if (user?.id && gameId) {
@@ -1283,7 +1378,7 @@ const EditGame = () => {
                   toast({
                     title: "Players updated",
                     description:
-                      "Teams were kept intact. Click Save to persist changes.",
+                      "Teams were kept intact. New players were distributed evenly. Click Save to persist changes.",
                     duration: 1500,
                   });
                 } catch (e) {

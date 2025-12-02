@@ -11,7 +11,6 @@ VolleyMatch uses **direct Supabase client queries** instead of traditional REST 
 const { data, error } = await supabase
   .from("players")
   .select("*, player_positions(*, positions(*))")
-  .eq("club_id", clubId)
   .eq("is_active", true);
 ```
 

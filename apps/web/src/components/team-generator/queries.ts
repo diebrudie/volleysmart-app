@@ -36,8 +36,7 @@ export const getPlayersWithPositions = async (
       skill_rating,
       height_cm,
       gender,
-      is_active,
-      club_id,
+      is_active,      
       player_positions!inner (
         position_id,
         is_primary,
@@ -48,7 +47,6 @@ export const getPlayersWithPositions = async (
       )
     `
     )
-    .eq("club_id", clubId)
     .eq("is_active", true);
 
   if (error) {

@@ -31,6 +31,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import {
+  createOrReuseGuestByName,
+  getLastPositionForPlayerInClub,
+} from "@/integrations/supabase/players";
+import {
+  GuestNameSelector,
+  GuestSummary,
+} from "@/components/forms/GuestNameSelector";
 
 interface ClubMember {
   id: string;
@@ -46,11 +54,12 @@ interface ClubMember {
 }
 
 interface ExtraPlayer {
-  id: string;
-  name: string;
+  id: string; // can be "extra-..." for new guests or an existing player.id
+  name: string; // guest first_name (no spaces)
   skill_rating: number;
   position: string;
   isExtraPlayer: true;
+  existingPlayerId?: string | null;
 }
 
 interface PlayerWithPosition {
@@ -170,13 +179,15 @@ const NewGame = () => {
       : Math.max(0, extraPlayersCount - 1);
 
     if (increment) {
-      // Add new extra player
+      const nextIndex = extraPlayers.length + 1;
+      const defaultName = `Guest${nextIndex}`;
       const newExtraPlayer: ExtraPlayer = {
         id: `extra-${Date.now()}-${Math.random()}`,
-        name: "Extra Player", // Default display name
+        name: defaultName, // first_name, no spaces
         skill_rating: 5,
-        position: "Any", // Will be auto-assigned during team generation
+        position: "Any", // auto-assigned later / overridden by last position
         isExtraPlayer: true,
+        existingPlayerId: null,
       };
       setExtraPlayers([...extraPlayers, newExtraPlayer]);
       setSelectedPlayers([...selectedPlayers, newExtraPlayer.id]);
@@ -237,47 +248,58 @@ const NewGame = () => {
 
   // Update extra player name
   const updateExtraPlayerName = (id: string, newName: string) => {
+    const sanitized = newName.replace(/\s+/g, "");
     setExtraPlayers(
       extraPlayers.map((player) =>
-        player.id === id ? { ...player, name: newName } : player
+        player.id === id
+          ? { ...player, name: sanitized, existingPlayerId: null }
+          : player
       )
     );
   };
 
-  // Combine regular players and extra players for display
-  const allDisplayPlayers = [...(players || []), ...extraPlayers];
+  const setExtraFromExistingGuest = (id: string, guest: GuestSummary) => {
+    const sanitizedFirst = guest.first_name.replace(/\s+/g, "");
+    setExtraPlayers(
+      extraPlayers.map((player) =>
+        player.id === id
+          ? {
+              ...player,
+              name: sanitizedFirst,
+              existingPlayerId: guest.player_id,
+            }
+          : player
+      )
+    );
+  };
 
-  // Filter and sort players
-  const filteredAndSortedPlayers = allDisplayPlayers
-    .filter((player) => {
-      if (player.isExtraPlayer) {
-        // ExtraPlayer only has 'name' property
-        return (player as ExtraPlayer).name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-      } else {
-        // ClubMember has first_name and last_name
-        const clubMember = player as ClubMember;
-        return `${clubMember.first_name} ${clubMember.last_name}`
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-      }
-    })
-    .sort((a, b) => {
-      // Extra players come after regular players
-      if (a.isExtraPlayer && !b.isExtraPlayer) return 1;
-      if (!a.isExtraPlayer && b.isExtraPlayer) return -1;
+  // Filter + sort:
+  // - Regular players alphabetically by first_name
+  // - Extra players only filtered, keep their creation order, and append after regulars
+  const filteredAndSortedPlayers: (ClubMember | ExtraPlayer)[] = (() => {
+    const term = searchTerm.toLowerCase().trim();
 
-      // Both are extra players - compare by name
-      if (a.isExtraPlayer && b.isExtraPlayer) {
-        return (a as ExtraPlayer).name.localeCompare((b as ExtraPlayer).name);
-      }
+    const matchesRegular = (p: ClubMember) =>
+      `${p.first_name} ${p.last_name}`.toLowerCase().includes(term);
 
-      // Both are regular players - compare by first_name
-      const clubA = a as ClubMember;
-      const clubB = b as ClubMember;
-      return clubA.first_name.localeCompare(clubB.first_name);
-    });
+    const matchesExtra = (p: ExtraPlayer) =>
+      p.name.toLowerCase().includes(term);
+
+    // 1) Regular players: filter + sort
+    const regular: ClubMember[] = (players ?? []).filter((p) =>
+      term ? matchesRegular(p) : true
+    );
+
+    regular.sort((a, b) => a.first_name.localeCompare(b.first_name));
+
+    // 2) Extra players: filter only, keep original order from state
+    const extras: ExtraPlayer[] = extraPlayers.filter((p) =>
+      term ? matchesExtra(p) : true
+    );
+
+    // 3) Combined list: regulars first, then extras in their current order
+    return [...regular, ...extras];
+  })();
 
   const handlePlayerToggle = (playerId: string) => {
     setSelectedPlayers((current) =>
@@ -407,44 +429,49 @@ const NewGame = () => {
         id.startsWith("extra-")
       );
 
-      // 4. Create temporary player records for extra players
-      const extraPlayerRecords = [];
+      // 4. Create or reuse guest player records for extra players
+      const extraPlayerRecords: {
+        tempPlayerId: string;
+        originalExtraId: string;
+        position: string;
+      }[] = [];
+
       for (const extraId of extraPlayerIds) {
         const extraPlayer = updatedExtraPlayers.find((ep) => ep.id === extraId);
-        if (extraPlayer) {
-          // Split the custom name intelligently
-          const nameParts = extraPlayer.name.trim().split(" ");
-          const firstName = nameParts[0] || "Extra";
-          const lastName =
-            nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Player";
+        if (!extraPlayer) continue;
 
-          // Create a temporary player record in the players table
-          const { data: tempPlayer, error: tempPlayerError } = await supabase
-            .from("players")
-            .insert({
-              first_name: firstName,
-              last_name: lastName,
-              user_id: null, // Now nullable
-              skill_rating: extraPlayer.skill_rating,
-              is_temporary: true,
-              is_active: true,
-              member_association: false,
-              gender: "other",
-            })
-            .select()
-            .single();
+        let guestPlayerId: string;
 
-          if (tempPlayerError) {
-            console.error("Error creating temp player:", tempPlayerError);
-            throw tempPlayerError;
-          }
+        if (extraPlayer.existingPlayerId) {
+          // Existing guest selected from autocomplete
+          guestPlayerId = extraPlayer.existingPlayerId;
+        } else {
+          // New guest: first_name = name without spaces, last_name = "Player"
+          const raw = extraPlayer.name.trim();
+          const noSpaces = raw.replace(/\s+/g, "");
+          const firstName = noSpaces || "Guest";
 
-          extraPlayerRecords.push({
-            tempPlayerId: tempPlayer.id,
-            originalExtraId: extraId,
-            position: extraPlayer.position,
-          });
+          const guestPlayer = await createOrReuseGuestByName(
+            clubId!,
+            firstName,
+            "Player"
+          );
+
+          guestPlayerId = guestPlayer.id;
         }
+
+        // Try to reuse the last position this guest played in this club.
+        // If none exists yet, fall back to the auto-assigned position.
+        const lastPos = await getLastPositionForPlayerInClub(
+          clubId!,
+          guestPlayerId
+        );
+
+        extraPlayerRecords.push({
+          tempPlayerId: guestPlayerId,
+          originalExtraId: extraId,
+          position: lastPos ?? extraPlayer.position,
+        });
       }
 
       // 5. Generate balanced teams using smart algorithm
@@ -867,49 +894,26 @@ const NewGame = () => {
                         >
                           <div className="flex flex-col flex-grow">
                             <div className="flex items-center gap-2">
-                              {player.isExtraPlayer &&
-                              editingExtraPlayer === player.id ? (
-                                <Input
+                              {player.isExtraPlayer ? (
+                                <GuestNameSelector
+                                  clubId={clubId!}
                                   value={(player as ExtraPlayer).name}
-                                  onChange={(e) =>
-                                    updateExtraPlayerName(
-                                      player.id,
-                                      e.target.value
-                                    )
+                                  onValueChange={(newName) =>
+                                    updateExtraPlayerName(player.id, newName)
                                   }
-                                  onBlur={() => setEditingExtraPlayer(null)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      setEditingExtraPlayer(null);
-                                    }
-                                  }}
-                                  className="text-sm font-medium"
-                                  autoFocus
+                                  onExistingGuestSelected={(guest) =>
+                                    setExtraFromExistingGuest(player.id, guest)
+                                  }
+                                  className="max-w-[220px]"
                                 />
                               ) : (
-                                <>
-                                  <span
-                                    className={cn(
-                                      "font-medium text-gray-900 dark:text-gray-100",
-                                      player.isExtraPlayer &&
-                                        "text-blue-700 dark:text-blue-300"
-                                    )}
-                                  >
-                                    {formatPlayerName(player)}
-                                  </span>
-                                  {player.isExtraPlayer && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                                      onClick={() =>
-                                        setEditingExtraPlayer(player.id)
-                                      }
-                                    >
-                                      <Edit2 className="h-3 w-3" />
-                                    </Button>
+                                <span
+                                  className={cn(
+                                    "font-medium text-gray-900 dark:text-gray-100"
                                   )}
-                                </>
+                                >
+                                  {formatPlayerName(player)}
+                                </span>
                               )}
                             </div>
                             <span

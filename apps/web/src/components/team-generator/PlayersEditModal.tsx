@@ -26,6 +26,10 @@ import { Search, Plus, Minus, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchActiveMembersBasic } from "@/integrations/supabase/clubMembers";
+import {
+  GuestNameSelector,
+  GuestSummary,
+} from "@/components/forms/GuestNameSelector";
 
 // Minimal shape for a joined row from players -> player_positions -> positions
 type PlayerPositionsRow = {
@@ -60,7 +64,7 @@ type ClubMember = {
 
 type ExtraPlayerDraft = {
   id: string; // local temp id: "extra-..."
-  name: string;
+  name: string; // guest first_name (no spaces)
   skill_rating: number;
   position:
     | "Setter"
@@ -69,6 +73,11 @@ type ExtraPlayerDraft = {
     | "Opposite"
     | "Libero";
   isExtraPlayer: true;
+  /**
+   * If set, this extra refers to an existing guest player's id (UUID) and should NOT call createOrReuseGuestByName.
+   * If undefined/null, the name should be treated as a new guest first_name with last_name = "Player".
+   */
+  existingPlayerId?: string | null;
 };
 
 // Discriminated union for list rendering
@@ -112,12 +121,27 @@ export function PlayersEditModal({
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   const [extraPlayers, setExtraPlayers] = useState<ExtraPlayerDraft[]>([]);
-  const [editingExtraId, setEditingExtraId] = useState<string | null>(null);
+
   const [selectedIds, setSelectedIds] = useState<string[]>(
     initialSelectedPlayerIds
   );
 
   const headerRef = useRef<HTMLDivElement | null>(null);
+
+  const setExtraFromExisting = (id: string, guest: GuestSummary) => {
+    const sanitizedFirst = guest.first_name.replace(/\s+/g, "");
+    setExtraPlayers((cur) =>
+      cur.map((e) =>
+        e.id === id
+          ? {
+              ...e,
+              name: sanitizedFirst,
+              existingPlayerId: guest.player_id,
+            }
+          : e
+      )
+    );
+  };
 
   useEffect(() => {
     if (!isSearchExpanded) return;
@@ -144,74 +168,116 @@ export function PlayersEditModal({
   useEffect(() => {
     if (!open) return;
     let active = true;
+
     (async () => {
       setIsLoading(true);
       try {
-        const m = await fetchActiveMembersBasic(clubId);
+        const membershipRows = await fetchActiveMembersBasic(clubId);
         if (!active) return;
 
-        // resolve players attributes
-        const userIds = m.map((mm) => mm.user_id).filter(Boolean);
-        if (userIds.length === 0) {
-          setMembers([]);
-          return;
+        // 1) Load active club members via user_id → players
+        const userIds = membershipRows.map((mm) => mm.user_id).filter(Boolean);
+        let processedMembers: ClubMember[] = [];
+
+        if (userIds.length > 0) {
+          const { data: playersData, error: playersError } = await supabase
+            .from("players")
+            .select(
+              `id, first_name, last_name, user_id, skill_rating, gender, height_cm,
+               player_positions!inner (is_primary, position_id, positions (id, name))`
+            )
+            .in("user_id", userIds);
+
+          if (playersError) throw playersError;
+
+          processedMembers = (
+            (playersData as PlayersSelectRow[] | null) ?? []
+          ).map((p) => {
+            const positions = p.player_positions ?? [];
+            // Prefer the explicitly primary position, otherwise fall back to the first one
+            const primary =
+              positions.find((pp) => pp.is_primary) ?? positions[0] ?? null;
+
+            return {
+              id: p.id,
+              first_name: p.first_name ?? "Player",
+              last_name: p.last_name ?? "X",
+              user_id: p.user_id ?? "",
+              primary_position_id: primary ? primary.position_id : null,
+              primary_position_name: primary
+                ? primary.positions.name
+                : "No Position",
+              skill_rating: p.skill_rating ?? 50,
+              gender: p.gender ?? "other",
+              height_cm: p.height_cm,
+              isExtraPlayer: false,
+            };
+          });
         }
 
-        const { data: playersData, error: playersError } = await supabase
-          .from("players")
-          .select(
-            `id, first_name, last_name, user_id, skill_rating, gender, height_cm,
-             player_positions!inner (is_primary, position_id, positions (id, name))`
-          )
-          .in("user_id", userIds);
+        // 2) Selected players that are NOT active members are treated as guests (extra rows)
+        const memberIds = new Set(processedMembers.map((m) => m.id));
+        const guestIds = initialSelectedPlayerIds.filter(
+          (id) => !memberIds.has(id)
+        );
 
-        if (playersError) throw playersError;
+        let existingGuestExtras: ExtraPlayerDraft[] = [];
 
-        const processed: ClubMember[] = (
-          (playersData as PlayersSelectRow[] | null) ?? []
-        ).map((p) => {
-          const primary =
-            (p.player_positions ?? []).find((pp) => pp.is_primary) ?? null;
-          return {
-            id: p.id,
-            first_name: p.first_name ?? "Player",
-            last_name: p.last_name ?? "X",
-            user_id: p.user_id ?? "",
-            primary_position_id: primary ? primary.position_id : null,
-            primary_position_name: primary
-              ? primary.positions.name
-              : "No Position",
-            skill_rating: p.skill_rating ?? 50,
-            gender: p.gender ?? "other",
-            height_cm: p.height_cm,
-            isExtraPlayer: false,
-          };
-        });
+        if (guestIds.length > 0) {
+          const { data: guestPlayers, error: guestError } = await supabase
+            .from("players")
+            .select(
+              `id, first_name, last_name, skill_rating, gender, height_cm`
+            )
+            .in("id", guestIds);
 
-        setMembers(processed);
+          if (guestError) throw guestError;
+
+          existingGuestExtras = (
+            (guestPlayers ?? []) as PlayersSelectRow[]
+          ).map((p, index) => ({
+            id: p.id, // use real player id as the row id
+            name: (p.first_name ?? `Guest${index + 1}`).replace(/\s+/g, ""),
+            skill_rating: p.skill_rating ?? 5,
+            position: "Outside Hitter",
+            isExtraPlayer: true,
+            existingPlayerId: p.id,
+          }));
+        }
+
+        if (!active) return;
+
+        setMembers(processedMembers);
+        setExtraPlayers(existingGuestExtras);
       } finally {
         if (active) setIsLoading(false);
       }
     })();
+
     return () => {
       active = false;
     };
-  }, [clubId, open]);
-
-  const allDisplay: PlayerDisplay[] = useMemo(() => {
-    return [...members, ...extraPlayers];
-  }, [members, extraPlayers]);
+  }, [clubId, open, initialSelectedPlayerIds]);
 
   const filtered: PlayerDisplay[] = useMemo(() => {
     const t = searchTerm.trim().toLowerCase();
-    if (!t) return allDisplay;
-    return allDisplay.filter((p) => {
-      if (isExtra(p)) {
-        return p.name.toLowerCase().includes(t);
-      }
-      return `${p.first_name} ${p.last_name}`.toLowerCase().includes(t);
-    });
-  }, [allDisplay, searchTerm]);
+
+    const matchesRegular = (m: ClubMember) =>
+      !t || `${m.first_name} ${m.last_name}`.toLowerCase().includes(t);
+
+    const matchesExtra = (e: ExtraPlayerDraft) =>
+      !t || e.name.toLowerCase().includes(t);
+
+    // 1) Regular members: filter + sort alphabetically by first_name
+    const regular: ClubMember[] = [...members].filter(matchesRegular);
+    regular.sort((a, b) => a.first_name.localeCompare(b.first_name));
+
+    // 2) Guests: filter only, keep their current array order
+    const extras: ExtraPlayerDraft[] = extraPlayers.filter(matchesExtra);
+
+    // 3) Combined: regulars first, then guests (in creation order)
+    return [...regular, ...extras];
+  }, [members, extraPlayers, searchTerm]);
 
   const allFilteredSelected =
     filtered.length > 0 && filtered.every((p) => selectedIds.includes(p.id));
@@ -238,16 +304,22 @@ export function PlayersEditModal({
 
   const addExtra = () => {
     const id = `extra-${Date.now()}-${Math.random()}`;
-    setExtraPlayers((cur) => [
-      ...cur,
-      {
-        id,
-        name: "Guest Player",
-        skill_rating: 5,
-        position: "Outside Hitter",
-        isExtraPlayer: true,
-      },
-    ]);
+    setExtraPlayers((cur) => {
+      const nextIndex = cur.length + 1;
+      const defaultName = `Guest${nextIndex}`; // no spaces, will map to first_name = Guest{n}
+
+      return [
+        ...cur,
+        {
+          id,
+          name: defaultName,
+          skill_rating: 5,
+          position: "Outside Hitter",
+          isExtraPlayer: true,
+          existingPlayerId: null,
+        },
+      ];
+    });
     setSelectedIds((cur) => [...cur, id]);
   };
 
@@ -261,8 +333,11 @@ export function PlayersEditModal({
   };
 
   const setExtraName = (id: string, name: string) => {
+    const sanitized = name.replace(/\s+/g, "");
     setExtraPlayers((cur) =>
-      cur.map((e) => (e.id === id ? { ...e, name } : e))
+      cur.map((e) =>
+        e.id === id ? { ...e, name: sanitized, existingPlayerId: null } : e
+      )
     );
   };
 
@@ -406,46 +481,25 @@ export function PlayersEditModal({
                 >
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      {isExtra(p) && editingExtraId === p.id ? (
-                        <Input
+                      {isExtra(p) ? (
+                        <GuestNameSelector
+                          clubId={clubId}
                           value={p.name}
-                          onChange={(e) => setExtraName(p.id, e.target.value)}
-                          onBlur={() => setEditingExtraId(null)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") setEditingExtraId(null);
-                          }}
-                          autoFocus
-                          className="h-8 w-[200px]"
+                          onValueChange={(newName) =>
+                            setExtraName(p.id, newName)
+                          }
+                          onExistingGuestSelected={(guest) =>
+                            setExtraFromExisting(p.id, guest)
+                          }
+                          className="max-w-[220px]"
                         />
                       ) : (
-                        <>
-                          <span
-                            className={cn(
-                              "font-medium",
-                              isExtra(p) && "text-blue-700 dark:text-blue-300"
-                            )}
-                          >
-                            {isExtra(p)
-                              ? p.name
-                              : `${p.first_name} ${p.last_name.charAt(0)}.`}
-                          </span>
-                          {isExtra(p) && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingExtraId(p.id);
-                              }}
-                              aria-label="Rename guest"
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </>
+                        <span className="font-medium">
+                          {`${p.first_name} ${p.last_name.charAt(0)}.`}
+                        </span>
                       )}
                     </div>
+
                     <span className="text-xs text-muted-foreground">
                       {isExtra(p)
                         ? `${p.position} (Level ${p.skill_rating}) • Guest`
@@ -468,16 +522,20 @@ export function PlayersEditModal({
             Cancel
           </Button>
           <Button
-            onClick={() =>
+            onClick={() => {
+              const guestDrafts = extraPlayers.filter((ep) =>
+                selectedIds.includes(ep.id)
+              );
+              const guestIdSet = new Set(guestDrafts.map((g) => g.id));
+
               onSave({
+                // Everything that is NOT in extraPlayers is a regular player
                 selectedRegularIds: selectedIds.filter(
-                  (id) => !id.startsWith("extra-")
+                  (id) => !guestIdSet.has(id)
                 ),
-                guestDrafts: extraPlayers.filter((ep) =>
-                  selectedIds.includes(ep.id)
-                ),
-              })
-            }
+                guestDrafts,
+              });
+            }}
           >
             Save ({selectedIds.length})
           </Button>
