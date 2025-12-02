@@ -1,16 +1,12 @@
+import CopyableClubId from "@/components/clubs/CopyableClubId";
+
 /**
  * ClubInviteSharePanel
  *
  * Reusable component that:
- * - Displays the Club ID in a copyable pill
- * - Shows "Share via" + social share buttons (WhatsApp, Telegram, Messenger)
- *
- * Usage:
- *   <ClubInviteSharePanel joinCode={clubMeta.slug} />
+ * - Displays a copyable Club ID with label rendered on top
+ * - Shows "Share via" + three clickable app logos (WhatsApp, Telegram, Messenger)
  */
-
-import { Button } from "@/components/ui/button";
-import CopyableClubId from "@/components/clubs/CopyableClubId";
 
 type ClubInviteSharePanelProps = {
   joinCode: string;
@@ -47,51 +43,70 @@ export const ClubInviteSharePanel = ({
   };
 
   const handleShareMessenger = () => {
-    // Works when Messenger is installed / registered for this protocol
     openShareUrl(`fb-messenger://share?link=${encodedClubLink}`);
   };
 
-  return (
-    <div className="flex flex-col items-center gap-6 text-center">
-      {/* Club ID block */}
-      <div className="space-y-2">
-        <p className="text-xs font-semibold tracking-[0.16em] uppercase text-gray-500">
-          Club ID
-        </p>
-        {/* Copyable pill */}
-        <CopyableClubId slug={joinCode} />
-      </div>
+  const iconBaseClasses =
+    "flex flex-col items-center gap-1 text-xs text-gray-700 dark:text-gray-200";
+  const imgClasses = "h-12 w-12 rounded-full shadow-sm";
 
-      {/* Share buttons */}
-      <div className="space-y-3 w-full">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-[0.16em]">
-          Share via
+  return (
+    <div className="flex flex-col items-center gap-8 text-center">
+      {/* Club ID block (label handled by component, on top) */}
+      <CopyableClubId
+        slug={joinCode}
+        label="Club ID"
+        labelPosition="top"
+        className="gap-2"
+      />
+
+      {/* Share logos */}
+      <div className="w-full max-w-sm text-left">
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-3">
+          Share via:
         </p>
-        <div className="flex flex-row justify-center gap-3">
-          <Button
+        <div className="flex flex-row gap-6">
+          <button
             type="button"
-            variant="outline"
-            className="w-16 px-0 text-xs font-semibold"
             onClick={handleShareWhatsApp}
+            className={iconBaseClasses}
+            aria-label="Share via WhatsApp"
           >
-            WSP
-          </Button>
-          <Button
+            <img
+              src="/logo-whatsapp.svg"
+              alt="WhatsApp"
+              className={imgClasses}
+            />
+            <span>WhatsApp</span>
+          </button>
+
+          <button
             type="button"
-            variant="outline"
-            className="w-16 px-0 text-xs font-semibold"
             onClick={handleShareTelegram}
+            className={iconBaseClasses}
+            aria-label="Share via Telegram"
           >
-            TLGM
-          </Button>
-          <Button
+            <img
+              src="/logo-telegram.webp"
+              alt="Telegram"
+              className={imgClasses}
+            />
+            <span>Telegram</span>
+          </button>
+
+          <button
             type="button"
-            variant="outline"
-            className="w-16 px-0 text-xs font-semibold"
             onClick={handleShareMessenger}
+            className={iconBaseClasses}
+            aria-label="Share via Messenger"
           >
-            MSN
-          </Button>
+            <img
+              src="/logo-facebookmessenger.png"
+              alt="Messenger"
+              className={imgClasses}
+            />
+            <span>Messenger</span>
+          </button>
         </div>
       </div>
     </div>

@@ -2,16 +2,25 @@ import React from "react";
 
 /**
  * CopyableClubId
- * Renders an inline "Club ID: U7CTG" with a copy-to-clipboard action.
+ * Renders a "Club ID" label + copyable code with a copy-to-clipboard action.
+ *
  * - Copies ONLY the slug (e.g., "U7CTG")
  * - Visual confirmation (icon + "Copied")
  * - Accessible: button role, keyboard focus, aria-live feedback
+ *
+ * New:
+ * - labelPosition controls where the label is rendered relative to the pill:
+ *   "left" | "right" | "top" | "bottom" | "none"
  */
+
+type LabelPosition = "left" | "right" | "top" | "bottom" | "none";
+
 type CopyableClubIdProps = {
   slug: string;
   label?: string; // defaults to "Club ID"
   className?: string; // optional wrapper classes for layout overrides
   compact?: boolean; // smaller variant for tight spaces
+  labelPosition?: LabelPosition; // defaults to "left"
 };
 
 export default function CopyableClubId({
@@ -19,6 +28,7 @@ export default function CopyableClubId({
   label = "Club ID",
   className = "",
   compact = false,
+  labelPosition = "left",
 }: CopyableClubIdProps) {
   const [copied, setCopied] = React.useState(false);
   const timeoutRef = React.useRef<number | null>(null);
@@ -52,34 +62,45 @@ export default function CopyableClubId({
     ? "inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
     : "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition";
 
+  // Layout of label relative to the pill
+  let containerLayout = "flex items-center gap-2";
+  if (labelPosition === "right") {
+    containerLayout = "flex items-center gap-2 flex-row-reverse";
+  } else if (labelPosition === "top") {
+    containerLayout = "flex flex-col items-center gap-1";
+  } else if (labelPosition === "bottom") {
+    containerLayout = "flex flex-col-reverse items-center gap-1";
+  } else if (labelPosition === "none") {
+    containerLayout = "flex items-center";
+  }
+
+  const shouldRenderLabel = labelPosition !== "none" && label.trim().length > 0;
+
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <span className={labelClasses}>{label}:</span>
+    <div className={`${containerLayout} ${className}`}>
+      {shouldRenderLabel && <span className={labelClasses}>{label}</span>}
+
       <button
         type="button"
         onClick={handleCopy}
         className={buttonClasses}
-        aria-label={`Copy ${label}`}
+        aria-label={`Copy ${label || "Club ID"}`}
       >
         <span className={idClasses}>{slug}</span>
         {copied ? (
-          // Check icon + "Copied"
-          <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 text-xs">
-            {/* Check icon */}
-            <svg
-              className="h-4 w-4"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 0 1 0 1.414l-7.25 7.25a1 1 0 0 1-1.414 0l-3-3a1 1 0 1 1 1.414-1.414l2.293 2.293 6.543-6.543a1 1 0 0 1 1.414 0Z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Copied
-          </span>
+          // Check icon only (no text) to keep layout stable
+          <svg
+            className="h-4 w-4 text-green-600 dark:text-green-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 0 1 0 1.414l-7.25 7.25a1 1 0 0 1-1.414 0l-3-3a1 1 0 1 1 1.414-1.414l2.293 2.293 6.543-6.543a1 1 0 0 1 1.414 0Z"
+              clipRule="evenodd"
+            />
+          </svg>
         ) : (
           // Copy icon
           <svg
@@ -112,7 +133,7 @@ export default function CopyableClubId({
 
       {/* Live region for screen readers */}
       <span className="sr-only" role="status" aria-live="polite">
-        {copied ? `${label} copied` : ""}
+        {copied ? `${label || "Club ID"} copied` : ""}
       </span>
     </div>
   );

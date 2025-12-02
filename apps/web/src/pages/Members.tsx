@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
+import { useIsCompact } from "@/hooks/use-compact";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
@@ -29,6 +30,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Grid3X3, List, Users, Plus, X, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -94,6 +102,7 @@ const Members = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("first_name_asc");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const isCompact = useIsCompact();
 
   // Invite modal state
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -460,31 +469,58 @@ const Members = () => {
               )}
 
             {/* Keep the Invite dialog mounted so it can be opened from the button */}
-            <Dialog
-              open={isInviteModalOpen}
-              onOpenChange={setIsInviteModalOpen}
-            >
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader className="mb-4 mt-4 text-center">
-                  <DialogTitle>Invite your friends</DialogTitle>
-                  <DialogDescription className="mt-1">
-                    Share your Club ID with your teammates so they can join this
-                    club.
-                  </DialogDescription>
-                </DialogHeader>
+            {isCompact ? (
+              <Drawer
+                open={isInviteModalOpen}
+                onOpenChange={setIsInviteModalOpen}
+              >
+                <DrawerContent className="pb-6">
+                  <DrawerHeader className="text-left">
+                    <DrawerTitle>Invite your friends</DrawerTitle>
+                    <DrawerDescription>
+                      Share your Club ID with your teammates so they can join
+                      this club.
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  <div className="px-4 pt-2 pb-2 flex justify-center">
+                    {clubMeta?.slug ? (
+                      <ClubInviteSharePanel joinCode={clubMeta.slug} />
+                    ) : (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                        We could not load your club join code. Please reload the
+                        page and try again.
+                      </p>
+                    )}
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Dialog
+                open={isInviteModalOpen}
+                onOpenChange={setIsInviteModalOpen}
+              >
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader className="mb-4 mt-4 text-center">
+                    <DialogTitle>Invite your friends</DialogTitle>
+                    <DialogDescription className="mt-1">
+                      Share your Club ID with your teammates so they can join
+                      this club.
+                    </DialogDescription>
+                  </DialogHeader>
 
-                <div className="flex justify-center">
-                  {clubMeta?.slug ? (
-                    <ClubInviteSharePanel joinCode={clubMeta.slug} />
-                  ) : (
-                    <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
-                      We could not load your club join code. Please reload the
-                      page and try again.
-                    </p>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+                  <div className="flex justify-center">
+                    {clubMeta?.slug ? (
+                      <ClubInviteSharePanel joinCode={clubMeta.slug} />
+                    ) : (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                        We could not load your club join code. Please reload the
+                        page and try again.
+                      </p>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           {/* Table Container */}
