@@ -193,8 +193,10 @@ export function PlayersEditModal({
           processedMembers = (
             (playersData as PlayersSelectRow[] | null) ?? []
           ).map((p) => {
+            const positions = p.player_positions ?? [];
+            // Prefer the explicitly primary position, otherwise fall back to the first one
             const primary =
-              (p.player_positions ?? []).find((pp) => pp.is_primary) ?? null;
+              positions.find((pp) => pp.is_primary) ?? positions[0] ?? null;
 
             return {
               id: p.id,
@@ -257,20 +259,25 @@ export function PlayersEditModal({
     };
   }, [clubId, open, initialSelectedPlayerIds]);
 
-  const allDisplay: PlayerDisplay[] = useMemo(() => {
-    return [...members, ...extraPlayers];
-  }, [members, extraPlayers]);
-
   const filtered: PlayerDisplay[] = useMemo(() => {
     const t = searchTerm.trim().toLowerCase();
-    if (!t) return allDisplay;
-    return allDisplay.filter((p) => {
-      if (isExtra(p)) {
-        return p.name.toLowerCase().includes(t);
-      }
-      return `${p.first_name} ${p.last_name}`.toLowerCase().includes(t);
-    });
-  }, [allDisplay, searchTerm]);
+
+    const matchesRegular = (m: ClubMember) =>
+      !t || `${m.first_name} ${m.last_name}`.toLowerCase().includes(t);
+
+    const matchesExtra = (e: ExtraPlayerDraft) =>
+      !t || e.name.toLowerCase().includes(t);
+
+    // 1) Regular members: filter + sort alphabetically by first_name
+    const regular: ClubMember[] = [...members].filter(matchesRegular);
+    regular.sort((a, b) => a.first_name.localeCompare(b.first_name));
+
+    // 2) Guests: filter only, keep their current array order
+    const extras: ExtraPlayerDraft[] = extraPlayers.filter(matchesExtra);
+
+    // 3) Combined: regulars first, then guests (in creation order)
+    return [...regular, ...extras];
+  }, [members, extraPlayers, searchTerm]);
 
   const allFilteredSelected =
     filtered.length > 0 && filtered.every((p) => selectedIds.includes(p.id));
@@ -515,16 +522,20 @@ export function PlayersEditModal({
             Cancel
           </Button>
           <Button
-            onClick={() =>
+            onClick={() => {
+              const guestDrafts = extraPlayers.filter((ep) =>
+                selectedIds.includes(ep.id)
+              );
+              const guestIdSet = new Set(guestDrafts.map((g) => g.id));
+
               onSave({
+                // Everything that is NOT in extraPlayers is a regular player
                 selectedRegularIds: selectedIds.filter(
-                  (id) => !id.startsWith("extra-")
+                  (id) => !guestIdSet.has(id)
                 ),
-                guestDrafts: extraPlayers.filter((ep) =>
-                  selectedIds.includes(ep.id)
-                ),
-              })
-            }
+                guestDrafts,
+              });
+            }}
           >
             Save ({selectedIds.length})
           </Button>

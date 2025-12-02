@@ -273,40 +273,33 @@ const NewGame = () => {
     );
   };
 
-  // Combine regular players and extra players for display
-  const allDisplayPlayers = [...(players || []), ...extraPlayers];
+  // Filter + sort:
+  // - Regular players alphabetically by first_name
+  // - Extra players only filtered, keep their creation order, and append after regulars
+  const filteredAndSortedPlayers: (ClubMember | ExtraPlayer)[] = (() => {
+    const term = searchTerm.toLowerCase().trim();
 
-  // Filter and sort players
-  const filteredAndSortedPlayers = allDisplayPlayers
-    .filter((player) => {
-      if (player.isExtraPlayer) {
-        // ExtraPlayer only has 'name' property
-        return (player as ExtraPlayer).name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-      } else {
-        // ClubMember has first_name and last_name
-        const clubMember = player as ClubMember;
-        return `${clubMember.first_name} ${clubMember.last_name}`
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-      }
-    })
-    .sort((a, b) => {
-      // Extra players come after regular players
-      if (a.isExtraPlayer && !b.isExtraPlayer) return 1;
-      if (!a.isExtraPlayer && b.isExtraPlayer) return -1;
+    const matchesRegular = (p: ClubMember) =>
+      `${p.first_name} ${p.last_name}`.toLowerCase().includes(term);
 
-      // Both are extra players - compare by name
-      if (a.isExtraPlayer && b.isExtraPlayer) {
-        return (a as ExtraPlayer).name.localeCompare((b as ExtraPlayer).name);
-      }
+    const matchesExtra = (p: ExtraPlayer) =>
+      p.name.toLowerCase().includes(term);
 
-      // Both are regular players - compare by first_name
-      const clubA = a as ClubMember;
-      const clubB = b as ClubMember;
-      return clubA.first_name.localeCompare(clubB.first_name);
-    });
+    // 1) Regular players: filter + sort
+    const regular: ClubMember[] = (players ?? []).filter((p) =>
+      term ? matchesRegular(p) : true
+    );
+
+    regular.sort((a, b) => a.first_name.localeCompare(b.first_name));
+
+    // 2) Extra players: filter only, keep original order from state
+    const extras: ExtraPlayer[] = extraPlayers.filter((p) =>
+      term ? matchesExtra(p) : true
+    );
+
+    // 3) Combined list: regulars first, then extras in their current order
+    return [...regular, ...extras];
+  })();
 
   const handlePlayerToggle = (playerId: string) => {
     setSelectedPlayers((current) =>
