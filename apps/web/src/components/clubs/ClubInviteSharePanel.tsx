@@ -20,8 +20,11 @@ export const ClubInviteSharePanel = ({
   )}`;
 
   const inviteMessage = [
-    "Hey, let's play Volleyball Smartly together. Register for free, and join my Club using this Club ID",
-    `*${joinCode}*`,
+    "Hey, let's play Volleyball Smartly together.",
+    " ",
+    "Register for free, and join my Club using this Club ID",
+    `> *${joinCode}*`,
+    " ",
     clubLink,
   ].join("\n");
 
