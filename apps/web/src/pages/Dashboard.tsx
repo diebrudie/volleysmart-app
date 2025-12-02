@@ -479,10 +479,9 @@ const Dashboard = () => {
           <Drawer open={isInviteOpen} onOpenChange={setIsInviteOpen}>
             <DrawerContent className="pb-6">
               <DrawerHeader className="text-left">
-                <DrawerTitle>Invite your friends</DrawerTitle>
+                <DrawerTitle>Invite your teammates</DrawerTitle>
                 <DrawerDescription>
-                  Share your Club ID with your teammates so they can join this
-                  club.
+                  Share your Club ID with them so they can join this club.
                 </DrawerDescription>
               </DrawerHeader>
               <div className="px-4 pt-2 pb-2 flex justify-center">
@@ -501,10 +500,9 @@ const Dashboard = () => {
           <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader className="mb-4 mt-4 text-center">
-                <DialogTitle>Invite your friends</DialogTitle>
+                <DialogTitle>Invite your teammates</DialogTitle>
                 <DialogDescription className="mt-1">
-                  Share your Club ID with your teammates so they can join this
-                  club.
+                  Share your Club ID with them so they can join this club.
                 </DialogDescription>
               </DialogHeader>
 

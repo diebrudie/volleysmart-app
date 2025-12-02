@@ -99,18 +99,23 @@ const InviteMembers = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-semibold text-center mb-2 text-gray-900 dark:text-gray-100">
-          Invite your friends to your club
-        </h1>
-        <p className="text-center text-gray-600 dark:text-gray-400 mb-8">
-          Share your Club ID with your teammates so they can join your club.
-        </p>
+    <div className="min-h-screen flex flex-col items-center bg-gray-50 dark:bg-gray-900">
+      {/* Outer wrapper keeps card + buttons aligned and reduces top padding on mobile */}
+      <div className="w-full max-w-2xl flex-1 flex flex-col justify-center px-4 pt-8 pb-10 md:pt-12">
+        {/* Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 md:p-8">
+          <h1 className="text-2xl font-semibold text-center mb-2 text-gray-900 dark:text-gray-100">
+            Invite your teammates to your club
+          </h1>
+          <p className="text-center text-gray-600 dark:text-gray-400 mb-8">
+            Share your Club ID with them so they can join your club.
+          </p>
 
-        {renderShareSection()}
+          {renderShareSection()}
+        </div>
 
-        <div className="flex justify-between mt-10">
+        {/* Buttons outside the card, aligned with card edges */}
+        <div className="flex justify-between mt-6">
           <Button type="button" variant="action" onClick={handleSkip}>
             Skip for now
           </Button>

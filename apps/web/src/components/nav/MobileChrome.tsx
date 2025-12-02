@@ -25,6 +25,7 @@ const HIDE_CHROME = [
   /^\/new-club\/?$/, // /new-club
   /^\/user\/[^/]+\/?$/, // /user/:userId (Profile)
   /^\/start\/?$/,
+  /^\/invite-members(\/[^/]+)?\/?$/,
 ];
 
 function isPublic(pathname: string): boolean {
