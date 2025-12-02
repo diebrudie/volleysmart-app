@@ -1,36 +1,54 @@
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { useClub } from "@/contexts/ClubContext";
-import CopyableClubId from "@/components/clubs/CopyableClubId";
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useClub } from "@/contexts/ClubContext";
 import { ClubInviteSharePanel } from "@/components/clubs/ClubInviteSharePanel";
 
-/**
- * InviteMembers
- *
- * Onboarding step to invite members to a club.
- * This screen now:
- * - Shows a centered Club ID (CopyableClubId) with a title above
- * - Displays share buttons for WhatsApp, Telegram and Messenger
- * - Lets the user skip and go to the dashboard
- */
+interface ClubMeta {
+  name: string;
+  slug: string;
+}
 
 const InviteMembers = () => {
-  const { clubId } = useClub();
   const navigate = useNavigate();
 
-  const { data: clubMeta } = useQuery({
-    queryKey: ["clubMeta", clubId],
+  // Read clubId from URL if present, otherwise from context
+  const { clubId: urlClubId } = useParams<{ clubId: string }>();
+  const { clubId: contextClubId, setClubId } = useClub();
+
+  const clubId = urlClubId || contextClubId;
+
+  // Keep ClubContext in sync with URL
+  useEffect(() => {
+    if (urlClubId && urlClubId !== contextClubId) {
+      setClubId(urlClubId);
+    }
+  }, [urlClubId, contextClubId, setClubId]);
+
+  // Fetch club info to get the joinCode / slug
+  const {
+    data: clubMeta,
+    isLoading: isClubLoading,
+    error: clubError,
+  } = useQuery<ClubMeta | null>({
+    queryKey: ["inviteMembersClubMeta", clubId],
     queryFn: async () => {
       if (!clubId) return null;
+
       const { data, error } = await supabase
         .from("clubs")
         .select("name, slug")
         .eq("id", clubId)
         .single();
-      if (error) throw error;
-      return data as { name: string; slug: string };
+
+      if (error) {
+        // Surface in React Query error boundary + fallback message below
+        throw error;
+      }
+
+      return data as ClubMeta;
     },
     enabled: !!clubId,
   });
@@ -43,7 +61,42 @@ const InviteMembers = () => {
     }
   };
 
-  const joinCode = clubMeta?.slug ?? "";
+  const handleGoToDashboard = () => {
+    if (clubId) {
+      navigate(`/dashboard/${clubId}`);
+    } else {
+      navigate("/clubs");
+    }
+  };
+
+  const renderShareSection = () => {
+    if (clubMeta?.slug) {
+      return (
+        <div className="flex justify-center">
+          <ClubInviteSharePanel joinCode={clubMeta.slug} />
+        </div>
+      );
+    }
+
+    if (isClubLoading) {
+      return (
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+          Loading your Club ID...
+        </p>
+      );
+    }
+
+    if (clubError || !clubId) {
+      return (
+        <p className="text-center text-sm text-red-500">
+          We couldn&apos;t load your Club ID. Please go to your dashboard and
+          try again.
+        </p>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
@@ -52,24 +105,17 @@ const InviteMembers = () => {
           Invite your friends to your club
         </h1>
         <p className="text-center text-gray-600 dark:text-gray-400 mb-8">
-          Share your Club ID with your teammates so they can join your club. You
-          can always do this later from the Members page.
+          Share your Club ID with your teammates so they can join your club.
         </p>
 
-        <div className="flex justify-center">
-          {joinCode ? (
-            <ClubInviteSharePanel joinCode={joinCode} />
-          ) : (
-            <span className="text-sm text-gray-500">Loading your Club ID…</span>
-          )}
-        </div>
+        {renderShareSection()}
 
         <div className="flex justify-between mt-10">
           <Button type="button" variant="action" onClick={handleSkip}>
             Skip for now
           </Button>
 
-          <Button type="button" variant="primary" onClick={handleSkip}>
+          <Button type="button" variant="primary" onClick={handleGoToDashboard}>
             Go to Dashboard
           </Button>
         </div>

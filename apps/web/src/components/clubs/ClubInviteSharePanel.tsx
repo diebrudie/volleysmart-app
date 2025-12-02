@@ -15,7 +15,7 @@ type ClubInviteSharePanelProps = {
 export const ClubInviteSharePanel = ({
   joinCode,
 }: ClubInviteSharePanelProps) => {
-  const clubLink = `https://volleysmart.app/?ci=${encodeURIComponent(
+  const clubLink = `https://volleysmart.app/?cid=${encodeURIComponent(
     joinCode
   )}`;
 
