@@ -76,9 +76,8 @@ const mockPositions = [
   { id: "1", name: "Setter" },
   { id: "2", name: "Outside Hitter" },
   { id: "3", name: "Middle Blocker" },
-  { id: "4", name: "Opposite Hitter" },
-  { id: "5", name: "Opposite" },
-  { id: "6", name: "Libero" },
+  { id: "4", name: "Opposite" },
+  { id: "5", name: "Libero" },
 ];
 
 interface EditPlayer {
@@ -392,8 +391,9 @@ const EditGame = () => {
       const normalizeForSort = (pos?: string | null) => {
         // same rule as Dashboard’s normalizeRole for sort ONLY
         // (if you already export normalizeRole, you can import & reuse it here)
-        const map: Record<string, string> = {
-          "Opposite Hitter": "Opposite", // sort as Opposite, but display remains Opposite Hitter
+        const map: Record<string, (typeof DASH_CANONICAL_ORDER)[number]> = {
+          // Legacy aliases / abbreviations
+          "Opposite Hitter": "Opposite",
           "MB/OPP": "Middle Blocker / Opposite Blocker",
           "Middle/Opposite": "Middle Blocker / Opposite Blocker",
           "M/O": "Middle Blocker / Opposite Blocker",
@@ -402,9 +402,21 @@ const EditGame = () => {
           S: "Setter",
           L: "Libero",
         };
+
         const raw = (pos ?? "").trim();
-        const canon = (map[raw] ?? raw) || "Opposite";
-        return canon as (typeof DASH_CANONICAL_ORDER)[number];
+        const mapped = map[raw];
+
+        // If `raw` is already one of the canonical values, keep it; otherwise
+        // fall back to "Opposite" for unknown/empty strings.
+        const canon =
+          mapped ??
+          (DASH_CANONICAL_ORDER.includes(
+            raw as (typeof DASH_CANONICAL_ORDER)[number]
+          )
+            ? (raw as (typeof DASH_CANONICAL_ORDER)[number])
+            : "Opposite");
+
+        return canon;
       };
 
       const sortByCanon = (a: EditPlayer, b: EditPlayer) => {

@@ -31,7 +31,7 @@ const defaultPositions = [
   { id: "1", name: "Setter" },
   { id: "2", name: "Outside Hitter" },
   { id: "3", name: "Middle Blocker" },
-  { id: "4", name: "Opposite Hitter" },
+  { id: "4", name: "Opposite" },
   { id: "5", name: "Libero" },
   { id: "6", name: "No Position" },
 ];

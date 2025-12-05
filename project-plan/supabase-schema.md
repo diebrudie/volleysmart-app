@@ -154,7 +154,7 @@ Standard volleyball positions are seeded:
 
 - Setter
 - Outside Hitter
-- Opposite Hitter
+- Opposite
 - Middle Blocker
 - Libero
 

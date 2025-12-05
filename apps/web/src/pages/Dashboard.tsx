@@ -59,7 +59,7 @@ interface GamePlayerData {
 type UIPlayer = {
   id: string;
   name: string;
-  position: string; // display label exactly as stored (e.g. "Opposite Hitter")
+  position: string; // display label exactly as stored (e.g. "Outside Hitter")
   sortRole: CanonicalRole; // normalized only for sorting fallback
   orderIndex?: number | null;
 };
