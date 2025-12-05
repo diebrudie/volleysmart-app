@@ -817,7 +817,7 @@ const Profile = () => {
                     <div className="px-4 pb-2">
                       <div className="mx-auto w-full md:max-w-3xl">
                         <img
-                          src="/positions-volleyball-players.png"
+                          src="/positions-volleyball-players-en.png"
                           alt="Volleyball player positions on court"
                           className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
                         />
