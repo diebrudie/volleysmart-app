@@ -57,8 +57,8 @@ export async function ensurePositionsExist() {
     const defaultPositions = [
       { name: "Setter" },
       { name: "Outside Hitter" },
-      { name: "Opposite Hitter" },
       { name: "Middle Blocker" },
+      { name: "Opposite" },
       { name: "Libero" },
     ];
 

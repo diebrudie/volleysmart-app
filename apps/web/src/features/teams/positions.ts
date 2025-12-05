@@ -1,6 +1,5 @@
 /**
  * Canonical role normalization & ordering for team display and assignment.
- * We merge "Opposite Hitter" and "Opposite" into a single role: "Opposite".
  * IDs from your positions table are preserved for lookups.
  */
 export type CanonicalRole =
@@ -13,7 +12,6 @@ export type CanonicalRole =
 export const POSITION_IDS = {
   Setter: "e6981022-8728-4bdd-9d41-8e2a4ce0d8f7",
   "Outside Hitter": "8ef208ad-97bb-4ad1-b160-35de6c859ded",
-  "Opposite Hitter": "feedde1a-83bb-4ead-a474-7b6969bb2ba2",
   "Middle Blocker": "4caf345a-ede8-4c70-bfb7-202ee0595b5d",
   Libero: "68e09387-8118-4458-a6da-8c5e759fc0ab",
   Opposite: "bfd22850-f8c1-4eb5-90a7-879670dcd38c",
@@ -22,7 +20,7 @@ export const POSITION_IDS = {
 /** Map any DB/display string to our canonical role */
 export function normalizeRole(input?: string | null): CanonicalRole {
   const v = (input ?? "").trim();
-  if (v === "Opposite Hitter" || v === "Opposite") return "Opposite";
+  if (v === "Opposite") return "Opposite";
   if (v === "Setter") return "Setter";
   if (v === "Middle Blocker") return "Middle Blocker";
   if (v === "Outside Hitter") return "Outside Hitter";

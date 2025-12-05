@@ -14,7 +14,7 @@ type PlayerPosition =
   | "Setter"
   | "Outside Hitter"
   | "Middle Blocker"
-  | "Opposite Hitter"
+  | "Opposite"
   | "Libero";
 
 const TeamGenerator = () => {
@@ -44,12 +44,16 @@ const TeamGenerator = () => {
       Setter: [],
       "Outside Hitter": [],
       "Middle Blocker": [],
-      "Opposite Hitter": [],
+      Opposite: [],
       Libero: [],
     };
 
     players.forEach((player) => {
-      const position = player.preferredPosition;
+      // Defensive normalization: any legacy "Opposite Hitter" gets bucketed as "Opposite"
+      const raw = player.preferredPosition;
+      const position =
+        raw === "Opposite Hitter" ? ("Opposite" as PlayerPosition) : raw;
+
       if (groups[position]) {
         groups[position].push(player);
       } else {
@@ -192,11 +196,11 @@ const TeamGenerator = () => {
       else teamB.push(liberos[i]);
     }
 
-    // Distribute Opposite Hitters
-    const oppositeHitters = positionGroups["Opposite Hitter"];
-    for (let i = 0; i < Math.min(oppositeHitters.length, 2); i++) {
-      if (i % 2 === 0) teamA.push(oppositeHitters[i]);
-      else teamB.push(oppositeHitters[i]);
+    // Distribute Opposites (1 per team ideally)
+    const opposites = positionGroups["Opposite"];
+    for (let i = 0; i < Math.min(opposites.length, 2); i++) {
+      if (i % 2 === 0) teamA.push(opposites[i]);
+      else teamB.push(opposites[i]);
     }
 
     // Distribute any remaining players to balance team sizes
@@ -347,6 +351,7 @@ const TeamGenerator = () => {
                 />
               ) : (
                 <EmptyTeamsState
+                  memberCount={allPlayers.length}
                   canGenerateTeams={canGenerateTeams}
                   onGenerateTeams={generateTeams}
                   onInviteMembers={handleInviteMembers}
