@@ -9,6 +9,7 @@ import {
   Binoculars,
   Trophy,
   LogOut,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,6 +86,11 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
               icon={<MoonStar className="h-5 w-5" />}
               label="Theme"
               onClick={() => setThemeOpen(true)}
+            />
+            <MenuItem
+              icon={<HelpCircle className="h-5 w-5" />}
+              label="FAQs"
+              onClick={() => go("/faqs")}
             />
             <MenuItem
               icon={<Settings className="h-5 w-5" />}

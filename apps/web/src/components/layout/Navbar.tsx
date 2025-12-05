@@ -4,7 +4,14 @@ import { useIsCompact } from "@/hooks/use-compact";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/theme-toggle";
-import { Menu, ChevronDown, Settings, User, UserPlus } from "lucide-react";
+import {
+  Menu,
+  ChevronDown,
+  Settings,
+  User,
+  UserPlus,
+  HelpCircle,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 
@@ -242,6 +249,7 @@ const Navbar = () => {
   const accountItems = [
     { label: "Profile", path: `/user/${user?.id}`, icon: User },
     { label: "Clubs", path: "/clubs", icon: UserPlus },
+    { label: "FAQs", path: "/faqs", icon: HelpCircle },
     {
       label: "Settings",
       icon: Settings,

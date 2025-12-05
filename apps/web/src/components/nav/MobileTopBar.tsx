@@ -20,6 +20,7 @@ const MobileTopBar: React.FC = () => {
           size="icon"
           aria-label="Open menu"
           onClick={() => setOpen(true)}
+          className="text-foreground hover:bg-muted focus:bg-muted"
         >
           <Menu className="h-5 w-5" />
         </Button>
