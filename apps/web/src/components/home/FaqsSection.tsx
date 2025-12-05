@@ -59,7 +59,7 @@ const FaqsSection = () => {
 
   return (
     <section id="faqs" className="bg-white text-gray-900">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-6 py-16 lg:py-16">
         {/* Heading */}
         <div className="text-center mb-10 sm:mb-12">
           <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">
@@ -75,7 +75,7 @@ const FaqsSection = () => {
         {/* FAQ list */}
         <div className="border-t border-gray-200">
           {isLoading && (
-            <p className="py-8 text-center text-muted-foreground">
+            <p className="py-12 text-center text-muted-foreground">
               Loading FAQs...
             </p>
           )}
@@ -91,18 +91,18 @@ const FaqsSection = () => {
           )}
 
           {!isLoading && !error && faqs.length > 0 && (
-            <Accordion
-              type="single"
-              collapsible
-              className="divide-y divide-gray-200"
-            >
+            <Accordion type="single" collapsible>
               {faqs.map((faq) => (
-                <AccordionItem key={faq.id} value={faq.id}>
-                  <AccordionTrigger className="py-4 text-left text-base sm:text-lg font-medium text-gray-900">
+                <AccordionItem
+                  key={faq.id}
+                  value={faq.id}
+                  className="border-b border-gray-200"
+                >
+                  <AccordionTrigger className="py-6 pl-2 text-left text-base sm:text-lg font-medium text-gray-900">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-sm sm:text-base text-gray-600">
-                    <div className="prose prose-sm sm:prose-base max-w-none">
+                  <AccordionContent className="text-sm pl-2 sm:text-base text-gray-600">
+                    <div className="prose prose-sm sm:prose-base max-w-none prose-a:underline">
                       <ReactMarkdown>{faq.answer}</ReactMarkdown>
                     </div>
                   </AccordionContent>
@@ -113,7 +113,7 @@ const FaqsSection = () => {
         </div>
 
         {/* Still have questions */}
-        <div className="mt-12 sm:mt-16 border-t border-gray-200 pt-10 text-center">
+        <div className="mt-12 sm:mt-16 border-b border-gray-200 pb-16 text-center">
           <h3 className="text-2xl sm:text-3xl font-semibold">
             Still have questions?
           </h3>
@@ -124,11 +124,19 @@ const FaqsSection = () => {
 
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to="/faqs">
-              <Button variant="outline" size="lg">
+              <Button
+                size="lg"
+                className="bg-black text-white border border-black hover:bg-[hsl(var(--primary))] hover:text-white hover:border-[hsl(var(--primary))]"
+              >
                 View all FAQs
               </Button>
             </Link>
-            <Button size="lg" onClick={() => setIsContactOpen(true)}>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-black text-black bg-white hover:bg-black hover:text-white"
+              onClick={() => setIsContactOpen(true)}
+            >
               Contact us
             </Button>
           </div>
@@ -139,6 +147,7 @@ const FaqsSection = () => {
         open={isContactOpen}
         onOpenChange={setIsContactOpen}
         source="homepage_faqs_section"
+        forceLight
       />
     </section>
   );

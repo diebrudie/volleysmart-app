@@ -15,6 +15,7 @@ const PUBLIC_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/players/onboarding",
+  "/faqs",
 ];
 
 // Routes that must NOT show mobile chrome (top + bottom)

@@ -86,7 +86,7 @@ const FaqsPage = () => {
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900">
                 FAQs
               </h1>
-              <p className="mt-4 text-lg text-muted-foreground">
+              <p className="mt-4 text-lg text-gray-600">
                 Browse all frequently asked questions about VolleySmart.
               </p>
             </header>
@@ -105,11 +105,8 @@ const FaqsPage = () => {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Search by question title..."
-                className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
               />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Only question titles are searched.
-              </p>
             </div>
 
             {isLoading && (
@@ -132,22 +129,24 @@ const FaqsPage = () => {
               !error &&
               faqsByCategory.map(([category, categoryFaqs]) => (
                 <section key={category} className="mb-10">
-                  <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-gray-900">
+                  <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-[hsl(var(--primary))]">
                     {category}
                   </h2>
+
                   <div className="border-t border-gray-200">
-                    <Accordion
-                      type="single"
-                      collapsible
-                      className="divide-y divide-gray-200"
-                    >
+                    <Accordion type="single" collapsible>
                       {categoryFaqs.map((faq) => (
-                        <AccordionItem key={faq.id} value={faq.id}>
+                        <AccordionItem
+                          key={faq.id}
+                          value={faq.id}
+                          className="border-b border-gray-200"
+                        >
                           <AccordionTrigger className="py-4 text-left text-base sm:text-lg font-medium text-gray-900">
                             {faq.question}
                           </AccordionTrigger>
-                          <AccordionContent className="text-sm sm:text-base text-muted-foreground">
-                            <div className="prose prose-sm sm:prose-base max-w-none">
+
+                          <AccordionContent className="text-sm sm:text-base text-gray-600">
+                            <div className="prose prose-sm sm:prose-base max-w-none prose-a:underline">
                               <ReactMarkdown>{faq.answer}</ReactMarkdown>
                             </div>
                           </AccordionContent>

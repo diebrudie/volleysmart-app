@@ -21,11 +21,21 @@ interface ContactSheetProps {
    * Example: "homepage_faqs_section".
    */
   source?: string;
+  /**
+   * When true, force light theme styling inside the sheet
+   * (useful for public landing pages).
+   */
+  forceLight?: boolean;
 }
 
 const CONTACT_WEBHOOK_URL = "https://webhook.placeholder.com";
 
-const ContactSheet = ({ open, onOpenChange, source }: ContactSheetProps) => {
+const ContactSheet = ({
+  open,
+  onOpenChange,
+  source,
+  forceLight,
+}: ContactSheetProps) => {
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [reason, setReason] = useState<ContactReason>("general_question");
@@ -83,7 +93,9 @@ const ContactSheet = ({ open, onOpenChange, source }: ContactSheetProps) => {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md flex flex-col"
+        className={`w-full sm:max-w-md flex flex-col ${
+          forceLight ? "bg-white text-gray-900" : ""
+        }`}
         aria-label="Contact form"
       >
         <SheetHeader className="mb-4">
@@ -110,7 +122,7 @@ const ContactSheet = ({ open, onOpenChange, source }: ContactSheetProps) => {
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
               placeholder="Your name"
               required
             />
@@ -128,7 +140,7 @@ const ContactSheet = ({ open, onOpenChange, source }: ContactSheetProps) => {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
               placeholder="you@example.com"
               required
             />
@@ -147,7 +159,7 @@ const ContactSheet = ({ open, onOpenChange, source }: ContactSheetProps) => {
               onChange={(event) =>
                 setReason(event.target.value as ContactReason)
               }
-              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
             >
               <option value="general_question">General question</option>
               <option value="account_support">Account support</option>
@@ -167,7 +179,7 @@ const ContactSheet = ({ open, onOpenChange, source }: ContactSheetProps) => {
               id="contact-message"
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              className="mt-1 block w-full min-h-[120px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+              className="mt-1 block w-full min-h-[120px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
               placeholder="Type your message..."
               required
             />
