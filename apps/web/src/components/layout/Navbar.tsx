@@ -288,7 +288,7 @@ const Navbar = () => {
             <img
               src="/logo-lightmode.svg"
               alt="VolleySmart"
-              className="h-8 sm:h-10 md:h-12 w-auto transition-all duration-300"
+              className="h-8 w-auto transition-all duration-300"
               loading="eager"
             />
           </Link>
@@ -353,7 +353,7 @@ const Navbar = () => {
             dashboard. * If authenticated but NO clubId → send to /clubs
             (fallback). * If not authenticated → send to homepage (/). */}
             <Logo
-              size="md"
+              size="sm"
               linkTo={
                 isAuthenticated && membershipStatus === "active" && clubId
                   ? `/dashboard/${clubId}`
@@ -462,7 +462,22 @@ const Navbar = () => {
                     );
                   }
 
-                  // Enabled items keep Link behavior
+                  // FAQs from inside the app → open in a new tab
+                  if (item.path === "/faqs") {
+                    return (
+                      <DropdownMenuItem key={index} asChild className={base}>
+                        <Link
+                          to={item.path}
+                          className="flex items-center cursor-pointer"
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  }
+
+                  // Other enabled items keep normal Link behavior
                   return (
                     <DropdownMenuItem key={index} asChild className={base}>
                       <Link
@@ -475,6 +490,7 @@ const Navbar = () => {
                     </DropdownMenuItem>
                   );
                 })}
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}
@@ -635,7 +651,7 @@ const Navbar = () => {
             <img
               src="/logo-lightmode.svg"
               alt="VolleySmart"
-              className="h-8 w-auto sm:h-10 transition-all duration-300"
+              className="h-6 w-auto sm:h-10 transition-all duration-300"
               loading="eager"
             />
           </Link>
@@ -748,14 +764,22 @@ const Navbar = () => {
     // Homepage must stay unchanged on mobile/desktop
     return isCompact ? <MobileHomepageNav /> : <HomepageNav />;
   }
+
   // On authenticated routes:
-  // - On compact screens, DO NOT render this Navbar (MobileTopBar handles it).
-  // - On desktop (>= lg), keep the DesktopNav exactly as today.
   // Hide navbar entirely on editor/join/new-club routes (desktop too)
   if (suppressChrome) return null;
 
-  // Authenticated: no legacy navbar on compact; keep desktop
-  return isCompact ? null : <DesktopNav />;
+  // On compact screens we usually rely on MobileTopBar + MobileBottomNav,
+  // but FAQs is "public-style": show the desktop nav even on mobile.
+  if (isCompact) {
+    if (pathname === "/faqs") {
+      return <DesktopNav />;
+    }
+    return null;
+  }
+
+  // Authenticated + desktop: always show DesktopNav
+  return <DesktopNav />;
 };
 
 export default Navbar;

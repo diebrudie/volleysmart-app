@@ -80,7 +80,7 @@ const FaqsPage = () => {
       <Navbar />
 
       <main className="flex-1">
-        <section className="pt-28 pb-16 sm:pt-32 sm:pb-20">
+        <section className="pt-24 pb-16 sm:pt-32 sm:pb-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
             <header className="text-center mb-8 sm:mb-10">
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900">
