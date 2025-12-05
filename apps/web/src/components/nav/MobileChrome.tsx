@@ -15,7 +15,6 @@ const PUBLIC_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/players/onboarding",
-  "/faqs",
 ];
 
 // Routes that must NOT show mobile chrome (top + bottom)
@@ -29,11 +28,16 @@ const HIDE_CHROME = [
   /^\/invite-members(\/[^/]+)?\/?$/,
 ];
 
+// Routes where we want the top bar only (no bottom nav),
+// e.g. FAQs from inside the app
+const HIDE_BOTTOM_ONLY = [/^\/faqs\/?$/];
+
 function isPublic(pathname: string): boolean {
   const p =
     pathname.endsWith("/") && pathname !== "/"
       ? pathname.slice(0, -1)
       : pathname;
+
   return PUBLIC_PREFIXES.some((prefix) => {
     const pp =
       prefix.endsWith("/") && prefix !== "/" ? prefix.slice(0, -1) : prefix;
@@ -49,8 +53,15 @@ const MobileChrome: React.FC = () => {
   if (!isCompact) return null;
   if (isPublic(pathname)) return null;
 
-  // Suppress chrome on editor/join/new-club pages
+  // Suppress chrome entirely on editor/join/new-club pages
   if (HIDE_CHROME.some((rx) => rx.test(pathname))) return null;
+
+  const hideBottom = HIDE_BOTTOM_ONLY.some((rx) => rx.test(pathname));
+
+  if (hideBottom) {
+    // e.g. /faqs → only top bar
+    return <MobileTopBar />;
+  }
 
   return (
     <>

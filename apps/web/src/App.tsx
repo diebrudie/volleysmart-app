@@ -128,6 +128,7 @@ const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
     "/forgot-password",
     "/reset-password",
     "/players/onboarding",
+    "/faqs",
   ];
 
   return (

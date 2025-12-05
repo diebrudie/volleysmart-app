@@ -9,6 +9,7 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import ReactMarkdown from "react-markdown";
+import { useAuth } from "@/contexts/AuthContext";
 
 type FaqPageDisplayed = "faqs" | "homepage_faqs";
 
@@ -27,6 +28,7 @@ const FaqsPage = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const loadFaqs = async () => {
@@ -76,17 +78,17 @@ const FaqsPage = () => {
   }, [filteredFaqs]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
       <main className="flex-1">
-        <section className="pt-28 pb-16 sm:pt-32 sm:pb-20">
+        <section className="pt-8 pb-16 sm:pt-24 sm:pb-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
             <header className="text-center mb-8 sm:mb-10">
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900">
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
                 FAQs
               </h1>
-              <p className="mt-4 text-lg text-gray-600">
+              <p className="mt-4 text-lg text-muted-foreground">
                 Browse all frequently asked questions about VolleySmart.
               </p>
             </header>
@@ -95,7 +97,7 @@ const FaqsPage = () => {
             <div className="mb-10">
               <label
                 htmlFor="faq-search"
-                className="block text-sm font-medium text-gray-900"
+                className="block text-sm font-medium text-foreground"
               >
                 Search questions
               </label>
@@ -105,7 +107,7 @@ const FaqsPage = () => {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Search by question title..."
-                className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                className="mt-2 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
               />
             </div>
 
@@ -129,23 +131,27 @@ const FaqsPage = () => {
               !error &&
               faqsByCategory.map(([category, categoryFaqs]) => (
                 <section key={category} className="mb-10">
-                  <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-[hsl(var(--primary))]">
+                  <h3 className="text-xl sm:text-2xl font-semibold mb-4 text-[hsl(var(--primary))]">
                     {category}
-                  </h2>
+                  </h3>
 
-                  <div className="border-t border-gray-200">
+                  <div className="border-t border-border">
                     <Accordion type="single" collapsible>
                       {categoryFaqs.map((faq) => (
                         <AccordionItem
                           key={faq.id}
                           value={faq.id}
-                          className="border-b border-gray-200"
+                          className="border-b border-border"
                         >
-                          <AccordionTrigger className="py-4 text-left text-base sm:text-lg font-medium text-gray-900">
+                          <AccordionTrigger
+                            className="group py-4 text-left text-base sm:text-lg font-medium 
+             text-foreground hover:bg-muted/60 data-[state=open]:bg-muted 
+             transition-colors"
+                          >
                             {faq.question}
                           </AccordionTrigger>
 
-                          <AccordionContent className="text-sm sm:text-base text-gray-600">
+                          <AccordionContent className="text-sm sm:text-base text-muted-foreground">
                             <div className="prose prose-sm sm:prose-base max-w-none prose-a:underline">
                               <ReactMarkdown>{faq.answer}</ReactMarkdown>
                             </div>
@@ -159,8 +165,8 @@ const FaqsPage = () => {
           </div>
         </section>
       </main>
-
-      <Footer />
+      {/* Footer should appear only for non-authenticated users */}
+      {!isAuthenticated && <Footer />}
     </div>
   );
 };

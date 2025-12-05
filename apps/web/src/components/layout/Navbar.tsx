@@ -135,6 +135,8 @@ const Navbar = () => {
   );
   const isCompact = useIsCompact();
   const { pathname } = useLocation();
+  const isFaqRoute = pathname === "/faqs";
+  const shouldHideOnScroll = pathname === "/";
 
   // Track scroll direction for public homepage nav auto-hide
   const lastScrollYRef = useRef(0);
@@ -277,9 +279,16 @@ const Navbar = () => {
   // Homepage/Landing Navbar (when not authenticated)
   const HomepageNav = () => (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 glass bg-white/70 border-b border-glass-border border-gray-200 transition-transform duration-500 ease-out ${
-        isNavHidden ? "-translate-y-full" : "translate-y-0"
-      }`}
+      className={
+        `fixed top-0 left-0 right-0 z-50 border-b border-gray-200 transition-transform duration-500 ease-out ` +
+        // only slide/hide on the landing page
+        (shouldHideOnScroll && isNavHidden
+          ? "-translate-y-full"
+          : "translate-y-0") +
+        " " +
+        // solid white on /faqs, translucent glass elsewhere
+        (isFaqRoute ? "bg-white" : "glass bg-white/70 border-glass-border")
+      }
     >
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
@@ -288,7 +297,7 @@ const Navbar = () => {
             <img
               src="/logo-lightmode.svg"
               alt="VolleySmart"
-              className="h-8 sm:h-10 md:h-12 w-auto transition-all duration-300"
+              className="h-8 w-auto transition-all duration-300"
               loading="eager"
             />
           </Link>
@@ -298,21 +307,21 @@ const Navbar = () => {
             <button
               type="button"
               onClick={() => handleLandingNavClick("features")}
-              className="text-lg font-medium text-gray-700 hover:text-gray-900"
+              className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
               Features
             </button>
             <button
               type="button"
               onClick={() => handleLandingNavClick("how-it-works")}
-              className="text-lg font-medium text-gray-700 hover:text-gray-900"
+              className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
               How it works
             </button>
             <button
               type="button"
               onClick={() => handleLandingNavClick("faqs")}
-              className="text-lg font-medium text-gray-700 hover:text-gray-900"
+              className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
               FAQs
             </button>
@@ -353,7 +362,7 @@ const Navbar = () => {
             dashboard. * If authenticated but NO clubId → send to /clubs
             (fallback). * If not authenticated → send to homepage (/). */}
             <Logo
-              size="md"
+              size="sm"
               linkTo={
                 isAuthenticated && membershipStatus === "active" && clubId
                   ? `/dashboard/${clubId}`
@@ -462,7 +471,22 @@ const Navbar = () => {
                     );
                   }
 
-                  // Enabled items keep Link behavior
+                  // FAQs from inside the app → open in a new tab
+                  if (item.path === "/faqs") {
+                    return (
+                      <DropdownMenuItem key={index} asChild className={base}>
+                        <Link
+                          to={item.path}
+                          className="flex items-center cursor-pointer"
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  }
+
+                  // Other enabled items keep normal Link behavior
                   return (
                     <DropdownMenuItem key={index} asChild className={base}>
                       <Link
@@ -475,6 +499,7 @@ const Navbar = () => {
                     </DropdownMenuItem>
                   );
                 })}
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}
@@ -624,9 +649,14 @@ const Navbar = () => {
   // Mobile homepage nav (white sheet, light logo)
   const MobileHomepageNav = () => (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200 transition-transform duration-500 ease-out ${
-        isNavHidden ? "-translate-y-full" : "translate-y-0"
-      }`}
+      className={
+        `fixed top-0 left-0 right-0 z-50 border-b border-gray-200 transition-transform duration-500 ease-out ` +
+        (shouldHideOnScroll && isNavHidden
+          ? "-translate-y-full"
+          : "translate-y-0") +
+        " " +
+        (isFaqRoute ? "bg-white" : "backdrop-blur-md bg-white/70")
+      }
     >
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
@@ -635,7 +665,7 @@ const Navbar = () => {
             <img
               src="/logo-lightmode.svg"
               alt="VolleySmart"
-              className="h-8 w-auto sm:h-10 transition-all duration-300"
+              className="h-6 w-auto sm:h-10 transition-all duration-300"
               loading="eager"
             />
           </Link>
@@ -672,7 +702,7 @@ const Navbar = () => {
                             handleLandingNavClick("features");
                             setIsOpen(false);
                           }}
-                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50"
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
                           Features
                         </button>
@@ -684,7 +714,7 @@ const Navbar = () => {
                             handleLandingNavClick("how-it-works");
                             setIsOpen(false);
                           }}
-                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50"
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
                           How it works
                         </button>
@@ -696,7 +726,7 @@ const Navbar = () => {
                             handleLandingNavClick("faqs");
                             setIsOpen(false);
                           }}
-                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50"
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
                           FAQs
                         </button>
@@ -745,17 +775,22 @@ const Navbar = () => {
 
   // Return different navbar based on authentication status
   if (!isAuthenticated) {
-    // Homepage must stay unchanged on mobile/desktop
+    // Public experience: homepage-style navbars on all public routes
     return isCompact ? <MobileHomepageNav /> : <HomepageNav />;
   }
+
   // On authenticated routes:
-  // - On compact screens, DO NOT render this Navbar (MobileTopBar handles it).
-  // - On desktop (>= lg), keep the DesktopNav exactly as today.
   // Hide navbar entirely on editor/join/new-club routes (desktop too)
   if (suppressChrome) return null;
 
-  // Authenticated: no legacy navbar on compact; keep desktop
-  return isCompact ? null : <DesktopNav />;
+  // On compact screens, we let MobileChrome render the chrome (top/bottom).
+  // So Navbar does nothing on mobile once authenticated.
+  if (isCompact) {
+    return null;
+  }
+
+  // Desktop (>= md): always show the authenticated desktop nav
+  return <DesktopNav />;
 };
 
 export default Navbar;
