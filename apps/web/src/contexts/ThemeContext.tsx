@@ -66,6 +66,12 @@ function routeMatches(
   return patterns.some((p) => {
     if (typeof p === "string") {
       const pat = normalizePath(p);
+
+      // Root "/" must only match exactly "/"
+      if (pat === "/") {
+        return path === "/";
+      }
+
       // exact match OR prefix match (handles nested steps and optional trailing slash)
       return path === pat || path.startsWith(pat + "/");
     }
@@ -82,7 +88,8 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
-  isAuthenticated = true,
+  // default: assume NOT authenticated unless told otherwise
+  isAuthenticated = false,
   enforceLightOnRoutes = [
     "/",
     "/login",
@@ -90,16 +97,17 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     "/forgot-password",
     "/reset-password",
     "/players/onboarding",
+    "/faqs",
   ],
 }) => {
-  const { user } = useAuth(); // Auth source of truth
+  const { user } = useAuth();
   const location = useLocation();
   const pathname = location.pathname;
 
-  // Should we enforce light for this route?
+  // Force light ONLY for non-authenticated users on these routes
   const enforcingLight = useMemo(
-    () => routeMatches(pathname, enforceLightOnRoutes),
-    [pathname, enforceLightOnRoutes]
+    () => !isAuthenticated && routeMatches(pathname, enforceLightOnRoutes),
+    [pathname, enforceLightOnRoutes, isAuthenticated]
   );
 
   // Initialize from localStorage only when we're NOT enforcing light.
@@ -196,6 +204,35 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   };
 
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+
+    // If this route should be forced light: make sure dark is removed
+    if (enforcingLight) {
+      if (root.classList.contains("dark")) {
+        root.classList.remove("dark");
+      }
+      if (isDark) {
+        setIsDark(false);
+      }
+      return;
+    }
+
+    // Normal behaviour: resolve theme and sync .dark
+    const resolved = resolveTheme(theme);
+    const shouldBeDark = resolved === "dark";
+
+    if (shouldBeDark !== isDark) {
+      setIsDark(shouldBeDark);
+    }
+
+    if (shouldBeDark) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [theme, enforcingLight, isDark]);
 
   // When enforcement turns off (e.g., after redirect into a private route),
   // re-hydrate the saved theme immediately so the UI updates without a reload.

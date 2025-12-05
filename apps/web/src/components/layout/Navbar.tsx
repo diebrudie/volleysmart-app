@@ -135,6 +135,8 @@ const Navbar = () => {
   );
   const isCompact = useIsCompact();
   const { pathname } = useLocation();
+  const isFaqRoute = pathname === "/faqs";
+  const shouldHideOnScroll = pathname === "/";
 
   // Track scroll direction for public homepage nav auto-hide
   const lastScrollYRef = useRef(0);
@@ -277,9 +279,16 @@ const Navbar = () => {
   // Homepage/Landing Navbar (when not authenticated)
   const HomepageNav = () => (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 glass bg-white/70 border-b border-glass-border border-gray-200 transition-transform duration-500 ease-out ${
-        isNavHidden ? "-translate-y-full" : "translate-y-0"
-      }`}
+      className={
+        `fixed top-0 left-0 right-0 z-50 border-b border-gray-200 transition-transform duration-500 ease-out ` +
+        // only slide/hide on the landing page
+        (shouldHideOnScroll && isNavHidden
+          ? "-translate-y-full"
+          : "translate-y-0") +
+        " " +
+        // solid white on /faqs, translucent glass elsewhere
+        (isFaqRoute ? "bg-white" : "glass bg-white/70 border-glass-border")
+      }
     >
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
@@ -640,9 +649,14 @@ const Navbar = () => {
   // Mobile homepage nav (white sheet, light logo)
   const MobileHomepageNav = () => (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200 transition-transform duration-500 ease-out ${
-        isNavHidden ? "-translate-y-full" : "translate-y-0"
-      }`}
+      className={
+        `fixed top-0 left-0 right-0 z-50 border-b border-gray-200 transition-transform duration-500 ease-out ` +
+        (shouldHideOnScroll && isNavHidden
+          ? "-translate-y-full"
+          : "translate-y-0") +
+        " " +
+        (isFaqRoute ? "bg-white" : "backdrop-blur-md bg-white/70")
+      }
     >
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
@@ -761,7 +775,7 @@ const Navbar = () => {
 
   // Return different navbar based on authentication status
   if (!isAuthenticated) {
-    // Homepage must stay unchanged on mobile/desktop
+    // Public experience: homepage-style navbars on all public routes
     return isCompact ? <MobileHomepageNav /> : <HomepageNav />;
   }
 
@@ -769,16 +783,13 @@ const Navbar = () => {
   // Hide navbar entirely on editor/join/new-club routes (desktop too)
   if (suppressChrome) return null;
 
-  // On compact screens we usually rely on MobileTopBar + MobileBottomNav,
-  // but FAQs is "public-style": show the desktop nav even on mobile.
+  // On compact screens, we let MobileChrome render the chrome (top/bottom).
+  // So Navbar does nothing on mobile once authenticated.
   if (isCompact) {
-    if (pathname === "/faqs") {
-      return <DesktopNav />;
-    }
     return null;
   }
 
-  // Authenticated + desktop: always show DesktopNav
+  // Desktop (>= md): always show the authenticated desktop nav
   return <DesktopNav />;
 };
 
