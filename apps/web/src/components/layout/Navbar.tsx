@@ -307,21 +307,21 @@ const Navbar = () => {
             <button
               type="button"
               onClick={() => handleLandingNavClick("features")}
-              className="text-lg font-medium text-gray-700 hover:text-gray-900"
+              className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
               Features
             </button>
             <button
               type="button"
               onClick={() => handleLandingNavClick("how-it-works")}
-              className="text-lg font-medium text-gray-700 hover:text-gray-900"
+              className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
               How it works
             </button>
             <button
               type="button"
               onClick={() => handleLandingNavClick("faqs")}
-              className="text-lg font-medium text-gray-700 hover:text-gray-900"
+              className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
               FAQs
             </button>
@@ -702,7 +702,7 @@ const Navbar = () => {
                             handleLandingNavClick("features");
                             setIsOpen(false);
                           }}
-                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50"
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
                           Features
                         </button>
@@ -714,7 +714,7 @@ const Navbar = () => {
                             handleLandingNavClick("how-it-works");
                             setIsOpen(false);
                           }}
-                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50"
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
                           How it works
                         </button>
@@ -726,7 +726,7 @@ const Navbar = () => {
                             handleLandingNavClick("faqs");
                             setIsOpen(false);
                           }}
-                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50"
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
                           FAQs
                         </button>
