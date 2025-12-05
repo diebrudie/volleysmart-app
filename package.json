@@ -22,8 +22,11 @@
     "rollup": "^4.24.0"
   },
   "devDependencies": {
-    "cross-env": "^10.1.0",
     "@types/react": "^19.2.4",
-    "@types/react-dom": "^19.2.2"
+    "@types/react-dom": "^19.2.2",
+    "cross-env": "^10.1.0"
+  },
+  "dependencies": {
+    "react-markdown": "^10.1.0"
   }
 }

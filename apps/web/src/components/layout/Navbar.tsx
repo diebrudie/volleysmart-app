@@ -1,10 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsCompact } from "@/hooks/use-compact";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/theme-toggle";
-import { Menu, ChevronDown, Settings, User, UserPlus } from "lucide-react";
+import {
+  Menu,
+  ChevronDown,
+  Settings,
+  User,
+  UserPlus,
+  HelpCircle,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 
@@ -120,13 +127,45 @@ const Navbar = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   //const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const { clubId, membershipStatus, initialized, isValidatingClub } = useClub();
+  const { clubId, membershipStatus, initialized } = useClub();
+
   // Player profile for avatar + names — must be declared BEFORE any early return
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(
     null
   );
   const isCompact = useIsCompact();
   const { pathname } = useLocation();
+
+  // Track scroll direction for public homepage nav auto-hide
+  const lastScrollYRef = useRef(0);
+  const [isNavHidden, setIsNavHidden] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const lastY = lastScrollYRef.current;
+      const delta = currentY - lastY;
+
+      // Ignore tiny movements
+      if (Math.abs(delta) < 4) {
+        return;
+      }
+
+      const isScrollingDown = delta > 0;
+
+      // Hide navbar when scrolling down past a small threshold, show when scrolling up
+      if (isScrollingDown && currentY > 80) {
+        setIsNavHidden(true);
+      } else {
+        setIsNavHidden(false);
+      }
+
+      lastScrollYRef.current = currentY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Suppress all nav chrome on these routes (desktop too)
   const HIDE_NAV_ROUTES = [
@@ -199,11 +238,7 @@ const Navbar = () => {
    * Otherwise no tabs are exposed.
    */
   const navItems =
-    isAuthenticated &&
-    initialized &&
-    membershipStatus === "active" &&
-    clubId &&
-    !isValidatingClub
+    isAuthenticated && initialized && membershipStatus === "active" && clubId
       ? [
           { label: "Dashboard", path: `/dashboard/${clubId}`, visible: true },
           { label: "Archive", path: `/games/${clubId}`, visible: true },
@@ -214,6 +249,7 @@ const Navbar = () => {
   const accountItems = [
     { label: "Profile", path: `/user/${user?.id}`, icon: User },
     { label: "Clubs", path: "/clubs", icon: UserPlus },
+    { label: "FAQs", path: "/faqs", icon: HelpCircle },
     {
       label: "Settings",
       icon: Settings,
@@ -221,9 +257,30 @@ const Navbar = () => {
     },
   ].filter(Boolean);
 
+  const handleLandingNavClick = (
+    sectionId: "features" | "how-it-works" | "faqs"
+  ) => {
+    // If we're not on the homepage, navigate there with the hash.
+    if (pathname !== "/") {
+      navigate(`/#${sectionId}`);
+      return;
+    }
+
+    // On homepage: update URL hash and smooth-scroll to section
+    const element = document.getElementById(sectionId);
+    if (element) {
+      window.history.pushState(null, "", `/#${sectionId}`);
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   // Homepage/Landing Navbar (when not authenticated)
   const HomepageNav = () => (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass bg-white/70 border-b border-glass-border border-gray-200">
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 glass bg-white/70 border-b border-glass-border border-gray-200 transition-transform duration-500 ease-out ${
+        isNavHidden ? "-translate-y-full" : "translate-y-0"
+      }`}
+    >
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -235,6 +292,31 @@ const Navbar = () => {
               loading="eager"
             />
           </Link>
+
+          {/* Center nav links (desktop only) */}
+          <div className="hidden md:flex items-center gap-10">
+            <button
+              type="button"
+              onClick={() => handleLandingNavClick("features")}
+              className="text-lg font-medium text-gray-700 hover:text-gray-900"
+            >
+              Features
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLandingNavClick("how-it-works")}
+              className="text-lg font-medium text-gray-700 hover:text-gray-900"
+            >
+              How it works
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLandingNavClick("faqs")}
+              className="text-lg font-medium text-gray-700 hover:text-gray-900"
+            >
+              FAQs
+            </button>
+          </div>
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-3">
@@ -300,8 +382,7 @@ const Navbar = () => {
             {isAuthenticated &&
               initialized &&
               membershipStatus === "active" &&
-              clubId &&
-              !isValidatingClub && (
+              clubId && (
                 <Button
                   variant="primary"
                   onClick={() => {
@@ -508,8 +589,7 @@ const Navbar = () => {
                   {isAuthenticated &&
                     initialized &&
                     membershipStatus === "active" &&
-                    clubId &&
-                    !isValidatingClub && (
+                    clubId && (
                       <Button
                         variant="primary"
                         className="w-full mb-2"
@@ -543,7 +623,11 @@ const Navbar = () => {
 
   // Mobile homepage nav (white sheet, light logo)
   const MobileHomepageNav = () => (
-    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200">
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200 transition-transform duration-500 ease-out ${
+        isNavHidden ? "-translate-y-full" : "translate-y-0"
+      }`}
+    >
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Force light logo and link to / */}
@@ -579,6 +663,47 @@ const Navbar = () => {
                   </DrawerHeader>
 
                   <div className="flex flex-1 flex-col items-center justify-center space-y-6 px-4">
+                    {/* Section links */}
+                    <div className="w-full max-w-md space-y-3">
+                      <DrawerClose asChild>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleLandingNavClick("features");
+                            setIsOpen(false);
+                          }}
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50"
+                        >
+                          Features
+                        </button>
+                      </DrawerClose>
+                      <DrawerClose asChild>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleLandingNavClick("how-it-works");
+                            setIsOpen(false);
+                          }}
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50"
+                        >
+                          How it works
+                        </button>
+                      </DrawerClose>
+                      <DrawerClose asChild>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleLandingNavClick("faqs");
+                            setIsOpen(false);
+                          }}
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50"
+                        >
+                          FAQs
+                        </button>
+                      </DrawerClose>
+                    </div>
+
+                    {/* Auth buttons */}
                     <DrawerClose asChild>
                       <Link to="/login" className="w-full max-w-xs">
                         <Button

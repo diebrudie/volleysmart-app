@@ -118,6 +118,42 @@ export type Database = {
         }
         Relationships: []
       }
+      faqs: {
+        Row: {
+          answer: string
+          category: string
+          created_at: string
+          group_label: string
+          id: string
+          page_displayed: Database["public"]["Enums"]["faq_page_display"]
+          question: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          category: string
+          created_at?: string
+          group_label: string
+          id?: string
+          page_displayed?: Database["public"]["Enums"]["faq_page_display"]
+          question: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          category?: string
+          created_at?: string
+          group_label?: string
+          id?: string
+          page_displayed?: Database["public"]["Enums"]["faq_page_display"]
+          question?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       game_players: {
         Row: {
           adjusted_at: string | null
@@ -782,6 +818,7 @@ export type Database = {
     }
     Enums: {
       club_status: "active" | "deleted"
+      faq_page_display: "faqs" | "homepage_faqs"
       membership_status: "pending" | "active" | "removed" | "rejected"
     }
     CompositeTypes: {
@@ -911,6 +948,7 @@ export const Constants = {
   public: {
     Enums: {
       club_status: ["active", "deleted"],
+      faq_page_display: ["faqs", "homepage_faqs"],
       membership_status: ["pending", "active", "removed", "rejected"],
     },
   },

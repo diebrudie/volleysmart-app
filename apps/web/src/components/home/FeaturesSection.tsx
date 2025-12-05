@@ -39,7 +39,7 @@ const FeaturesSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-24 relative bg-[#DCE0E4]">
+    <section id="features" className="py-24 relative bg-[#DCE0E4]">
       <div className="container mx-auto px-6">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">

@@ -11,7 +11,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
  */
 const CTA = () => {
   return (
-    <section className="bg-white text-gray-900 py-24">
+    <section className="bg-white text-gray-900 pb-24">
       <div className="container mx-auto px-6">
         {/* Gradient card */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-primary px-8 py-14 md:px-16 text-center shadow-lg">
