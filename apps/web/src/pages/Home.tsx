@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import HeroSection from "@/components/home/HeroSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
+import FaqsSection from "@/components/home/FaqsSection";
 import CtaSection from "@/components/home/CtaSection";
 
 const Home = () => {
@@ -24,6 +25,7 @@ const Home = () => {
       <HeroSection />
       <FeaturesSection />
       <HowItWorksSection />
+      <FaqsSection />
       <CtaSection />
 
       <Footer />

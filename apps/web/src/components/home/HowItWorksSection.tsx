@@ -8,7 +8,6 @@ import {
   LucideIcon,
   Play,
 } from "lucide-react";
-import type { SVGProps } from "react";
 import { useState, useCallback } from "react";
 
 /**
@@ -18,8 +17,6 @@ import { useState, useCallback } from "react";
  * - Right column: Vertical stepper with gradient numbered circles
  * - Mobile: stacks; Desktop: two columns
  */
-
-type IconType = (props: SVGProps<SVGSVGElement>) => JSX.Element;
 
 type Step = {
   icon: LucideIcon;
@@ -79,7 +76,7 @@ export default function HowItWorksSection() {
             <h2 className="text-5xl sm:text-4xl font-bold tracking-tight">
               How&nbsp;It&nbsp;Works
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 text-lg text-gray-600">
               Get started in minutes with our simple, intuitive process.
             </p>
             <div className="mt-8">
@@ -115,7 +112,7 @@ export default function HowItWorksSection() {
                         />
                         {step.title}
                       </h3>
-                      <p className="mt-2 text-lg text-muted-foreground leading-8">
+                      <p className="mt-2 text-lg text-gray-600 leading-8">
                         {step.description}
                       </p>
                     </div>

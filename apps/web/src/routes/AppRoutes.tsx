@@ -30,6 +30,7 @@ import NewGame from "@/pages/NewGame";
 import Profile from "@/pages/Profile";
 import Clubs from "@/pages/Clubs";
 import ClubGuard from "@/components/routing/ClubGuard";
+import FaqsPage from "@/pages/FaqsPage";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -219,6 +220,9 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
+
+    {/* Public FAQ page */}
+    <Route path="/faqs" element={<FaqsPage />} />
 
     {/* Catch-all route */}
     <Route path="*" element={<NotFound />} />

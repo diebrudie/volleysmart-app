@@ -171,6 +171,7 @@ volleysmart-app/
 │       │   │  │   └─ CopyableClubId.tsx
 │       │   │  ├─ common/
 │       │   │  │   ├─ AppLiveRefresh.tsx
+│       │   │  │   ├─ ContactSheet.tsx
 │       │   │  │   ├─ EmptyGameState.tsx
 │       │   │  │   ├─ Logo.tsx
 │       │   │  │   ├─ RealtimeAppEffect.tsx
@@ -180,6 +181,7 @@ volleysmart-app/
 │       │   │  │   └─ LocationSelector.tsx
 │       │   │  ├─ home/
 │       │   │  │   ├─ CtaSection.tsx
+│       │   │  │   ├─ FaqsSection.tsx
 │       │   │  │   ├─ FeaturesSection.tsx
 │       │   │  │   ├─ HeroSection.tsx
 │       │   │  │   ├─ HowItWorksSection.tsx
@@ -305,6 +307,7 @@ volleysmart-app/
 │       │   │   ├─ Clubs.tsx
 │       │   │   ├─ Dashboard.tsx
 │       │   │   ├─ EditGame.tsx
+│       │   │   ├─ FaqsPage.tsx
 │       │   │   ├─ ForgotPassword.tsx
 │       │   │   ├─ GameDetail.tsx
 │       │   │   ├─ Games.tsx

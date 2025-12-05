@@ -120,7 +120,8 @@ const Navbar = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   //const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const { clubId, membershipStatus, initialized, isValidatingClub } = useClub();
+  const { clubId, membershipStatus, initialized } = useClub();
+
   // Player profile for avatar + names — must be declared BEFORE any early return
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(
     null
@@ -199,11 +200,7 @@ const Navbar = () => {
    * Otherwise no tabs are exposed.
    */
   const navItems =
-    isAuthenticated &&
-    initialized &&
-    membershipStatus === "active" &&
-    clubId &&
-    !isValidatingClub
+    isAuthenticated && initialized && membershipStatus === "active" && clubId
       ? [
           { label: "Dashboard", path: `/dashboard/${clubId}`, visible: true },
           { label: "Archive", path: `/games/${clubId}`, visible: true },
@@ -235,6 +232,28 @@ const Navbar = () => {
               loading="eager"
             />
           </Link>
+
+          {/* Center nav links (desktop only) */}
+          <div className="hidden md:flex items-center gap-8">
+            <a
+              href="#features"
+              className="text-sm font-medium text-gray-700 hover:text-gray-900"
+            >
+              Features
+            </a>
+            <a
+              href="#how-it-works"
+              className="text-sm font-medium text-gray-700 hover:text-gray-900"
+            >
+              How it works
+            </a>
+            <a
+              href="#faqs"
+              className="text-sm font-medium text-gray-700 hover:text-gray-900"
+            >
+              FAQs
+            </a>
+          </div>
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-3">
@@ -300,8 +319,7 @@ const Navbar = () => {
             {isAuthenticated &&
               initialized &&
               membershipStatus === "active" &&
-              clubId &&
-              !isValidatingClub && (
+              clubId && (
                 <Button
                   variant="primary"
                   onClick={() => {
@@ -508,8 +526,7 @@ const Navbar = () => {
                   {isAuthenticated &&
                     initialized &&
                     membershipStatus === "active" &&
-                    clubId &&
-                    !isValidatingClub && (
+                    clubId && (
                       <Button
                         variant="primary"
                         className="w-full mb-2"
@@ -579,6 +596,38 @@ const Navbar = () => {
                   </DrawerHeader>
 
                   <div className="flex flex-1 flex-col items-center justify-center space-y-6 px-4">
+                    {/* Section links */}
+                    <div className="w-full max-w-xs space-y-3">
+                      <DrawerClose asChild>
+                        <a
+                          href="#features"
+                          className="block w-full text-center rounded-md border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900 hover:bg-gray-50"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          Features
+                        </a>
+                      </DrawerClose>
+                      <DrawerClose asChild>
+                        <a
+                          href="#how-it-works"
+                          className="block w-full text-center rounded-md border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900 hover:bg-gray-50"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          How it works
+                        </a>
+                      </DrawerClose>
+                      <DrawerClose asChild>
+                        <a
+                          href="#faqs"
+                          className="block w-full text-center rounded-md border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900 hover:bg-gray-50"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          FAQs
+                        </a>
+                      </DrawerClose>
+                    </div>
+
+                    {/* Auth buttons */}
                     <DrawerClose asChild>
                       <Link to="/login" className="w-full max-w-xs">
                         <Button
