@@ -269,7 +269,7 @@ const Navbar = () => {
   // Homepage/Landing Navbar (when not authenticated)
   const HomepageNav = () => (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 glass bg-white/70 border-b border-glass-border border-gray-200 transition-transform duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 glass bg-white/70 border-b border-glass-border border-gray-200 transition-transform duration-500 ease-out ${
         isNavHidden ? "-translate-y-full" : "translate-y-0"
       }`}
     >
@@ -616,7 +616,7 @@ const Navbar = () => {
   // Mobile homepage nav (white sheet, light logo)
   const MobileHomepageNav = () => (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200 transition-transform duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200 transition-transform duration-500 ease-out ${
         isNavHidden ? "-translate-y-full" : "translate-y-0"
       }`}
     >

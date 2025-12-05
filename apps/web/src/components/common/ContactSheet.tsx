@@ -93,14 +93,18 @@ const ContactSheet = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className={`w-full sm:max-w-md flex flex-col ${
+        className={`w-full sm:max-w-md flex flex-col overflow-visible ${
           forceLight ? "bg-white text-gray-900" : ""
         }`}
         aria-label="Contact form"
       >
-        <SheetHeader className="mb-4">
-          <SheetTitle>Contact us</SheetTitle>
-          <SheetDescription>
+        <SheetHeader className="px-6 pt-6 pb-4">
+          <SheetTitle className={forceLight ? "text-gray-900" : undefined}>
+            Contact us
+          </SheetTitle>
+          <SheetDescription
+            className={forceLight ? "text-gray-600" : undefined}
+          >
             Send us a question, report a bug, or request a feature. We’ll get
             back to you as soon as we can.
           </SheetDescription>
