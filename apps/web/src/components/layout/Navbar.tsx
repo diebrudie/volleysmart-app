@@ -139,12 +139,17 @@ const Navbar = () => {
   const isFaqRoute = pathname === "/faqs";
   const shouldHideOnScroll = pathname === "/";
 
-  const { isDark, theme } = useTheme();
+  const { isDark } = useTheme();
 
+  /**
+   * Always follow the actual DOM theme (<html>.dark) as the single source
+   * of truth. This guarantees the navbar and hamburger icon stay in sync
+   * with the app background, especially when theme = "system" and the OS
+   * is dark but the app is currently in light mode.
+   */
   const effectiveIsDark =
-    theme === "system"
-      ? typeof window !== "undefined" &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches
+    typeof document !== "undefined"
+      ? document.documentElement.classList.contains("dark")
       : isDark;
 
   // class helpers
