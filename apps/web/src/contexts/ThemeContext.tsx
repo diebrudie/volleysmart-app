@@ -272,10 +272,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     if (htmlHasDark !== isDark) setIsDark(htmlHasDark);
   }, [theme, enforcingLight, isDark]);
 
-  // On auth change (and when not enforcing light), load remote preference
-  // DB: NULL => 'system', 'light'/'dark' => explicit choice
+  // Load remote theme as soon as a user exists.
+  // EVEN IF enforcingLight is active (e.g. login page).
   useEffect(() => {
-    if (enforcingLight || !user) return;
+    if (!user) return;
 
     let isMounted = true;
 
@@ -314,6 +314,20 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     toggleTheme,
     enforcingLight,
   };
+
+  // When leaving enforced-light routes (login → dashboard)
+  // immediately resolve system theme and apply correct DOM class
+  useEffect(() => {
+    if (!enforcingLight) {
+      const resolved = resolveTheme(theme);
+      const shouldBeDark = resolved === "dark";
+
+      setIsDark(shouldBeDark);
+
+      if (shouldBeDark) document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("dark");
+    }
+  }, [enforcingLight, theme]);
 
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
