@@ -35,7 +35,7 @@ const STEPS: Step[] = [
     icon: UserPlus,
     title: "Invite Players",
     description:
-      "Invite players to your Club via Email or users can actively join a Club — no downloads required.",
+      "Invite players to your Club by sharing your generated Club-ID, then users can actively join your Club — no downloads required.",
   },
   {
     icon: Volleyball,

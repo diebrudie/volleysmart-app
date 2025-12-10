@@ -13,17 +13,20 @@ import { useTheme } from "@/contexts/ThemeContext";
 /**
  * Fixed bottom tab bar with a prominent center "+" action.
  * Tabs are always visible but disabled if there is no active clubId.
- * Covers safe area and sits above page content.
+ * Covers safe area and sits above page content. Test
  */
 const MobileBottomNav: React.FC = () => {
   const { clubId } = useClub();
   const disabled = !clubId;
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { isDark } = useTheme();
+  const { resolvedTheme } = useTheme();
 
-  // Active color depends on theme:
-  const activeColorClass = isDark ? "text-white" : "text-primary";
+  // Always follow the DOM-resolved theme so the nav matches the real background.
+  const effectiveIsDark = resolvedTheme === "dark";
+
+  // Active color depends on effective theme:
+  const activeColorClass = effectiveIsDark ? "text-white" : "text-primary";
 
   const go = (to: string, isDisabled: boolean) => {
     if (isDisabled) return;

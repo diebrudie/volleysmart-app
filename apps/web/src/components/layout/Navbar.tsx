@@ -4,6 +4,7 @@ import { useIsCompact } from "@/hooks/use-compact";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/theme-toggle";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   Menu,
   ChevronDown,
@@ -137,6 +138,26 @@ const Navbar = () => {
   const { pathname } = useLocation();
   const isFaqRoute = pathname === "/faqs";
   const shouldHideOnScroll = pathname === "/";
+
+  const { isDark } = useTheme();
+
+  /**
+   * Always follow the actual DOM theme (<html>.dark) as the single source
+   * of truth. This guarantees the navbar and hamburger icon stay in sync
+   * with the app background, especially when theme = "system" and the OS
+   * is dark but the app is currently in light mode.
+   */
+  const effectiveIsDark =
+    typeof document !== "undefined"
+      ? document.documentElement.classList.contains("dark")
+      : isDark;
+
+  // class helpers
+  const navTextColor = effectiveIsDark ? "text-gray-300" : "text-gray-700";
+  const navHoverColor = effectiveIsDark
+    ? "hover:text-gray-100"
+    : "hover:text-gray-900";
+  const iconColor = effectiveIsDark ? "text-gray-300" : "text-gray-600";
 
   // Track scroll direction for public homepage nav auto-hide
   const lastScrollYRef = useRef(0);
@@ -379,7 +400,7 @@ const Navbar = () => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className="text-base font-medium text-gray-700 dark:text-gray-300 hover:text-volleyball-primary dark:hover:text-blue-400 border-b border-transparent hover:border-[#243F8D] dark:hover:border-blue-400 pb-1 transition-colors"
+                    className={`text-base font-medium ${navTextColor} ${navHoverColor} border-b border-transparent hover:border-[#243F8D] dark:hover:border-blue-400 pb-1 transition-colors`}
                   >
                     {item.label}
                   </Link>
@@ -433,17 +454,16 @@ const Navbar = () => {
                           loading="lazy"
                         />
                       ) : (
-                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 select-none">
+                        <span
+                          className={`text-sm font-semibold ${navTextColor}`}
+                        >
                           {initials}
                         </span>
                       )}
                     </div>
                   );
                 })()}
-                <ChevronDown
-                  className="ml-1 h-4 w-4 text-gray-500 dark:text-gray-400
-               group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
-                />
+                <ChevronDown className={`ml-1 h-4 w-4 ${iconColor}`} />
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
@@ -545,7 +565,7 @@ const Navbar = () => {
                   isOpen ? "bg-muted" : "bg-transparent"
                 } border-border text-foreground hover:bg-muted focus:bg-muted`}
               >
-                <Menu className="h-6 w-6" />
+                <Menu className={`h-6 w-6 ${iconColor}`} />
               </Button>
             </DrawerTrigger>
 

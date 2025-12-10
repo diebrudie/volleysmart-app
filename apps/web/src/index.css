@@ -152,24 +152,23 @@
     @apply border-border;
   }
 
+  html,
   body {
     @apply bg-background text-foreground;
     min-height: 100vh;
+    overscroll-behavior-y: contain;
+    background-color: hsl(var(--background));
   }
 
   html {
     scroll-behavior: smooth;
   }
-  /* --- Added for mobile/PWA keyboard & overscroll stability --- */
-  html,
-  body {
-    overscroll-behavior-y: contain;
-  }
 
-  .app-root,
-  body,
-  html {
-    height: 100svh;
+  /* Ensure the React root also fills and inherits the themed background */
+  #root,
+  .app-root {
+    min-height: 100vh;
+    background-color: hsl(var(--background));
   }
 }
 
