@@ -61,6 +61,38 @@ const getDomIsDark = (): boolean =>
   typeof document !== "undefined" &&
   document.documentElement.classList.contains("dark");
 
+const updateMetaThemeColor = (shouldBeDark: boolean) => {
+  if (typeof document === "undefined") return;
+
+  // Try to derive from CSS var so it tracks per-page/background tweaks.
+  let color: string | null = null;
+  try {
+    const bg = getComputedStyle(document.documentElement).getPropertyValue(
+      "--background"
+    );
+    if (bg) color = `hsl(${bg.trim()})`;
+  } catch {
+    /* ignore */
+  }
+
+  // Fall back to explicit colors used in index.html
+  if (!color) {
+    color = shouldBeDark ? "#020617" : "#f9fafb";
+  }
+
+  let meta = document.querySelector(
+    'meta[name="theme-color"]'
+  ) as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", color);
+  // Clear media so the value always applies in standalone/PWA contexts.
+  meta.removeAttribute("media");
+};
+
 const applyDomTheme = (shouldBeDark: boolean) => {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -71,6 +103,7 @@ const applyDomTheme = (shouldBeDark: boolean) => {
     root.classList.remove("dark");
     root.style.setProperty("color-scheme", "light");
   }
+  updateMetaThemeColor(shouldBeDark);
 };
 
 function normalizePath(p: string): string {
