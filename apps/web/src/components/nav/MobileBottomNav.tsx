@@ -13,7 +13,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 /**
  * Fixed bottom tab bar with a prominent center "+" action.
  * Tabs are always visible but disabled if there is no active clubId.
- * Covers safe area and sits above page content.
+ * Covers safe area and sits above page content. Test
  */
 const MobileBottomNav: React.FC = () => {
   const { clubId } = useClub();
