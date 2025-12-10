@@ -10,18 +10,14 @@ interface LogoProps {
 
 const Logo = ({ size = "md", linkTo = "/", forceTheme }: LogoProps) => {
   const { isAuthenticated } = useAuth();
-  const { isDark, theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
   /**
    * Always follow the actual DOM theme for system mode.
    * This guarantees the logo matches whatever Tailwind is using,
    * even if ThemeContext is briefly out of sync after auth redirects.
    */
-  const effectiveIsDark =
-    theme === "system"
-      ? typeof document !== "undefined" &&
-        document.documentElement.classList.contains("dark")
-      : isDark;
+  const effectiveIsDark = resolvedTheme === "dark";
 
   const destination = isAuthenticated ? "/dashboard" : "/";
 

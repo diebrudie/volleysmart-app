@@ -18,6 +18,10 @@ interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   isDark: boolean;
+  /** Resolved theme based on the DOM (<html>.dark) */
+  resolvedTheme: "light" | "dark";
+  /** True when the DOM is currently dark (single source of truth) */
+  isDarkResolved: boolean;
   toggleTheme: () => void;
   /** True when provider is currently enforcing light mode (no persistence). */
   enforcingLight: boolean;
@@ -52,6 +56,22 @@ const getSystemTheme = (): "light" | "dark" => {
 // Helper function to resolve actual theme
 const resolveTheme = (theme: Theme): "light" | "dark" =>
   theme === "system" ? getSystemTheme() : theme;
+
+const getDomIsDark = (): boolean =>
+  typeof document !== "undefined" &&
+  document.documentElement.classList.contains("dark");
+
+const applyDomTheme = (shouldBeDark: boolean) => {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (shouldBeDark) {
+    root.classList.add("dark");
+    root.style.setProperty("color-scheme", "dark");
+  } else {
+    root.classList.remove("dark");
+    root.style.setProperty("color-scheme", "light");
+  }
+};
 
 function normalizePath(p: string): string {
   // remove trailing slashes except for root
@@ -138,12 +158,19 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return "light";
   });
 
+  const [domIsDark, setDomIsDark] = useState<boolean>(() => {
+    const domDark = getDomIsDark();
+    if (domDark) return true;
+    const resolved = resolveTheme(theme);
+    return resolved === "dark" && !enforcingLight;
+  });
+
   const [isDark, setIsDark] = useState<boolean>(() => {
     // Detect from <html> on mount for immediate SSR/refresh correctness
     if (typeof document !== "undefined") {
       return document.documentElement.classList.contains("dark");
     }
-    return resolveTheme(theme) === "dark" && !enforcingLight;
+    return domIsDark;
   });
 
   // Safely write localStorage
@@ -184,7 +211,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       // Ignore writes before authenticated/allowed routes
       setThemeState("light");
       setIsDark(false);
-      document.documentElement.classList.remove("dark");
+      setDomIsDark(false);
+      applyDomTheme(false);
       return;
     }
 
@@ -194,10 +222,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
     // update immediately
     setIsDark(isDarkResolved);
+    setDomIsDark(isDarkResolved);
 
-    const root = document.documentElement;
-    if (isDarkResolved) root.classList.add("dark");
-    else root.classList.remove("dark");
+    applyDomTheme(isDarkResolved);
 
     writeLocal(newTheme);
     void persistRemote(newTheme);
@@ -216,6 +243,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       if (isDark) {
         setIsDark(false);
       }
+      if (domIsDark) {
+        setDomIsDark(false);
+      }
       return;
     }
 
@@ -227,12 +257,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       setIsDark(shouldBeDark);
     }
 
-    if (shouldBeDark) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
+    if (shouldBeDark !== domIsDark) {
+      setDomIsDark(shouldBeDark);
     }
-  }, [theme, enforcingLight, isDark]);
+
+    applyDomTheme(shouldBeDark);
+  }, [theme, enforcingLight, isDark, domIsDark]);
 
   // When enforcement turns off (e.g., after redirect into a private route),
   // re-hydrate the saved theme immediately so the UI updates without a reload.
@@ -255,22 +285,33 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
       const resolved = getSystemTheme();
-      setIsDark(resolved === "dark");
-
-      const root = document.documentElement;
-      if (resolved === "dark") root.classList.add("dark");
-      else root.classList.remove("dark");
+      const shouldBeDark = resolved === "dark";
+      setIsDark(shouldBeDark);
+      setDomIsDark(shouldBeDark);
+      applyDomTheme(shouldBeDark);
     };
 
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme, enforcingLight]);
 
-  // small sync effect so isDark updates if the DOM or theme changes asynchronously
+  // Keep local state in sync with the actual DOM class (single source of truth)
   useEffect(() => {
-    const htmlHasDark = document.documentElement.classList.contains("dark");
-    if (htmlHasDark !== isDark) setIsDark(htmlHasDark);
-  }, [theme, enforcingLight, isDark]);
+    const root = document.documentElement;
+    const syncFromDom = () => {
+      const hasDark = root.classList.contains("dark");
+      setDomIsDark((prev) => (prev === hasDark ? prev : hasDark));
+      setIsDark((prev) => (prev === hasDark ? prev : hasDark));
+      root.style.setProperty("color-scheme", hasDark ? "dark" : "light");
+    };
+
+    syncFromDom();
+
+    const observer = new MutationObserver(syncFromDom);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Load remote theme as soon as a user exists.
   // EVEN IF enforcingLight is active (e.g. login page).
@@ -307,10 +348,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     };
   }, [user, enforcingLight]);
 
+  const resolvedTheme = domIsDark ? "dark" : "light";
+
   const value: ThemeContextType = {
     theme,
     setTheme,
     isDark,
+    resolvedTheme,
+    isDarkResolved: domIsDark,
     toggleTheme,
     enforcingLight,
   };
@@ -323,9 +368,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       const shouldBeDark = resolved === "dark";
 
       setIsDark(shouldBeDark);
+      setDomIsDark(shouldBeDark);
 
-      if (shouldBeDark) document.documentElement.classList.add("dark");
-      else document.documentElement.classList.remove("dark");
+      applyDomTheme(shouldBeDark);
     }
   }, [enforcingLight, theme]);
 

@@ -20,21 +20,10 @@ const MobileBottomNav: React.FC = () => {
   const disabled = !clubId;
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { isDark, theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
-  /**
-   * Resolve dark mode for the bottom nav.
-   *
-   * For "system", we look at the actual <html> class that Tailwind
-   * uses (`dark`). This guarantees the active tab color always matches
-   * the real UI background, even if ThemeContext is briefly out of sync
-   * after login/logout redirects.
-   */
-  const effectiveIsDark =
-    theme === "system"
-      ? typeof document !== "undefined" &&
-        document.documentElement.classList.contains("dark")
-      : isDark;
+  // Always follow the DOM-resolved theme so the nav matches the real background.
+  const effectiveIsDark = resolvedTheme === "dark";
 
   // Active color depends on effective theme:
   const activeColorClass = effectiveIsDark ? "text-white" : "text-primary";
