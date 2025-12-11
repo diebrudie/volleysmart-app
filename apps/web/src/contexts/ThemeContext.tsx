@@ -137,6 +137,8 @@ interface ThemeProviderProps {
   /** Provided by App, not strictly required for enforcement but kept for compatibility. */
   isAuthenticated?: boolean;
   enforceLightOnRoutes?: Array<string | RegExp>;
+  /** Routes that must always be light regardless of auth status. */
+  enforceLightAlwaysRoutes?: Array<string | RegExp>;
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
@@ -150,17 +152,21 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     "/forgot-password",
     "/reset-password",
     "/players/onboarding",
+    "/start",
     "/faqs",
   ],
+  enforceLightAlwaysRoutes = ["/players/onboarding", "/start"],
 }) => {
   const { user } = useAuth();
   const location = useLocation();
   const pathname = location.pathname;
 
-  // Force light ONLY for non-authenticated users on these routes
+  // Force light on onboarding regardless; others only when unauthenticated
   const enforcingLight = useMemo(
-    () => !isAuthenticated && routeMatches(pathname, enforceLightOnRoutes),
-    [pathname, enforceLightOnRoutes, isAuthenticated]
+    () =>
+      routeMatches(pathname, enforceLightAlwaysRoutes) ||
+      (!isAuthenticated && routeMatches(pathname, enforceLightOnRoutes)),
+    [pathname, enforceLightOnRoutes, enforceLightAlwaysRoutes, isAuthenticated]
   );
 
   // Initialize from localStorage only when we're NOT enforcing light.
@@ -279,6 +285,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       if (domIsDark) {
         setDomIsDark(false);
       }
+      applyDomTheme(false);
       return;
     }
 
@@ -366,10 +373,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       }
       if (!isMounted) return;
 
+      // Default new profiles to LIGHT (not system) so first-time users
+      // aren't pulled into dark via system or stale storage.
       const remoteTheme: Theme =
         data?.theme === "light" || data?.theme === "dark"
           ? data.theme
-          : "system";
+          : "light";
 
       setThemeState(remoteTheme);
       writeLocal(remoteTheme);
