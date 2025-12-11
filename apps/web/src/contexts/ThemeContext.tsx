@@ -61,6 +61,38 @@ const getDomIsDark = (): boolean =>
   typeof document !== "undefined" &&
   document.documentElement.classList.contains("dark");
 
+const updateMetaThemeColor = (shouldBeDark: boolean) => {
+  if (typeof document === "undefined") return;
+
+  // Try to derive from CSS var so it tracks per-page/background tweaks.
+  let color: string | null = null;
+  try {
+    const bg = getComputedStyle(document.documentElement).getPropertyValue(
+      "--background"
+    );
+    if (bg) color = `hsl(${bg.trim()})`;
+  } catch {
+    /* ignore */
+  }
+
+  // Fall back to explicit colors used in index.html
+  if (!color) {
+    color = shouldBeDark ? "#020617" : "#f9fafb";
+  }
+
+  let meta = document.querySelector(
+    'meta[name="theme-color"]'
+  ) as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", color);
+  // Clear media so the value always applies in standalone/PWA contexts.
+  meta.removeAttribute("media");
+};
+
 const applyDomTheme = (shouldBeDark: boolean) => {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -71,6 +103,7 @@ const applyDomTheme = (shouldBeDark: boolean) => {
     root.classList.remove("dark");
     root.style.setProperty("color-scheme", "light");
   }
+  updateMetaThemeColor(shouldBeDark);
 };
 
 function normalizePath(p: string): string {
@@ -104,6 +137,8 @@ interface ThemeProviderProps {
   /** Provided by App, not strictly required for enforcement but kept for compatibility. */
   isAuthenticated?: boolean;
   enforceLightOnRoutes?: Array<string | RegExp>;
+  /** Routes that must always be light regardless of auth status. */
+  enforceLightAlwaysRoutes?: Array<string | RegExp>;
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
@@ -117,17 +152,21 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     "/forgot-password",
     "/reset-password",
     "/players/onboarding",
+    "/start",
     "/faqs",
   ],
+  enforceLightAlwaysRoutes = ["/players/onboarding", "/start"],
 }) => {
   const { user } = useAuth();
   const location = useLocation();
   const pathname = location.pathname;
 
-  // Force light ONLY for non-authenticated users on these routes
+  // Force light on onboarding regardless; others only when unauthenticated
   const enforcingLight = useMemo(
-    () => !isAuthenticated && routeMatches(pathname, enforceLightOnRoutes),
-    [pathname, enforceLightOnRoutes, isAuthenticated]
+    () =>
+      routeMatches(pathname, enforceLightAlwaysRoutes) ||
+      (!isAuthenticated && routeMatches(pathname, enforceLightOnRoutes)),
+    [pathname, enforceLightOnRoutes, enforceLightAlwaysRoutes, isAuthenticated]
   );
 
   // Initialize from localStorage only when we're NOT enforcing light.
@@ -246,6 +285,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       if (domIsDark) {
         setDomIsDark(false);
       }
+      applyDomTheme(false);
       return;
     }
 
@@ -333,10 +373,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       }
       if (!isMounted) return;
 
+      // Default new profiles to LIGHT (not system) so first-time users
+      // aren't pulled into dark via system or stale storage.
       const remoteTheme: Theme =
         data?.theme === "light" || data?.theme === "dark"
           ? data.theme
-          : "system";
+          : "light";
 
       setThemeState(remoteTheme);
       writeLocal(remoteTheme);

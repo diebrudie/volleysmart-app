@@ -1,5 +1,6 @@
 /**
  * AuthLayout
+ * AuthLayout
  * - Forces LIGHT MODE on auth pages before paint (useLayoutEffect)
  * - Prevents any re-addition of the `dark` class while mounted
  * - Restores previous theme on unmount

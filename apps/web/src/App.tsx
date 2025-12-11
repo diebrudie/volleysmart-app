@@ -121,6 +121,7 @@ const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
 
   // Public / pre-auth routes must ignore theme and stay light
+  // Public / pre-auth routes must ignore theme and stay light
   const enforceLightOnRoutes: Array<string | RegExp> = [
     "/",
     "/login",
@@ -128,6 +129,7 @@ const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
     "/forgot-password",
     "/reset-password",
     "/players/onboarding",
+    "/start",
     "/faqs",
   ];
 
@@ -135,6 +137,7 @@ const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
     <ThemeProvider
       isAuthenticated={isAuthenticated}
       enforceLightOnRoutes={enforceLightOnRoutes}
+      enforceLightAlwaysRoutes={["/players/onboarding", "/start"]}
     >
       {children}
     </ThemeProvider>
