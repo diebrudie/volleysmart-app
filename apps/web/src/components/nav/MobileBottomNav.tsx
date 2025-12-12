@@ -22,7 +22,6 @@ const MobileBottomNav: React.FC = () => {
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
   const [isStandalone, setIsStandalone] = React.useState(false);
-  const [viewportOffset, setViewportOffset] = React.useState(0);
 
   React.useEffect(() => {
     const checkStandalone = () =>
@@ -37,23 +36,6 @@ const MobileBottomNav: React.FC = () => {
     const handler = () => setIsStandalone(checkStandalone());
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  // Keep nav pinned to the visual viewport in standalone/PWA (iOS quirks)
-  React.useEffect(() => {
-    if (typeof window === "undefined" || !window.visualViewport) return;
-    const vv = window.visualViewport;
-    const updateOffset = () => {
-      const diff = window.innerHeight - vv.height - vv.offsetTop;
-      setViewportOffset(diff > 0 ? diff : 0);
-    };
-    updateOffset();
-    vv.addEventListener("resize", updateOffset);
-    vv.addEventListener("scroll", updateOffset);
-    return () => {
-      vv.removeEventListener("resize", updateOffset);
-      vv.removeEventListener("scroll", updateOffset);
-    };
   }, []);
 
   // Always follow the DOM-resolved theme so the nav matches the real background.
@@ -78,12 +60,8 @@ const MobileBottomNav: React.FC = () => {
 
   return (
     <nav
-      className={`fixed left-0 right-0 z-50 border-t ${navBackgroundClass}
-                 pb-[max(env(safe-area-inset-bottom),0px)]`}
-      style={{
-        bottom: `max(env(safe-area-inset-bottom), ${viewportOffset}px)`,
-        transform: "translateZ(0)",
-      }}
+      className={`fixed bottom-0 left-0 right-0 z-50 border-t ${navBackgroundClass}
+                 pb-[max(env(safe-area-inset-bottom),0px)] translate-z-0`}
       role="navigation"
       aria-label="Primary"
     >
