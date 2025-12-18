@@ -21,12 +21,32 @@ const MobileBottomNav: React.FC = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
+  const [isStandalone, setIsStandalone] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkStandalone = () =>
+      typeof window !== "undefined" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        // iOS Safari PWA
+        (window.navigator as any)?.standalone === true);
+
+    setIsStandalone(checkStandalone());
+
+    const mq = window.matchMedia("(display-mode: standalone)");
+    const handler = () => setIsStandalone(checkStandalone());
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   // Always follow the DOM-resolved theme so the nav matches the real background.
   const effectiveIsDark = resolvedTheme === "dark";
 
   // Active color depends on effective theme:
   const activeColorClass = effectiveIsDark ? "text-white" : "text-primary";
+
+  const navBackgroundClass = isStandalone
+    ? "bg-background"
+    : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70";
 
   const go = (to: string, isDisabled: boolean) => {
     if (isDisabled) return;
@@ -40,8 +60,8 @@ const MobileBottomNav: React.FC = () => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70
-                 pb-[max(env(safe-area-inset-bottom),0px)]"
+      className={`fixed bottom-0 left-0 right-0 z-50 border-t ${navBackgroundClass}
+                 pb-[max(env(safe-area-inset-bottom),0px)] translate-z-0`}
       role="navigation"
       aria-label="Primary"
     >
