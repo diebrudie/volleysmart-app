@@ -111,7 +111,7 @@ const SetBox: React.FC<SetBoxProps> = ({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!onScoreUpdate) return;
     const a = parseInt(localTeamAScore, 10);
     const b = parseInt(localTeamBScore, 10);
@@ -122,7 +122,7 @@ const SetBox: React.FC<SetBoxProps> = ({
     const active = document.activeElement as HTMLElement | null;
     active?.blur?.();
 
-    onScoreUpdate(setNumber, aVal, bVal);
+    await onScoreUpdate(setNumber, aVal, bVal);
     handleOpen(false);
   };
 
@@ -198,7 +198,10 @@ const SetBox: React.FC<SetBoxProps> = ({
 
       focusAndCenterFirstInput();
     } else {
-      if (isStandalone) unlockBodyScroll();
+      // Ensure scroll is unlocked before drawer closes
+      if (isMobile && isStandalone) {
+        unlockBodyScroll();
+      }
     }
   };
 
