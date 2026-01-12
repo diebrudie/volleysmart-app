@@ -71,6 +71,7 @@ const SetBox: React.FC<SetBoxProps> = ({
   const teamAInputRef = useRef<HTMLInputElement>(null);
   const [keyboardInset, setKeyboardInset] = useState<number>(0);
   const drawerContentRef = useRef<HTMLDivElement>(null);
+  const drawerCloseRef = useRef<HTMLButtonElement>(null);
 
   // Tracks the first time the sheet opens on mobile to harden focus timing
   const firstOpenPrimedRef = useRef<boolean>(false);
@@ -118,24 +119,33 @@ const SetBox: React.FC<SetBoxProps> = ({
     const aVal = Number.isFinite(a) ? a : 0;
     const bVal = Number.isFinite(b) ? b : 0;
 
+    console.log("✅ handleSubmit called with:", setNumber, aVal, bVal);
+
     // Blur to prompt keyboard to close before unlock/reenable scroll
     const active = document.activeElement as HTMLElement | null;
     active?.blur?.();
 
     try {
       await onScoreUpdate(setNumber, aVal, bVal);
+      console.log("✅ Score update successful");
     } catch (error) {
-      console.error("Error updating score:", error);
+      console.error("❌ Error updating score:", error);
       return;
     }
 
-    console.log("Score updated:", setNumber, aVal, bVal);
-    // Reset keyboard inset immediately and close drawer with a small delay
-    // to allow keyboard to fully dismiss on Safari/Chrome
+    // Reset keyboard inset and trigger drawer close via ref
     setKeyboardInset(0);
-    setTimeout(() => {
-      handleOpen(false);
-    }, 100);
+    console.log("✅ Attempting to close drawer via ref");
+
+    // Use the drawer close ref to properly close the drawer
+    if (drawerCloseRef.current) {
+      drawerCloseRef.current.click();
+    } else {
+      // Fallback: use setTimeout with state management
+      setTimeout(() => {
+        handleOpen(false);
+      }, 100);
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -524,21 +534,30 @@ const SetBox: React.FC<SetBoxProps> = ({
                   </div>
 
                   <div className="flex justify-center gap-3 pb-2">
+                    <DrawerClose ref={drawerCloseRef} asChild>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log("✅ Cancel button clicked");
+                          setKeyboardInset(0);
+                        }}
+                        className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </DrawerClose>
                     <button
                       type="button"
-                      onClick={() => {
-                        setKeyboardInset(0);
-                        setTimeout(() => {
-                          handleOpen(false);
-                        }, 50);
+                      onClick={(e) => {
+                        console.log("✅ Submit button clicked");
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSubmit();
                       }}
-                      className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                      className="inline-flex items-center justify-center rounded-md bg-volleyball-primary dark:bg-blue-600 text-white px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-volleyball-primary/90 dark:hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
                     >
-                      Cancel
-                    </button>
-                    <Button variant="primary" onClick={handleSubmit}>
                       Submit
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </DrawerContent>
