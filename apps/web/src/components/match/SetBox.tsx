@@ -4,6 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -271,19 +272,19 @@ const SetBox: React.FC<SetBoxProps> = ({
   }, [isMobile, isOpen]);
 
   // Lock body scroll while the drawer is open in MOBILE BROWSER (non-standalone).
-  // PWA locking is handled in handleOpen via fixed-position lock.
+  // IMPORTANT: Do NOT set `touchAction: none` on iOS Safari/Chrome.
+  // It can break Vaul/Radix pointer handling inside portaled overlays.
   useEffect(() => {
     if (!isMobile || !isOpen) return;
-    if (isStandalone) return; // skip here; PWA already locked
+    if (isStandalone) return; // skip here; PWA already locked in handleOpen()
 
-    const prevOverflow = document.body.style.overflow;
-    const prevTouchAction = document.body.style.touchAction;
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
+    const body = document.body;
+    const prevOverflow = body.style.overflow;
+
+    body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouchAction;
+      body.style.overflow = prevOverflow;
       // Safari sometimes needs a microtask to re-attach scrolling after closing the sheet
       Promise.resolve().then(() => window.scrollBy(0, 0));
     };
@@ -364,6 +365,10 @@ const SetBox: React.FC<SetBoxProps> = ({
                   <DialogTitle className="text-center">
                     Update Set {setNumber} Score
                   </DialogTitle>
+                  <DialogDescription className="sr-only">
+                    Enter the scores for Team A and Team B, then submit or
+                    cancel.
+                  </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-6">
@@ -446,10 +451,9 @@ const SetBox: React.FC<SetBoxProps> = ({
               <DrawerContent
                 ref={drawerContentRef}
                 onOpenAutoFocus={(e) => e.preventDefault()}
-                onPointerDownOutside={(e) => e.preventDefault()}
                 /**
-                 * Safe-area + keyboard inset so content sits above the iOS keyboard.
-                 * The 16px gives a little breathing space over the keyboard.
+                 * Do not prevent outside interactions here.
+                 * Vaul uses pointer/touch events to handle dismiss + drag gestures reliably on iOS.
                  */
                 style={{
                   paddingBottom: `calc(${keyboardInset}px + env(safe-area-inset-bottom))`,
