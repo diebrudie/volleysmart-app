@@ -122,8 +122,19 @@ const SetBox: React.FC<SetBoxProps> = ({
     const active = document.activeElement as HTMLElement | null;
     active?.blur?.();
 
-    await onScoreUpdate(setNumber, aVal, bVal);
-    handleOpen(false);
+    try {
+      await onScoreUpdate(setNumber, aVal, bVal);
+    } catch (error) {
+      console.error("Error updating score:", error);
+      return;
+    }
+
+    // Reset keyboard inset immediately and close drawer with a small delay
+    // to allow keyboard to fully dismiss on Safari/Chrome
+    setKeyboardInset(0);
+    setTimeout(() => {
+      handleOpen(false);
+    }, 100);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -179,8 +190,8 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const handleOpen = (open: boolean) => {
-    setIsOpen(open);
     if (open) {
+      setIsOpen(true);
       resetLocalScores();
 
       // PWA needs fixed-position lock BEFORE focusing to avoid jump.
@@ -198,7 +209,11 @@ const SetBox: React.FC<SetBoxProps> = ({
 
       focusAndCenterFirstInput();
     } else {
-      // Ensure scroll is unlocked before drawer closes
+      // Close drawer: reset keyboard inset first, then update state
+      setKeyboardInset(0);
+      setIsOpen(false);
+
+      // Ensure scroll is unlocked after drawer closes
       if (isMobile && isStandalone) {
         unlockBodyScroll();
       }
@@ -508,9 +523,18 @@ const SetBox: React.FC<SetBoxProps> = ({
                   </div>
 
                   <div className="flex justify-center gap-3 pb-2">
-                    <DrawerClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DrawerClose>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setKeyboardInset(0);
+                        setTimeout(() => {
+                          handleOpen(false);
+                        }, 50);
+                      }}
+                      className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
                     <Button variant="primary" onClick={handleSubmit}>
                       Submit
                     </Button>
