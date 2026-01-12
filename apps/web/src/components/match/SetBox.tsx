@@ -129,6 +129,7 @@ const SetBox: React.FC<SetBoxProps> = ({
       return;
     }
 
+    console.log("Score updated:", setNumber, aVal, bVal);
     // Reset keyboard inset immediately and close drawer with a small delay
     // to allow keyboard to fully dismiss on Safari/Chrome
     setKeyboardInset(0);
