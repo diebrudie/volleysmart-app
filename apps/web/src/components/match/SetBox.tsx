@@ -78,9 +78,12 @@ const SetBox: React.FC<SetBoxProps> = ({
 
   // Update local state when props change (important for when switching between games)
   useEffect(() => {
+    console.log(
+      `🔄 [SETBOX] Set ${setNumber} props updated - teamAScore: ${teamAScore}, teamBScore: ${teamBScore}`
+    );
     setLocalTeamAScore(teamAScore && teamAScore > 0 ? String(teamAScore) : "");
     setLocalTeamBScore(teamBScore && teamBScore > 0 ? String(teamBScore) : "");
-  }, [teamAScore, teamBScore]);
+  }, [teamAScore, teamBScore, setNumber]);
 
   const hasBeenPlayed =
     teamAScore !== null &&
@@ -113,39 +116,57 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!onScoreUpdate) return;
+    console.log("📱 [SUBMIT] Button tap detected");
+
+    if (!onScoreUpdate) {
+      console.log("❌ [SUBMIT] No onScoreUpdate callback");
+      return;
+    }
+
     const a = parseInt(localTeamAScore, 10);
     const b = parseInt(localTeamBScore, 10);
     const aVal = Number.isFinite(a) ? a : 0;
     const bVal = Number.isFinite(b) ? b : 0;
 
-    console.log("✅ handleSubmit called with:", setNumber, aVal, bVal);
+    console.log("📝 [SUBMIT] Scores to save:", { setNumber, aVal, bVal });
 
-    // Blur to prompt keyboard to close before unlock/reenable scroll
+    // Blur to prompt keyboard to close
     const active = document.activeElement as HTMLElement | null;
     active?.blur?.();
+    console.log("⌨️ [SUBMIT] Keyboard blur triggered");
 
     try {
+      console.log("🔄 [SUBMIT] Calling onScoreUpdate...");
       await onScoreUpdate(setNumber, aVal, bVal);
-      console.log("✅ Score update successful");
+      console.log("✅ [SUBMIT] Score update successful");
     } catch (error) {
-      console.error("❌ Error updating score:", error);
+      console.error("❌ [SUBMIT] Error updating score:", error);
       return;
     }
 
-    // Reset keyboard inset and trigger drawer close via ref
+    // Reset keyboard inset and close drawer
+    console.log("🔧 [SUBMIT] Resetting keyboard inset and closing drawer");
     setKeyboardInset(0);
-    console.log("✅ Attempting to close drawer via ref");
 
-    // Use the drawer close ref to properly close the drawer
-    if (drawerCloseRef.current) {
-      drawerCloseRef.current.click();
-    } else {
-      // Fallback: use setTimeout with state management
-      setTimeout(() => {
-        handleOpen(false);
-      }, 100);
-    }
+    // Use a small timeout to ensure the update is processed
+    setTimeout(() => {
+      console.log("⏱️ [SUBMIT] Timeout complete, calling handleOpen(false)");
+      handleOpen(false);
+      console.log("✅ [SUBMIT] handleOpen(false) called");
+    }, 50);
+  };
+
+  const handleCancel = () => {
+    console.log("📱 [CANCEL] Button tap detected");
+    console.log("🔧 [CANCEL] Resetting keyboard inset");
+    setKeyboardInset(0);
+
+    console.log("⏱️ [CANCEL] Calling handleOpen(false) with setTimeout");
+    setTimeout(() => {
+      console.log("⏱️ [CANCEL] Timeout complete, calling handleOpen(false)");
+      handleOpen(false);
+      console.log("✅ [CANCEL] handleOpen(false) called");
+    }, 50);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -201,12 +222,18 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const handleOpen = (open: boolean) => {
+    console.log("🎯 [HANDLEOPEN] Called with open:", open);
+
     if (open) {
+      console.log("📂 [HANDLEOPEN] Opening drawer");
       setIsOpen(true);
       resetLocalScores();
 
       // PWA needs fixed-position lock BEFORE focusing to avoid jump.
-      if (isMobile && isStandalone) lockBodyScroll();
+      if (isMobile && isStandalone) {
+        console.log("🔒 [HANDLEOPEN] Locking body scroll (PWA)");
+        lockBodyScroll();
+      }
 
       // Recompute keyboard inset once after open (microtask)
       Promise.resolve().then(() => {
@@ -214,20 +241,36 @@ const SetBox: React.FC<SetBoxProps> = ({
           typeof window !== "undefined" ? window.visualViewport ?? null : null;
         if (vv) {
           const vh = window.innerHeight;
-          setKeyboardInset(Math.max(0, vh - vv.height));
+          const newInset = Math.max(0, vh - vv.height);
+          console.log(
+            "⌨️ [HANDLEOPEN] Visual viewport height:",
+            vh,
+            "actual height:",
+            vv.height,
+            "inset:",
+            newInset
+          );
+          setKeyboardInset(newInset);
         }
       });
 
       focusAndCenterFirstInput();
     } else {
+      console.log("📂 [HANDLEOPEN] Closing drawer");
       // Close drawer: reset keyboard inset first, then update state
       setKeyboardInset(0);
+      console.log("⌨️ [HANDLEOPEN] Keyboard inset reset to 0");
+
       setIsOpen(false);
+      console.log("📂 [HANDLEOPEN] setIsOpen(false) called");
 
       // Ensure scroll is unlocked after drawer closes
       if (isMobile && isStandalone) {
+        console.log("🔓 [HANDLEOPEN] Unlocking body scroll (PWA)");
         unlockBodyScroll();
       }
+
+      console.log("✅ [HANDLEOPEN] Drawer close complete");
     }
   };
 
@@ -534,22 +577,42 @@ const SetBox: React.FC<SetBoxProps> = ({
                   </div>
 
                   <div className="flex justify-center gap-3 pb-2">
-                    <DrawerClose ref={drawerCloseRef} asChild>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          console.log("✅ Cancel button clicked");
-                          setKeyboardInset(0);
-                        }}
-                        className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
-                    </DrawerClose>
                     <button
                       type="button"
+                      onTouchStart={(e) => {
+                        console.log("👆 [CANCEL] Touch started");
+                      }}
+                      onTouchEnd={(e) => {
+                        console.log(
+                          "👆 [CANCEL] Touch ended - calling handleCancel"
+                        );
+                        e.preventDefault();
+                        handleCancel();
+                      }}
                       onClick={(e) => {
-                        console.log("✅ Submit button clicked");
+                        console.log("🖱️ [CANCEL] Click event fired");
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleCancel();
+                      }}
+                      className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onTouchStart={(e) => {
+                        console.log("👆 [SUBMIT] Touch started");
+                      }}
+                      onTouchEnd={(e) => {
+                        console.log(
+                          "👆 [SUBMIT] Touch ended - calling handleSubmit"
+                        );
+                        e.preventDefault();
+                        handleSubmit();
+                      }}
+                      onClick={(e) => {
+                        console.log("🖱️ [SUBMIT] Click event fired");
                         e.preventDefault();
                         e.stopPropagation();
                         handleSubmit();
