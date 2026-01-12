@@ -4,6 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -70,15 +71,19 @@ const SetBox: React.FC<SetBoxProps> = ({
   const teamAInputRef = useRef<HTMLInputElement>(null);
   const [keyboardInset, setKeyboardInset] = useState<number>(0);
   const drawerContentRef = useRef<HTMLDivElement>(null);
+  const drawerCloseRef = useRef<HTMLButtonElement>(null);
 
   // Tracks the first time the sheet opens on mobile to harden focus timing
   const firstOpenPrimedRef = useRef<boolean>(false);
 
   // Update local state when props change (important for when switching between games)
   useEffect(() => {
+    /*console.log(
+      `🔄 [SETBOX] Set ${setNumber} props updated - teamAScore: ${teamAScore}, teamBScore: ${teamBScore}`
+    );*/
     setLocalTeamAScore(teamAScore && teamAScore > 0 ? String(teamAScore) : "");
     setLocalTeamBScore(teamBScore && teamBScore > 0 ? String(teamBScore) : "");
-  }, [teamAScore, teamBScore]);
+  }, [teamAScore, teamBScore, setNumber]);
 
   const hasBeenPlayed =
     teamAScore !== null &&
@@ -110,19 +115,58 @@ const SetBox: React.FC<SetBoxProps> = ({
     }
   };
 
-  const handleSubmit = () => {
-    if (!onScoreUpdate) return;
+  const handleSubmit = async () => {
+    /*console.log("📱 [SUBMIT] Button tap detected");*/
+
+    if (!onScoreUpdate) {
+      /*console.log("❌ [SUBMIT] No onScoreUpdate callback");*/
+      return;
+    }
+
     const a = parseInt(localTeamAScore, 10);
     const b = parseInt(localTeamBScore, 10);
     const aVal = Number.isFinite(a) ? a : 0;
     const bVal = Number.isFinite(b) ? b : 0;
 
-    // Blur to prompt keyboard to close before unlock/reenable scroll
+    /*console.log("📝 [SUBMIT] Scores to save:", { setNumber, aVal, bVal });*/
+
+    // Blur to prompt keyboard to close
     const active = document.activeElement as HTMLElement | null;
     active?.blur?.();
+    /*console.log("⌨️ [SUBMIT] Keyboard blur triggered");*/
 
-    onScoreUpdate(setNumber, aVal, bVal);
-    handleOpen(false);
+    try {
+      /*console.log("🔄 [SUBMIT] Calling onScoreUpdate...");*/
+      await onScoreUpdate(setNumber, aVal, bVal);
+      /*console.log("✅ [SUBMIT] Score update successful");*/
+    } catch (error) {
+      /*console.error("❌ [SUBMIT] Error updating score:", error);*/
+      return;
+    }
+
+    // Reset keyboard inset and close drawer
+    /*console.log("🔧 [SUBMIT] Resetting keyboard inset and closing drawer");*/
+    setKeyboardInset(0);
+
+    // Use a small timeout to ensure the update is processed
+    setTimeout(() => {
+      /*console.log("⏱️ [SUBMIT] Timeout complete, calling handleOpen(false)");*/
+      handleOpen(false);
+      /*console.log("✅ [SUBMIT] handleOpen(false) called");*/
+    }, 50);
+  };
+
+  const handleCancel = () => {
+    /*console.log("📱 [CANCEL] Button tap detected");*/
+    /*console.log("🔧 [CANCEL] Resetting keyboard inset");*/
+    setKeyboardInset(0);
+
+    /*console.log("⏱️ [CANCEL] Calling handleOpen(false) with setTimeout");*/
+    setTimeout(() => {
+      /*console.log("⏱️ [CANCEL] Timeout complete, calling handleOpen(false)");*/
+      handleOpen(false);
+      /*console.log("✅ [CANCEL] handleOpen(false) called");*/
+    }, 50);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -178,12 +222,18 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const handleOpen = (open: boolean) => {
-    setIsOpen(open);
+    /*console.log("🎯 [HANDLEOPEN] Called with open:", open);*/
+
     if (open) {
+      /*console.log("📂 [HANDLEOPEN] Opening drawer");*/
+      setIsOpen(true);
       resetLocalScores();
 
       // PWA needs fixed-position lock BEFORE focusing to avoid jump.
-      if (isMobile && isStandalone) lockBodyScroll();
+      if (isMobile && isStandalone) {
+        /*console.log("🔒 [HANDLEOPEN] Locking body scroll (PWA)");*/
+        lockBodyScroll();
+      }
 
       // Recompute keyboard inset once after open (microtask)
       Promise.resolve().then(() => {
@@ -191,13 +241,36 @@ const SetBox: React.FC<SetBoxProps> = ({
           typeof window !== "undefined" ? window.visualViewport ?? null : null;
         if (vv) {
           const vh = window.innerHeight;
-          setKeyboardInset(Math.max(0, vh - vv.height));
+          const newInset = Math.max(0, vh - vv.height);
+          /*console.log(
+            "⌨️ [HANDLEOPEN] Visual viewport height:",
+            vh,
+            "actual height:",
+            vv.height,
+            "inset:",
+            newInset
+          );*/
+          setKeyboardInset(newInset);
         }
       });
 
       focusAndCenterFirstInput();
     } else {
-      if (isStandalone) unlockBodyScroll();
+      /*console.log("📂 [HANDLEOPEN] Closing drawer");*/
+      // Close drawer: reset keyboard inset first, then update state
+      setKeyboardInset(0);
+      /*console.log("⌨️ [HANDLEOPEN] Keyboard inset reset to 0");*/
+
+      setIsOpen(false);
+      /*console.log("📂 [HANDLEOPEN] setIsOpen(false) called");*/
+
+      // Ensure scroll is unlocked after drawer closes
+      if (isMobile && isStandalone) {
+        /*console.log("🔓 [HANDLEOPEN] Unlocking body scroll (PWA)");*/
+        unlockBodyScroll();
+      }
+
+      /*console.log("✅ [HANDLEOPEN] Drawer close complete");*/
     }
   };
 
@@ -271,19 +344,19 @@ const SetBox: React.FC<SetBoxProps> = ({
   }, [isMobile, isOpen]);
 
   // Lock body scroll while the drawer is open in MOBILE BROWSER (non-standalone).
-  // PWA locking is handled in handleOpen via fixed-position lock.
+  // IMPORTANT: Do NOT set `touchAction: none` on iOS Safari/Chrome.
+  // It can break Vaul/Radix pointer handling inside portaled overlays.
   useEffect(() => {
     if (!isMobile || !isOpen) return;
-    if (isStandalone) return; // skip here; PWA already locked
+    if (isStandalone) return; // skip here; PWA already locked in handleOpen()
 
-    const prevOverflow = document.body.style.overflow;
-    const prevTouchAction = document.body.style.touchAction;
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
+    const body = document.body;
+    const prevOverflow = body.style.overflow;
+
+    body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouchAction;
+      body.style.overflow = prevOverflow;
       // Safari sometimes needs a microtask to re-attach scrolling after closing the sheet
       Promise.resolve().then(() => window.scrollBy(0, 0));
     };
@@ -364,6 +437,10 @@ const SetBox: React.FC<SetBoxProps> = ({
                   <DialogTitle className="text-center">
                     Update Set {setNumber} Score
                   </DialogTitle>
+                  <DialogDescription className="sr-only">
+                    Enter the scores for Team A and Team B, then submit or
+                    cancel.
+                  </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-6">
@@ -446,10 +523,9 @@ const SetBox: React.FC<SetBoxProps> = ({
               <DrawerContent
                 ref={drawerContentRef}
                 onOpenAutoFocus={(e) => e.preventDefault()}
-                onPointerDownOutside={(e) => e.preventDefault()}
                 /**
-                 * Safe-area + keyboard inset so content sits above the iOS keyboard.
-                 * The 16px gives a little breathing space over the keyboard.
+                 * Do not prevent outside interactions here.
+                 * Vaul uses pointer/touch events to handle dismiss + drag gestures reliably on iOS.
                  */
                 style={{
                   paddingBottom: `calc(${keyboardInset}px + env(safe-area-inset-bottom))`,
@@ -501,12 +577,50 @@ const SetBox: React.FC<SetBoxProps> = ({
                   </div>
 
                   <div className="flex justify-center gap-3 pb-2">
-                    <DrawerClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DrawerClose>
-                    <Button variant="primary" onClick={handleSubmit}>
+                    <button
+                      type="button"
+                      onTouchStart={(e) => {
+                        /*console.log("👆 [CANCEL] Touch started");*/
+                      }}
+                      onTouchEnd={(e) => {
+                        /*console.log(
+                          "👆 [CANCEL] Touch ended - calling handleCancel"
+                        );*/
+                        e.preventDefault();
+                        handleCancel();
+                      }}
+                      onClick={(e) => {
+                        /*console.log("🖱️ [CANCEL] Click event fired");*/
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleCancel();
+                      }}
+                      className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onTouchStart={(e) => {
+                        /*console.log("👆 [SUBMIT] Touch started");*/
+                      }}
+                      onTouchEnd={(e) => {
+                        /*console.log(
+                          "👆 [SUBMIT] Touch ended - calling handleSubmit"
+                        );*/
+                        e.preventDefault();
+                        handleSubmit();
+                      }}
+                      onClick={(e) => {
+                        console.log("🖱️ [SUBMIT] Click event fired");
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSubmit();
+                      }}
+                      className="inline-flex items-center justify-center rounded-md bg-volleyball-primary dark:bg-blue-600 text-white px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-volleyball-primary/90 dark:hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                    >
                       Submit
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </DrawerContent>
