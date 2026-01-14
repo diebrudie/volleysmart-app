@@ -44,8 +44,8 @@ interface UserProfileRow {
   email: string | null;
 }
 
-const N8N_URL = Deno.env.get("N8N_JOIN_REQUEST_WEBHOOK_URL") ?? "";
-const N8N_SECRET = Deno.env.get("N8N_WEBHOOK_SECRET") ?? "";
+const N8N_URL = (Deno.env.get("N8N_JOIN_REQUEST_WEBHOOK_URL") ?? "").trim();
+const N8N_SECRET = (Deno.env.get("N8N_WEBHOOK_SECRET") ?? "").trim();
 
 function isValidSlug(slug: string): boolean {
   // Be permissive but safe; adjust if you enforce stricter slugs.
@@ -107,9 +107,17 @@ serve(async (req: Request) => {
     }
 
     const body = (parsed ?? {}) as Partial<RequestBody>;
+
+    /**
+     * Normalize user input so:
+     * - leading/trailing spaces don’t matter
+     * - case doesn’t matter for the user
+     * - we always query the DB using the canonical format (UPPERCASE)
+     */
     const slug = String(body.slug ?? "")
       .trim()
-      .toLowerCase();
+      .toUpperCase();
+
     const memberAssociation = Boolean(body.member_association ?? false);
 
     if (!slug || !isValidSlug(slug)) {
@@ -220,6 +228,8 @@ serve(async (req: Request) => {
       occurred_at: new Date().toISOString(),
     };
 
+    console.log("[notify-join-request] Posting to n8n:", N8N_URL);
+
     const res = await fetch(N8N_URL, {
       method: "POST",
       headers: {
@@ -231,7 +241,11 @@ serve(async (req: Request) => {
 
     // Even if n8n fails, we do not fail the caller; the join request is already created.
     if (!res.ok) {
-      console.warn("[notify-join-request] n8n returned:", res.status);
+      const txt = await res.text().catch(() => "");
+      console.warn("[notify-join-request] n8n returned:", res.status, txt);
+    } else {
+      // Useful while debugging; you can remove later
+      console.log("[notify-join-request] n8n OK:", res.status);
     }
 
     return new Response(JSON.stringify({ ok: true }), {
