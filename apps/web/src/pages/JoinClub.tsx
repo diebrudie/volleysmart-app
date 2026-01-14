@@ -107,8 +107,15 @@ const JoinClub = () => {
     if (!user?.id || !clubIdInput.trim()) return;
 
     setIsLoading(true);
+
     try {
-      const slug = clubIdInput.trim().toLowerCase();
+      /**
+       * Normalize user input so:
+       * - leading/trailing spaces don’t matter
+       * - user-entered casing doesn’t matter
+       * - we convert to the canonical DB format (UPPERCASE slug)
+       */
+      const slug = clubIdInput.trim().toUpperCase();
 
       // Optional: ensure session is valid (useful during debugging)
       await supabase.auth.getUser();
@@ -126,7 +133,6 @@ const JoinClub = () => {
         .maybeSingle();
 
       if (!visibleErr && visibleClub?.id) {
-        // Invite has effectively been "used" — clear pending slug.
         localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
 
         toast({
@@ -193,10 +199,11 @@ const JoinClub = () => {
        * Why Edge Function:
        * - admin emails are protected by RLS in public.user_profiles
        * - service-role lookup + webhook secret must stay server-side
+       *
+       * Note:
+       * - This sends the normalized slug; Edge Function must look up the club case-insensitively (ILIKE).
        */
       try {
-        const slug = clubIdInput.trim().toLowerCase();
-
         const { error: notifyErr } = await supabase.functions.invoke(
           "notify-join-request",
           {
@@ -208,10 +215,7 @@ const JoinClub = () => {
         );
 
         if (notifyErr) {
-          console.warn(
-            "[JoinClub] notify-join-request failed:",
-            notifyErr.message
-          );
+          console.warn("[JoinClub] notify-join-request failed:", notifyErr);
         }
       } catch (notifyErr) {
         console.warn(
