@@ -186,6 +186,40 @@ const JoinClub = () => {
       // Clear pending invite, since the join request has been created.
       localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
 
+      /**
+       * Best-effort: notify admins via Edge Function → n8n webhook.
+       * We do NOT block the UX on this; join request already exists.
+       *
+       * Why Edge Function:
+       * - admin emails are protected by RLS in public.user_profiles
+       * - service-role lookup + webhook secret must stay server-side
+       */
+      try {
+        const slug = clubIdInput.trim().toLowerCase();
+
+        const { error: notifyErr } = await supabase.functions.invoke(
+          "notify-join-request",
+          {
+            body: {
+              slug,
+              member_association: isAssociationMember,
+            },
+          }
+        );
+
+        if (notifyErr) {
+          console.warn(
+            "[JoinClub] notify-join-request failed:",
+            notifyErr.message
+          );
+        }
+      } catch (notifyErr) {
+        console.warn(
+          "[JoinClub] notify-join-request unexpected error:",
+          notifyErr
+        );
+      }
+
       toast({
         title: "Request sent",
         description:
