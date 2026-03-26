@@ -24,6 +24,7 @@ interface ClubContextType {
   setClubId: (id: string) => void; // Validates before persisting
   clearClubId: () => void;
   initialized: boolean;
+  isValidatingClub: boolean;
 }
 
 const ClubContext = createContext<ClubContextType | undefined>(undefined);
@@ -42,6 +43,7 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
   const [initialized, setInitialized] = useState(false);
   const [membershipStatus, setMembershipStatus] =
     useState<MembershipStatus | null>(null);
+  const [isValidatingClub, setIsValidatingClub] = useState(false);
 
   // Use a mounted ref instead of a "cancelled" flag to satisfy eslint prefer-const
   const mountedRef = useRef(true);
@@ -146,6 +148,7 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
    * Remains a sync signature; async is encapsulated inside.
    */
   const setClubId = (id: string) => {
+    setIsValidatingClub(true);
     (async () => {
       const status = await fetchMembershipStatus(id);
       if (!mountedRef.current) return;
@@ -159,6 +162,7 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
         setClubIdState(null);
         setMembershipStatus(status);
       }
+      setIsValidatingClub(false);
     })();
   };
 
@@ -176,6 +180,7 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
         setClubId,
         clearClubId,
         initialized,
+        isValidatingClub,
       }}
     >
       {children}
