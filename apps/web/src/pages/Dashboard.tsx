@@ -486,7 +486,6 @@ const Dashboard = () => {
   }> = [];
 
   if (latestGame?.game_players) {
-
     const toUI = (gp: GamePlayerData): UIPlayer => {
       const display = gp.position_name ?? "No Position";
       return {
@@ -577,42 +576,32 @@ const Dashboard = () => {
     teamAScore: number,
     teamBScore: number
   ) => {
-
     try {
-      // Find the match to update
       const matchToUpdate = latestGame?.matches?.find(
         (m) => m.game_number === setNumber
       );
-
 
       if (!matchToUpdate) {
         console.error("No match found for set number:", setNumber);
         return;
       }
 
-
-      // Update score in the database
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("matches")
         .update({
           team_a_score: teamAScore,
           team_b_score: teamBScore,
         })
-        .eq("id", matchToUpdate.id)
-        .select(); // Add select() to see what was updated
-
+        .eq("id", matchToUpdate.id);
 
       if (error) {
         console.error("Error updating match score:", error);
         return;
       }
 
-
-      // Invalidate and refetch the latest game query
       await queryClient.invalidateQueries({
         queryKey: ["latestGame", userClubId],
       });
-
     } catch (error) {
       console.error("Error in handleSetScoreUpdate:", error);
     }
@@ -714,7 +703,6 @@ const Dashboard = () => {
     : "Last Game Overview";
 
   const handleEditTeamsClick = () => {
-
     if (!userClubId) {
       console.error("❌ No userClubId found!");
       return;
