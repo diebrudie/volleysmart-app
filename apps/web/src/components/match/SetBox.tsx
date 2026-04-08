@@ -270,6 +270,10 @@ const SetBox: React.FC<SetBoxProps> = ({
     isBodyLockedRef.current = false;
     window.scrollTo(0, y);
 
+    // iOS keyboard dismiss animation takes ~300 ms. position:fixed elements
+    // anchored to an animating viewport won't reanchor on their own until a
+    // scroll event fires AFTER the animation completes. Trigger one explicitly.
+    window.setTimeout(() => window.scrollBy(0, 0), 350);
   }
 
   /**
@@ -324,6 +328,8 @@ const SetBox: React.FC<SetBoxProps> = ({
 
     return () => {
       body.style.overflow = prevOverflow;
+      // Safari sometimes needs a microtask to re-attach scrolling after closing the sheet
+      Promise.resolve().then(() => window.scrollBy(0, 0));
     };
   }, [isMobile, isOpen, isStandalone]);
 

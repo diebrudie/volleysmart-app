@@ -22,7 +22,6 @@ const MobileBottomNav: React.FC = () => {
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
   const [isStandalone, setIsStandalone] = React.useState(false);
-  const navRef = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
     const checkStandalone = () =>
@@ -39,33 +38,20 @@ const MobileBottomNav: React.FC = () => {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Explicit bottom-positioning guard for iOS PWA: when the keyboard dismisses
-  // after a modal, iOS sometimes fails to reanchor position:fixed elements.
-  // We listen to visualViewport resize/scroll and explicitly set nav.style.bottom
-  // so the nav is always flush with the visual viewport bottom.
+  // Safety-net: after any visual-viewport resize on iOS PWA (e.g., keyboard
+  // show/hide triggered by a modal), fire a no-op scroll so iOS reanchors all
+  // position:fixed elements — including this nav — to the correct bottom.
   React.useEffect(() => {
     if (!isStandalone) return;
     const vv = window.visualViewport;
     if (!vv) return;
 
-    const update = () => {
-      const nav = navRef.current;
-      if (!nav) return;
-      // When keyboard is showing, vv.height < window.innerHeight.
-      // offset > 0 means the visual viewport doesn't reach the layout bottom.
-      const offset = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
-      nav.style.bottom = offset > 0 ? `${offset}px` : "";
+    const onResize = () => {
+      requestAnimationFrame(() => window.scrollBy(0, 0));
     };
 
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    update();
-
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-      if (navRef.current) navRef.current.style.bottom = "";
-    };
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
   }, [isStandalone]);
 
   // Always follow the DOM-resolved theme so the nav matches the real background.
@@ -90,7 +76,6 @@ const MobileBottomNav: React.FC = () => {
 
   return (
     <nav
-      ref={navRef}
       className={`fixed bottom-0 left-0 right-0 z-50 border-t ${navBackgroundClass}
                  pb-[max(env(safe-area-inset-bottom),0px)]`}
       role="navigation"
