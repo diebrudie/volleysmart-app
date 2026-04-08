@@ -70,11 +70,6 @@ const Login = () => {
     const routeAfterLogin = async () => {
       // 1) Fast path: return to the protected page we came from
       if (normalizedFrom) {
-        /* console.log(
-          "[NAV] navigating from /login to",
-          normalizedFrom,
-          "reason: return to 'from'"
-        );*/
         navigate(normalizedFrom, { replace: true });
         setIsCheckingProfile(false);
         return;

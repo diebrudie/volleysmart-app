@@ -156,7 +156,6 @@ const Members = () => {
     queryKey: ["clubMembers", clubId],
     queryFn: async (): Promise<MemberWithPlayer[]> => {
       if (!clubId) {
-        // console.log("❌ No clubId in queryFn");
         return [];
       }
 

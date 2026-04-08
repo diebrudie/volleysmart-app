@@ -373,14 +373,6 @@ const Dashboard = () => {
 
   const handleCreateGame = () => {
     if (userClubId) {
-      /*console.log(
-        "[DASHBOARD]",
-        "navigating from",
-        location.pathname,
-        "to",
-        "/new-game/:clubId",
-        "reason: Creating a new Game"
-      );*/
       navigate(`/new-game/${userClubId}`);
     }
   };
@@ -494,8 +486,6 @@ const Dashboard = () => {
   }> = [];
 
   if (latestGame?.game_players) {
-    // console. log(("=== GAME PLAYERS DEBUG ===");
-    // console. log(("Game players:", latestGame.game_players);
 
     const toUI = (gp: GamePlayerData): UIPlayer => {
       const display = gp.position_name ?? "No Position";
@@ -518,8 +508,6 @@ const Dashboard = () => {
       .map(toUI)
       .sort(sortByOrderThenCanonical);
 
-    // console. log(("Team A players:", teamAPlayers);
-    // console. log(("Team B players:", teamBPlayers);
   }
 
   // Check if editing is still allowed (within 1 day of game date)
@@ -589,12 +577,6 @@ const Dashboard = () => {
     teamAScore: number,
     teamBScore: number
   ) => {
-    // console. log(("=== SCORE UPDATE DEBUG ===");
-    // console. log(("Set Number:", setNumber);
-    // console. log(("Team A Score:", teamAScore);
-    // console. log(("Team B Score:", teamBScore);
-    // console. log(("Latest Game:", latestGame);
-    // console. log(("All Matches:", latestGame?.matches);
 
     try {
       // Find the match to update
@@ -602,14 +584,12 @@ const Dashboard = () => {
         (m) => m.game_number === setNumber
       );
 
-      // console. log(("Match to update:", matchToUpdate);
 
       if (!matchToUpdate) {
         console.error("No match found for set number:", setNumber);
         return;
       }
 
-      // console. log(("Updating match with ID:", matchToUpdate.id);
 
       // Update score in the database
       const { data, error } = await supabase
@@ -621,22 +601,18 @@ const Dashboard = () => {
         .eq("id", matchToUpdate.id)
         .select(); // Add select() to see what was updated
 
-      // console. log(("Supabase update result:", { data, error });
 
       if (error) {
         console.error("Error updating match score:", error);
         return;
       }
 
-      // console. log(("Successfully updated match:", data);
 
       // Invalidate and refetch the latest game query
-      // console. log(("Invalidating queries for userClubId:", userClubId);
       await queryClient.invalidateQueries({
         queryKey: ["latestGame", userClubId],
       });
 
-      // console. log(("Queries invalidated successfully");
     } catch (error) {
       console.error("Error in handleSetScoreUpdate:", error);
     }
@@ -738,12 +714,6 @@ const Dashboard = () => {
     : "Last Game Overview";
 
   const handleEditTeamsClick = () => {
-    // console. log(("=== EDIT TEAMS BUTTON CLICKED ===");
-    // console. log(("userClubId:", userClubId);
-    // console. log(("latestGame:", latestGame);
-    // console. log(("latestGame.id:", latestGame?.id);
-    // console. log(("userRole:", userRole);
-    // console. log(("clubDetails:", clubDetails);
 
     if (!userClubId) {
       console.error("❌ No userClubId found!");
@@ -756,15 +726,6 @@ const Dashboard = () => {
     }
 
     const targetPath = `/edit-game/${userClubId}/${latestGame.id}`;
-    // console. log(("🚀 Navigating to:", targetPath);
-    /*console.log(
-      "[DASHBOARD]",
-      "navigating from",
-      location.pathname,
-      "to",
-      "/edit-game/:clubId/:latestGameId",
-      "reason: Clicked on Edit Game Button"
-    );*/
     navigate(targetPath);
   };
 

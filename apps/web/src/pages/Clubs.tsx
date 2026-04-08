@@ -208,27 +208,11 @@ const Clubs = () => {
   });
 
   const handleCreateClub = () => {
-    /*console.log(
-      "[CLUBS]",
-      "navigating from",
-      location.pathname,
-      "to",
-      "/new-club",
-      "reason: Create a New Club"
-    );*/
 
     navigate("/new-club");
   };
 
   const handleJoinClub = () => {
-    /*console.log(
-      "[CLUBS]",
-      "navigating from",
-      location.pathname,
-      "to",
-      "/join-club",
-      "reason: Join an exsiting Club"
-    );*/
 
     navigate("/join-club");
   };
@@ -236,14 +220,6 @@ const Clubs = () => {
   const handleClubClick = (clubId: string) => {
     setClubId(clubId); // set it globally
     localStorage.setItem("lastVisitedClub", clubId);
-    /*console.log(
-      "[CLUBS]",
-      "navigating from",
-      location.pathname,
-      "to",
-      "/dashboard/:clubId",
-      "reason: After creating/joining club get redirected to dashboard"
-    );*/
 
     navigate(`/dashboard/${clubId}`);
   };

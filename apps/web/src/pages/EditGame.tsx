@@ -199,8 +199,6 @@ const EditGame = () => {
     queryFn: async (): Promise<MatchDayData | null> => {
       if (!gameId) return null;
 
-      // console.log("=== FETCHING GAME DATA FOR EDIT ===");
-      // console.log("Game ID (match_day_id):", gameId);
 
       // Get the match day
       const { data: matchDay, error: matchDayError } = await supabase
@@ -319,8 +317,6 @@ const EditGame = () => {
           }[]
         >();
 
-      // console.log("[auditInfo] read mdErr:", mdErr);
-      // console.log("[auditInfo] read mdArr:", mdArr);
 
       if (mdErr) throw mdErr;
 
@@ -352,8 +348,6 @@ const EditGame = () => {
   // Update teams when game data loads
   useEffect(() => {
     if (gameData?.game_players) {
-      // console.log("=== CONVERTING GAME DATA TO TEAMS ===");
-      // console.log("Game players:", gameData.game_players);
 
       const teamA = gameData.game_players
         .filter((gp) => gp.team_name === "team_a")
@@ -445,8 +439,6 @@ const EditGame = () => {
         setSelectedLocationId(gameData.location_id);
       }
 
-      // console.log("Team A players:", teamA);
-      // console.log("Team B players:", teamB);
     }
   }, [gameData]);
 
@@ -799,17 +791,14 @@ const EditGame = () => {
   };
 
   const handlePositionChange = (playerId: string, newPosition: string) => {
-    // console.log("=== HANDLE POSITION CHANGE ===");
-    // console.log("Player ID:", playerId);
-    // console.log("New Position:", newPosition);
 
-    /*console.log(
+
       "Team A Players:",
       teamAPlayers.map((p) => ({ id: p.id, name: p.name }))
     );
     */
 
-    /*console.log(
+
       "Team B Players:",
       teamBPlayers.map((p) => ({ id: p.id, name: p.name }))
     );
@@ -817,7 +806,7 @@ const EditGame = () => {
 
     const updatePlayerPosition = (players: typeof teamAPlayers) =>
       players.map((player) => {
-        /*console.log(
+
           `Comparing ${player.id} === ${playerId}:`,
           player.id === playerId
         );
@@ -831,14 +820,10 @@ const EditGame = () => {
     const isInTeamA = teamAPlayers.some((p) => p.id === playerId);
     const isInTeamB = teamBPlayers.some((p) => p.id === playerId);
 
-    // console.log("Is in Team A:", isInTeamA);
-    // console.log("Is in Team B:", isInTeamB);
 
     if (isInTeamA) {
-      // console.log("Updating Team A");
       setTeamAPlayers(updatePlayerPosition);
     } else if (isInTeamB) {
-      // console.log("Updating Team B");
       setTeamBPlayers(updatePlayerPosition);
     } else {
       console.error("Player not found in either team!");
@@ -861,9 +846,6 @@ const EditGame = () => {
     }
 
     try {
-      // console.log("=== SAVING TEAM CHANGES ===");
-      // console.log("Team A players:", teamAPlayers);
-      // console.log("Team B players:", teamBPlayers);
 
       // Delete existing game players for this match day
       const { error: deleteError } = await supabase

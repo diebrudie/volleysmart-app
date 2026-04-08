@@ -78,9 +78,6 @@ const SetBox: React.FC<SetBoxProps> = ({
 
   // Update local state when props change (important for when switching between games)
   useEffect(() => {
-    /*console.log(
-      `🔄 [SETBOX] Set ${setNumber} props updated - teamAScore: ${teamAScore}, teamBScore: ${teamBScore}`
-    );*/
     setLocalTeamAScore(teamAScore && teamAScore > 0 ? String(teamAScore) : "");
     setLocalTeamBScore(teamBScore && teamBScore > 0 ? String(teamBScore) : "");
   }, [teamAScore, teamBScore, setNumber]);
@@ -116,10 +113,8 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const handleSubmit = async () => {
-    /*console.log("📱 [SUBMIT] Button tap detected");*/
 
     if (!onScoreUpdate) {
-      /*console.log("❌ [SUBMIT] No onScoreUpdate callback");*/
       return;
     }
 
@@ -128,44 +123,31 @@ const SetBox: React.FC<SetBoxProps> = ({
     const aVal = Number.isFinite(a) ? a : 0;
     const bVal = Number.isFinite(b) ? b : 0;
 
-    /*console.log("📝 [SUBMIT] Scores to save:", { setNumber, aVal, bVal });*/
 
     // Blur to prompt keyboard to close
     const active = document.activeElement as HTMLElement | null;
     active?.blur?.();
-    /*console.log("⌨️ [SUBMIT] Keyboard blur triggered");*/
 
     try {
-      /*console.log("🔄 [SUBMIT] Calling onScoreUpdate...");*/
       await onScoreUpdate(setNumber, aVal, bVal);
-      /*console.log("✅ [SUBMIT] Score update successful");*/
     } catch (error) {
-      /*console.error("❌ [SUBMIT] Error updating score:", error);*/
       return;
     }
 
     // Reset keyboard inset and close drawer
-    /*console.log("🔧 [SUBMIT] Resetting keyboard inset and closing drawer");*/
     setKeyboardInset(0);
 
     // Use a small timeout to ensure the update is processed
     setTimeout(() => {
-      /*console.log("⏱️ [SUBMIT] Timeout complete, calling handleOpen(false)");*/
       handleOpen(false);
-      /*console.log("✅ [SUBMIT] handleOpen(false) called");*/
     }, 50);
   };
 
   const handleCancel = () => {
-    /*console.log("📱 [CANCEL] Button tap detected");*/
-    /*console.log("🔧 [CANCEL] Resetting keyboard inset");*/
     setKeyboardInset(0);
 
-    /*console.log("⏱️ [CANCEL] Calling handleOpen(false) with setTimeout");*/
     setTimeout(() => {
-      /*console.log("⏱️ [CANCEL] Timeout complete, calling handleOpen(false)");*/
       handleOpen(false);
-      /*console.log("✅ [CANCEL] handleOpen(false) called");*/
     }, 50);
   };
 
@@ -222,16 +204,13 @@ const SetBox: React.FC<SetBoxProps> = ({
   };
 
   const handleOpen = (open: boolean) => {
-    /*console.log("🎯 [HANDLEOPEN] Called with open:", open);*/
 
     if (open) {
-      /*console.log("📂 [HANDLEOPEN] Opening drawer");*/
       setIsOpen(true);
       resetLocalScores();
 
       // PWA needs fixed-position lock BEFORE focusing to avoid jump.
       if (isMobile && isStandalone) {
-        /*console.log("🔒 [HANDLEOPEN] Locking body scroll (PWA)");*/
         lockBodyScroll();
       }
 
@@ -242,35 +221,22 @@ const SetBox: React.FC<SetBoxProps> = ({
         if (vv) {
           const vh = window.innerHeight;
           const newInset = Math.max(0, vh - vv.height);
-          /*console.log(
-            "⌨️ [HANDLEOPEN] Visual viewport height:",
-            vh,
-            "actual height:",
-            vv.height,
-            "inset:",
-            newInset
-          );*/
           setKeyboardInset(newInset);
         }
       });
 
       focusAndCenterFirstInput();
     } else {
-      /*console.log("📂 [HANDLEOPEN] Closing drawer");*/
       // Close drawer: reset keyboard inset first, then update state
       setKeyboardInset(0);
-      /*console.log("⌨️ [HANDLEOPEN] Keyboard inset reset to 0");*/
 
       setIsOpen(false);
-      /*console.log("📂 [HANDLEOPEN] setIsOpen(false) called");*/
 
       // Ensure scroll is unlocked after drawer closes
       if (isMobile && isStandalone) {
-        /*console.log("🔓 [HANDLEOPEN] Unlocking body scroll (PWA)");*/
         unlockBodyScroll();
       }
 
-      /*console.log("✅ [HANDLEOPEN] Drawer close complete");*/
     }
   };
 
@@ -580,17 +546,12 @@ const SetBox: React.FC<SetBoxProps> = ({
                     <button
                       type="button"
                       onTouchStart={(e) => {
-                        /*console.log("👆 [CANCEL] Touch started");*/
                       }}
                       onTouchEnd={(e) => {
-                        /*console.log(
-                          "👆 [CANCEL] Touch ended - calling handleCancel"
-                        );*/
                         e.preventDefault();
                         handleCancel();
                       }}
                       onClick={(e) => {
-                        /*console.log("🖱️ [CANCEL] Click event fired");*/
                         e.preventDefault();
                         e.stopPropagation();
                         handleCancel();
@@ -602,12 +563,8 @@ const SetBox: React.FC<SetBoxProps> = ({
                     <button
                       type="button"
                       onTouchStart={(e) => {
-                        /*console.log("👆 [SUBMIT] Touch started");*/
                       }}
                       onTouchEnd={(e) => {
-                        /*console.log(
-                          "👆 [SUBMIT] Touch ended - calling handleSubmit"
-                        );*/
                         e.preventDefault();
                         handleSubmit();
                       }}
