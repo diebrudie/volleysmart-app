@@ -118,7 +118,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isCheckingClub, setIsCheckingClub] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<"admin" | "editor" | "member" | null>(null);
   const [clubMemberCount, setClubMemberCount] = useState(0);
   const isCompact = useIsCompact();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -168,41 +168,13 @@ const Dashboard = () => {
             return;
           }
 
-          // User doesn't have access to this club
-          /*console.log(
-            "[DASH]",
-            "navigating from",
-            location.pathname,
-            "to",
-            "/clubs",
-            "reason: User have no access to this club"
-          );*/
-
           navigate("/clubs");
           return;
         }
 
-        // User doesn't belong to any club and hasn't created one
-        /* console.log(
-          "[DASH]",
-          "navigating from",
-          location.pathname,
-          "to",
-          "/start",
-          "reason: User doesn't belong to any club and hasn't created one"
-        );*/
         navigate("/start");
       } catch (error) {
         console.error("Error checking user club:", error);
-        // On error, safely redirect to start
-        /*console.log(
-          "[DASH]",
-          "navigating from",
-          location.pathname,
-          "to",
-          "/start",
-          "reason: On error, safely redirect to start"
-        );*/
         navigate("/start");
       } finally {
         setIsCheckingClub(false);
@@ -242,13 +214,6 @@ const Dashboard = () => {
     }
   }, [memberCount]);
 
-  useEffect(() => {
-    // console. log(("=== USER OBJECT DEBUG ===");
-    // console. log(("Full user object:", user);
-    // console. log(("user.role:", user?.role);
-    // console. log(("typeof user.role:", typeof user?.role);
-  }, [user]);
-
   // Query to fetch the latest game with separate queries to avoid relation issues
   const { data: latestGame, isLoading } = useQuery({
     queryKey: ["latestGame", userClubId],
@@ -281,22 +246,21 @@ const Dashboard = () => {
         throw matchDayError;
       }
 
-      // Find the latest match day that has game players
+      // Find the latest match day that has game players.
+      // Use a single IN query instead of a per-match-day loop to avoid N+1.
       let selectedMatchDay = null;
       if (allMatchDays && allMatchDays.length > 0) {
-        for (const md of allMatchDays) {
-          // Quick check if this match day has game players
-          const { data: playerCheck } = await supabase
-            .from("game_players")
-            .select("id")
-            .eq("match_day_id", md.id)
-            .limit(1);
+        const matchDayIds = allMatchDays.map((md) => md.id);
+        const { data: matchDaysWithPlayers } = await supabase
+          .from("game_players")
+          .select("match_day_id")
+          .in("match_day_id", matchDayIds);
 
-          if (playerCheck && playerCheck.length > 0) {
-            selectedMatchDay = md;
-            break;
-          }
-        }
+        const idsWithPlayers = new Set(
+          (matchDaysWithPlayers ?? []).map((r) => r.match_day_id)
+        );
+        // allMatchDays is already ordered newest-first, so the first hit wins
+        selectedMatchDay = allMatchDays.find((md) => idsWithPlayers.has(md.id)) ?? null;
       }
 
       if (!selectedMatchDay) {
