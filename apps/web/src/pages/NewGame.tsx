@@ -436,42 +436,44 @@ const NewGame = () => {
         position: string;
       }[] = [];
 
-      for (const extraId of extraPlayerIds) {
-        const extraPlayer = updatedExtraPlayers.find((ep) => ep.id === extraId);
-        if (!extraPlayer) continue;
+      // Resolve all extra players in parallel — each is independent
+      const resolvedExtras = await Promise.all(
+        extraPlayerIds.map(async (extraId) => {
+          const extraPlayer = updatedExtraPlayers.find((ep) => ep.id === extraId);
+          if (!extraPlayer) return null;
 
-        let guestPlayerId: string;
+          let guestPlayerId: string;
 
-        if (extraPlayer.existingPlayerId) {
-          // Existing guest selected from autocomplete
-          guestPlayerId = extraPlayer.existingPlayerId;
-        } else {
-          // New guest: first_name = name without spaces, last_name = "Player"
-          const raw = extraPlayer.name.trim();
-          const noSpaces = raw.replace(/\s+/g, "");
-          const firstName = noSpaces || "Guest";
+          if (extraPlayer.existingPlayerId) {
+            // Existing guest selected from autocomplete
+            guestPlayerId = extraPlayer.existingPlayerId;
+          } else {
+            // New guest: first_name = name without spaces, last_name = "Player"
+            const raw = extraPlayer.name.trim();
+            const firstName = raw.replace(/\s+/g, "") || "Guest";
 
-          const guestPlayer = await createOrReuseGuestByName(
-            clubId!,
-            firstName,
-            "Player"
-          );
+            const guestPlayer = await createOrReuseGuestByName(
+              clubId!,
+              firstName,
+              "Player"
+            );
+            guestPlayerId = guestPlayer.id;
+          }
 
-          guestPlayerId = guestPlayer.id;
-        }
+          // Try to reuse the last position this guest played in this club
+          const lastPos = await getLastPositionForPlayerInClub(clubId!, guestPlayerId);
 
-        // Try to reuse the last position this guest played in this club.
-        // If none exists yet, fall back to the auto-assigned position.
-        const lastPos = await getLastPositionForPlayerInClub(
-          clubId!,
-          guestPlayerId
-        );
+          return {
+            tempPlayerId: guestPlayerId,
+            originalExtraId: extraId,
+            position: lastPos ?? extraPlayer.position,
+          };
+        })
+      );
 
-        extraPlayerRecords.push({
-          tempPlayerId: guestPlayerId,
-          originalExtraId: extraId,
-          position: lastPos ?? extraPlayer.position,
-        });
+      // Filter out any null entries (extraId not found in updatedExtraPlayers)
+      for (const record of resolvedExtras) {
+        if (record) extraPlayerRecords.push(record);
       }
 
       // 5. Generate balanced teams using smart algorithm
