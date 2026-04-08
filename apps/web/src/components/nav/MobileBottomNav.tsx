@@ -61,10 +61,22 @@ const MobileBottomNav: React.FC = () => {
   return (
     <nav
       className={`fixed bottom-0 left-0 right-0 z-50 border-t ${navBackgroundClass}
-                 pb-[max(env(safe-area-inset-bottom),0px)] translate-z-0`}
+                 pb-[max(env(safe-area-inset-bottom),0px)]`}
       role="navigation"
       aria-label="Primary"
     >
+      {/*
+       * iOS PWA scroll-drift guard: extends the nav background below the
+       * safe-area boundary so any momentary gap during momentum scrolling
+       * is filled with the same background colour instead of exposing
+       * page content. Must NOT use transform on the nav itself (that is
+       * what causes the drift in the first place).
+       */}
+      <div
+        className="absolute top-full inset-x-0 h-16 pointer-events-none"
+        style={{ background: "hsl(var(--background))" }}
+        aria-hidden="true"
+      />
       <div className="mx-auto max-w-xl px-2 pb-3">
         <div className="relative grid grid-cols-5 items-center h-16">
           <TabButton

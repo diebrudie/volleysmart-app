@@ -43,7 +43,13 @@ const MobileBottomSpacer: React.FC = () => {
   if (isPublic(pathname)) return null;
   if (shouldHideChrome(pathname)) return null;
 
-  return <div className="h-24" aria-hidden="true" />;
+  // Nav height: h-16 tabs (64px) + pb-3 inner padding (12px) + safe-area-inset-bottom
+  return (
+    <div
+      style={{ height: "calc(76px + max(env(safe-area-inset-bottom), 0px))" }}
+      aria-hidden="true"
+    />
+  );
 };
 
 export default MobileBottomSpacer;
