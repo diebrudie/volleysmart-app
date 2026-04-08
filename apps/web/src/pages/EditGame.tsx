@@ -791,26 +791,8 @@ const EditGame = () => {
   };
 
   const handlePositionChange = (playerId: string, newPosition: string) => {
-
-
-      "Team A Players:",
-      teamAPlayers.map((p) => ({ id: p.id, name: p.name }))
-    );
-    */
-
-
-      "Team B Players:",
-      teamBPlayers.map((p) => ({ id: p.id, name: p.name }))
-    );
-    */
-
     const updatePlayerPosition = (players: typeof teamAPlayers) =>
       players.map((player) => {
-
-          `Comparing ${player.id} === ${playerId}:`,
-          player.id === playerId
-        );
-        */
         return player.id === playerId
           ? { ...player, preferredPosition: newPosition }
           : player;

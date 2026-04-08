@@ -242,17 +242,6 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logout();
-
-
-      "[NAV]",
-      "navigating from",
-      location.pathname,
-      "to",
-      "/",
-      "reason: Logging Out"
-    );
-    */
-
     navigate("/");
   };
 
