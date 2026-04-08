@@ -290,9 +290,7 @@ const Dashboard = () => {
           }[]
         | null = null;
 
-      let gamePlayersError: unknown = null;
-
-      // Attempt #1: with order_index
+      // Attempt #1: with order_index (column may not exist on older DB versions)
       {
         const { data, error } = await supabase
           .from("game_players")
@@ -304,22 +302,16 @@ const Dashboard = () => {
         if (!error) {
           gamePlayersRaw = data;
         } else {
-          // If the column doesn't exist, fall back to query without it
-          gamePlayersError = error;
-          const { data: dataNoOrder, error: errNoOrder } = await supabase
+          // Fallback: query without order_index if that column doesn't exist yet
+          const { data: dataNoOrder } = await supabase
             .from("game_players")
             .select("player_id, team_name, position_played")
             .eq("match_day_id", selectedMatchDay.id);
 
-          if (!errNoOrder) {
-            // normalize to same shape (order_index absent)
-            gamePlayersRaw = (dataNoOrder ?? []).map((gp) => ({
-              ...gp,
-              order_index: null as number | null,
-            }));
-          } else {
-            gamePlayersError = errNoOrder;
-          }
+          gamePlayersRaw = (dataNoOrder ?? []).map((gp) => ({
+            ...gp,
+            order_index: null as number | null,
+          }));
         }
       }
 
