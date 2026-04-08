@@ -269,6 +269,11 @@ const SetBox: React.FC<SetBoxProps> = ({
     body.style.overscrollBehaviorY = "";
     isBodyLockedRef.current = false;
     window.scrollTo(0, y);
+
+    // iOS keyboard dismiss animation takes ~300 ms. position:fixed elements
+    // anchored to an animating viewport won't reanchor on their own until a
+    // scroll event fires AFTER the animation completes. Trigger one explicitly.
+    window.setTimeout(() => window.scrollBy(0, 0), 350);
   }
 
   /**
@@ -569,7 +574,6 @@ const SetBox: React.FC<SetBoxProps> = ({
                         handleSubmit();
                       }}
                       onClick={(e) => {
-                        console.log("🖱️ [SUBMIT] Click event fired");
                         e.preventDefault();
                         e.stopPropagation();
                         handleSubmit();

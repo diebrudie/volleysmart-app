@@ -38,6 +38,22 @@ const MobileBottomNav: React.FC = () => {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
+  // Safety-net: after any visual-viewport resize on iOS PWA (e.g., keyboard
+  // show/hide triggered by a modal), fire a no-op scroll so iOS reanchors all
+  // position:fixed elements — including this nav — to the correct bottom.
+  React.useEffect(() => {
+    if (!isStandalone) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const onResize = () => {
+      requestAnimationFrame(() => window.scrollBy(0, 0));
+    };
+
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, [isStandalone]);
+
   // Always follow the DOM-resolved theme so the nav matches the real background.
   const effectiveIsDark = resolvedTheme === "dark";
 
