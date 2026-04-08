@@ -35,6 +35,8 @@ import {
   createOrReuseGuestByName,
   getLastPositionForPlayerInClub,
 } from "@/integrations/supabase/players";
+import { assignTeams } from "@/features/teams/assignLineup";
+import { normalizeRole } from "@/features/teams/positions";
 import {
   GuestNameSelector,
   GuestSummary,
@@ -47,6 +49,7 @@ interface ClubMember {
   user_id: string;
   primary_position_id?: string | null;
   primary_position_name?: string;
+  secondary_position_name?: string | null;
   skill_rating?: number;
   gender?: string;
   height_cm?: number;
@@ -122,13 +125,13 @@ const NewGame = () => {
 
       const userIds = members.map((m) => m.user_id).filter(Boolean);
 
-      // Get players for these users with their primary position and attributes
+      // Get players for these users with their primary and secondary positions
       const { data: playersData, error: playersError } = await supabase
         .from("players")
         .select(
-          `id, 
-          first_name, 
-          last_name, 
+          `id,
+          first_name,
+          last_name,
           user_id,
           skill_rating,
           gender,
@@ -147,10 +150,13 @@ const NewGame = () => {
 
       if (playersError) throw playersError;
 
-      // Process players to get their primary position and attributes
+      // Process players to get their primary and secondary positions
       const processedPlayers = (playersData || []).map((player) => {
         const primaryPosition = player.player_positions?.find(
           (pp) => pp.is_primary
+        );
+        const secondaryPosition = player.player_positions?.find(
+          (pp) => !pp.is_primary
         );
         return {
           id: player.id,
@@ -160,6 +166,8 @@ const NewGame = () => {
           primary_position_id: primaryPosition?.position_id || null,
           primary_position_name:
             primaryPosition?.positions?.name || "No Position",
+          secondary_position_name:
+            secondaryPosition?.positions?.name || null,
           skill_rating: player.skill_rating || 50,
           gender: player.gender || "other",
           height_cm: player.height_cm,
@@ -476,140 +484,37 @@ const NewGame = () => {
         if (record) extraPlayerRecords.push(record);
       }
 
-      // 5. Generate balanced teams using smart algorithm
-      const generateBalancedTeams = () => {
-        // Prepare all players with their positions and skills
-        const allPlayersWithPositions = [];
-
-        // Add regular players
-        regularPlayerIds.forEach((playerId) => {
+      // 5. Build PlayerForTeams input and run spec-compliant team assignment
+      const playersForTeams = [
+        // Regular club members
+        ...regularPlayerIds.flatMap((playerId) => {
           const player = players?.find((p) => p.id === playerId);
-          if (player) {
-            allPlayersWithPositions.push({
-              id: player.id,
-              skill_rating: player.skill_rating || 50,
-              gender: player.gender || "other",
-              position: player.primary_position_name || "Outside Hitter",
-              isExtraPlayer: false,
-            });
-          }
-        });
-
-        // Add extra players (using temp player IDs)
-        extraPlayerRecords.forEach((record) => {
+          if (!player) return [];
+          return [{
+            id: player.id,
+            score: player.skill_rating ?? 50,
+            mainPosition: normalizeRole(player.primary_position_name),
+            secondaryPosition: player.secondary_position_name
+              ? normalizeRole(player.secondary_position_name)
+              : null,
+          }];
+        }),
+        // Extra / guest players (using temp player IDs)
+        ...extraPlayerRecords.flatMap((record) => {
           const extraPlayer = updatedExtraPlayers.find(
             (ep) => ep.id === record.originalExtraId
           );
-          if (extraPlayer) {
-            allPlayersWithPositions.push({
-              id: record.tempPlayerId,
-              skill_rating: extraPlayer.skill_rating,
-              gender: "other", // Extra players default
-              position: record.position,
-              isExtraPlayer: true,
-            });
-          }
-        });
+          if (!extraPlayer) return [];
+          return [{
+            id: record.tempPlayerId,
+            score: extraPlayer.skill_rating,
+            mainPosition: normalizeRole(record.position),
+            secondaryPosition: null,
+          }];
+        }),
+      ];
 
-        // Group players by position
-        const playersByPosition: Record<string, PlayerWithPosition[]> = {};
-        allPlayersWithPositions.forEach((player) => {
-          if (!playersByPosition[player.position]) {
-            playersByPosition[player.position] = [];
-          }
-          playersByPosition[player.position].push(player);
-        });
-
-        // Sort players within each position by skill (highest first)
-        Object.keys(playersByPosition).forEach((position) => {
-          playersByPosition[position].sort(
-            (a, b) => b.skill_rating - a.skill_rating
-          );
-        });
-
-        // Distribute positions using snake draft method
-        const teamA: PlayerWithPosition[] = [];
-        const teamB: PlayerWithPosition[] = [];
-
-        Object.entries(playersByPosition).forEach(
-          ([position, positionPlayers]) => {
-            positionPlayers.forEach((player, index) => {
-              // Snake draft: alternate high-skill players between teams
-              const teamACount = teamA.filter(
-                (p) => p.position === position
-              ).length;
-              const teamBCount = teamB.filter(
-                (p) => p.position === position
-              ).length;
-
-              if (index % 2 === 0) {
-                if (teamACount <= teamBCount) {
-                  teamA.push(player);
-                } else {
-                  teamB.push(player);
-                }
-              } else {
-                if (teamBCount <= teamACount) {
-                  teamB.push(player);
-                } else {
-                  teamA.push(player);
-                }
-              }
-            });
-          }
-        );
-
-        // Balance teams by size
-        while (Math.abs(teamA.length - teamB.length) > 1) {
-          if (teamA.length > teamB.length) {
-            const playerToMove = teamA.pop();
-            if (playerToMove) teamB.push(playerToMove);
-          } else {
-            const playerToMove = teamB.pop();
-            if (playerToMove) teamA.push(playerToMove);
-          }
-        }
-
-        // Try to balance gender
-        const teamAFemales = teamA.filter((p) => p.gender === "female").length;
-        const teamBFemales = teamB.filter((p) => p.gender === "female").length;
-        const genderDiff = Math.abs(teamAFemales - teamBFemales);
-
-        if (genderDiff > 2) {
-          // Find potential swaps that improve gender balance
-          for (let i = 0; i < teamA.length; i++) {
-            for (let j = 0; j < teamB.length; j++) {
-              const playerA = teamA[i];
-              const playerB = teamB[j];
-
-              if (
-                playerA.gender !== playerB.gender &&
-                Math.abs(playerA.skill_rating - playerB.skill_rating) < 15
-              ) {
-                // Perform the swap
-                teamA[i] = playerB;
-                teamB[j] = playerA;
-                break;
-              }
-            }
-            if (
-              Math.abs(
-                teamA.filter((p) => p.gender === "female").length -
-                  teamB.filter((p) => p.gender === "female").length
-              ) <= 1
-            ) {
-              break;
-            }
-          }
-        }
-
-        return {
-          teamAPlayerIds: teamA.map((p) => p.id),
-          teamBPlayerIds: teamB.map((p) => p.id),
-        };
-      };
-
-      const { teamAPlayerIds, teamBPlayerIds } = generateBalancedTeams();
+      const teamAssignment = assignTeams(playersForTeams);
 
       // 6. Create game_players records
       type GamePlayerInsert = {
@@ -621,50 +526,17 @@ const NewGame = () => {
         position_played: string | null;
       };
 
-      const allGamePlayers: GamePlayerInsert[] = [];
-
-      // Helper function to get player's position
-      const getPlayerPosition = (playerId: string) => {
-        // Check if it's a regular player
-        const regularPlayer = players?.find((p) => p.id === playerId);
-        if (regularPlayer) {
-          return regularPlayer.primary_position_name || "No Position";
-        }
-
-        // Check if it's a temporary player
-        const extraPlayerRecord = extraPlayerRecords.find(
-          (ep) => ep.tempPlayerId === playerId
-        );
-        if (extraPlayerRecord) {
-          return extraPlayerRecord.position;
-        }
-
-        return "No Position";
-      };
-
-      // Add Team A players with their positions
-      teamAPlayerIds.forEach((playerId) => {
-        allGamePlayers.push({
-          match_day_id: matchDay.id,
-          player_id: playerId,
-          team_name: "team_a",
-          original_team_name: "team_a",
-          manually_adjusted: false,
-          position_played: getPlayerPosition(playerId),
-        });
-      });
-
-      // Add Team B players with their positions
-      teamBPlayerIds.forEach((playerId) => {
-        allGamePlayers.push({
-          match_day_id: matchDay.id,
-          player_id: playerId,
-          team_name: "team_b",
-          original_team_name: "team_b",
-          manually_adjusted: false,
-          position_played: getPlayerPosition(playerId),
-        });
-      });
+      const allGamePlayers: GamePlayerInsert[] = [
+        ...teamAssignment.teamA,
+        ...teamAssignment.teamB,
+      ].map((ap) => ({
+        match_day_id: matchDay.id,
+        player_id: ap.id,
+        team_name: ap.team,
+        original_team_name: ap.team,
+        manually_adjusted: false,
+        position_played: ap.assignedPosition,
+      }));
 
       const { error: gamePlayersError } = await supabase
         .from("game_players")
@@ -680,14 +552,17 @@ const NewGame = () => {
       // Invalidate the latest game query so Dashboard refetches
       queryClient.invalidateQueries({ queryKey: ["latestGame", clubId] });
 
+      const baseDesc = `Your game has been created${
+        extraPlayersCount > 0 ? ` with ${extraPlayersCount} extra players` : ""
+      }`;
+      const compromiseNote =
+        teamAssignment.compromises.length > 0
+          ? ` Note: ${teamAssignment.compromises.join("; ")}`
+          : "";
       toast({
         title: "Game created!",
-        description: `Your game has been created${
-          extraPlayersCount > 0
-            ? ` with ${extraPlayersCount} extra players`
-            : ""
-        }`,
-        duration: 1500,
+        description: baseDesc + compromiseNote,
+        duration: compromiseNote ? 4000 : 1500,
       });
 
       // Navigate to the dashboard to see the game
