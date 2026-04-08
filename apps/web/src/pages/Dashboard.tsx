@@ -118,7 +118,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isCheckingClub, setIsCheckingClub] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<"admin" | "editor" | "member" | null>(null);
   const [clubMemberCount, setClubMemberCount] = useState(0);
   const isCompact = useIsCompact();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -168,41 +168,13 @@ const Dashboard = () => {
             return;
           }
 
-          // User doesn't have access to this club
-          /*console.log(
-            "[DASH]",
-            "navigating from",
-            location.pathname,
-            "to",
-            "/clubs",
-            "reason: User have no access to this club"
-          );*/
-
           navigate("/clubs");
           return;
         }
 
-        // User doesn't belong to any club and hasn't created one
-        /* console.log(
-          "[DASH]",
-          "navigating from",
-          location.pathname,
-          "to",
-          "/start",
-          "reason: User doesn't belong to any club and hasn't created one"
-        );*/
         navigate("/start");
       } catch (error) {
         console.error("Error checking user club:", error);
-        // On error, safely redirect to start
-        /*console.log(
-          "[DASH]",
-          "navigating from",
-          location.pathname,
-          "to",
-          "/start",
-          "reason: On error, safely redirect to start"
-        );*/
         navigate("/start");
       } finally {
         setIsCheckingClub(false);
@@ -242,13 +214,6 @@ const Dashboard = () => {
     }
   }, [memberCount]);
 
-  useEffect(() => {
-    // console. log(("=== USER OBJECT DEBUG ===");
-    // console. log(("Full user object:", user);
-    // console. log(("user.role:", user?.role);
-    // console. log(("typeof user.role:", typeof user?.role);
-  }, [user]);
-
   // Query to fetch the latest game with separate queries to avoid relation issues
   const { data: latestGame, isLoading } = useQuery({
     queryKey: ["latestGame", userClubId],
@@ -281,22 +246,21 @@ const Dashboard = () => {
         throw matchDayError;
       }
 
-      // Find the latest match day that has game players
+      // Find the latest match day that has game players.
+      // Use a single IN query instead of a per-match-day loop to avoid N+1.
       let selectedMatchDay = null;
       if (allMatchDays && allMatchDays.length > 0) {
-        for (const md of allMatchDays) {
-          // Quick check if this match day has game players
-          const { data: playerCheck } = await supabase
-            .from("game_players")
-            .select("id")
-            .eq("match_day_id", md.id)
-            .limit(1);
+        const matchDayIds = allMatchDays.map((md) => md.id);
+        const { data: matchDaysWithPlayers } = await supabase
+          .from("game_players")
+          .select("match_day_id")
+          .in("match_day_id", matchDayIds);
 
-          if (playerCheck && playerCheck.length > 0) {
-            selectedMatchDay = md;
-            break;
-          }
-        }
+        const idsWithPlayers = new Set(
+          (matchDaysWithPlayers ?? []).map((r) => r.match_day_id)
+        );
+        // allMatchDays is already ordered newest-first, so the first hit wins
+        selectedMatchDay = allMatchDays.find((md) => idsWithPlayers.has(md.id)) ?? null;
       }
 
       if (!selectedMatchDay) {
@@ -326,9 +290,7 @@ const Dashboard = () => {
           }[]
         | null = null;
 
-      let gamePlayersError: unknown = null;
-
-      // Attempt #1: with order_index
+      // Attempt #1: with order_index (column may not exist on older DB versions)
       {
         const { data, error } = await supabase
           .from("game_players")
@@ -340,22 +302,16 @@ const Dashboard = () => {
         if (!error) {
           gamePlayersRaw = data;
         } else {
-          // If the column doesn't exist, fall back to query without it
-          gamePlayersError = error;
-          const { data: dataNoOrder, error: errNoOrder } = await supabase
+          // Fallback: query without order_index if that column doesn't exist yet
+          const { data: dataNoOrder } = await supabase
             .from("game_players")
             .select("player_id, team_name, position_played")
             .eq("match_day_id", selectedMatchDay.id);
 
-          if (!errNoOrder) {
-            // normalize to same shape (order_index absent)
-            gamePlayersRaw = (dataNoOrder ?? []).map((gp) => ({
-              ...gp,
-              order_index: null as number | null,
-            }));
-          } else {
-            gamePlayersError = errNoOrder;
-          }
+          gamePlayersRaw = (dataNoOrder ?? []).map((gp) => ({
+            ...gp,
+            order_index: null as number | null,
+          }));
         }
       }
 
@@ -417,14 +373,6 @@ const Dashboard = () => {
 
   const handleCreateGame = () => {
     if (userClubId) {
-      /*console.log(
-        "[DASHBOARD]",
-        "navigating from",
-        location.pathname,
-        "to",
-        "/new-game/:clubId",
-        "reason: Creating a new Game"
-      );*/
       navigate(`/new-game/${userClubId}`);
     }
   };
@@ -538,9 +486,6 @@ const Dashboard = () => {
   }> = [];
 
   if (latestGame?.game_players) {
-    // console. log(("=== GAME PLAYERS DEBUG ===");
-    // console. log(("Game players:", latestGame.game_players);
-
     const toUI = (gp: GamePlayerData): UIPlayer => {
       const display = gp.position_name ?? "No Position";
       return {
@@ -562,8 +507,6 @@ const Dashboard = () => {
       .map(toUI)
       .sort(sortByOrderThenCanonical);
 
-    // console. log(("Team A players:", teamAPlayers);
-    // console. log(("Team B players:", teamBPlayers);
   }
 
   // Check if editing is still allowed (within 1 day of game date)
@@ -633,54 +576,32 @@ const Dashboard = () => {
     teamAScore: number,
     teamBScore: number
   ) => {
-    // console. log(("=== SCORE UPDATE DEBUG ===");
-    // console. log(("Set Number:", setNumber);
-    // console. log(("Team A Score:", teamAScore);
-    // console. log(("Team B Score:", teamBScore);
-    // console. log(("Latest Game:", latestGame);
-    // console. log(("All Matches:", latestGame?.matches);
-
     try {
-      // Find the match to update
       const matchToUpdate = latestGame?.matches?.find(
         (m) => m.game_number === setNumber
       );
-
-      // console. log(("Match to update:", matchToUpdate);
 
       if (!matchToUpdate) {
         console.error("No match found for set number:", setNumber);
         return;
       }
 
-      // console. log(("Updating match with ID:", matchToUpdate.id);
-
-      // Update score in the database
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("matches")
         .update({
           team_a_score: teamAScore,
           team_b_score: teamBScore,
         })
-        .eq("id", matchToUpdate.id)
-        .select(); // Add select() to see what was updated
-
-      // console. log(("Supabase update result:", { data, error });
+        .eq("id", matchToUpdate.id);
 
       if (error) {
         console.error("Error updating match score:", error);
         return;
       }
 
-      // console. log(("Successfully updated match:", data);
-
-      // Invalidate and refetch the latest game query
-      // console. log(("Invalidating queries for userClubId:", userClubId);
       await queryClient.invalidateQueries({
         queryKey: ["latestGame", userClubId],
       });
-
-      // console. log(("Queries invalidated successfully");
     } catch (error) {
       console.error("Error in handleSetScoreUpdate:", error);
     }
@@ -782,13 +703,6 @@ const Dashboard = () => {
     : "Last Game Overview";
 
   const handleEditTeamsClick = () => {
-    // console. log(("=== EDIT TEAMS BUTTON CLICKED ===");
-    // console. log(("userClubId:", userClubId);
-    // console. log(("latestGame:", latestGame);
-    // console. log(("latestGame.id:", latestGame?.id);
-    // console. log(("userRole:", userRole);
-    // console. log(("clubDetails:", clubDetails);
-
     if (!userClubId) {
       console.error("❌ No userClubId found!");
       return;
@@ -800,15 +714,6 @@ const Dashboard = () => {
     }
 
     const targetPath = `/edit-game/${userClubId}/${latestGame.id}`;
-    // console. log(("🚀 Navigating to:", targetPath);
-    /*console.log(
-      "[DASHBOARD]",
-      "navigating from",
-      location.pathname,
-      "to",
-      "/edit-game/:clubId/:latestGameId",
-      "reason: Clicked on Edit Game Button"
-    );*/
     navigate(targetPath);
   };
 

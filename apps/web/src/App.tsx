@@ -31,14 +31,13 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  //console.log("🔄 App rendering, current URL:", window.location.pathname);
-
   useEffect(() => {
-    // Intercept and suppress bucket creation attempts
+    // Intercept bucket creation attempts — the "club-images" bucket must be
+    // pre-created in the Supabase dashboard. Until then, block the POST so
+    // the SDK doesn't spam the console with 409/permission errors on every
+    // app load. All other fetch calls are passed through unmodified.
     const originalFetch = window.fetch;
-    const originalError = console.error;
 
-    // Block any bucket creation API calls
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url =
         typeof input === "string"
@@ -47,9 +46,7 @@ const App = () => {
           ? input.href
           : (input as Request).url;
 
-      // Block POST requests to bucket endpoints
       if (url.includes("/storage/v1/bucket") && init?.method === "POST") {
-        // Return fake success to prevent errors
         return new Response(
           JSON.stringify({
             name: "club-images",
@@ -67,24 +64,8 @@ const App = () => {
       return originalFetch(input, init);
     };
 
-    // Suppress all bucket-related console errors
-    console.error = (...args) => {
-      const message = JSON.stringify(args).toLowerCase();
-      if (
-        message.includes("bucket") ||
-        message.includes("storageapierror") ||
-        message.includes("row-level security") ||
-        message.includes("admin privileges") ||
-        message.includes("club-images")
-      ) {
-        return; // Completely suppress these errors
-      }
-      originalError(...args);
-    };
-
     return () => {
       window.fetch = originalFetch;
-      console.error = originalError;
     };
   }, []);
 
@@ -120,7 +101,6 @@ const App = () => {
 const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
 
-  // Public / pre-auth routes must ignore theme and stay light
   // Public / pre-auth routes must ignore theme and stay light
   const enforceLightOnRoutes: Array<string | RegExp> = [
     "/",

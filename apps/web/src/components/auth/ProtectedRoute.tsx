@@ -79,13 +79,6 @@ const ProtectedRoute = ({
 
   // Redirect to login ONLY if definitely not authenticated and not loading
   if (!isLoading && !isAuthenticated) {
-    /*console.log("[Route] redirect → /login", {
-      isLoading,
-      isAuthenticated,
-      path: location.pathname,
-    });
-    */
-
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -95,12 +88,6 @@ const ProtectedRoute = ({
     hasCompletedOnboarding === false &&
     location.pathname !== "/players/onboarding"
   ) {
-    /*console.log("[Route] redirect → /players/onboarding", {
-      requiresOnboarding,
-      path: location.pathname,
-    });
-    */
-
     return <Navigate to="/players/onboarding" replace />;
   }
 
@@ -110,7 +97,6 @@ const ProtectedRoute = ({
   }
 
   // If they're authenticated and have the required role (if specified), render the children
-  /*console.log("[Route] render children", { path: location.pathname });*/
 
   return <>{children}</>;
 };
