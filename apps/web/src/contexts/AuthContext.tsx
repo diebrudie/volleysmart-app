@@ -50,8 +50,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  //console.log("🏐 AuthContext rendering, user:", user);
-
   // Initialize auth state
   useEffect(() => {
     // 1) Set up a minimal listener first: only handle definitive sign-out
@@ -155,8 +153,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name: authUser.email?.split("@")[0] || "User",
       };
       setUser(fallbackUser);
-    } finally {
-      // no isLoading toggles here
     }
   };
 
@@ -187,8 +183,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "You have successfully logged in",
         duration: 1500,
       });
-
-      return Promise.resolve();
     } catch (error: unknown) {
       console.error("Login error:", error);
       toast({
