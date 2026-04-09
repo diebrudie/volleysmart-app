@@ -24,7 +24,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, Upload, HelpCircle, X } from "lucide-react";
-import { buildImageUrl } from "@/utils/buildImageUrl";
 import {
   Drawer,
   DrawerContent,
@@ -504,11 +503,7 @@ const Profile = () => {
                       src={
                         imageFile
                           ? URL.createObjectURL(imageFile)
-                          : buildImageUrl(profile.image_url || "", {
-                              w: 192,
-                              q: 75,
-                              format: "webp",
-                            })
+                          : profile.image_url ?? undefined
                       }
                       alt="Profile"
                       className="object-cover"
