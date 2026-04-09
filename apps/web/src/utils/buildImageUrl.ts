@@ -13,7 +13,14 @@ type Opts = {
 
 export function buildImageUrl(url?: string | null, opts: Opts = {}): string {
   if (!url) return "";
-  const u = new URL(url);
+
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    // Not a valid absolute URL — return as-is so the browser can still try to load it
+    return url;
+  }
 
   // Sensible defaults: small & efficient unless overridden
   const w = opts.w ?? 720;

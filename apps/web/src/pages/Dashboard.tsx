@@ -609,10 +609,18 @@ const Dashboard = () => {
 
   // OPTIONAL: clamp to your DB constraint (1..9)
   const MAX_SETS = 9; // keep in sync with DB constraint
+
+  // Set 5 must have both scores filled in before a 6th set can be added.
+  const set5 = scoresByNumber.get(5);
+  const isSet5Scored =
+    set5 !== undefined && set5.teamA !== null && set5.teamB !== null;
+
   // You can only add another set if:
   //  - the game is still editable
+  //  - set 5 has been scored
   //  - and we haven't reached the max number of sets
-  const canAddAnotherSet = isEditingAllowed && nextSetNumber <= MAX_SETS;
+  const canAddAnotherSet =
+    isEditingAllowed && isSet5Scored && nextSetNumber <= MAX_SETS;
 
   // Insert a new set (match row) for this match day
   const handleAddSet = async () => {
