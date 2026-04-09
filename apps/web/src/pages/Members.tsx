@@ -44,7 +44,6 @@ import { useToast } from "@/hooks/use-toast";
 import CopyableClubId from "@/components/clubs/CopyableClubId";
 import { ClubInviteSharePanel } from "@/components/clubs/ClubInviteSharePanel";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { buildImageUrl } from "@/utils/buildImageUrl";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 // Simple types to avoid complex Supabase type inference
@@ -327,11 +326,7 @@ const Members = () => {
             <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
               {player.image_url ? (
                 <img
-                  src={buildImageUrl(player.image_url, {
-                    w: 128,
-                    q: 70,
-                    format: "webp",
-                  })}
+                  src={player.image_url}
                   alt={`${player.first_name} ${player.last_name}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
