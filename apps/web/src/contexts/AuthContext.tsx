@@ -28,6 +28,7 @@ interface AuthContextType {
     firstName?: string,
     lastName?: string
   ) => Promise<void>;
+  signInWithOAuth: (provider: "google" | "apple") => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -268,6 +269,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const signInWithOAuth = async (provider: "google" | "apple") => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          // After the provider redirects back, land on /login so the existing
+          // routeAfterLogin() logic handles onboarding / dashboard routing.
+          redirectTo: window.location.origin + "/login",
+        },
+      });
+      if (error) throw error;
+      // No further action needed — the browser will navigate to the provider.
+    } catch (error: unknown) {
+      console.error("OAuth sign-in error:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : `Failed to sign in with ${provider}. Please try again.`,
+        variant: "destructive",
+        duration: 2000,
+      });
+      throw error;
+    }
+  };
+
   const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -360,6 +388,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         login,
         signup,
+        signInWithOAuth,
         logout,
         resetPassword,
         updatePassword,
