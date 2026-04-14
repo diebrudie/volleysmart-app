@@ -157,7 +157,7 @@ const PlayerOnboarding = () => {
     fetchPositions();
   }, []);
 
-  // Load name from user metadata — handles both email sign-up and OAuth providers.
+  // Load name from user metadata — handles email sign-up and all OAuth providers.
   useEffect(() => {
     const loadNames = async () => {
       const {
@@ -165,26 +165,26 @@ const PlayerOnboarding = () => {
       } = await supabase.auth.getUser();
       if (!authUser) return;
 
-      // Email sign-up stores first_name / last_name directly.
-      let fn: string = authUser.user_metadata?.first_name || "";
-      let ln: string = authUser.user_metadata?.last_name || "";
+      const m = authUser.user_metadata ?? {};
 
-      // OAuth providers (Google, Apple) store the full name as full_name or name.
+      // Try dedicated first/last fields first (email sign-up, some providers).
+      // Google OIDC also exposes given_name / family_name directly.
+      let fn: string = m.first_name || m.given_name || "";
+      let ln: string = m.last_name || m.family_name || "";
+
+      // Fall back to splitting a combined full_name / name field.
       if (!fn || !ln) {
-        const fullName: string =
-          authUser.user_metadata?.full_name ||
-          authUser.user_metadata?.name ||
-          "";
-        if (fullName.trim()) {
-          const parts = fullName.trim().split(/\s+/);
-          fn = parts[0] ?? "";
-          ln = parts.slice(1).join(" ") || "";
+        const full: string = m.full_name || m.name || "";
+        if (full.trim()) {
+          const parts = full.trim().split(/\s+/);
+          if (!fn) fn = parts[0] ?? "";
+          if (!ln) ln = parts.slice(1).join(" ") || "";
         }
       }
 
       setFirstName(fn);
       setLastName(ln);
-      // Only auto-fill if both parts are present.
+      // Only consider names auto-filled when both parts are non-empty.
       setNamesAutoFilled(!!(fn.trim() && ln.trim()));
     };
 
