@@ -132,6 +132,12 @@ const PlayerOnboarding = () => {
   const [isPositionsHelpOpen, setIsPositionsHelpOpen] =
     useState<boolean>(false);
 
+  // Name fields — pre-filled from OAuth/email metadata; editable in step 0 if missing.
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  // True when both names were successfully extracted from user metadata.
+  const [namesAutoFilled, setNamesAutoFilled] = useState(false);
+
   const [answers, setAnswers] = useState<OnboardingAnswers>({
     primaryPosition: "",
     secondaryPositions: [],
@@ -149,6 +155,40 @@ const PlayerOnboarding = () => {
 
   useEffect(() => {
     fetchPositions();
+  }, []);
+
+  // Load name from user metadata — handles both email sign-up and OAuth providers.
+  useEffect(() => {
+    const loadNames = async () => {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      // Email sign-up stores first_name / last_name directly.
+      let fn: string = authUser.user_metadata?.first_name || "";
+      let ln: string = authUser.user_metadata?.last_name || "";
+
+      // OAuth providers (Google, Apple) store the full name as full_name or name.
+      if (!fn || !ln) {
+        const fullName: string =
+          authUser.user_metadata?.full_name ||
+          authUser.user_metadata?.name ||
+          "";
+        if (fullName.trim()) {
+          const parts = fullName.trim().split(/\s+/);
+          fn = parts[0] ?? "";
+          ln = parts.slice(1).join(" ") || "";
+        }
+      }
+
+      setFirstName(fn);
+      setLastName(ln);
+      // Only auto-fill if both parts are present.
+      setNamesAutoFilled(!!(fn.trim() && ln.trim()));
+    };
+
+    void loadNames();
   }, []);
 
   // Initialize selected date if birthday is already set
@@ -237,7 +277,9 @@ const PlayerOnboarding = () => {
   const isStepValid = (step: number): boolean => {
     switch (step) {
       case 0:
-        return true; // Welcome screen - always valid
+        // If names were auto-filled from metadata, always valid.
+        // Otherwise require the user to fill them in.
+        return namesAutoFilled || (firstName.trim() !== "" && lastName.trim() !== "");
       case 1:
         return answers.primaryPosition !== "";
       case 2:
@@ -307,18 +349,16 @@ const PlayerOnboarding = () => {
       return;
     }
 
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
-    const firstName = authUser?.user_metadata?.first_name || "";
-    const lastName = authUser?.user_metadata?.last_name || "";
+    const fn = firstName.trim();
+    const ln = lastName.trim();
 
-    if (!firstName || !lastName) {
+    if (!fn || !ln) {
       toast({
         title: "Error",
-        description: "First and last names are required from your account.",
+        description: "Please enter your first and last name to continue.",
         variant: "destructive",
       });
+      setCurrentStep(0);
       return;
     }
 
@@ -372,8 +412,8 @@ const PlayerOnboarding = () => {
         .from("players")
         .insert({
           user_id: user.id,
-          first_name: firstName,
-          last_name: lastName,
+          first_name: fn,
+          last_name: ln,
           skill_rating: calculatedSkillLevel,
           general_skill_level: answers.generalSkillLevel,
           training_status: answers.trainingStatus,
@@ -464,6 +504,37 @@ const PlayerOnboarding = () => {
                 with the right team!
               </p>
             </div>
+
+            {/* Show name fields when they couldn't be read from OAuth/email metadata */}
+            {!namesAutoFilled && (
+              <div className="text-left space-y-3 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  First, tell us your name:
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="ob-first-name">First name</Label>
+                    <Input
+                      id="ob-first-name"
+                      autoComplete="given-name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Jane"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="ob-last-name">Last name</Label>
+                    <Input
+                      id="ob-last-name"
+                      autoComplete="family-name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <p className="text-gray-500 dark:text-gray-400">
               This will take about 2-4 minutes to complete.
