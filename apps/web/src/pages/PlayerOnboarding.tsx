@@ -973,32 +973,30 @@ const PlayerOnboarding = () => {
         const maxDate = tenYearsAgo.toISOString().split("T")[0];
 
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 w-full">
             <div className="text-center">
               <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
                 When's your birthday?
               </h2>
             </div>
-            <div className="w-full sm:max-w-xs space-y-3">
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none z-10" />
-                <Input
-                  type="date"
-                  value={answers.birthday}
-                  max={maxDate}
-                  onChange={(e) => {
-                    setAnswers((prev) => ({
-                      ...prev,
-                      birthday: e.target.value,
-                    }));
-                    if (e.target.value) {
-                      setSelectedDate(new Date(e.target.value));
-                    }
-                  }}
-                  className="w-full text-left dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:[color-scheme:dark] pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
-                  placeholder="YYYY-MM-DD"
-                />
-              </div>
+            <div className="relative">
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none z-10" />
+              <Input
+                type="date"
+                value={answers.birthday}
+                max={maxDate}
+                onChange={(e) => {
+                  setAnswers((prev) => ({
+                    ...prev,
+                    birthday: e.target.value,
+                  }));
+                  if (e.target.value) {
+                    setSelectedDate(new Date(e.target.value));
+                  }
+                }}
+                className="w-full min-w-0 text-left dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:[color-scheme:dark] pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                placeholder="YYYY-MM-DD"
+              />
             </div>
           </div>
         );
