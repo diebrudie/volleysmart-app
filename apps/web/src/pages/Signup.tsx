@@ -172,13 +172,13 @@ const Signup = () => {
             <>
               {/* Step 2: name + password */}
               <p className="mt-2 text-slate-500 text-sm">
-                Creating account for{" "}
+                Creating account for <span className="font-medium text-slate-700">{email}</span>{" "}
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="text-blue-600 hover:underline font-medium"
+                  className="text-blue-600 hover:underline"
                 >
-                  {email}
+                  (Edit)
                 </button>
               </p>
 
