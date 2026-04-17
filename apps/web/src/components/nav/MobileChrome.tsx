@@ -19,8 +19,9 @@ const PUBLIC_PREFIXES = [
 
 // Routes that must NOT show mobile chrome (top + bottom)
 const HIDE_CHROME = [
-  /^\/new-game\/[^/]+$/, // /new-game/:clubId
+  /^\/new-game\/[^/]+$/, // /new-game/:clubId (legacy)
   /^\/edit-game\/[^/]+\/[^/]+\/?$/,
+  /^\/events\/new\/?$/, // Create Event flow
   /^\/join-club\/?$/, // /join-club
   /^\/new-club\/?$/, // /new-club
   /^\/user\/[^/]+\/?$/, // /user/:userId (Profile)

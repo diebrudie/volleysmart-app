@@ -42,7 +42,38 @@
 - ✅ Multi-game scoring (up to 5 games per match day)
 - ✅ Match history and result tracking
 
-## 🔄 Phase 3: Enhancement & Polish (Current)
+## 🔄 Phase 3: Major Feature Extension (Current — April 2026)
+
+### Navigation Overhaul
+The app is being transformed from club-scoped to user-scoped navigation. New global bottom nav: Home | Archive | + FAB | Clubs | Members. New top bar: Logo | Notifications | Chat | Hamburger menu.
+
+### Planned Events & RSVP System
+- New `planned_events` table (event types: friendly_game, social_game, training, tournament)
+- RSVP system with custom deadlines, attending/declined/maybe states
+- Teams locked until game day — admin manually triggers team generation on day-of
+- Minimum 4 players required; creator alerted if minimum not met
+
+### Global Home Tab
+- Cross-club upcoming events feed (list + calendar toggle)
+- User profile chip (avatar + skill rating)
+- Inline RSVP actions per event card
+
+### Global Archive Tab
+- Cross-club past games table: Date | Club | Score | Winner | Details
+
+### Chat (per-club)
+- Real-time club chat using Supabase Realtime
+- In-app notification center for activity log
+
+### Global Members & Clubs Tabs
+- Members directory filterable across all user's clubs
+- Clubs tab for managing all memberships
+
+**Branch per phase:** `feat/phase-N-short-description` (see project-plan for full branching strategy)
+
+---
+
+## ✅ Phase 2: Core Features (Completed)
 
 ### User Experience Improvements
 

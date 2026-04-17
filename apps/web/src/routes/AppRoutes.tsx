@@ -16,7 +16,11 @@ import Games from "@/pages/Games";
 import GameDetail from "@/pages/GameDetail";
 import Players from "@/pages/Players";
 import Members from "@/pages/Members";
+import MembersGlobal from "@/pages/MembersGlobal";
 import ManageMembers from "@/pages/ManageMembers";
+import UpcomingEvents from "@/pages/UpcomingEvents";
+import Archive from "@/pages/Archive";
+import CreateEvent from "@/pages/CreateEvent";
 import PlayerDetail from "@/pages/PlayerDetail";
 import TeamGenerator from "@/pages/TeamGenerator";
 import EditGame from "@/pages/EditGame";
@@ -38,7 +42,7 @@ const HomeRoute = () => {
   if (isLoading) return null;
 
   if (isAuthenticated) {
-    return <Navigate to="/clubs" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   return <Home />;
@@ -135,8 +139,42 @@ const AppRoutes = () => (
       }
     />
 
-    {/* Safety redirect: bare /dashboard → /clubs */}
-    <Route path="/dashboard" element={<Navigate to="/clubs" replace />} />
+    {/* Global tabs */}
+    <Route
+      path="/home"
+      element={
+        <ProtectedRoute>
+          <UpcomingEvents />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/archive"
+      element={
+        <ProtectedRoute>
+          <Archive />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/members"
+      element={
+        <ProtectedRoute>
+          <MembersGlobal />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/events/new"
+      element={
+        <ProtectedRoute>
+          <CreateEvent />
+        </ProtectedRoute>
+      }
+    />
+
+    {/* Safety redirects */}
+    <Route path="/dashboard" element={<Navigate to="/home" replace />} />
     <Route
       path="/games/:clubId"
       element={
