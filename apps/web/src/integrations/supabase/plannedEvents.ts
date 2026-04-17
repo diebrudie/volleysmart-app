@@ -125,6 +125,7 @@ export async function createPlannedEvent(
       date: input.date,
       start_time: `${input.start_time}:00`, // ensure HH:MM:SS
       club_id: input.club_id,
+      created_by: userId,
       location_id: locationId,
       is_public: input.is_public,
       max_players: input.max_players ?? null,

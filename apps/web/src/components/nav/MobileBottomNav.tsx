@@ -61,7 +61,7 @@ const MobileBottomNav: React.FC = () => {
         aria-hidden="true"
       />
       <div className="mx-auto max-w-xl px-2 pb-3">
-        <div className="relative grid grid-cols-4 items-center h-16">
+        <div className="relative grid grid-cols-5 items-center h-16">
           <TabLink
             to="/home"
             icon={<Home className="h-5 w-5" />}
@@ -69,6 +69,9 @@ const MobileBottomNav: React.FC = () => {
             active={isActive(/^\/home(\/|$)/)}
             activeColor={activeColorClass}
           />
+
+          {/* Empty slot (was Archive) */}
+          <div aria-hidden className="h-full" />
 
           {/* Center empty slot so the FAB doesn't cover any tab */}
           <div aria-hidden className="h-full" />
