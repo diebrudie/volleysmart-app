@@ -63,53 +63,44 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
   const clubNameById: Record<string, string> = {};
   clubRows?.forEach((c) => { clubNameById[c.id] = c.name; });
 
-  // 3. Query club_members directly (covered by RLS "Members see active peers in their club")
-  //    and join players as a nested resource.
+  // 3. Fetch club_members rows (club_members has no FK to players, so we must
+  //    do a two-step fetch — first memberships, then players by user_id).
   const { data: memberships, error: membErr } = await supabase
     .from("club_members")
-    .select(
-      `
-      club_id,
-      role,
-      member_association,
-      players (
-        id,
-        user_id,
-        first_name,
-        last_name,
-        image_url,
-        skill_rating,
-        country,
-        player_positions (
-          is_primary,
-          positions ( name )
-        )
-      )
-    `
-    )
+    .select("club_id, role, member_association, user_id")
     .in("club_id", clubIds)
     .eq("status", "active")
     .eq("is_active", true);
 
   if (membErr) throw membErr;
+  if (!memberships?.length) return [];
 
-  // 4. Deduplicate by player id — merge club entries from multiple memberships
+  // 4. Collect unique user_ids, then fetch matching players with positions.
+  const userIds = [...new Set(
+    memberships.map((m) => m.user_id).filter(Boolean) as string[]
+  )];
+
+  const { data: players, error: playersErr } = await supabase
+    .from("players")
+    .select(
+      `id, user_id, first_name, last_name, image_url, skill_rating, country,
+       player_positions ( is_primary, positions ( name ) )`
+    )
+    .in("user_id", userIds);
+
+  if (playersErr) throw playersErr;
+
+  const playerByUserId = new Map(
+    (players ?? []).map((p) => [p.user_id, p])
+  );
+
+  // 5. Merge memberships with players; deduplicate by player id.
   const byPlayerId = new Map<string, GlobalMember>();
 
-  for (const row of memberships ?? []) {
-    const player = row.players;
-    if (!player || Array.isArray(player)) continue;
-
-    const p = player as {
-      id: string;
-      user_id: string | null;
-      first_name: string;
-      last_name: string;
-      image_url: string | null;
-      skill_rating: number | null;
-      country: string | null;
-      player_positions: GlobalMember["player_positions"];
-    };
+  for (const row of memberships) {
+    if (!row.user_id) continue;
+    const p = playerByUserId.get(row.user_id);
+    if (!p) continue;
 
     const clubEntry = {
       id: row.club_id ?? "",
@@ -132,7 +123,7 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
         skill_rating: p.skill_rating,
         country: p.country,
         member_association: row.member_association ?? null,
-        player_positions: p.player_positions ?? [],
+        player_positions: (p.player_positions ?? []) as GlobalMember["player_positions"],
         clubs: [clubEntry],
       });
     }
