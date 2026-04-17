@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
+import { BackButton } from "@/components/ui/back-button";
 import SetBox from "@/components/match/SetBox";
 import AddSetBox from "@/components/match/AddSetBox";
 import { Button } from "@/components/ui/button";
@@ -731,6 +732,7 @@ const Dashboard = () => {
 
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <BackButton to="/clubs" label="Clubs" />
           {/* Header with title and buttons */}
           <div className="mb-8">
             {/* Desktop Layout */}

@@ -545,7 +545,7 @@ const GameDetail = () => {
                 variant="outline"
                 size="icon"
                 className="mr-4"
-                onClick={() => navigate(`/games/${matchData.club_id}`)}
+                onClick={() => navigate(-1)}
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>

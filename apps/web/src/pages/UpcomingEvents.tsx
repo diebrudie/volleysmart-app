@@ -32,6 +32,7 @@ import {
 } from "@/integrations/supabase/plannedEvents";
 import { EventCard } from "@/components/events/EventCard";
 import { useIsCompact } from "@/hooks/use-compact";
+import Navbar from "@/components/layout/Navbar";
 
 // ─── User profile chip ────────────────────────────────────────────────────────
 const UserChip: React.FC<{ userId: string }> = ({ userId }) => {
@@ -292,53 +293,58 @@ const UpcomingEvents: React.FC = () => {
   // ── Desktop: sidebar calendar + wide event grid ────────────────────────────
   if (!isCompact) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        <div className="flex items-center justify-between mb-6">
-          {user?.id && <UserChip userId={user.id} />}
-          <Button onClick={() => navigate("/events/new")} size="sm">
-            <Plus className="h-4 w-4 mr-1.5" />
-            Create Event
-          </Button>
-        </div>
-
-        <div className="flex gap-8">
-          <aside className="w-64 shrink-0">
-            <div className="rounded-2xl border bg-card p-4 sticky top-20">
-              <MiniCalendar
-                events={events}
-                month={calendarMonth}
-                onMonthChange={setCalendarMonth}
-                selectedDay={selectedDay}
-                onDaySelect={handleDaySelect}
-              />
-              {selectedDay && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedDay(null)}
-                  className="mt-3 w-full text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Clear filter
-                </button>
-              )}
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow">
+          <div className="max-w-6xl mx-auto px-6 py-6">
+            <div className="flex items-center justify-between mb-6">
+              {user?.id && <UserChip userId={user.id} />}
+              <Button onClick={() => navigate("/events/new")} size="sm">
+                <Plus className="h-4 w-4 mr-1.5" />
+                Create Event
+              </Button>
             </div>
-          </aside>
 
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-semibold mb-4">
-              {selectedDay
-                ? `Events on ${format(selectedDay, "MMMM d")}`
-                : "Upcoming Events"}
-            </h1>
-            <EventList
-              events={visibleEvents}
-              isLoading={isLoading}
-              playerId={playerId ?? null}
-              onRsvp={handleRsvp}
-              rsvpLoading={rsvpMutation.isPending}
-              onCreateEvent={() => navigate("/events/new")}
-            />
+            <div className="flex gap-8">
+              <aside className="w-64 shrink-0">
+                <div className="rounded-2xl border bg-card p-4 sticky top-20">
+                  <MiniCalendar
+                    events={events}
+                    month={calendarMonth}
+                    onMonthChange={setCalendarMonth}
+                    selectedDay={selectedDay}
+                    onDaySelect={handleDaySelect}
+                  />
+                  {selectedDay && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDay(null)}
+                      className="mt-3 w-full text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Clear filter
+                    </button>
+                  )}
+                </div>
+              </aside>
+
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-semibold mb-4">
+                  {selectedDay
+                    ? `Events on ${format(selectedDay, "MMMM d")}`
+                    : "Upcoming Events"}
+                </h1>
+                <EventList
+                  events={visibleEvents}
+                  isLoading={isLoading}
+                  playerId={playerId ?? null}
+                  onRsvp={handleRsvp}
+                  rsvpLoading={rsvpMutation.isPending}
+                  onCreateEvent={() => navigate("/events/new")}
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     );
   }

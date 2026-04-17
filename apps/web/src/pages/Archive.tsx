@@ -27,6 +27,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import Navbar from "@/components/layout/Navbar";
+import { useIsCompact } from "@/hooks/use-compact";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ArchiveRow {
@@ -166,6 +168,7 @@ const WINNER_BADGE: Record<
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const Archive: React.FC = () => {
   const { user } = useAuth();
+  const isCompact = useIsCompact();
 
   const [sortConfig, setSortConfig] = useState<{
     key: SortKey;
@@ -245,33 +248,34 @@ const Archive: React.FC = () => {
       <ChevronDown className="h-3.5 w-3.5 ml-1 inline text-muted-foreground" />
     );
 
-  // ── Loading ──
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="animate-spin h-7 w-7 rounded-full border-2 border-muted border-t-foreground" />
-      </div>
-    );
-  }
-
-  // ── Empty state ──
-  if (rows.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center pb-24">
-        <ArchiveIcon className="h-12 w-12 text-muted-foreground" />
-        <div>
-          <h1 className="text-xl font-semibold">No games yet</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Completed games from all your clubs will appear here.
-          </p>
+  const pageContent = () => {
+    // ── Loading ──
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <div className="animate-spin h-7 w-7 rounded-full border-2 border-muted border-t-foreground" />
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // ── Table ──
-  return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 pb-24">
+    // ── Empty state ──
+    if (rows.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center pb-24">
+          <ArchiveIcon className="h-12 w-12 text-muted-foreground" />
+          <div>
+            <h1 className="text-xl font-semibold">No games yet</h1>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Completed games from all your clubs will appear here.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Table ──
+    return (
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 pb-24">
       <Card>
         <CardHeader className="border-b">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -463,6 +467,14 @@ const Archive: React.FC = () => {
           {filtered.length !== rows.length ? ` (filtered from ${rows.length})` : ""}
         </p>
       )}
+    </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      {!isCompact && <Navbar />}
+      <main className="flex-grow">{pageContent()}</main>
     </div>
   );
 };
