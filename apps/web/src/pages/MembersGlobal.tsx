@@ -79,6 +79,8 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
     memberships.map((m) => m.user_id).filter(Boolean) as string[]
   )];
 
+  if (!userIds.length) return [];
+
   const { data: players, error: playersErr } = await supabase
     .from("players")
     .select(
