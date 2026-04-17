@@ -48,6 +48,7 @@
 - ✅ **Nav & DB Foundation** (`feat/phase-1-nav-db-foundation`) — DB migration (planned_events, event_clubs, event_rsvp, messages, notifications + RLS policies); global MobileBottomNav (Home/Archive/+/Clubs/Members, no club dependency); MobileTopBar with Bell + Chat + Hamburger; routes /home, /archive, /members, /events/new added
 - ✅ **Home Tab + Create Event** (`feat/phase-2-3-events-home-create`) — UpcomingEvents page with list/calendar toggle, mini-calendar, RSVP inline actions, user profile chip; CreateEvent 3-step form (type → details → club/options) with RSVP deadline presets + custom date picker; Desktop Navbar updated to global links, Create Event button, Bell + Chat icons; EventCard component
 - ✅ **Archive Tab** (`feat/phase-4-archive-tab`) — Cross-club past games table: Date, Club, Score, Winner, Location, Details; filters by club/month/winner; sortable columns; Club column auto-hidden for single-club users; game count summary row
+- ✅ **Clubs & Members Tabs** (`feat/phase-5-6-clubs-members`) — Clubs.tsx: removed internal Navbar render (double-nav fix); Members tab: full MembersGlobal.tsx with cross-club member directory, search by name, filter by club/country, sort by first/last name A-Z + skill rating; deduplication of players across clubs; responsive grid (2→6 cols)
 
 ### Navigation Overhaul
 The app is being transformed from club-scoped to user-scoped navigation. New global bottom nav: Home | Archive | + FAB | Clubs | Members. New top bar: Logo | Notifications | Chat | Hamburger menu.

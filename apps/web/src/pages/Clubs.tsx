@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -344,21 +343,14 @@ const Clubs = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <Spinner className="h-8 w-8" />
-        </div>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Spinner className="h-8 w-8" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-
-      <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
           {/* Header with title and buttons */}
           <div className="mb-8">
             {/* Desktop Layout */}
@@ -528,8 +520,6 @@ const Clubs = () => {
               </p>
             </div>
           )}
-        </div>
-      </main>
 
       {/* Club Settings Dialog */}
       {selectedClub && (
