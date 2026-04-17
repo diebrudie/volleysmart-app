@@ -97,18 +97,8 @@ const Login = () => {
 
           if (clubIds.length === 0) {
             navigate("/start", { replace: true });
-          } else if (clubIds.length === 1) {
-            navigate(`/dashboard/${clubIds[0]}`, { replace: true });
           } else {
-            const lastVisitedClubId = localStorage.getItem("lastVisitedClub");
-            const isLastClubValid =
-              !!lastVisitedClubId && clubIds.includes(lastVisitedClubId);
-
-            if (isLastClubValid) {
-              navigate(`/dashboard/${lastVisitedClubId}`, { replace: true });
-            } else {
-              navigate("/clubs", { replace: true });
-            }
+            navigate("/home", { replace: true });
           }
         } catch (clubError) {
           console.error("Error checking club membership:", clubError);

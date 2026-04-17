@@ -248,6 +248,7 @@ const UpcomingEvents: React.FC = () => {
   const [view, setView] = React.useState<"list" | "calendar">("list");
   const [calendarMonth, setCalendarMonth] = React.useState(new Date());
   const [selectedDay, setSelectedDay] = React.useState<Date | null>(null);
+  const [rsvpFilter, setRsvpFilter] = React.useState<"all" | "attending" | "maybe" | "declined" | "none">("all");
 
   const { data: playerId } = useQuery({
     queryKey: ["my-player-id", user?.id],
@@ -277,10 +278,21 @@ const UpcomingEvents: React.FC = () => {
     },
   });
 
-  const visibleEvents: PlannedEvent[] =
-    view === "calendar" && selectedDay
+  const visibleEvents: PlannedEvent[] = React.useMemo(() => {
+    let list = view === "calendar" && selectedDay
       ? events.filter((e) => e.date === format(selectedDay, "yyyy-MM-dd"))
       : events;
+
+    if (rsvpFilter !== "all" && playerId) {
+      list = list.filter((e) => {
+        const myStatus = e.event_rsvp?.find((r) => r.player_id === playerId)?.status ?? null;
+        if (rsvpFilter === "none") return myStatus === null;
+        return myStatus === rsvpFilter;
+      });
+    }
+
+    return list;
+  }, [events, view, selectedDay, rsvpFilter, playerId]);
 
   const handleRsvp = (eventId: string, status: RsvpStatus) => {
     if (!playerId) return;
@@ -289,6 +301,35 @@ const UpcomingEvents: React.FC = () => {
 
   const handleDaySelect = (day: Date) =>
     setSelectedDay((prev) => (prev && isSameDay(prev, day) ? null : day));
+
+  // ── Shared RSVP filter bar ─────────────────────────────────────────────────
+  const RsvpFilterBar = () => (
+    <div className="flex flex-wrap gap-1.5 mb-4">
+      {(
+        [
+          { key: "all", label: "All" },
+          { key: "attending", label: "Going" },
+          { key: "maybe", label: "Maybe" },
+          { key: "declined", label: "Can't go" },
+          { key: "none", label: "Not responded" },
+        ] as const
+      ).map(({ key, label }) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => setRsvpFilter(key)}
+          className={cn(
+            "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
+            rsvpFilter === key
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border text-muted-foreground hover:bg-muted"
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 
   // ── Desktop: sidebar calendar + wide event grid ────────────────────────────
   if (!isCompact) {
@@ -333,6 +374,7 @@ const UpcomingEvents: React.FC = () => {
                     ? `Events on ${format(selectedDay, "MMMM d")}`
                     : "Upcoming Events"}
                 </h1>
+                <RsvpFilterBar />
                 <EventList
                   events={visibleEvents}
                   isLoading={isLoading}
@@ -410,6 +452,8 @@ const UpcomingEvents: React.FC = () => {
           ? `Events on ${format(selectedDay, "MMMM d")}`
           : "Upcoming Events"}
       </h1>
+
+      <RsvpFilterBar />
 
       <EventList
         events={visibleEvents}

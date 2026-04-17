@@ -55,81 +55,86 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
   const clubIds = myMemberships.map((m) => m.club_id).filter(Boolean) as string[];
 
   // 2. Fetch club names
-  const { data: clubs } = await supabase
+  const { data: clubRows } = await supabase
     .from("clubs")
     .select("id, name")
     .in("id", clubIds);
 
   const clubNameById: Record<string, string> = {};
-  clubs?.forEach((c) => { clubNameById[c.id] = c.name; });
+  clubRows?.forEach((c) => { clubNameById[c.id] = c.name; });
 
-  // 3. Query players directly with an inner join on club_members — avoids
-  //    the nested-join RLS issue that blocked the previous approach.
-  const { data: players, error: playersErr } = await supabase
-    .from("players")
+  // 3. Query club_members directly (covered by RLS "Members see active peers in their club")
+  //    and join players as a nested resource.
+  const { data: memberships, error: membErr } = await supabase
+    .from("club_members")
     .select(
       `
-      id,
-      user_id,
-      first_name,
-      last_name,
-      image_url,
-      skill_rating,
-      country,
-      player_positions (
-        is_primary,
-        positions ( name )
-      ),
-      club_members!inner (
-        club_id,
-        role,
-        member_association,
-        status,
-        is_active
+      club_id,
+      role,
+      member_association,
+      players (
+        id,
+        user_id,
+        first_name,
+        last_name,
+        image_url,
+        skill_rating,
+        country,
+        player_positions (
+          is_primary,
+          positions ( name )
+        )
       )
     `
     )
-    .in("club_members.club_id", clubIds)
-    .eq("club_members.status", "active")
-    .eq("club_members.is_active", true);
+    .in("club_id", clubIds)
+    .eq("status", "active")
+    .eq("is_active", true);
 
-  if (playersErr) throw playersErr;
+  if (membErr) throw membErr;
 
   // 4. Deduplicate by player id — merge club entries from multiple memberships
   const byPlayerId = new Map<string, GlobalMember>();
 
-  for (const player of players ?? []) {
-    const memberships = Array.isArray(player.club_members)
-      ? player.club_members
-      : [player.club_members];
+  for (const row of memberships ?? []) {
+    const player = row.players;
+    if (!player || Array.isArray(player)) continue;
 
-    for (const m of memberships) {
-      if (!m || !m.club_id) continue;
-      const clubEntry = {
-        id: m.club_id,
-        name: clubNameById[m.club_id] ?? "",
-        role: m.role ?? "member",
-      };
+    const p = player as {
+      id: string;
+      user_id: string | null;
+      first_name: string;
+      last_name: string;
+      image_url: string | null;
+      skill_rating: number | null;
+      country: string | null;
+      player_positions: GlobalMember["player_positions"];
+    };
 
-      const existing = byPlayerId.get(player.id);
-      if (existing) {
-        if (!existing.clubs.some((c) => c.id === m.club_id)) {
-          existing.clubs.push(clubEntry);
-        }
-      } else {
-        byPlayerId.set(player.id, {
-          player_id: player.id,
-          user_id: player.user_id,
-          first_name: player.first_name,
-          last_name: player.last_name,
-          image_url: player.image_url,
-          skill_rating: player.skill_rating,
-          country: player.country,
-          member_association: m.member_association ?? null,
-          player_positions: (player.player_positions ?? []) as GlobalMember["player_positions"],
-          clubs: [clubEntry],
-        });
+    const clubEntry = {
+      id: row.club_id ?? "",
+      name: clubNameById[row.club_id ?? ""] ?? "",
+      role: row.role ?? "member",
+    };
+
+    const existing = byPlayerId.get(p.id);
+    if (existing) {
+      if (!existing.clubs.some((c) => c.id === clubEntry.id)) {
+        existing.clubs.push(clubEntry);
       }
+    } else {
+      byPlayerId.set(p.id, {
+        player_id: p.id,
+        user_id: p.user_id,
+        first_name: p.first_name,
+        last_name: p.last_name,
+        image_url: p.image_url,
+        skill_rating: p.skill_rating,
+        country: p.country,
+        member_association: row.member_association ?? null,
+        player_positions: p.player_positions ?? [],
+        clubs: [clubEntry],
+      });
     }
   }
 

@@ -27,7 +27,7 @@ export interface PlannedEvent {
   created_at: string;
   updated_at: string;
   clubs?: { id: string; name: string } | null;
-  locations?: { name: string; city: string | null } | null;
+  locations?: { name: string } | null;
   event_rsvp?: Array<{ status: RsvpStatus; player_id: string }>;
 }
 
@@ -54,7 +54,7 @@ export async function fetchUpcomingEvents(
       `
       *,
       clubs(id, name),
-      locations(name, city),
+      locations(name),
       event_rsvp(status, player_id)
     `
     )
@@ -111,7 +111,7 @@ export async function createPlannedEvent(
   if (input.location_name?.trim()) {
     const { data: loc, error: locErr } = await supabase
       .from("locations")
-      .insert({ name: input.location_name.trim(), created_by: userId })
+      .insert({ name: input.location_name.trim() })
       .select("id")
       .single();
     if (!locErr && loc) locationId = loc.id;

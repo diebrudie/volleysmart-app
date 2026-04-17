@@ -149,10 +149,7 @@ export const EventCard: React.FC<EventCardProps> = ({
         {event.locations?.name && (
           <div className="flex items-center gap-1.5">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span>
-              {event.locations.name}
-              {event.locations.city ? `, ${event.locations.city}` : ""}
-            </span>
+            <span>{event.locations.name}</span>
           </div>
         )}
         <div className="flex items-center gap-1.5">
@@ -172,38 +169,53 @@ export const EventCard: React.FC<EventCardProps> = ({
         )}
       </div>
 
-      {/* RSVP buttons */}
-      {canRsvp && (
-        <div className="flex gap-2 pt-1">
-          {RSVP_OPTIONS.map((opt) => {
-            const isActive = myRsvp === opt.status;
-            return (
-              <button
-                key={opt.status}
-                type="button"
-                disabled={rsvpLoading}
-                onClick={() => onRsvp(event.id, opt.status)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-                  isActive
-                    ? opt.activeClass
-                    : "border-border text-muted-foreground hover:bg-muted"
-                )}
-              >
-                {opt.icon}
-                {opt.label}
-              </button>
-            );
-          })}
+      {/* RSVP section */}
+      {playerId && event.status !== "cancelled" && (
+        <div className="pt-1">
+          {canRsvp ? (
+            /* Interactive RSVP buttons */
+            <div className="flex gap-2">
+              {RSVP_OPTIONS.map((opt) => {
+                const isActive = myRsvp === opt.status;
+                return (
+                  <button
+                    key={opt.status}
+                    type="button"
+                    disabled={rsvpLoading}
+                    onClick={() => onRsvp(event.id, opt.status)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                      isActive
+                        ? opt.activeClass
+                        : "border-border text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    {opt.icon}
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : myRsvp ? (
+            /* Deadline passed — read-only badge */
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border-0",
+                myRsvp === "attending" &&
+                  "bg-green-600/10 text-green-700 dark:text-green-400",
+                myRsvp === "maybe" &&
+                  "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
+                myRsvp === "declined" &&
+                  "bg-red-500/10 text-red-700 dark:text-red-400"
+              )}
+            >
+              {myRsvp === "attending" && <Check className="h-3.5 w-3.5" />}
+              {myRsvp === "maybe" && <HelpCircle className="h-3.5 w-3.5" />}
+              {myRsvp === "declined" && <X className="h-3.5 w-3.5" />}
+              <span className="capitalize">{myRsvp === "attending" ? "Going" : myRsvp === "declined" ? "Can't go" : "Maybe"}</span>
+            </span>
+          ) : null}
         </div>
-      )}
-
-      {/* Deadline passed — show current status read-only */}
-      {!canRsvp && playerId && event.status !== "cancelled" && myRsvp && (
-        <p className="text-xs text-muted-foreground">
-          Your RSVP:{" "}
-          <span className="font-medium capitalize">{myRsvp}</span>
-        </p>
       )}
     </div>
   );

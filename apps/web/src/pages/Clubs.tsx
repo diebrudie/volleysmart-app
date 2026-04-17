@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import Navbar from "@/components/layout/Navbar";
+import { useIsCompact } from "@/hooks/use-compact";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -78,6 +80,7 @@ type ClubIdRow = Pick<ClubRow, "id">;
 const Clubs = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isCompact = useIsCompact();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedClub, setSelectedClub] = useState<ClubWithDetails | null>(
@@ -341,16 +344,17 @@ const Clubs = () => {
     return `${club.creator_first_name} ${club.creator_last_name}`;
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Spinner className="h-8 w-8" />
-      </div>
-    );
-  }
+  const pageContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Spinner className="h-8 w-8" />
+        </div>
+      );
+    }
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
           {/* Header with title and buttons */}
           <div className="mb-8">
             {/* Desktop Layout */}
@@ -520,6 +524,14 @@ const Clubs = () => {
               </p>
             </div>
           )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      {!isCompact && <Navbar />}
+      <main className="flex-grow">{pageContent()}</main>
 
       {/* Club Settings Dialog */}
       {selectedClub && (
