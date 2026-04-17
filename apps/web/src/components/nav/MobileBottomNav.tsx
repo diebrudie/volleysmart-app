@@ -1,12 +1,6 @@
 import * as React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import {
-  Home,
-  Archive as ArchiveIcon,
-  Users,
-  Building2,
-  Plus,
-} from "lucide-react";
+import { Home, Users, Building2, Plus } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 /**
@@ -67,19 +61,12 @@ const MobileBottomNav: React.FC = () => {
         aria-hidden="true"
       />
       <div className="mx-auto max-w-xl px-2 pb-3">
-        <div className="relative grid grid-cols-5 items-center h-16">
+        <div className="relative grid grid-cols-4 items-center h-16">
           <TabLink
             to="/home"
             icon={<Home className="h-5 w-5" />}
             label="Home"
             active={isActive(/^\/home(\/|$)/)}
-            activeColor={activeColorClass}
-          />
-          <TabLink
-            to="/archive"
-            icon={<ArchiveIcon className="h-5 w-5" />}
-            label="Archive"
-            active={isActive(/^\/archive(\/|$)/)}
             activeColor={activeColorClass}
           />
 

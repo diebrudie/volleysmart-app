@@ -19,7 +19,6 @@ import Members from "@/pages/Members";
 import MembersGlobal from "@/pages/MembersGlobal";
 import ManageMembers from "@/pages/ManageMembers";
 import UpcomingEvents from "@/pages/UpcomingEvents";
-import Archive from "@/pages/Archive";
 import CreateEvent from "@/pages/CreateEvent";
 import PlayerDetail from "@/pages/PlayerDetail";
 import TeamGenerator from "@/pages/TeamGenerator";
@@ -148,14 +147,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
-    <Route
-      path="/archive"
-      element={
-        <ProtectedRoute>
-          <Archive />
-        </ProtectedRoute>
-      }
-    />
+    <Route path="/archive" element={<Navigate to="/home" replace />} />
     <Route
       path="/members"
       element={
