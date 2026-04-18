@@ -199,11 +199,13 @@ const CreateEvent: React.FC = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch templates
+  // Fetch templates (non-critical — don't retry on failure)
   const { data: templates = [] } = useQuery({
     queryKey: ["event-templates", user?.id],
     queryFn: () => fetchEventTemplates(user!.id),
     enabled: !!user?.id,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   // Pre-select first club if user has clubs and hasn't chosen yet
@@ -217,23 +219,27 @@ const CreateEvent: React.FC = () => {
     mutationFn: async (input: CreateEventInput) => {
       const result = await createPlannedEvent(user!.id, input);
 
-      // Save template if requested
+      // Save template if requested (non-blocking — don't fail event creation)
       if (form.save_template && form.template_name.trim()) {
-        const config: TemplateConfig = {
-          event_type: input.event_type,
-          title: input.title,
-          start_time: input.start_time,
-          location_id: input.location_id ?? undefined,
-          max_players: input.max_players,
-          is_public: input.is_public,
-          notes: input.notes,
-          rsvp_preset: form.rsvp_preset ?? undefined,
-        };
-        await createEventTemplate(user!.id, {
-          name: form.template_name.trim(),
-          club_id: input.club_id,
-          config,
-        });
+        try {
+          const config: TemplateConfig = {
+            event_type: input.event_type,
+            title: input.title,
+            start_time: input.start_time,
+            location_id: input.location_id ?? undefined,
+            max_players: input.max_players,
+            is_public: input.is_public,
+            notes: input.notes,
+            rsvp_preset: form.rsvp_preset ?? undefined,
+          };
+          await createEventTemplate(user!.id, {
+            name: form.template_name.trim(),
+            club_id: input.club_id,
+            config,
+          });
+        } catch {
+          console.warn("Failed to save template, event was still created.");
+        }
       }
 
       return result;

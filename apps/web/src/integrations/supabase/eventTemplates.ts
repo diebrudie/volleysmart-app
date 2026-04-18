@@ -22,7 +22,8 @@ export interface EventTemplate {
   updated_at: string;
 }
 
-/** Fetch templates visible to this user (own + club templates). */
+/** Fetch templates visible to this user (own + club templates).
+ *  Returns empty array on error (table may not exist yet). */
 export async function fetchEventTemplates(
   userId: string
 ): Promise<EventTemplate[]> {
@@ -31,7 +32,10 @@ export async function fetchEventTemplates(
     .select("*")
     .order("name");
 
-  if (error) throw error;
+  if (error) {
+    console.warn("Could not fetch event templates:", error.message);
+    return [];
+  }
   return (data ?? []) as EventTemplate[];
 }
 

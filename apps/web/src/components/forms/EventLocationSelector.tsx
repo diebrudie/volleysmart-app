@@ -155,7 +155,8 @@ export const EventLocationSelector = ({
       const address = feature.place_name ?? null;
       const [lng, lat] = feature.center ?? [null, null];
 
-      const { data, error } = await supabase
+      // Try with full columns; fallback to basic insert if columns don't exist
+      let result = await supabase
         .from("locations")
         .insert({
           club_id: clubId,
@@ -167,6 +168,16 @@ export const EventLocationSelector = ({
         .select("id")
         .single();
 
+      if (result.error) {
+        // Fallback: insert without new columns
+        result = await supabase
+          .from("locations")
+          .insert({ club_id: clubId, name })
+          .select("id")
+          .single();
+      }
+
+      const { data, error } = result;
       if (error) throw error;
 
       await queryClient.invalidateQueries({

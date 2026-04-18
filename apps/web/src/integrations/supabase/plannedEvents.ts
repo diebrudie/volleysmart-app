@@ -66,7 +66,7 @@ export async function fetchUpcomingEvents(
           .gte("date", today)
           .order("date", { ascending: true })
           .order("start_time", { ascending: true })
-      : Promise.resolve({ data: [], error: null });
+      : Promise.resolve({ data: [] as any[], error: null });
 
   // User's own clubless events
   const personalEventsPromise = supabase
