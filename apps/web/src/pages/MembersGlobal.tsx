@@ -410,14 +410,14 @@ const MembersGlobal: React.FC = () => {
             </div>
 
             {/* Sort + Filter + View toggle row */}
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2 min-w-0">
               {/* Sort toggle */}
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => setSortAsc((prev) => !prev)}
                 aria-label={sortAsc ? "Sort Z to A" : "Sort A to Z"}
-                className="h-9 w-9 flex-shrink-0"
+                className="h-9 w-9 shrink-0"
               >
                 <ArrowUpDown className="h-4 w-4" />
               </Button>
@@ -428,7 +428,7 @@ const MembersGlobal: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setIsFilterOpen(true)}
-                  className="relative flex-shrink-0"
+                  className="relative shrink-0"
                 >
                   <SlidersHorizontal className="h-4 w-4 mr-2" />
                   Filter
@@ -447,7 +447,7 @@ const MembersGlobal: React.FC = () => {
                 onValueChange={(v) => {
                   if (v) setViewMode(v as ViewMode);
                 }}
-                className="flex-shrink-0"
+                className="shrink-0 grow-0 basis-auto w-auto"
               >
                 <ToggleGroupItem value="grid" aria-label="Grid view" size="sm">
                   <Grid3X3 className="h-4 w-4" />
