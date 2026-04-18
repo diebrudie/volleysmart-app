@@ -13,12 +13,15 @@ import {
   Lock,
   CalendarIcon,
   Check,
+  UserCircle,
+  Bookmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
+import { Switch } from "@/components/ui/switch";
 import {
   Popover,
   PopoverContent,
@@ -32,6 +35,13 @@ import {
   type EventType,
   type CreateEventInput,
 } from "@/integrations/supabase/plannedEvents";
+import {
+  fetchEventTemplates,
+  createEventTemplate,
+  type EventTemplate,
+  type TemplateConfig,
+} from "@/integrations/supabase/eventTemplates";
+import { EventLocationSelector } from "@/components/forms/EventLocationSelector";
 import { toast } from "sonner";
 
 // ─── Event type definitions ───────────────────────────────────────────────────
@@ -104,27 +114,32 @@ const StepIndicator: React.FC<{ step: number; total: number }> = ({
 );
 
 // ─── Form state ───────────────────────────────────────────────────────────────
+// club_id: string = a club UUID, "__none__" = explicitly no club, "" = not yet chosen
 interface FormState {
   event_type: EventType | null;
   title: string;
   date: Date | null;
   start_time: string;
-  location_name: string;
+  location_id: string | null;
   rsvp_preset: number | null; // index into RSVP_PRESETS, or null for custom
   rsvp_custom_date: Date | null;
-  club_id: string;
+  club_id: string; // UUID | "__none__" | ""
   extra_club_ids: string[];
   max_players: string;
   is_public: boolean;
   notes: string;
+  save_template: boolean;
+  template_name: string;
 }
+
+const NO_CLUB = "__none__";
 
 const INITIAL_STATE: FormState = {
   event_type: null,
   title: "",
   date: null,
   start_time: "18:00",
-  location_name: "",
+  location_id: null,
   rsvp_preset: 1, // "1 day before" default
   rsvp_custom_date: null,
   club_id: "",
@@ -132,6 +147,8 @@ const INITIAL_STATE: FormState = {
   max_players: "",
   is_public: true,
   notes: "",
+  save_template: false,
+  template_name: "",
 };
 
 // ─── Compute RSVP deadline timestamp ─────────────────────────────────────────
@@ -164,7 +181,7 @@ const CreateEvent: React.FC = () => {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  // Fetch user's clubs
+  // Fetch user's clubs (admin/editor)
   const { data: userClubs = [] } = useQuery({
     queryKey: ["user-clubs", user?.id],
     queryFn: async () => {
@@ -182,7 +199,14 @@ const CreateEvent: React.FC = () => {
     enabled: !!user?.id,
   });
 
-  // Pre-select first club
+  // Fetch templates
+  const { data: templates = [] } = useQuery({
+    queryKey: ["event-templates", user?.id],
+    queryFn: () => fetchEventTemplates(user!.id),
+    enabled: !!user?.id,
+  });
+
+  // Pre-select first club if user has clubs and hasn't chosen yet
   React.useEffect(() => {
     if (userClubs.length > 0 && !form.club_id) {
       set("club_id", userClubs[0].id);
@@ -190,10 +214,33 @@ const CreateEvent: React.FC = () => {
   }, [userClubs, form.club_id]);
 
   const createMutation = useMutation({
-    mutationFn: (input: CreateEventInput) =>
-      createPlannedEvent(user!.id, input),
+    mutationFn: async (input: CreateEventInput) => {
+      const result = await createPlannedEvent(user!.id, input);
+
+      // Save template if requested
+      if (form.save_template && form.template_name.trim()) {
+        const config: TemplateConfig = {
+          event_type: input.event_type,
+          title: input.title,
+          start_time: input.start_time,
+          location_id: input.location_id ?? undefined,
+          max_players: input.max_players,
+          is_public: input.is_public,
+          notes: input.notes,
+          rsvp_preset: form.rsvp_preset ?? undefined,
+        };
+        await createEventTemplate(user!.id, {
+          name: form.template_name.trim(),
+          club_id: input.club_id,
+          config,
+        });
+      }
+
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
+      queryClient.invalidateQueries({ queryKey: ["event-templates"] });
       toast.success("Event created!");
       navigate("/home");
     },
@@ -203,38 +250,76 @@ const CreateEvent: React.FC = () => {
   });
 
   const handleSubmit = () => {
-    if (!form.event_type || !form.date || !form.club_id || !form.title.trim()) {
+    if (!form.event_type || !form.date || !form.title.trim()) {
       toast.error("Please fill in all required fields.");
       return;
     }
+    // Club must be chosen (either a real club or explicitly "no club")
+    if (!form.club_id) {
+      toast.error("Please select a club or choose 'No club'.");
+      return;
+    }
+
+    const clubId = form.club_id === NO_CLUB ? null : form.club_id;
 
     const input: CreateEventInput = {
       title: form.title.trim(),
       event_type: form.event_type,
       date: format(form.date, "yyyy-MM-dd"),
       start_time: form.start_time,
-      club_id: form.club_id,
-      location_name: form.location_name.trim() || undefined,
+      club_id: clubId,
+      location_id: form.location_id,
       is_public: form.is_public,
       max_players: form.max_players ? parseInt(form.max_players, 10) : undefined,
       notes: form.notes.trim() || undefined,
       rsvp_deadline: computeRsvpDeadline(form),
       extra_club_ids:
-        form.event_type === "tournament" ? form.extra_club_ids : undefined,
+        form.event_type === "tournament" && clubId
+          ? form.extra_club_ids
+          : undefined,
     };
 
     createMutation.mutate(input);
   };
 
+  // Apply a template to the form
+  const applyTemplate = (template: EventTemplate) => {
+    const c = template.config;
+    setForm((prev) => ({
+      ...prev,
+      event_type: c.event_type ?? prev.event_type,
+      title: c.title ?? prev.title,
+      start_time: c.start_time ?? prev.start_time,
+      location_id: c.location_id ?? prev.location_id,
+      max_players: c.max_players != null ? String(c.max_players) : prev.max_players,
+      is_public: c.is_public ?? prev.is_public,
+      notes: c.notes ?? prev.notes,
+      rsvp_preset: c.rsvp_preset ?? prev.rsvp_preset,
+      club_id: template.club_id ?? prev.club_id,
+    }));
+    // If event type is set, advance to step 2
+    if (c.event_type) {
+      setStep(2);
+    }
+    toast.success(`Template "${template.name}" applied`);
+  };
+
   const canGoNext = (): boolean => {
     if (step === 1) return !!form.event_type;
     if (step === 2)
-      return !!form.title.trim() && !!form.date && !!form.start_time;
-    if (step === 3) return !!form.club_id;
+      return (
+        !!form.club_id &&
+        !!form.title.trim() &&
+        !!form.date &&
+        !!form.start_time
+      );
+    if (step === 3) return true; // all step 3 fields are optional
     return false;
   };
 
   const today = startOfDay(new Date());
+  const resolvedClubId =
+    form.club_id === NO_CLUB ? null : form.club_id || null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -254,8 +339,8 @@ const CreateEvent: React.FC = () => {
           </p>
           <h1 className="text-base font-semibold leading-tight">
             {step === 1 && "Choose event type"}
-            {step === 2 && "Event details"}
-            {step === 3 && "Club & options"}
+            {step === 2 && "Club & details"}
+            {step === 3 && "Options"}
           </h1>
         </div>
       </header>
@@ -267,38 +352,160 @@ const CreateEvent: React.FC = () => {
 
       {/* Step content */}
       <div className="flex-1 overflow-y-auto px-4 pb-32 max-w-2xl mx-auto w-full">
-        {/* ── Step 1: Event type ── */}
+        {/* ── Step 1: Event type + templates ── */}
         {step === 1 && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-2">
-            {EVENT_TYPES.map((type) => {
-              const selected = form.event_type === type.value;
-              return (
-                <button
-                  key={type.value}
-                  type="button"
-                  onClick={() => set("event_type", type.value)}
-                  className={cn(
-                    "relative flex flex-col gap-2 rounded-2xl border-2 p-5 text-left transition-all",
-                    selected
-                      ? type.color + " border-current"
-                      : "border-border bg-card hover:bg-muted"
-                  )}
-                >
-                  {selected && (
-                    <Check className="absolute top-3 right-3 h-4 w-4" />
-                  )}
-                  {type.icon}
-                  <span className="font-semibold">{type.label}</span>
-                  <span className="text-sm opacity-70">{type.description}</span>
-                </button>
-              );
-            })}
+          <div className="space-y-5 pt-2">
+            {/* Templates */}
+            {templates.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Quick start from template
+                </Label>
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                  {templates.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => applyTemplate(t)}
+                      className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
+                    >
+                      <Bookmark className="h-3.5 w-3.5 text-muted-foreground" />
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Event type cards */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {EVENT_TYPES.map((type) => {
+                const selected = form.event_type === type.value;
+                return (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => set("event_type", type.value)}
+                    className={cn(
+                      "relative flex flex-col gap-2 rounded-2xl border-2 p-5 text-left transition-all",
+                      selected
+                        ? type.color + " border-current"
+                        : "border-border bg-card hover:bg-muted"
+                    )}
+                  >
+                    {selected && (
+                      <Check className="absolute top-3 right-3 h-4 w-4" />
+                    )}
+                    {type.icon}
+                    <span className="font-semibold">{type.label}</span>
+                    <span className="text-sm opacity-70">{type.description}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        {/* ── Step 2: Details ── */}
+        {/* ── Step 2: Club + Details ── */}
         {step === 2 && (
           <div className="space-y-5 pt-2">
+            {/* Club / No-club selection */}
+            <div className="space-y-1.5">
+              <Label>Club</Label>
+              <div className="flex flex-col gap-2">
+                {/* No-club option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    set("club_id", NO_CLUB);
+                    set("location_id", null);
+                  }}
+                  className={cn(
+                    "flex items-center justify-between rounded-xl border px-4 py-3 text-sm text-left transition-colors",
+                    form.club_id === NO_CLUB
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:bg-muted"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <UserCircle className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">No club — personal event</span>
+                  </div>
+                  {form.club_id === NO_CLUB && (
+                    <Check className="h-4 w-4 text-primary" />
+                  )}
+                </button>
+
+                {/* Club options */}
+                {userClubs.map((club) => {
+                  const selected = form.club_id === club.id;
+                  return (
+                    <button
+                      key={club.id}
+                      type="button"
+                      onClick={() => {
+                        set("club_id", club.id);
+                        set("location_id", null);
+                      }}
+                      className={cn(
+                        "flex items-center justify-between rounded-xl border px-4 py-3 text-sm text-left transition-colors",
+                        selected
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted"
+                      )}
+                    >
+                      <span className="font-medium">{club.name}</span>
+                      {selected && <Check className="h-4 w-4 text-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* For tournaments: additional clubs */}
+            {form.event_type === "tournament" &&
+              form.club_id !== NO_CLUB &&
+              form.club_id &&
+              userClubs.length > 1 && (
+                <div className="space-y-1.5">
+                  <Label>Additional clubs (tournament)</Label>
+                  <div className="flex flex-col gap-2">
+                    {userClubs
+                      .filter((c) => c.id !== form.club_id)
+                      .map((club) => {
+                        const included = form.extra_club_ids.includes(club.id);
+                        return (
+                          <button
+                            key={club.id}
+                            type="button"
+                            onClick={() =>
+                              set(
+                                "extra_club_ids",
+                                included
+                                  ? form.extra_club_ids.filter(
+                                      (id) => id !== club.id
+                                    )
+                                  : [...form.extra_club_ids, club.id]
+                              )
+                            }
+                            className={cn(
+                              "flex items-center justify-between rounded-xl border px-4 py-3 text-sm text-left transition-colors",
+                              included
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:bg-muted"
+                            )}
+                          >
+                            <span>{club.name}</span>
+                            {included && (
+                              <Check className="h-4 w-4 text-primary" />
+                            )}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
             {/* Title */}
             <div className="space-y-1.5">
               <Label htmlFor="title">Event title *</Label>
@@ -355,12 +562,11 @@ const CreateEvent: React.FC = () => {
 
             {/* Location */}
             <div className="space-y-1.5">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                placeholder="e.g. Sports Hall, Court 3"
-                value={form.location_name}
-                onChange={(e) => set("location_name", e.target.value)}
+              <Label>Location</Label>
+              <EventLocationSelector
+                clubId={resolvedClubId}
+                value={form.location_id}
+                onValueChange={(id) => set("location_id", id)}
               />
             </div>
 
@@ -434,82 +640,9 @@ const CreateEvent: React.FC = () => {
           </div>
         )}
 
-        {/* ── Step 3: Club & options ── */}
+        {/* ── Step 3: Options ── */}
         {step === 3 && (
           <div className="space-y-5 pt-2">
-            {/* Club */}
-            <div className="space-y-1.5">
-              <Label>Club *</Label>
-              {userClubs.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  You need to be an admin or editor of a club to create events.
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {userClubs.map((club) => {
-                    const selected = form.club_id === club.id;
-                    return (
-                      <button
-                        key={club.id}
-                        type="button"
-                        onClick={() => set("club_id", club.id)}
-                        className={cn(
-                          "flex items-center justify-between rounded-xl border px-4 py-3 text-sm text-left transition-colors",
-                          selected
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:bg-muted"
-                        )}
-                      >
-                        <span className="font-medium">{club.name}</span>
-                        {selected && <Check className="h-4 w-4 text-primary" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* For tournaments: additional clubs */}
-            {form.event_type === "tournament" && userClubs.length > 1 && (
-              <div className="space-y-1.5">
-                <Label>Additional clubs (tournament)</Label>
-                <div className="flex flex-col gap-2">
-                  {userClubs
-                    .filter((c) => c.id !== form.club_id)
-                    .map((club) => {
-                      const included = form.extra_club_ids.includes(club.id);
-                      return (
-                        <button
-                          key={club.id}
-                          type="button"
-                          onClick={() =>
-                            set(
-                              "extra_club_ids",
-                              included
-                                ? form.extra_club_ids.filter(
-                                    (id) => id !== club.id
-                                  )
-                                : [...form.extra_club_ids, club.id]
-                            )
-                          }
-                          className={cn(
-                            "flex items-center justify-between rounded-xl border px-4 py-3 text-sm text-left transition-colors",
-                            included
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:bg-muted"
-                          )}
-                        >
-                          <span>{club.name}</span>
-                          {included && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-            )}
-
             {/* Max players */}
             <div className="space-y-1.5">
               <Label htmlFor="max_players">Max players (optional)</Label>
@@ -569,6 +702,29 @@ const CreateEvent: React.FC = () => {
                 rows={3}
               />
             </div>
+
+            {/* Save as template */}
+            <div className="space-y-2 rounded-xl border border-border p-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="save-template" className="flex items-center gap-2 cursor-pointer">
+                  <Bookmark className="h-4 w-4 text-muted-foreground" />
+                  Save as template
+                </Label>
+                <Switch
+                  id="save-template"
+                  checked={form.save_template}
+                  onCheckedChange={(v) => set("save_template", v)}
+                />
+              </div>
+              {form.save_template && (
+                <Input
+                  placeholder="Template name, e.g. Thursday Training"
+                  value={form.template_name}
+                  onChange={(e) => set("template_name", e.target.value)}
+                  className="mt-2"
+                />
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -591,7 +747,7 @@ const CreateEvent: React.FC = () => {
           ) : (
             <Button
               className="w-full"
-              disabled={!canGoNext() || createMutation.isPending}
+              disabled={createMutation.isPending}
               onClick={handleSubmit}
             >
               {createMutation.isPending ? "Creating…" : "Create Event"}

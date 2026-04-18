@@ -128,11 +128,9 @@ export const EventCard: React.FC<EventCardProps> = ({
             </Badge>
           )}
         </div>
-        {event.clubs?.name && (
-          <span className="text-xs text-muted-foreground shrink-0">
-            {event.clubs.name}
-          </span>
-        )}
+        <span className="text-xs text-muted-foreground shrink-0">
+          {event.clubs?.name ?? "Personal"}
+        </span>
       </div>
 
       {/* Title */}
@@ -149,7 +147,12 @@ export const EventCard: React.FC<EventCardProps> = ({
         {event.locations?.name && (
           <div className="flex items-center gap-1.5">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span>{event.locations.name}</span>
+            <div className="flex flex-col">
+              <span>{event.locations.name}</span>
+              {event.locations.address && event.locations.address !== event.locations.name && (
+                <span className="text-xs text-muted-foreground/70">{event.locations.address}</span>
+              )}
+            </div>
           </div>
         )}
         <div className="flex items-center gap-1.5">

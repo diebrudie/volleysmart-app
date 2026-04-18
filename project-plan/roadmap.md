@@ -51,6 +51,8 @@
 - ✅ **Clubs & Members Tabs** (`feat/phase-5-6-clubs-members`) — Clubs.tsx: removed internal Navbar render (double-nav fix); Members tab: full MembersGlobal.tsx with cross-club member directory, search by name, filter by club/country, sort by first/last name A-Z + skill rating; deduplication of players across clubs; responsive grid (2→6 cols)
 - ✅ **Bug Fixes & Back Navigation** (`feat/phase-7-fixes`) — Desktop Navbar added to UpcomingEvents, Archive, MembersGlobal pages; MembersGlobal query refactored to join from `players!inner(club_members)` to fix RLS data loading; BackButton component created; back navigation added to Dashboard, Players, FaqsPage, GameDetail updated to use navigate(-1)
 
+- ✅ **Create Event Improvements** (`feat/phase-9-create-event-improvements`) — Event templates (DB-backed, per-user/club, save & apply from Step 1); Location selector with Mapbox address autocomplete replacing free-text input; "No club" personal events option; form step reorder (club moved to Step 2 before location); RLS updates for clubless events & locations; EventCard shows "Personal" label and address
+
 ### Navigation Overhaul
 The app is being transformed from club-scoped to user-scoped navigation. New global bottom nav: Home | Archive | + FAB | Clubs | Members. New top bar: Logo | Notifications | Chat | Hamburger menu.
 

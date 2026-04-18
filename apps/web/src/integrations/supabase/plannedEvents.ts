@@ -27,11 +27,12 @@ export interface PlannedEvent {
   created_at: string;
   updated_at: string;
   clubs?: { id: string; name: string } | null;
-  locations?: { name: string } | null;
+  locations?: { name: string; address?: string | null } | null;
   event_rsvp?: Array<{ status: RsvpStatus; player_id: string }>;
 }
 
-/** Fetch all upcoming events across every club the user is an active member of. */
+/** Fetch all upcoming events across every club the user is an active member of,
+ *  plus the user's own clubless events. */
 export async function fetchUpcomingEvents(
   userId: string
 ): Promise<PlannedEvent[]> {
@@ -41,31 +42,70 @@ export async function fetchUpcomingEvents(
     .eq("user_id", userId)
     .eq("is_active", true);
 
-  if (!memberships?.length) return [];
-  const clubIds = memberships
+  const clubIds = (memberships ?? [])
     .map((m) => m.club_id)
     .filter(Boolean) as string[];
 
   const today = new Date().toISOString().split("T")[0];
 
-  const { data, error } = await supabase
+  const selectFields = `
+    *,
+    clubs(id, name),
+    locations(name, address),
+    event_rsvp(status, player_id)
+  `;
+
+  // Club events
+  const clubEventsPromise =
+    clubIds.length > 0
+      ? supabase
+          .from("planned_events")
+          .select(selectFields)
+          .in("club_id", clubIds)
+          .in("status", ["open", "confirmed"])
+          .gte("date", today)
+          .order("date", { ascending: true })
+          .order("start_time", { ascending: true })
+      : Promise.resolve({ data: [], error: null });
+
+  // User's own clubless events
+  const personalEventsPromise = supabase
     .from("planned_events")
-    .select(
-      `
-      *,
-      clubs(id, name),
-      locations(name),
-      event_rsvp(status, player_id)
-    `
-    )
-    .in("club_id", clubIds)
+    .select(selectFields)
+    .is("club_id", null)
+    .eq("created_by", userId)
     .in("status", ["open", "confirmed"])
     .gte("date", today)
     .order("date", { ascending: true })
     .order("start_time", { ascending: true });
 
-  if (error) throw error;
-  return (data ?? []) as PlannedEvent[];
+  const [clubResult, personalResult] = await Promise.all([
+    clubEventsPromise,
+    personalEventsPromise,
+  ]);
+
+  if (clubResult.error) throw clubResult.error;
+  if (personalResult.error) throw personalResult.error;
+
+  const all = [
+    ...((clubResult.data ?? []) as PlannedEvent[]),
+    ...((personalResult.data ?? []) as PlannedEvent[]),
+  ];
+
+  // Deduplicate (in case a clubless event was also returned) and sort
+  const seen = new Set<string>();
+  const unique = all.filter((e) => {
+    if (seen.has(e.id)) return false;
+    seen.add(e.id);
+    return true;
+  });
+
+  unique.sort(
+    (a, b) =>
+      a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)
+  );
+
+  return unique;
 }
 
 /** Upsert RSVP (insert or update on conflict). */
@@ -91,8 +131,8 @@ export interface CreateEventInput {
   event_type: EventType;
   date: string; // YYYY-MM-DD
   start_time: string; // HH:MM
-  club_id: string;
-  location_name?: string;
+  club_id: string | null;
+  location_id?: string | null;
   is_public: boolean;
   max_players?: number;
   min_players?: number;
@@ -101,22 +141,11 @@ export interface CreateEventInput {
   extra_club_ids?: string[]; // for tournament multi-club
 }
 
-/** Create a planned event, optionally inserting a location by name. */
+/** Create a planned event with an optional location_id and optional club. */
 export async function createPlannedEvent(
   userId: string,
   input: CreateEventInput
 ): Promise<{ id: string }> {
-  let locationId: string | null = null;
-
-  if (input.location_name?.trim()) {
-    const { data: loc, error: locErr } = await supabase
-      .from("locations")
-      .insert({ name: input.location_name.trim() })
-      .select("id")
-      .single();
-    if (!locErr && loc) locationId = loc.id;
-  }
-
   const { data: event, error } = await supabase
     .from("planned_events")
     .insert({
@@ -126,7 +155,7 @@ export async function createPlannedEvent(
       start_time: `${input.start_time}:00`, // ensure HH:MM:SS
       club_id: input.club_id,
       created_by: userId,
-      location_id: locationId,
+      location_id: input.location_id ?? null,
       is_public: input.is_public,
       max_players: input.max_players ?? null,
       min_players: input.min_players ?? 4,
@@ -139,7 +168,7 @@ export async function createPlannedEvent(
   if (error) throw error;
 
   // For multi-club tournaments, link additional clubs
-  if (input.extra_club_ids?.length && event?.id) {
+  if (input.club_id && input.extra_club_ids?.length && event?.id) {
     const allClubIds = [input.club_id, ...input.extra_club_ids].filter(
       (id, i, arr) => arr.indexOf(id) === i
     );
