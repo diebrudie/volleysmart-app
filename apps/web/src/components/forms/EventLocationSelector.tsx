@@ -1,23 +1,9 @@
-import { useState, useEffect } from "react";
-import { Check, ChevronDown, Plus, MapPin, Search } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { MapPin, Search } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -33,7 +19,6 @@ interface MapboxFeature {
   text?: string;
   place_name?: string;
   center?: [number, number]; // [lng, lat]
-  context?: Array<{ id: string; text: string; short_code?: string }>;
 }
 
 interface EventLocationSelectorProps {
@@ -47,17 +32,27 @@ export const EventLocationSelector = ({
   clubId,
   value,
   onValueChange,
-  placeholder = "Search or select location...",
 }: EventLocationSelectorProps) => {
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [address, setAddress] = useState("");
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    value
+  );
+  const [latLng, setLatLng] = useState<[number, number] | null>(null);
+  const [originalAddress, setOriginalAddress] = useState<string | null>(null);
+
+  const [showNameDropdown, setShowNameDropdown] = useState(false);
+  const [showAddressDropdown, setShowAddressDropdown] = useState(false);
   const [mapboxResults, setMapboxResults] = useState<MapboxFeature[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const nameRef = useRef<HTMLDivElement>(null);
+  const addressRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
-  // Fetch existing locations (club-scoped or all clubless ones)
-  const { data: locations = [], isLoading } = useQuery({
+  // Fetch saved locations
+  const { data: locations = [] } = useQuery({
     queryKey: ["eventLocations", clubId],
     queryFn: async (): Promise<LocationRecord[]> => {
       let query = supabase
@@ -77,50 +72,65 @@ export const EventLocationSelector = ({
     },
   });
 
-  // Find the selected location (from fetched list or by ID)
-  const selectedLocation = locations.find((l) => l.id === value);
-  const [selectedName, setSelectedName] = useState<string>("");
-
-  // If value is set but not in the current locations list, fetch it
+  // Hydrate from value prop (when editing or value set externally)
   useEffect(() => {
-    if (value && !selectedLocation) {
-      supabase
-        .from("locations")
-        .select("name, address")
-        .eq("id", value)
-        .single()
-        .then(({ data }) => {
-          if (data) setSelectedName(data.name);
-        });
-    } else if (selectedLocation) {
-      setSelectedName(selectedLocation.name);
+    if (value) {
+      const found = locations.find((l) => l.id === value);
+      if (found) {
+        setLocationName(found.name);
+        setAddress(found.address ?? "");
+        setOriginalAddress(found.address ?? "");
+        setSelectedLocationId(found.id);
+      } else {
+        // Fetch if not in local list
+        supabase
+          .from("locations")
+          .select("id, name, address")
+          .eq("id", value)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setLocationName(data.name);
+              setAddress((data as any).address ?? "");
+              setOriginalAddress((data as any).address ?? "");
+              setSelectedLocationId(data.id);
+            }
+          });
+      }
     } else {
-      setSelectedName("");
+      setLocationName("");
+      setAddress("");
+      setOriginalAddress(null);
+      setSelectedLocationId(null);
+      setLatLng(null);
     }
-  }, [value, selectedLocation]);
+  }, [value, locations]);
 
-  // Filter saved locations by search
-  const filteredLocations = locations.filter((l) =>
-    l.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter saved locations by name input
+  const filteredLocations = locationName.trim()
+    ? locations.filter((l) =>
+        l.name.toLowerCase().includes(locationName.toLowerCase())
+      )
+    : locations;
 
-  const exactMatch = filteredLocations.find(
-    (l) => l.name.toLowerCase() === searchQuery.toLowerCase()
-  );
-
-  // Mapbox autocomplete
+  // Mapbox autocomplete for address
   useEffect(() => {
-    if (!searchQuery || searchQuery.length < 2 || !token) {
+    if (!address || address.length < 2 || !token) {
+      setMapboxResults([]);
+      return;
+    }
+
+    // Don't search if address matches the original (user selected saved location, didn't change)
+    if (address === originalAddress) {
       setMapboxResults([]);
       return;
     }
 
     let active = true;
-
     const fetchPlaces = async () => {
       const url = new URL(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          searchQuery
+          address
         )}.json`
       );
       url.searchParams.set("types", "address,poi,place");
@@ -132,9 +142,7 @@ export const EventLocationSelector = ({
         const res = await fetch(url.toString());
         if (!res.ok) return;
         const data = await res.json();
-        if (active) {
-          setMapboxResults(data.features ?? []);
-        }
+        if (active) setMapboxResults(data.features ?? []);
       } catch {
         // silently fail
       }
@@ -145,237 +153,268 @@ export const EventLocationSelector = ({
       active = false;
       clearTimeout(t);
     };
-  }, [searchQuery, token]);
+  }, [address, token, originalAddress]);
 
-  // Create location from Mapbox result
-  const createFromMapbox = async (feature: MapboxFeature) => {
-    setIsCreating(true);
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (nameRef.current && !nameRef.current.contains(e.target as Node)) {
+        setShowNameDropdown(false);
+      }
+      if (
+        addressRef.current &&
+        !addressRef.current.contains(e.target as Node)
+      ) {
+        setShowAddressDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Select a saved location
+  const handleSelectSaved = (loc: LocationRecord) => {
+    setLocationName(loc.name);
+    setAddress(loc.address ?? "");
+    setOriginalAddress(loc.address ?? "");
+    setSelectedLocationId(loc.id);
+    setLatLng(null);
+    setShowNameDropdown(false);
+    onValueChange(loc.id);
+  };
+
+  // Select a Mapbox result
+  const handleSelectMapbox = (feature: MapboxFeature) => {
+    const fullAddress = feature.place_name ?? feature.text ?? address;
+    setAddress(fullAddress);
+    if (feature.center) {
+      setLatLng([feature.center[0], feature.center[1]]);
+    }
+    setMapboxResults([]);
+    setShowAddressDropdown(false);
+  };
+
+  // Save/create/update location on blur
+  const commitLocation = useCallback(async () => {
+    const trimmedName = locationName.trim();
+
+    // If name is empty, clear everything
+    if (!trimmedName) {
+      setSelectedLocationId(null);
+      setAddress("");
+      setOriginalAddress(null);
+      setLatLng(null);
+      onValueChange(null);
+      return;
+    }
+
+    // If we have a selected location and nothing changed, no-op
+    if (
+      selectedLocationId &&
+      address === originalAddress
+    ) {
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      const name = feature.text ?? feature.place_name ?? searchQuery;
-      const address = feature.place_name ?? null;
-      const [lng, lat] = feature.center ?? [null, null];
+      if (selectedLocationId && address !== originalAddress) {
+        // Update existing location's address
+        const updatePayload: Record<string, any> = {
+          address: address.trim() || null,
+        };
+        if (latLng) {
+          updatePayload.latitude = latLng[1];
+          updatePayload.longitude = latLng[0];
+        }
 
-      // Try with full columns; fallback to basic insert if columns don't exist
-      let result = await supabase
-        .from("locations")
-        .insert({
-          club_id: clubId,
-          name,
-          address,
-          latitude: lat,
-          longitude: lng,
-        })
-        .select("id")
-        .single();
-
-      if (result.error) {
-        // Fallback: insert without new columns
-        result = await supabase
+        const { error } = await supabase
           .from("locations")
-          .insert({ club_id: clubId, name })
+          .update(updatePayload)
+          .eq("id", selectedLocationId);
+
+        if (error) throw error;
+
+        setOriginalAddress(address.trim() || null);
+        await queryClient.invalidateQueries({
+          queryKey: ["eventLocations", clubId],
+        });
+        onValueChange(selectedLocationId);
+      } else if (!selectedLocationId) {
+        // Create new location
+        const insertPayload: Record<string, any> = {
+          club_id: clubId,
+          name: trimmedName,
+          address: address.trim() || null,
+        };
+        if (latLng) {
+          insertPayload.latitude = latLng[1];
+          insertPayload.longitude = latLng[0];
+        }
+
+        let result = await supabase
+          .from("locations")
+          .insert(insertPayload)
           .select("id")
           .single();
+
+        // Fallback if lat/lng columns don't exist
+        if (result.error && latLng) {
+          result = await supabase
+            .from("locations")
+            .insert({
+              club_id: clubId,
+              name: trimmedName,
+              address: address.trim() || null,
+            })
+            .select("id")
+            .single();
+        }
+
+        if (result.error) throw result.error;
+
+        setSelectedLocationId(result.data.id);
+        setOriginalAddress(address.trim() || null);
+        await queryClient.invalidateQueries({
+          queryKey: ["eventLocations", clubId],
+        });
+        onValueChange(result.data.id);
+        toast.success("Location saved");
       }
-
-      const { data, error } = result;
-      if (error) throw error;
-
-      await queryClient.invalidateQueries({
-        queryKey: ["eventLocations", clubId],
-      });
-
-      onValueChange(data.id);
-      setSelectedName(name);
-      setSearchQuery("");
-      setOpen(false);
     } catch {
-      toast.error("Failed to create location.");
+      toast.error("Failed to save location.");
     } finally {
-      setIsCreating(false);
+      setIsSaving(false);
     }
-  };
+  }, [
+    locationName,
+    address,
+    selectedLocationId,
+    originalAddress,
+    latLng,
+    clubId,
+    onValueChange,
+    queryClient,
+  ]);
 
-  // Create location from free text (no Mapbox)
-  const createFromText = async (name: string) => {
-    if (!name.trim()) return;
-    setIsCreating(true);
-    try {
-      const { data, error } = await supabase
-        .from("locations")
-        .insert({ club_id: clubId, name: name.trim() })
-        .select("id")
-        .single();
-
-      if (error) throw error;
-
-      await queryClient.invalidateQueries({
-        queryKey: ["eventLocations", clubId],
-      });
-
-      onValueChange(data.id);
-      setSelectedName(name.trim());
-      setSearchQuery("");
-      setOpen(false);
-      toast.success("Location created");
-    } catch {
-      toast.error("Failed to create location.");
-    } finally {
-      setIsCreating(false);
+  // When name changes and doesn't match selected location, deselect
+  const handleNameChange = (val: string) => {
+    setLocationName(val);
+    if (
+      selectedLocationId &&
+      val !== locations.find((l) => l.id === selectedLocationId)?.name
+    ) {
+      setSelectedLocationId(null);
+      onValueChange(null);
     }
+    setShowNameDropdown(true);
   };
 
-  const handleSelectExisting = (locationId: string) => {
-    onValueChange(locationId);
-    setOpen(false);
-    setSearchQuery("");
+  const handleAddressChange = (val: string) => {
+    setAddress(val);
+    setShowAddressDropdown(true);
+    // Clear latLng when user edits address manually
+    setLatLng(null);
   };
-
-  const displayLabel =
-    value && selectedName
-      ? selectedName
-      : value && selectedLocation
-        ? selectedLocation.name
-        : placeholder;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "w-full justify-between",
-            !value && "text-muted-foreground"
-          )}
-        >
-          <div className="flex items-center gap-2 truncate">
-            <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="truncate">{displayLabel}</span>
-          </div>
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder="Search locations..."
-            value={searchQuery}
-            onValueChange={setSearchQuery}
+    <div className="space-y-3">
+      {/* Location Name */}
+      <div className="space-y-1.5" ref={nameRef}>
+        <Label className="text-sm">Location Name</Label>
+        <div className="relative">
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="e.g. Berlin Sports Hall"
+            value={locationName}
+            onChange={(e) => handleNameChange(e.target.value)}
+            onFocus={() => setShowNameDropdown(true)}
+            onBlur={() => {
+              // Delay to allow click on dropdown items
+              setTimeout(() => {
+                setShowNameDropdown(false);
+                commitLocation();
+              }, 200);
+            }}
+            className="pl-10"
           />
-          <CommandList>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Spinner className="h-4 w-4" />
-              </div>
-            ) : (
-              <>
-                {/* Clear selection */}
-                {value && (
-                  <CommandGroup>
-                    <CommandItem
-                      onSelect={() => {
-                        onValueChange(null);
-                        setSelectedName("");
-                        setSearchQuery("");
-                        setOpen(false);
-                      }}
-                      className="cursor-pointer text-muted-foreground"
-                    >
-                      Clear selection
-                    </CommandItem>
-                  </CommandGroup>
-                )}
-
-                {/* Saved locations */}
-                {filteredLocations.length > 0 && (
-                  <CommandGroup heading="Saved locations">
-                    {filteredLocations.map((location) => (
-                      <CommandItem
-                        key={location.id}
-                        value={location.id}
-                        onSelect={() => handleSelectExisting(location.id)}
-                        className="cursor-pointer"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            value === location.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <div className="flex flex-col">
-                          <span>{location.name}</span>
-                          {location.address && (
-                            <span className="text-xs text-muted-foreground truncate">
-                              {location.address}
-                            </span>
-                          )}
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
-
-                {/* Mapbox results */}
-                {mapboxResults.length > 0 && (
-                  <>
-                    <CommandSeparator />
-                    <CommandGroup heading="Search results">
-                      {mapboxResults.map((feature) => (
-                        <CommandItem
-                          key={feature.id}
-                          onSelect={() => createFromMapbox(feature)}
-                          className="cursor-pointer"
-                          disabled={isCreating}
-                        >
-                          <Search className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <div className="flex flex-col">
-                            <span>{feature.text}</span>
-                            {feature.place_name && feature.place_name !== feature.text && (
-                              <span className="text-xs text-muted-foreground truncate">
-                                {feature.place_name}
-                              </span>
-                            )}
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </>
-                )}
-
-                {/* Create new from text */}
-                {searchQuery.trim() && !exactMatch && mapboxResults.length === 0 && (
-                  <CommandGroup>
-                    <CommandItem
-                      onSelect={() => createFromText(searchQuery)}
-                      className="cursor-pointer text-blue-600 dark:text-blue-400"
-                      disabled={isCreating}
-                    >
-                      {isCreating ? (
-                        <Spinner className="mr-2 h-4 w-4" />
-                      ) : (
-                        <Plus className="mr-2 h-4 w-4" />
-                      )}
-                      Create "{searchQuery.trim()}"
-                    </CommandItem>
-                  </CommandGroup>
-                )}
-
-                {/* Empty state */}
-                {filteredLocations.length === 0 &&
-                  mapboxResults.length === 0 &&
-                  !searchQuery.trim() && (
-                    <CommandEmpty>
-                      Type to search for a location
-                      {token ? " or find an address" : ""}.
-                    </CommandEmpty>
+          {/* Saved locations dropdown */}
+          {showNameDropdown && filteredLocations.length > 0 && (
+            <div className="absolute z-50 top-full mt-1 w-full rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">
+              {filteredLocations.map((loc) => (
+                <button
+                  key={loc.id}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSelectSaved(loc)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 hover:bg-accent flex flex-col gap-0.5",
+                    selectedLocationId === loc.id && "bg-accent"
                   )}
-              </>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                >
+                  <span className="text-sm font-medium">{loc.name}</span>
+                  {loc.address && (
+                    <span className="text-xs text-muted-foreground truncate">
+                      {loc.address}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Address */}
+      <div className="space-y-1.5" ref={addressRef}>
+        <Label className="text-sm">Address</Label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search for an address..."
+            value={address}
+            onChange={(e) => handleAddressChange(e.target.value)}
+            onFocus={() => {
+              if (mapboxResults.length > 0) setShowAddressDropdown(true);
+            }}
+            onBlur={() => {
+              setTimeout(() => {
+                setShowAddressDropdown(false);
+                commitLocation();
+              }, 200);
+            }}
+            className="pl-10"
+          />
+          {/* Mapbox results dropdown */}
+          {showAddressDropdown && mapboxResults.length > 0 && (
+            <div className="absolute z-50 top-full mt-1 w-full rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">
+              {mapboxResults.map((feature) => (
+                <button
+                  key={feature.id}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSelectMapbox(feature)}
+                  className="w-full text-left px-3 py-2 hover:bg-accent flex flex-col gap-0.5"
+                >
+                  <span className="text-sm font-medium">
+                    {feature.text}
+                  </span>
+                  {feature.place_name &&
+                    feature.place_name !== feature.text && (
+                      <span className="text-xs text-muted-foreground truncate">
+                        {feature.place_name}
+                      </span>
+                    )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isSaving && (
+        <p className="text-xs text-muted-foreground">Saving location...</p>
+      )}
+    </div>
   );
 };

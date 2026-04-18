@@ -6,8 +6,8 @@
 - Next step: Fix remaining Phase 9 bugs (see below), then Phase 10 — Notification left drawer + Chat pages (final phase)
 
 ## Phase 9 bugs to fix
-1. **Members view toggle padding**: Active state of the grid/list view toggle has incorrect padding — needs CSS fix
-2. **Address with house number fails**: Mapbox address autocomplete works for addresses without a number, but selecting an address with a house number fails (location row not created in DB). Likely an issue in `EventLocationSelector.tsx` `createFromMapbox()` — investigate the Mapbox `place_name` parsing or the DB insert payload.
+1. ~~**Members view toggle padding**~~: Fixed — h-7 w-7 items inside p-1 container
+2. ~~**Address with house number fails**~~: Fixed — rewrote EventLocationSelector to two-field design (name + address with Mapbox autocomplete)
 3. **Created event not shown in Home**: Event is created successfully (toast shows success, redirects to /home) but the event doesn't appear in the feed. Likely issue in `fetchUpcomingEvents()` — the `locations(name, address)` select may cause a PostgREST error, or the clubless events query isn't returning results. Check the network response for 300/400 errors.
 4. **Overall Create Event flow**: The whole create → view flow needs end-to-end testing and polish after bug fixes.
 

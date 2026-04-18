@@ -567,14 +567,11 @@ const CreateEvent: React.FC = () => {
             </div>
 
             {/* Location */}
-            <div className="space-y-1.5">
-              <Label>Location</Label>
-              <EventLocationSelector
-                clubId={resolvedClubId}
-                value={form.location_id}
-                onValueChange={(id) => set("location_id", id)}
-              />
-            </div>
+            <EventLocationSelector
+              clubId={resolvedClubId}
+              value={form.location_id}
+              onValueChange={(id) => set("location_id", id)}
+            />
 
             {/* RSVP deadline */}
             <div className="space-y-2">
