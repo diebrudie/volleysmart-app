@@ -398,64 +398,67 @@ const MembersGlobal: React.FC = () => {
               </span>
             </div>
 
-            {/* Search */}
-            <div className="relative w-full mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search members by name..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+            {/* Search + Sort + Filter + View toggle */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              {/* Search */}
+              <div className="relative flex-grow">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search members by name..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10 h-9"
+                />
+              </div>
 
-            {/* Sort + Filter + View toggle row */}
-            <div className="flex items-center justify-end gap-2 min-w-0">
-              {/* Sort toggle */}
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setSortAsc((prev) => !prev)}
-                aria-label={sortAsc ? "Sort Z to A" : "Sort A to Z"}
-                className="h-9 w-9 shrink-0"
-              >
-                <ArrowUpDown className="h-4 w-4" />
-              </Button>
-
-              {/* Filter button */}
-              {clubs.length > 1 && (
+              {/* Controls */}
+              <div className="flex items-center justify-end gap-2">
+                {/* Sort toggle */}
                 <Button
                   variant="outline"
-                  size="sm"
-                  onClick={() => setIsFilterOpen(true)}
-                  className="relative shrink-0"
+                  size="icon"
+                  onClick={() => setSortAsc((prev) => !prev)}
+                  aria-label={sortAsc ? "Sort Z to A" : "Sort A to Z"}
+                  className="h-9 w-9 shrink-0"
                 >
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  Filter
-                  {filterClub.size > 0 && (
-                    <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-medium rounded-full bg-primary text-primary-foreground">
-                      {filterClub.size}
-                    </span>
-                  )}
+                  <ArrowUpDown className="h-4 w-4" />
                 </Button>
-              )}
 
-              {/* View toggle */}
-              <ToggleGroup
-                type="single"
-                value={viewMode}
-                onValueChange={(v) => {
-                  if (v) setViewMode(v as ViewMode);
-                }}
-                className="shrink-0 grow-0 basis-auto w-auto"
-              >
-                <ToggleGroupItem value="grid" aria-label="Grid view" size="sm">
-                  <Grid3X3 className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="list" aria-label="List view" size="sm">
-                  <List className="h-4 w-4" />
-                </ToggleGroupItem>
-              </ToggleGroup>
+                {/* Filter button */}
+                {clubs.length > 1 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsFilterOpen(true)}
+                    className="relative shrink-0 h-9"
+                  >
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    Filter
+                    {filterClub.size > 0 && (
+                      <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-medium rounded-full bg-primary text-primary-foreground">
+                        {filterClub.size}
+                      </span>
+                    )}
+                  </Button>
+                )}
+
+                {/* View toggle */}
+                <ToggleGroup
+                  type="single"
+                  value={viewMode}
+                  onValueChange={(v) => {
+                    if (v) setViewMode(v as ViewMode);
+                  }}
+                  className="shrink-0 grow-0 basis-auto w-auto h-9"
+                >
+                  <ToggleGroupItem value="grid" aria-label="Grid view" size="sm">
+                    <Grid3X3 className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="list" aria-label="List view" size="sm">
+                    <List className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
             </div>
           </CardContent>
         </Card>
