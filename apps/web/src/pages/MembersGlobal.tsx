@@ -7,6 +7,7 @@ import {
   List,
   Plus,
   SlidersHorizontal,
+  ArrowUpDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -253,6 +254,7 @@ const MembersGlobal: React.FC = () => {
   const isCompact = useIsCompact();
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortAsc, setSortAsc] = useState(true);
   const [filterClub, setFilterClub] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -278,7 +280,7 @@ const MembersGlobal: React.FC = () => {
     }));
   }, [members]);
 
-  // ── Filter + sort (always first_name A-Z) ──
+  // ── Filter + sort ──
   const filtered = useMemo(() => {
     let result = members;
 
@@ -294,10 +296,11 @@ const MembersGlobal: React.FC = () => {
       );
     }
 
-    return [...result].sort((a, b) =>
-      a.first_name.localeCompare(b.first_name)
-    );
-  }, [members, filterClub, search]);
+    return [...result].sort((a, b) => {
+      const cmp = a.first_name.localeCompare(b.first_name);
+      return sortAsc ? cmp : -cmp;
+    });
+  }, [members, filterClub, search, sortAsc]);
 
   const toggleClubFilter = (clubId: string) => {
     setFilterClub((prev) => {
@@ -406,15 +409,26 @@ const MembersGlobal: React.FC = () => {
               />
             </div>
 
-            {/* Filter + View toggle row */}
-            <div className="flex items-center justify-between">
+            {/* Sort + Filter + View toggle row */}
+            <div className="flex items-center justify-end gap-2">
+              {/* Sort toggle */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSortAsc((prev) => !prev)}
+                aria-label={sortAsc ? "Sort Z to A" : "Sort A to Z"}
+                className="h-9 w-9 flex-shrink-0"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+              </Button>
+
               {/* Filter button */}
               {clubs.length > 1 && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsFilterOpen(true)}
-                  className="relative"
+                  className="relative flex-shrink-0"
                 >
                   <SlidersHorizontal className="h-4 w-4 mr-2" />
                   Filter
@@ -425,8 +439,6 @@ const MembersGlobal: React.FC = () => {
                   )}
                 </Button>
               )}
-
-              <div className="flex-grow" />
 
               {/* View toggle */}
               <ToggleGroup
