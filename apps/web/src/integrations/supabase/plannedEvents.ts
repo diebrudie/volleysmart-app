@@ -39,7 +39,7 @@ export async function fetchUpcomingEvents(
     .from("club_members")
     .select("club_id")
     .eq("user_id", userId)
-    .eq("status", "active");
+    .eq("is_active", true);
 
   if (!memberships?.length) return [];
   const clubIds = memberships

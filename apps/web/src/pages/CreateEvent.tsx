@@ -173,7 +173,7 @@ const CreateEvent: React.FC = () => {
         .from("club_members")
         .select("clubs(id, name)")
         .eq("user_id", user.id)
-        .eq("status", "active")
+        .eq("is_active", true)
         .in("role", ["admin", "editor"]);
       return (data ?? [])
         .map((m) => m.clubs)

@@ -270,6 +270,7 @@ const UpcomingEvents: React.FC = () => {
     queryKey: ["upcoming-events", user?.id],
     queryFn: () => fetchUpcomingEvents(user!.id),
     enabled: !!user?.id,
+    retry: 1,
   });
 
   const rsvpMutation = useMutation({

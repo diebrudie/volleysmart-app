@@ -63,96 +63,74 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
   const clubNameById: Record<string, string> = {};
   clubRows?.forEach((c) => { clubNameById[c.id] = c.name; });
 
-  // 3. Fetch club_members rows (club_members has no FK to players, so we must
-  //    do a two-step fetch — first memberships, then players by user_id).
-  const { data: memberships, error: membErr } = await supabase
-    .from("club_members")
-    .select("club_id, role, member_association, user_id")
-    .in("club_id", clubIds)
-    .eq("is_active", true);
-
-  if (membErr) throw membErr;
-  if (!memberships?.length) return [];
-
-  // 4. Build a set of user_ids we want, then fetch ALL players RLS allows.
-  //    We avoid .in("user_id", [...]) because large URL parameters cause 400.
-  //    RLS ("users can view players in same clubs") naturally scopes the result.
-  const userIds = new Set(
-    memberships.map((m) => m.user_id).filter(Boolean) as string[]
-  );
-
-  if (!userIds.size) return [];
-
-  const { data: players, error: playersErr } = await supabase
-    .from("players")
-    .select("id, user_id, first_name, last_name, image_url, skill_rating, country");
-
-  if (playersErr) throw playersErr;
-
-  // Filter in JS to only the members we identified above.
-  const relevantPlayers = (players ?? []).filter(
-    (p) => p.user_id && userIds.has(p.user_id)
-  );
-
-  // 5. Fetch player_positions separately to avoid double-nested FK join.
-  const playerIds = relevantPlayers.map((p) => p.id);
-  const positionsByPlayerId: Record<string, GlobalMember["player_positions"]> = {};
-
-  if (playerIds.length > 0) {
-    const { data: playerPositions } = await supabase
-      .from("player_positions")
-      .select("player_id, is_primary, positions(name)")
-      .in("player_id", playerIds);
-
-    for (const pp of playerPositions ?? []) {
-      if (!positionsByPlayerId[pp.player_id]) {
-        positionsByPlayerId[pp.player_id] = [];
-      }
-      positionsByPlayerId[pp.player_id].push({
-        is_primary: pp.is_primary,
-        positions: pp.positions as { name: string },
-      });
-    }
-  }
-
-  const playerByUserId = new Map(
-    relevantPlayers.map((p) => [p.user_id, p])
-  );
-
-  // 6. Merge memberships with players; deduplicate by player id.
+  // 3. For each club, fetch members + players using the same per-club query
+  //    pattern that Members.tsx uses (proven to work). This avoids large .in()
+  //    queries that cause 400 errors.
   const byPlayerId = new Map<string, GlobalMember>();
 
-  for (const row of memberships) {
-    if (!row.user_id) continue;
-    const p = playerByUserId.get(row.user_id);
-    if (!p) continue;
+  await Promise.all(
+    clubIds.map(async (clubId) => {
+      // 3a. Get active members for this club
+      const { data: members } = await supabase
+        .from("club_members")
+        .select("user_id, role, member_association")
+        .eq("club_id", clubId)
+        .eq("is_active", true);
 
-    const clubEntry = {
-      id: row.club_id ?? "",
-      name: clubNameById[row.club_id ?? ""] ?? "",
-      role: row.role ?? "member",
-    };
+      if (!members?.length) return;
 
-    const existing = byPlayerId.get(p.id);
-    if (existing) {
-      if (!existing.clubs.some((c) => c.id === clubEntry.id)) {
-        existing.clubs.push(clubEntry);
+      const userIds = members
+        .map((m) => m.user_id)
+        .filter(Boolean) as string[];
+      if (!userIds.length) return;
+
+      // 3b. Fetch players with positions (small .in() per club — same as Members.tsx)
+      const { data: players } = await supabase
+        .from("players")
+        .select(
+          `id, user_id, first_name, last_name, image_url, skill_rating, country,
+           player_positions(is_primary, positions(name))`
+        )
+        .in("user_id", userIds);
+
+      const playerByUserId = new Map(
+        (players ?? []).map((p) => [p.user_id, p])
+      );
+
+      // 3c. Merge into deduplicated map
+      for (const row of members) {
+        if (!row.user_id) continue;
+        const p = playerByUserId.get(row.user_id);
+        if (!p) continue;
+
+        const clubEntry = {
+          id: clubId,
+          name: clubNameById[clubId] ?? "",
+          role: row.role ?? "member",
+        };
+
+        const existing = byPlayerId.get(p.id);
+        if (existing) {
+          if (!existing.clubs.some((c) => c.id === clubEntry.id)) {
+            existing.clubs.push(clubEntry);
+          }
+        } else {
+          byPlayerId.set(p.id, {
+            player_id: p.id,
+            user_id: p.user_id,
+            first_name: p.first_name,
+            last_name: p.last_name,
+            image_url: p.image_url,
+            skill_rating: p.skill_rating,
+            country: p.country,
+            member_association: row.member_association ?? null,
+            player_positions: (p.player_positions ?? []) as GlobalMember["player_positions"],
+            clubs: [clubEntry],
+          });
+        }
       }
-    } else {
-      byPlayerId.set(p.id, {
-        player_id: p.id,
-        user_id: p.user_id,
-        first_name: p.first_name,
-        last_name: p.last_name,
-        image_url: p.image_url,
-        skill_rating: p.skill_rating,
-        country: p.country,
-        member_association: row.member_association ?? null,
-        player_positions: positionsByPlayerId[p.id] ?? [],
-        clubs: [clubEntry],
-      });
-    }
-  }
+    })
+  );
 
   return Array.from(byPlayerId.values());
 }
@@ -170,6 +148,7 @@ const MembersGlobal: React.FC = () => {
     queryKey: ["members-global", user?.id],
     queryFn: () => fetchGlobalMembers(user!.id),
     enabled: !!user?.id,
+    retry: 1,
   });
 
   // ── Derived filter options ──
