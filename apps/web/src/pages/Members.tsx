@@ -181,8 +181,11 @@ const Members = () => {
               image_url,
               user_id,
               player_positions (
+                id,
+                position_id,
                 is_primary,
                 positions (
+                  id,
                   name
                 )
               )

@@ -89,7 +89,7 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
         .from("players")
         .select(
           `id, user_id, first_name, last_name, image_url, skill_rating, country,
-           player_positions(is_primary, positions(name))`
+           player_positions(id, position_id, is_primary, positions(id, name))`
         )
         .in("user_id", userIds);
 
