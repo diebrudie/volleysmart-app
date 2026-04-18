@@ -74,7 +74,7 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
   if (membErr) throw membErr;
   if (!memberships?.length) return [];
 
-  // 4. Collect unique user_ids, then fetch matching players with positions.
+  // 4. Collect unique user_ids, then fetch matching players (no nested join).
   const userIds = [...new Set(
     memberships.map((m) => m.user_id).filter(Boolean) as string[]
   )];
@@ -83,19 +83,37 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
 
   const { data: players, error: playersErr } = await supabase
     .from("players")
-    .select(
-      `id, user_id, first_name, last_name, image_url, skill_rating, country,
-       player_positions ( is_primary, positions ( name ) )`
-    )
+    .select("id, user_id, first_name, last_name, image_url, skill_rating, country")
     .in("user_id", userIds);
 
   if (playersErr) throw playersErr;
+
+  // 5. Fetch player_positions separately to avoid double-nested FK join.
+  const playerIds = (players ?? []).map((p) => p.id);
+  const positionsByPlayerId: Record<string, GlobalMember["player_positions"]> = {};
+
+  if (playerIds.length > 0) {
+    const { data: playerPositions } = await supabase
+      .from("player_positions")
+      .select("player_id, is_primary, positions(name)")
+      .in("player_id", playerIds);
+
+    for (const pp of playerPositions ?? []) {
+      if (!positionsByPlayerId[pp.player_id]) {
+        positionsByPlayerId[pp.player_id] = [];
+      }
+      positionsByPlayerId[pp.player_id].push({
+        is_primary: pp.is_primary,
+        positions: pp.positions as { name: string },
+      });
+    }
+  }
 
   const playerByUserId = new Map(
     (players ?? []).map((p) => [p.user_id, p])
   );
 
-  // 5. Merge memberships with players; deduplicate by player id.
+  // 6. Merge memberships with players; deduplicate by player id.
   const byPlayerId = new Map<string, GlobalMember>();
 
   for (const row of memberships) {
@@ -124,7 +142,7 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
         skill_rating: p.skill_rating,
         country: p.country,
         member_association: row.member_association ?? null,
-        player_positions: (p.player_positions ?? []) as GlobalMember["player_positions"],
+        player_positions: positionsByPlayerId[p.id] ?? [],
         clubs: [clubEntry],
       });
     }
