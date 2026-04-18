@@ -449,12 +449,12 @@ const MembersGlobal: React.FC = () => {
                   onValueChange={(v) => {
                     if (v) setViewMode(v as ViewMode);
                   }}
-                  className="shrink-0 grow-0 basis-auto w-auto h-9 p-0.5"
+                  className="shrink-0 grow-0 basis-auto w-auto h-auto items-center p-1"
                 >
-                  <ToggleGroupItem value="grid" aria-label="Grid view" size="sm" className="h-8 w-8 p-0">
+                  <ToggleGroupItem value="grid" aria-label="Grid view" size="sm" className="h-7 w-7 p-0">
                     <Grid3X3 className="h-4 w-4" />
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="list" aria-label="List view" size="sm" className="h-8 w-8 p-0">
+                  <ToggleGroupItem value="list" aria-label="List view" size="sm" className="h-7 w-7 p-0">
                     <List className="h-4 w-4" />
                   </ToggleGroupItem>
                 </ToggleGroup>
