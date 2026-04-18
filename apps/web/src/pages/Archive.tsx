@@ -41,7 +41,23 @@ interface ArchiveRow {
   total_games_played: number;
   winner: "Team A" | "Team B" | "Draw";
   location_name: string | null;
+  title: string;
+  event_type: string;
 }
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  friendly_game: "Friendly",
+  social_game: "Social",
+  training: "Training",
+  tournament: "Tournament",
+};
+
+const EVENT_TYPE_CLASS: Record<string, string> = {
+  friendly_game: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  social_game: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+  training: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  tournament: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+};
 
 type SortKey = "date" | "club_name" | "winner";
 type SortDir = "ascending" | "descending";
@@ -53,7 +69,7 @@ async function fetchCrossClubArchive(userId: string): Promise<ArchiveRow[]> {
     .from("club_members")
     .select("club_id, clubs(id, name)")
     .eq("user_id", userId)
-    .eq("status", "active");
+    .eq("is_active", true);
 
   if (membErr) throw membErr;
   if (!memberships?.length) return [];
@@ -69,7 +85,7 @@ async function fetchCrossClubArchive(userId: string): Promise<ArchiveRow[]> {
     }
   });
 
-  // 2. Fetch all match_days with their matches + location across those clubs
+  // 2. Fetch all match_days with their matches + location + planned_event metadata
   const { data: matchDays, error: mdErr } = await supabase
     .from("match_days")
     .select(
@@ -78,7 +94,8 @@ async function fetchCrossClubArchive(userId: string): Promise<ArchiveRow[]> {
       date,
       club_id,
       locations(name),
-      matches(id, team_a_score, team_b_score)
+      matches(id, team_a_score, team_b_score),
+      planned_events!planned_event_id(title, event_type)
     `
     )
     .in("club_id", clubIds)
@@ -114,6 +131,13 @@ async function fetchCrossClubArchive(userId: string): Promise<ArchiveRow[]> {
         ? "Team B"
         : "Draw";
 
+    const pe = md.planned_events as { title: string; event_type: string } | null;
+    const title =
+      pe?.title ??
+      new Date(md.date).toLocaleDateString("en-US", { weekday: "long" }) +
+        " Training";
+    const eventType = pe?.event_type ?? "friendly_game";
+
     rows.push({
       match_day_id: md.id,
       date: md.date,
@@ -127,6 +151,8 @@ async function fetchCrossClubArchive(userId: string): Promise<ArchiveRow[]> {
         md.locations && !Array.isArray(md.locations)
           ? (md.locations as { name: string }).name
           : null,
+      title,
+      event_type: eventType,
     });
   }
 
@@ -264,9 +290,9 @@ const Archive: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center pb-24">
           <ArchiveIcon className="h-12 w-12 text-muted-foreground" />
           <div>
-            <h1 className="text-xl font-semibold">No games yet</h1>
+            <h1 className="text-xl font-semibold">No past events yet</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Completed games from all your clubs will appear here.
+              Completed events from all your clubs will appear here.
             </p>
           </div>
         </div>
@@ -279,7 +305,7 @@ const Archive: React.FC = () => {
       <Card>
         <CardHeader className="border-b">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>Games Archive</CardTitle>
+            <CardTitle>Past Events</CardTitle>
 
             {/* Filters */}
             <div className="flex flex-wrap gap-2">
@@ -334,8 +360,8 @@ const Archive: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {/* Date */}
-                  <TableHead className="w-[160px]">
+                  {/* Date + Title */}
+                  <TableHead className="w-[200px]">
                     <button
                       className="flex items-center hover:text-foreground transition-colors"
                       onClick={() => requestSort("date")}
@@ -344,6 +370,9 @@ const Archive: React.FC = () => {
                       <SortIcon col="date" />
                     </button>
                   </TableHead>
+
+                  {/* Type */}
+                  <TableHead className="hidden sm:table-cell">Type</TableHead>
 
                   {/* Club — visible if >1 club */}
                   {clubs.length > 1 && (
@@ -386,10 +415,10 @@ const Archive: React.FC = () => {
                 {filtered.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={clubs.length > 1 ? 6 : 5}
+                      colSpan={clubs.length > 1 ? 7 : 6}
                       className="text-center py-10 text-muted-foreground"
                     >
-                      No games match your filters.
+                      No events match your filters.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -397,14 +426,30 @@ const Archive: React.FC = () => {
                     const badge = WINNER_BADGE[row.winner];
                     return (
                       <TableRow key={row.match_day_id}>
-                        {/* Date */}
+                        {/* Date + Title */}
                         <TableCell className="font-medium whitespace-nowrap">
-                          <span className="sm:hidden">
-                            {formatDateShort(row.date)}
-                          </span>
-                          <span className="hidden sm:inline">
-                            {formatDate(row.date)}
-                          </span>
+                          <div>
+                            <span className="sm:hidden">
+                              {formatDateShort(row.date)}
+                            </span>
+                            <span className="hidden sm:inline">
+                              {formatDate(row.date)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-[180px]">
+                            {row.title}
+                          </div>
+                        </TableCell>
+
+                        {/* Type */}
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge
+                            className={`text-xs font-medium border-0 ${
+                              EVENT_TYPE_CLASS[row.event_type] ?? "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {EVENT_TYPE_LABELS[row.event_type] ?? row.event_type}
+                          </Badge>
                         </TableCell>
 
                         {/* Club */}
@@ -463,7 +508,7 @@ const Archive: React.FC = () => {
       {/* Summary row */}
       {filtered.length > 0 && (
         <p className="text-xs text-muted-foreground text-right mt-2">
-          {filtered.length} game{filtered.length !== 1 ? "s" : ""}
+          {filtered.length} event{filtered.length !== 1 ? "s" : ""}
           {filtered.length !== rows.length ? ` (filtered from ${rows.length})` : ""}
         </p>
       )}

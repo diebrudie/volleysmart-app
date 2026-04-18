@@ -252,6 +252,7 @@ const Navbar = () => {
   const navItems = isAuthenticated
     ? [
         { label: "Home", path: "/home", visible: true },
+        { label: "Past Events", path: "/archive", visible: true },
         { label: "Clubs", path: "/clubs", visible: true },
         { label: "Members", path: "/members", visible: true },
       ]

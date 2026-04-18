@@ -1,6 +1,6 @@
 import * as React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, Users, Building2, Plus } from "lucide-react";
+import { Home, Users, Building2, Plus, Archive } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 /**
@@ -70,8 +70,13 @@ const MobileBottomNav: React.FC = () => {
             activeColor={activeColorClass}
           />
 
-          {/* Empty slot (was Archive) */}
-          <div aria-hidden className="h-full" />
+          <TabLink
+            to="/archive"
+            icon={<Archive className="h-5 w-5" />}
+            label="Archive"
+            active={isActive(/^\/archive(\\/|$)/)}
+            activeColor={activeColorClass}
+          />
 
           {/* Center empty slot so the FAB doesn't cover any tab */}
           <div aria-hidden className="h-full" />

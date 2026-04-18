@@ -34,6 +34,7 @@ import Profile from "@/pages/Profile";
 import Clubs from "@/pages/Clubs";
 import ClubGuard from "@/components/routing/ClubGuard";
 import FaqsPage from "@/pages/FaqsPage";
+import Archive from "@/pages/Archive";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -147,7 +148,14 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
-    <Route path="/archive" element={<Navigate to="/home" replace />} />
+    <Route
+      path="/archive"
+      element={
+        <ProtectedRoute>
+          <Archive />
+        </ProtectedRoute>
+      }
+    />
     <Route
       path="/members"
       element={
