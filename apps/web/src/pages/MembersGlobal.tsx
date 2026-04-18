@@ -23,7 +23,6 @@ interface GlobalMember {
   last_name: string;
   image_url: string | null;
   skill_rating: number | null;
-  country: string | null;
   member_association: boolean | null;
   player_positions: Array<{
     is_primary: boolean | null;
@@ -88,7 +87,7 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
       const { data: players } = await supabase
         .from("players")
         .select(
-          `id, user_id, first_name, last_name, image_url, skill_rating, country,
+          `id, user_id, first_name, last_name, image_url, skill_rating,
            player_positions(id, position_id, is_primary, positions(id, name))`
         )
         .in("user_id", userIds);
@@ -122,7 +121,6 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
             last_name: p.last_name,
             image_url: p.image_url,
             skill_rating: p.skill_rating,
-            country: p.country,
             member_association: row.member_association ?? null,
             player_positions: (p.player_positions ?? []) as GlobalMember["player_positions"],
             clubs: [clubEntry],
@@ -141,7 +139,6 @@ const MembersGlobal: React.FC = () => {
   const isCompact = useIsCompact();
   const [search, setSearch] = useState("");
   const [filterClub, setFilterClub] = useState("all");
-  const [filterCountry, setFilterCountry] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("first_name_asc");
 
   const { data: members = [], isLoading } = useQuery({
@@ -158,20 +155,12 @@ const MembersGlobal: React.FC = () => {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [members]);
 
-  const countries = useMemo(() => {
-    const set = new Set(members.map((m) => m.country).filter(Boolean) as string[]);
-    return Array.from(set).sort();
-  }, [members]);
-
   // ── Filter + sort ──
   const filtered = useMemo(() => {
     let result = members;
 
     if (filterClub !== "all") {
       result = result.filter((m) => m.clubs.some((c) => c.id === filterClub));
-    }
-    if (filterCountry !== "all") {
-      result = result.filter((m) => m.country === filterCountry);
     }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -200,7 +189,7 @@ const MembersGlobal: React.FC = () => {
           return 0;
       }
     });
-  }, [members, filterClub, filterCountry, search, sortKey]);
+  }, [members, filterClub, search, sortKey]);
 
   const content = () => {
     if (isLoading) {
@@ -253,22 +242,6 @@ const MembersGlobal: React.FC = () => {
                 {clubs.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {countries.length > 1 && (
-            <Select value={filterCountry} onValueChange={setFilterCountry}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Countries" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Countries</SelectItem>
-                {countries.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
                   </SelectItem>
                 ))}
               </SelectContent>
