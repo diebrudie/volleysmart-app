@@ -74,22 +74,28 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
   if (membErr) throw membErr;
   if (!memberships?.length) return [];
 
-  // 4. Collect unique user_ids, then fetch matching players (no nested join).
-  const userIds = [...new Set(
+  // 4. Build a set of user_ids we want, then fetch ALL players RLS allows.
+  //    We avoid .in("user_id", [...]) because large URL parameters cause 400.
+  //    RLS ("users can view players in same clubs") naturally scopes the result.
+  const userIds = new Set(
     memberships.map((m) => m.user_id).filter(Boolean) as string[]
-  )];
+  );
 
-  if (!userIds.length) return [];
+  if (!userIds.size) return [];
 
   const { data: players, error: playersErr } = await supabase
     .from("players")
-    .select("id, user_id, first_name, last_name, image_url, skill_rating, country")
-    .in("user_id", userIds);
+    .select("id, user_id, first_name, last_name, image_url, skill_rating, country");
 
   if (playersErr) throw playersErr;
 
+  // Filter in JS to only the members we identified above.
+  const relevantPlayers = (players ?? []).filter(
+    (p) => p.user_id && userIds.has(p.user_id)
+  );
+
   // 5. Fetch player_positions separately to avoid double-nested FK join.
-  const playerIds = (players ?? []).map((p) => p.id);
+  const playerIds = relevantPlayers.map((p) => p.id);
   const positionsByPlayerId: Record<string, GlobalMember["player_positions"]> = {};
 
   if (playerIds.length > 0) {
@@ -110,7 +116,7 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
   }
 
   const playerByUserId = new Map(
-    (players ?? []).map((p) => [p.user_id, p])
+    relevantPlayers.map((p) => [p.user_id, p])
   );
 
   // 6. Merge memberships with players; deduplicate by player id.
