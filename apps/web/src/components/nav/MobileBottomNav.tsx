@@ -74,7 +74,7 @@ const MobileBottomNav: React.FC = () => {
             to="/archive"
             icon={<Archive className="h-5 w-5" />}
             label="Archive"
-            active={isActive(/^\/archive(\\/|$)/)}
+            active={isActive(/^\/archive(\/|$)/)}
             activeColor={activeColorClass}
           />
 
