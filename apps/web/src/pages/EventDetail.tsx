@@ -623,7 +623,7 @@ const EventDetail: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="px-4 -mt-12 max-w-2xl mx-auto w-full space-y-8">
+      <div className="px-4 -mt-12 max-w-2xl mx-auto w-full space-y-8 z-50">
         {/* Date badge + RSVP status row */}
         <div className="flex items-end justify-between">
           {/* Calendar badge — square, fully opaque white */}
