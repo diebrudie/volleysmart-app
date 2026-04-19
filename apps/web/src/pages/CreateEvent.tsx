@@ -16,7 +16,6 @@ import {
   Bookmark,
   LayoutGrid,
   Trash2,
-  CalendarCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,13 +41,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -203,7 +195,6 @@ const CreateEvent: React.FC = () => {
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
   const [templateSheetOpen, setTemplateSheetOpen] = React.useState(false);
   const [rsvpCalendarOpen, setRsvpCalendarOpen] = React.useState(false);
-  const [createdEventId, setCreatedEventId] = React.useState<string | null>(null);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -275,7 +266,7 @@ const CreateEvent: React.FC = () => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
       queryClient.invalidateQueries({ queryKey: ["event-templates"] });
-      setCreatedEventId(result.id);
+      navigate(`/events/${result.id}?created=true`);
     },
     onError: () => {
       toast.error("Failed to create event. Please try again.");
@@ -434,10 +425,15 @@ const CreateEvent: React.FC = () => {
             <button
               type="button"
               onClick={() => setTemplateSheetOpen(true)}
-              className="w-full flex items-center gap-3 rounded-2xl border-2 border-border bg-muted/50 px-4 py-3 text-left font-semibold hover:bg-muted transition-colors"
+              className="w-full flex items-center gap-3 rounded-2xl border-2 border-border bg-muted/50 px-4 py-3 text-left hover:bg-muted transition-colors"
             >
-              <LayoutGrid className="h-6 w-6 text-muted-foreground" />
-              Templates
+              <span className="shrink-0">
+                <LayoutGrid className="h-6 w-6 text-muted-foreground" />
+              </span>
+              <div className="flex flex-col">
+                <span className="font-semibold">Templates</span>
+                <span className="text-xs opacity-70">Start from a saved template</span>
+              </div>
             </button>
 
             {/* Templates bottom drawer */}
@@ -806,51 +802,6 @@ const CreateEvent: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Success dialog */}
-      <Dialog
-        open={!!createdEventId}
-        onOpenChange={(open) => {
-          if (!open) {
-            setCreatedEventId(null);
-            navigate("/home");
-          }
-        }}
-      >
-        <DialogContent className="max-w-sm mx-auto">
-          <div className="flex flex-col items-center text-center gap-4 py-4">
-            <div className="rounded-xl bg-muted p-4">
-              <CalendarCheck className="h-10 w-10" />
-            </div>
-            <DialogHeader className="space-y-2">
-              <DialogTitle className="text-xl">
-                Your event was created successfully
-              </DialogTitle>
-              <DialogDescription>
-                Modify details, share the event and get moving.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col gap-2 w-full mt-2">
-              <Button
-                className="w-full"
-                onClick={() => navigate(`/events/${createdEventId}`)}
-              >
-                View event
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setCreatedEventId(null);
-                  navigate("/home");
-                }}
-              >
-                Dismiss
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

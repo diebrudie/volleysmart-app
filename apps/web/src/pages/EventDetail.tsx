@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
@@ -12,6 +12,8 @@ import {
   Check,
   X,
   User,
+  CalendarCheck,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,10 +63,14 @@ interface Attendee {
 const EventDetail: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [showCreatedDialog, setShowCreatedDialog] = React.useState(
+    searchParams.get("created") === "true"
+  );
 
   // Fetch event
   const {
@@ -398,9 +404,70 @@ const EventDetail: React.FC = () => {
         </div>
       </div>
 
+      {/* Success dialog (shown after event creation) */}
+      <Dialog
+        open={showCreatedDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowCreatedDialog(false);
+            // Remove ?created=true from URL
+            searchParams.delete("created");
+            setSearchParams(searchParams, { replace: true });
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm mx-auto rounded-2xl">
+          <div className="flex flex-col items-center text-center gap-4 py-4">
+            <div className="rounded-xl bg-muted p-4">
+              <CalendarCheck className="h-10 w-10" />
+            </div>
+            <DialogHeader className="space-y-2">
+              <DialogTitle className="text-xl">
+                Your event was created successfully
+              </DialogTitle>
+              <DialogDescription>
+                Modify details, share the event and get moving.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-2 w-full mt-2">
+              <Button
+                className="w-full gap-2"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: event.title,
+                      url: window.location.href.split("?")[0],
+                    });
+                  } else {
+                    navigator.clipboard.writeText(
+                      window.location.href.split("?")[0]
+                    );
+                    toast.success("Link copied to clipboard");
+                  }
+                }}
+              >
+                <Share2 className="h-4 w-4" />
+                Share event
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setShowCreatedDialog(false);
+                  searchParams.delete("created");
+                  setSearchParams(searchParams, { replace: true });
+                }}
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
             <DialogTitle>Delete event</DialogTitle>
             <DialogDescription>

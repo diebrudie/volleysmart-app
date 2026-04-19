@@ -52,7 +52,7 @@ export async function fetchUpcomingEvents(
   const selectFields = `
     *,
     clubs(id, name),
-    locations(name, address),
+    locations!planned_events_location_id_fkey(name, address),
     event_rsvp(status, player_id)
   `;
 
@@ -134,7 +134,7 @@ export async function fetchSingleEvent(
   const { data, error } = await supabase
     .from("planned_events")
     .select(
-      `*, clubs(id, name), locations(name, address), event_rsvp(status, player_id)`
+      `*, clubs(id, name), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id)`
     )
     .eq("id", eventId)
     .single();
