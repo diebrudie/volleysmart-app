@@ -158,10 +158,73 @@ const EventDetail: React.FC = () => {
     onError: () => toast.error("Failed to delete event"),
   });
 
+  // Render the success dialog even during loading so it's visible immediately
+  const createdDialog = (
+    <Dialog
+      open={showCreatedDialog}
+      onOpenChange={(open) => {
+        if (!open) {
+          setShowCreatedDialog(false);
+          searchParams.delete("created");
+          setSearchParams(searchParams, { replace: true });
+        }
+      }}
+    >
+      <DialogContent className="max-w-sm mx-auto rounded-2xl">
+        <div className="flex flex-col items-center text-center gap-4 py-4">
+          <div className="rounded-xl bg-muted p-4">
+            <CalendarCheck className="h-10 w-10" />
+          </div>
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-xl">
+              Your event was created successfully
+            </DialogTitle>
+            <DialogDescription>
+              Modify details, share the event and get moving.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 w-full mt-2">
+            <Button
+              className="w-full gap-2"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: event?.title ?? "Event",
+                    url: window.location.href.split("?")[0],
+                  });
+                } else {
+                  navigator.clipboard.writeText(
+                    window.location.href.split("?")[0]
+                  );
+                  toast.success("Link copied to clipboard");
+                }
+              }}
+            >
+              <Share2 className="h-4 w-4" />
+              Share event
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setShowCreatedDialog(false);
+                searchParams.delete("created");
+                setSearchParams(searchParams, { replace: true });
+              }}
+            >
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading event...</p>
+        {createdDialog}
       </div>
     );
   }
@@ -173,6 +236,7 @@ const EventDetail: React.FC = () => {
         <Button variant="outline" onClick={() => navigate("/home")}>
           Go home
         </Button>
+        {createdDialog}
       </div>
     );
   }
@@ -404,66 +468,7 @@ const EventDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Success dialog (shown after event creation) */}
-      <Dialog
-        open={showCreatedDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowCreatedDialog(false);
-            // Remove ?created=true from URL
-            searchParams.delete("created");
-            setSearchParams(searchParams, { replace: true });
-          }
-        }}
-      >
-        <DialogContent className="max-w-sm mx-auto rounded-2xl">
-          <div className="flex flex-col items-center text-center gap-4 py-4">
-            <div className="rounded-xl bg-muted p-4">
-              <CalendarCheck className="h-10 w-10" />
-            </div>
-            <DialogHeader className="space-y-2">
-              <DialogTitle className="text-xl">
-                Your event was created successfully
-              </DialogTitle>
-              <DialogDescription>
-                Modify details, share the event and get moving.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col gap-2 w-full mt-2">
-              <Button
-                className="w-full gap-2"
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: event.title,
-                      url: window.location.href.split("?")[0],
-                    });
-                  } else {
-                    navigator.clipboard.writeText(
-                      window.location.href.split("?")[0]
-                    );
-                    toast.success("Link copied to clipboard");
-                  }
-                }}
-              >
-                <Share2 className="h-4 w-4" />
-                Share event
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setShowCreatedDialog(false);
-                  searchParams.delete("created");
-                  setSearchParams(searchParams, { replace: true });
-                }}
-              >
-                Dismiss
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {createdDialog}
 
       {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
