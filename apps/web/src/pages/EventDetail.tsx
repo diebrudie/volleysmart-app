@@ -625,15 +625,15 @@ const EventDetail: React.FC = () => {
       {/* Content */}
       <div className="px-4 -mt-12 max-w-2xl mx-auto w-full space-y-8">
         {/* Date badge + RSVP status row */}
-        <div className="flex items-center justify-between">
-          {/* Calendar badge — square, fully opaque */}
-          <div className="w-16 rounded-lg overflow-hidden shadow-md border border-border bg-background">
+        <div className="flex items-end justify-between">
+          {/* Calendar badge — square, fully opaque white */}
+          <div className="w-16 rounded-lg overflow-hidden shadow-md border border-border">
             <div className="bg-primary text-primary-foreground text-center py-1">
               <span className="text-xs font-semibold uppercase">
                 {format(parsedDate, "MMM")}
               </span>
             </div>
-            <div className="bg-background text-foreground text-center py-1.5">
+            <div className="bg-white dark:bg-card text-foreground text-center py-1.5">
               <span className="text-2xl font-bold leading-none block">
                 {format(parsedDate, "d")}
               </span>
@@ -643,7 +643,7 @@ const EventDetail: React.FC = () => {
             </div>
           </div>
           {currentRsvp && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground pb-1">
               <User className="h-4 w-4" />
               {currentRsvp.status === "attending"
                 ? "You're Going"
@@ -826,7 +826,13 @@ const EventDetail: React.FC = () => {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="secondary"
-                className="gap-1.5"
+                className={cn(
+                  "gap-1.5 w-[140px] justify-center",
+                  currentRsvp?.status === "attending" &&
+                    "bg-green-600 hover:bg-green-700 text-white",
+                  currentRsvp?.status === "declined" &&
+                    "bg-red-600 hover:bg-red-700 text-white"
+                )}
                 disabled={rsvpMutation.isPending}
               >
                 {rsvpLabel}
