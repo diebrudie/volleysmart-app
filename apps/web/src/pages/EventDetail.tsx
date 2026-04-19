@@ -9,11 +9,14 @@ import {
   MapPin,
   Pencil,
   Trash2,
-  Check,
-  X,
+  ChevronDown,
   User,
   CalendarCheck,
   Share2,
+  Swords,
+  Users,
+  Dumbbell,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,11 +45,14 @@ import {
 import { toast } from "sonner";
 
 // ─── Event type display config ──────────────────────────────────────────────
-const EVENT_TYPE_LABELS: Record<string, string> = {
-  friendly_game: "Friendly Game",
-  social_game: "Social Game",
-  training: "Training",
-  tournament: "Tournament",
+const EVENT_TYPE_CONFIG: Record<
+  string,
+  { label: string; icon: React.ReactNode }
+> = {
+  friendly_game: { label: "Friendly Game", icon: <Swords className="h-5 w-5" /> },
+  social_game: { label: "Social Game", icon: <Users className="h-5 w-5" /> },
+  training: { label: "Training", icon: <Dumbbell className="h-5 w-5" /> },
+  tournament: { label: "Tournament", icon: <Trophy className="h-5 w-5" /> },
 };
 
 // ─── RSVP attendee with profile info ─────────────────────────────────────────
@@ -251,6 +257,14 @@ const EventDetail: React.FC = () => {
   const endTime = event.end_time?.slice(0, 5);
   const attendingCount = attendingPlayerIds.length;
 
+  const rsvpLabel = currentRsvp
+    ? currentRsvp.status === "attending"
+      ? "Going"
+      : "Not Going"
+    : "RSVP";
+
+  const typeConfig = EVENT_TYPE_CONFIG[event.event_type];
+
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
       {/* Gradient hero */}
@@ -258,7 +272,7 @@ const EventDetail: React.FC = () => {
         {/* Top bar overlay */}
         <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)]">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/home")}
             className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -290,17 +304,24 @@ const EventDetail: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="px-4 -mt-6 max-w-2xl mx-auto w-full space-y-6">
+      <div className="px-4 -mt-12 max-w-2xl mx-auto w-full space-y-8">
         {/* Date badge + RSVP status */}
-        <div className="flex items-start justify-between">
-          <div className="flex flex-col items-center rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-center leading-tight">
-            <span className="text-xs font-semibold uppercase">
-              {format(parsedDate, "MMM")}
-            </span>
-            <span className="text-2xl font-bold">
-              {format(parsedDate, "d")}
-            </span>
-            <span className="text-xs">{format(parsedDate, "EEE")}</span>
+        <div className="flex items-center justify-between">
+          {/* Calendar badge — square 1:1 */}
+          <div className="w-16 rounded-lg overflow-hidden shadow-md">
+            <div className="bg-primary text-primary-foreground text-center py-1">
+              <span className="text-xs font-semibold uppercase">
+                {format(parsedDate, "MMM")}
+              </span>
+            </div>
+            <div className="bg-card text-card-foreground text-center py-1.5">
+              <span className="text-2xl font-bold leading-none block">
+                {format(parsedDate, "d")}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {format(parsedDate, "EEE")}
+              </span>
+            </div>
           </div>
           {currentRsvp && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -326,25 +347,22 @@ const EventDetail: React.FC = () => {
         </div>
 
         {/* Event type + Club row */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-10">
           <div>
             <p className="text-xs text-muted-foreground">Event Type</p>
+            <div className="flex items-center gap-1.5 font-semibold">
+              {typeConfig?.icon}
+              {typeConfig?.label ?? event.event_type}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Club</p>
             <p className="font-semibold">
-              {EVENT_TYPE_LABELS[event.event_type] ?? event.event_type}
+              {event.clubs?.name ?? (
+                <span className="text-muted-foreground">Personal</span>
+              )}
             </p>
           </div>
-          {event.clubs && (
-            <div>
-              <p className="text-xs text-muted-foreground">Club</p>
-              <p className="font-semibold">{event.clubs.name}</p>
-            </div>
-          )}
-          {!event.clubs && (
-            <div>
-              <p className="text-xs text-muted-foreground">Club</p>
-              <p className="font-semibold text-muted-foreground">Personal</p>
-            </div>
-          )}
         </div>
 
         {/* Details section */}
@@ -434,34 +452,45 @@ const EventDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Fixed bottom bar: RSVP + Start Game */}
+      {/* Fixed bottom bar: RSVP dropdown + Start Game */}
       <div className="fixed bottom-0 left-0 right-0 px-4 py-3 bg-background border-t pb-[max(env(safe-area-inset-bottom),12px)]">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
-          {/* RSVP Yes/No */}
-          <Button
-            variant={currentRsvp?.status === "attending" ? "default" : "outline"}
-            size="sm"
-            className="gap-1.5"
-            disabled={rsvpMutation.isPending}
-            onClick={() => rsvpMutation.mutate("attending")}
-          >
-            <Check className="h-4 w-4" />
-            Yes
-          </Button>
-          <Button
-            variant={currentRsvp?.status === "declined" ? "destructive" : "outline"}
-            size="sm"
-            className="gap-1.5"
-            disabled={rsvpMutation.isPending}
-            onClick={() => rsvpMutation.mutate("declined")}
-          >
-            <X className="h-4 w-4" />
-            No
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={
+                  currentRsvp?.status === "attending"
+                    ? "default"
+                    : currentRsvp?.status === "declined"
+                      ? "destructive"
+                      : "outline"
+                }
+                className="gap-1.5"
+                disabled={rsvpMutation.isPending}
+              >
+                {rsvpLabel}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                className="gap-2"
+                onClick={() => rsvpMutation.mutate("attending")}
+              >
+                Going
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2"
+                onClick={() => rsvpMutation.mutate("declined")}
+              >
+                Not Going
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Start Game (creator only, future feature) */}
           {isCreator && (
-            <Button className="flex-1 ml-2" disabled>
+            <Button className="flex-1" disabled>
               Start Game
             </Button>
           )}
