@@ -13,8 +13,9 @@ import {
   Lock,
   CalendarIcon,
   Check,
-  UserCircle,
   Bookmark,
+  LayoutGrid,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +52,7 @@ import {
 import {
   fetchEventTemplates,
   createEventTemplate,
+  deleteEventTemplate,
   type EventTemplate,
   type TemplateConfig,
 } from "@/integrations/supabase/eventTemplates";
@@ -120,6 +135,7 @@ interface FormState {
   title: string;
   date: Date | null;
   start_time: string;
+  end_time: string;
   location_id: string | null;
   rsvp_preset: number | null; // index into RSVP_PRESETS, or null for custom
   rsvp_custom_date: Date | null;
@@ -139,6 +155,7 @@ const INITIAL_STATE: FormState = {
   title: "",
   date: null,
   start_time: "18:00",
+  end_time: "20:00",
   location_id: null,
   rsvp_preset: 1, // "1 day before" default
   rsvp_custom_date: null,
@@ -176,7 +193,7 @@ const CreateEvent: React.FC = () => {
   const [step, setStep] = React.useState(1);
   const [form, setForm] = React.useState<FormState>(INITIAL_STATE);
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
-  const [rsvpPickerOpen, setRsvpPickerOpen] = React.useState(false);
+  const [templateSheetOpen, setTemplateSheetOpen] = React.useState(false);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -273,6 +290,7 @@ const CreateEvent: React.FC = () => {
       event_type: form.event_type,
       date: format(form.date, "yyyy-MM-dd"),
       start_time: form.start_time,
+      end_time: form.end_time,
       club_id: clubId,
       location_id: form.location_id,
       is_public: form.is_public,
@@ -310,6 +328,16 @@ const CreateEvent: React.FC = () => {
     toast.success(`Template "${template.name}" applied`);
   };
 
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      await deleteEventTemplate(templateId);
+      queryClient.invalidateQueries({ queryKey: ["event-templates"] });
+      toast.success("Template deleted");
+    } catch {
+      toast.error("Failed to delete template");
+    }
+  };
+
   const canGoNext = (): boolean => {
     if (step === 1) return !!form.event_type;
     if (step === 2)
@@ -317,7 +345,8 @@ const CreateEvent: React.FC = () => {
         !!form.club_id &&
         !!form.title.trim() &&
         !!form.date &&
-        !!form.start_time
+        !!form.start_time &&
+        !!form.end_time
       );
     if (step === 3) return true; // all step 3 fields are optional
     return false;
@@ -360,31 +389,9 @@ const CreateEvent: React.FC = () => {
       <div className="flex-1 overflow-y-auto px-4 pb-32 max-w-2xl mx-auto w-full">
         {/* ── Step 1: Event type + templates ── */}
         {step === 1 && (
-          <div className="space-y-5 pt-2">
-            {/* Templates */}
-            {templates.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Quick start from template
-                </Label>
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-                  {templates.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => applyTemplate(t)}
-                      className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
-                    >
-                      <Bookmark className="h-3.5 w-3.5 text-muted-foreground" />
-                      {t.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
+          <div className="space-y-3 pt-2">
             {/* Event type cards */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-3">
               {EVENT_TYPES.map((type) => {
                 const selected = form.event_type === type.value;
                 return (
@@ -393,7 +400,7 @@ const CreateEvent: React.FC = () => {
                     type="button"
                     onClick={() => set("event_type", type.value)}
                     className={cn(
-                      "relative flex flex-col gap-2 rounded-2xl border-2 p-5 text-left transition-all",
+                      "relative flex items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-all",
                       selected
                         ? type.color + " border-current"
                         : "border-border bg-card hover:bg-muted"
@@ -402,70 +409,96 @@ const CreateEvent: React.FC = () => {
                     {selected && (
                       <Check className="absolute top-3 right-3 h-4 w-4" />
                     )}
-                    {type.icon}
-                    <span className="font-semibold">{type.label}</span>
-                    <span className="text-sm opacity-70">{type.description}</span>
+                    <span className="shrink-0">{type.icon}</span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">{type.label}</span>
+                      <span className="text-xs opacity-70">{type.description}</span>
+                    </div>
                   </button>
                 );
               })}
             </div>
+
+            {/* Templates button */}
+            <button
+              type="button"
+              onClick={() => setTemplateSheetOpen(true)}
+              className="w-full flex items-center gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-3 text-sm font-medium hover:bg-muted transition-colors"
+            >
+              <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+              Templates
+            </button>
+
+            {/* Templates bottom drawer */}
+            <Sheet open={templateSheetOpen} onOpenChange={setTemplateSheetOpen}>
+              <SheetContent side="bottom" className="rounded-t-2xl">
+                <SheetHeader>
+                  <SheetTitle>Templates</SheetTitle>
+                </SheetHeader>
+                <div className="overflow-y-auto mt-4 max-h-[50vh]">
+                  {templates.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-6">
+                      No templates yet. Create an event and save it as a template.
+                    </p>
+                  ) : (
+                    <div className="space-y-1">
+                      {templates.map((t) => (
+                        <div
+                          key={t.id}
+                          className="flex items-center justify-between px-2 py-3 rounded-lg hover:bg-muted"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              applyTemplate(t);
+                              setTemplateSheetOpen(false);
+                            }}
+                            className="flex-1 text-left text-sm font-medium"
+                          >
+                            {t.name}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTemplate(t.id)}
+                            className="p-1.5 rounded-md hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         )}
 
         {/* ── Step 2: Club + Details ── */}
         {step === 2 && (
           <div className="space-y-5 pt-2">
-            {/* Club / No-club selection */}
+            {/* Club dropdown */}
             <div className="space-y-1.5">
               <Label>Club</Label>
-              <div className="flex flex-col gap-2">
-                {/* No-club option */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    set("club_id", NO_CLUB);
-                    set("location_id", null);
-                  }}
-                  className={cn(
-                    "flex items-center justify-between rounded-xl border px-4 py-3 text-sm text-left transition-colors",
-                    form.club_id === NO_CLUB
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <UserCircle className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">No club — personal event</span>
-                  </div>
-                  {form.club_id === NO_CLUB && (
-                    <Check className="h-4 w-4 text-primary" />
-                  )}
-                </button>
-
-                {/* Club options */}
-                {userClubs.map((club) => {
-                  const selected = form.club_id === club.id;
-                  return (
-                    <button
-                      key={club.id}
-                      type="button"
-                      onClick={() => {
-                        set("club_id", club.id);
-                        set("location_id", null);
-                      }}
-                      className={cn(
-                        "flex items-center justify-between rounded-xl border px-4 py-3 text-sm text-left transition-colors",
-                        selected
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted"
-                      )}
-                    >
-                      <span className="font-medium">{club.name}</span>
-                      {selected && <Check className="h-4 w-4 text-primary" />}
-                    </button>
-                  );
-                })}
-              </div>
+              <Select
+                value={form.club_id || NO_CLUB}
+                onValueChange={(val) => {
+                  set("club_id", val);
+                  set("location_id", null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CLUB}>No club — personal event</SelectItem>
+                  {userClubs.map((club) => (
+                    <SelectItem key={club.id} value={club.id}>
+                      {club.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* For tournaments: additional clubs */}
@@ -514,7 +547,7 @@ const CreateEvent: React.FC = () => {
 
             {/* Title */}
             <div className="space-y-1.5">
-              <Label htmlFor="title">Event title *</Label>
+              <Label htmlFor="title">Event name *</Label>
               <Input
                 id="title"
                 placeholder="e.g. Saturday Friendly"
@@ -554,16 +587,26 @@ const CreateEvent: React.FC = () => {
               </Popover>
             </div>
 
-            {/* Start time */}
-            <div className="space-y-1.5">
-              <Label htmlFor="start_time">Start time *</Label>
-              <Input
-                id="start_time"
-                type="time"
-                value={form.start_time}
-                onChange={(e) => set("start_time", e.target.value)}
-                className="w-full"
-              />
+            {/* Start time + End time */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="start_time">Start time *</Label>
+                <Input
+                  id="start_time"
+                  type="time"
+                  value={form.start_time}
+                  onChange={(e) => set("start_time", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="end_time">End time *</Label>
+                <Input
+                  id="end_time"
+                  type="time"
+                  value={form.end_time}
+                  onChange={(e) => set("end_time", e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Location */}
@@ -576,68 +619,40 @@ const CreateEvent: React.FC = () => {
             {/* RSVP deadline */}
             <div className="space-y-2">
               <Label>RSVP deadline</Label>
-              <div className="flex flex-wrap gap-2">
-                {RSVP_PRESETS.map((preset, i) => {
-                  const isCustom = preset.label === "Custom";
-                  const selected = isCustom
-                    ? form.rsvp_preset === null
-                    : form.rsvp_preset === i;
-                  return (
-                    <button
+              <Select
+                value={form.rsvp_preset === null ? "custom" : String(form.rsvp_preset)}
+                onValueChange={(val) => {
+                  if (val === "custom") {
+                    set("rsvp_preset", null);
+                  } else {
+                    set("rsvp_preset", parseInt(val, 10));
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RSVP_PRESETS.map((preset, i) => (
+                    <SelectItem
                       key={preset.label}
-                      type="button"
-                      onClick={() => {
-                        if (isCustom) {
-                          set("rsvp_preset", null);
-                          setRsvpPickerOpen(true);
-                        } else {
-                          set("rsvp_preset", i);
-                        }
-                      }}
-                      className={cn(
-                        "px-3 py-1.5 rounded-full border text-sm font-medium transition-colors",
-                        selected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border hover:bg-muted"
-                      )}
+                      value={preset.label === "Custom" ? "custom" : String(i)}
                     >
-                      {isCustom && form.rsvp_custom_date
-                        ? format(form.rsvp_custom_date, "MMM d")
-                        : preset.label}
-                    </button>
-                  );
-                })}
-              </div>
-              {/* Custom date picker */}
+                      {preset.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* Inline calendar when Custom is selected */}
               {form.rsvp_preset === null && (
-                <Popover open={rsvpPickerOpen} onOpenChange={setRsvpPickerOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(
-                        "flex items-center gap-2 rounded-md border px-3 py-2 text-sm",
-                        !form.rsvp_custom_date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                      {form.rsvp_custom_date
-                        ? format(form.rsvp_custom_date, "PPP")
-                        : "Pick deadline date"}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={form.rsvp_custom_date ?? undefined}
-                      onSelect={(d) => {
-                        set("rsvp_custom_date", d ?? null);
-                        setRsvpPickerOpen(false);
-                      }}
-                      disabled={(d) => isBefore(d, today)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <div className="rounded-md border p-2">
+                  <Calendar
+                    mode="single"
+                    selected={form.rsvp_custom_date ?? undefined}
+                    onSelect={(d) => set("rsvp_custom_date", d ?? null)}
+                    disabled={(d) => isBefore(d, today)}
+                  />
+                </div>
               )}
             </div>
           </div>

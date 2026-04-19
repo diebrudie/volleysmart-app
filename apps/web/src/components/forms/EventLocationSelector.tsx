@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Search, Pencil, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,7 @@ export const EventLocationSelector = ({
   const [latLng, setLatLng] = useState<[number, number] | null>(null);
   const [originalAddress, setOriginalAddress] = useState<string | null>(null);
 
+  const [addressEditing, setAddressEditing] = useState(false);
   const [showNameDropdown, setShowNameDropdown] = useState(false);
   const [showAddressDropdown, setShowAddressDropdown] = useState(false);
   const [mapboxResults, setMapboxResults] = useState<MapboxFeature[]>([]);
@@ -179,6 +180,7 @@ export const EventLocationSelector = ({
     setOriginalAddress(loc.address ?? "");
     setSelectedLocationId(loc.id);
     setLatLng(null);
+    setAddressEditing(false);
     setShowNameDropdown(false);
     onValueChange(loc.id);
   };
@@ -305,9 +307,20 @@ export const EventLocationSelector = ({
       val !== locations.find((l) => l.id === selectedLocationId)?.name
     ) {
       setSelectedLocationId(null);
+      setAddressEditing(false);
       onValueChange(null);
     }
     setShowNameDropdown(true);
+  };
+
+  const clearLocation = () => {
+    setLocationName("");
+    setAddress("");
+    setOriginalAddress(null);
+    setSelectedLocationId(null);
+    setLatLng(null);
+    setAddressEditing(false);
+    onValueChange(null);
   };
 
   const handleAddressChange = (val: string) => {
@@ -321,7 +334,7 @@ export const EventLocationSelector = ({
     <div className="space-y-3">
       {/* Location Name */}
       <div className="space-y-1.5" ref={nameRef}>
-        <Label className="text-sm">Location Name</Label>
+        <Label className="text-sm">Location Name *</Label>
         <div className="relative">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -330,16 +343,29 @@ export const EventLocationSelector = ({
             onChange={(e) => handleNameChange(e.target.value)}
             onFocus={() => setShowNameDropdown(true)}
             onBlur={() => {
-              // Delay to allow click on dropdown items
               setTimeout(() => {
                 setShowNameDropdown(false);
                 commitLocation();
               }, 200);
             }}
-            className="pl-10"
+            readOnly={!!selectedLocationId}
+            className={cn(
+              "pl-10",
+              selectedLocationId && "pr-10 bg-muted cursor-default"
+            )}
           />
+          {/* Clear button when a saved location is selected */}
+          {selectedLocationId && (
+            <button
+              type="button"
+              onClick={clearLocation}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-accent"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
           {/* Saved locations dropdown */}
-          {showNameDropdown && filteredLocations.length > 0 && (
+          {showNameDropdown && !selectedLocationId && filteredLocations.length > 0 && (
             <div className="absolute z-50 top-full mt-1 w-full rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">
               {filteredLocations.map((loc) => (
                 <button
@@ -370,21 +396,46 @@ export const EventLocationSelector = ({
         <Label className="text-sm">Address</Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search for an address..."
-            value={address}
-            onChange={(e) => handleAddressChange(e.target.value)}
-            onFocus={() => {
-              if (mapboxResults.length > 0) setShowAddressDropdown(true);
-            }}
-            onBlur={() => {
-              setTimeout(() => {
-                setShowAddressDropdown(false);
-                commitLocation();
-              }, 200);
-            }}
-            className="pl-10"
-          />
+          {(() => {
+            // Address is disabled when: no name entered, OR saved location selected and not editing
+            const hasName = !!locationName.trim();
+            const isLocked = !!selectedLocationId && !addressEditing;
+            const isDisabled = !hasName || isLocked;
+            return (
+              <>
+                <Input
+                  placeholder="Search for an address..."
+                  value={address}
+                  onChange={(e) => handleAddressChange(e.target.value)}
+                  onFocus={() => {
+                    if (mapboxResults.length > 0) setShowAddressDropdown(true);
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setShowAddressDropdown(false);
+                      commitLocation();
+                    }, 200);
+                  }}
+                  disabled={isDisabled}
+                  className={cn(
+                    "pl-10",
+                    isDisabled && "bg-muted cursor-default",
+                    isLocked && "pr-10"
+                  )}
+                />
+                {/* Pencil icon to enable editing on locked address */}
+                {isLocked && (
+                  <button
+                    type="button"
+                    onClick={() => setAddressEditing(true)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-accent"
+                  >
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                )}
+              </>
+            );
+          })()}
           {/* Mapbox results dropdown */}
           {showAddressDropdown && mapboxResults.length > 0 && (
             <div className="absolute z-50 top-full mt-1 w-full rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">

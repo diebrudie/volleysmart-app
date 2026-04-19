@@ -131,6 +131,7 @@ export interface CreateEventInput {
   event_type: EventType;
   date: string; // YYYY-MM-DD
   start_time: string; // HH:MM
+  end_time: string; // HH:MM
   club_id: string | null;
   location_id?: string | null;
   is_public: boolean;
@@ -153,6 +154,7 @@ export async function createPlannedEvent(
       event_type: input.event_type,
       date: input.date,
       start_time: `${input.start_time}:00`, // ensure HH:MM:SS
+      end_time: `${input.end_time}:00`, // ensure HH:MM:SS
       club_id: input.club_id,
       created_by: userId,
       location_id: input.location_id ?? null,
