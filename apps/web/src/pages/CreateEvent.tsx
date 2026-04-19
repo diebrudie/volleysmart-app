@@ -16,6 +16,7 @@ import {
   Bookmark,
   LayoutGrid,
   Trash2,
+  CalendarCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -194,6 +202,8 @@ const CreateEvent: React.FC = () => {
   const [form, setForm] = React.useState<FormState>(INITIAL_STATE);
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
   const [templateSheetOpen, setTemplateSheetOpen] = React.useState(false);
+  const [rsvpCalendarOpen, setRsvpCalendarOpen] = React.useState(false);
+  const [createdEventId, setCreatedEventId] = React.useState<string | null>(null);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -243,6 +253,7 @@ const CreateEvent: React.FC = () => {
             event_type: input.event_type,
             title: input.title,
             start_time: input.start_time,
+            end_time: input.end_time,
             location_id: input.location_id ?? undefined,
             max_players: input.max_players,
             is_public: input.is_public,
@@ -261,11 +272,10 @@ const CreateEvent: React.FC = () => {
 
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
       queryClient.invalidateQueries({ queryKey: ["event-templates"] });
-      toast.success("Event created!");
-      navigate("/home");
+      setCreatedEventId(result.id);
     },
     onError: () => {
       toast.error("Failed to create event. Please try again.");
@@ -314,6 +324,7 @@ const CreateEvent: React.FC = () => {
       event_type: c.event_type ?? prev.event_type,
       title: c.title ?? prev.title,
       start_time: c.start_time ?? prev.start_time,
+      end_time: c.end_time ?? prev.end_time,
       location_id: c.location_id ?? prev.location_id,
       max_players: c.max_players != null ? String(c.max_players) : prev.max_players,
       is_public: c.is_public ?? prev.is_public,
@@ -423,9 +434,9 @@ const CreateEvent: React.FC = () => {
             <button
               type="button"
               onClick={() => setTemplateSheetOpen(true)}
-              className="w-full flex items-center gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-3 text-sm font-medium hover:bg-muted transition-colors"
+              className="w-full flex items-center gap-3 rounded-2xl border-2 border-border bg-muted/50 px-4 py-3 text-left font-semibold hover:bg-muted transition-colors"
             >
-              <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+              <LayoutGrid className="h-6 w-6 text-muted-foreground" />
               Templates
             </button>
 
@@ -643,16 +654,38 @@ const CreateEvent: React.FC = () => {
                   ))}
                 </SelectContent>
               </Select>
-              {/* Inline calendar when Custom is selected */}
+              {/* Custom date: toggle button + calendar */}
               {form.rsvp_preset === null && (
-                <div className="rounded-md border p-2">
-                  <Calendar
-                    mode="single"
-                    selected={form.rsvp_custom_date ?? undefined}
-                    onSelect={(d) => set("rsvp_custom_date", d ?? null)}
-                    disabled={(d) => isBefore(d, today)}
-                  />
-                </div>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setRsvpCalendarOpen((o) => !o)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md border px-3 py-2 text-sm w-full",
+                      form.rsvp_custom_date
+                        ? "text-foreground"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                    {form.rsvp_custom_date
+                      ? format(form.rsvp_custom_date, "PPP")
+                      : "Pick deadline date"}
+                  </button>
+                  {rsvpCalendarOpen && (
+                    <div className="rounded-md border p-2">
+                      <Calendar
+                        mode="single"
+                        selected={form.rsvp_custom_date ?? undefined}
+                        onSelect={(d) => {
+                          set("rsvp_custom_date", d ?? null);
+                          setRsvpCalendarOpen(false);
+                        }}
+                        disabled={(d) => isBefore(d, today)}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -773,6 +806,51 @@ const CreateEvent: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Success dialog */}
+      <Dialog
+        open={!!createdEventId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreatedEventId(null);
+            navigate("/home");
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm mx-auto">
+          <div className="flex flex-col items-center text-center gap-4 py-4">
+            <div className="rounded-xl bg-muted p-4">
+              <CalendarCheck className="h-10 w-10" />
+            </div>
+            <DialogHeader className="space-y-2">
+              <DialogTitle className="text-xl">
+                Your event was created successfully
+              </DialogTitle>
+              <DialogDescription>
+                Modify details, share the event and get moving.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-2 w-full mt-2">
+              <Button
+                className="w-full"
+                onClick={() => navigate(`/events/${createdEventId}`)}
+              >
+                View event
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setCreatedEventId(null);
+                  navigate("/home");
+                }}
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

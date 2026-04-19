@@ -17,6 +17,7 @@ export interface PlannedEvent {
   event_type: EventType;
   date: string; // YYYY-MM-DD
   start_time: string; // HH:MM:SS
+  end_time: string | null; // HH:MM:SS
   location_id: string | null;
   is_public: boolean;
   max_players: number | null;
@@ -123,6 +124,30 @@ export async function upsertRsvp(
     },
     { onConflict: "event_id,player_id" }
   );
+  if (error) throw error;
+}
+
+/** Fetch a single planned event by ID with full details. */
+export async function fetchSingleEvent(
+  eventId: string
+): Promise<PlannedEvent> {
+  const { data, error } = await supabase
+    .from("planned_events")
+    .select(
+      `*, clubs(id, name), locations(name, address), event_rsvp(status, player_id)`
+    )
+    .eq("id", eventId)
+    .single();
+  if (error) throw error;
+  return data as PlannedEvent;
+}
+
+/** Delete a planned event. */
+export async function deletePlannedEvent(eventId: string): Promise<void> {
+  const { error } = await supabase
+    .from("planned_events")
+    .delete()
+    .eq("id", eventId);
   if (error) throw error;
 }
 

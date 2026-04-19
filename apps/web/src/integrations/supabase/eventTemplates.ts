@@ -5,6 +5,7 @@ export interface TemplateConfig {
   event_type?: EventType;
   title?: string;
   start_time?: string;
+  end_time?: string;
   location_id?: string;
   max_players?: number;
   is_public?: boolean;
