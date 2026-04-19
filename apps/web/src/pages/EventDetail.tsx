@@ -69,15 +69,12 @@ import { toast } from "sonner";
 // ─── Event type display config ──────────────────────────────────────────────
 const EVENT_TYPE_CONFIG: Record<
   string,
-  { label: string; icon: React.ReactNode }
+  { label: string; Icon: React.FC<{ className?: string }> }
 > = {
-  friendly_game: {
-    label: "Friendly Game",
-    icon: <Swords className="h-5 w-5" />,
-  },
-  social_game: { label: "Social Game", icon: <Users className="h-5 w-5" /> },
-  training: { label: "Training", icon: <Dumbbell className="h-5 w-5" /> },
-  tournament: { label: "Tournament", icon: <Trophy className="h-5 w-5" /> },
+  friendly_game: { label: "Friendly Game", Icon: Swords },
+  social_game: { label: "Social Game", Icon: Users },
+  training: { label: "Training", Icon: Dumbbell },
+  tournament: { label: "Tournament", Icon: Trophy },
 };
 
 const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] = [
@@ -198,7 +195,10 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
                 {EVENT_TYPE_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     <div className="flex items-center gap-2">
-                      {EVENT_TYPE_CONFIG[opt.value]?.icon}
+                      {(() => {
+                        const cfg = EVENT_TYPE_CONFIG[opt.value];
+                        return cfg ? <cfg.Icon className="h-4 w-4" /> : null;
+                      })()}
                       {opt.label}
                     </div>
                   </SelectItem>
@@ -624,10 +624,10 @@ const EventDetail: React.FC = () => {
 
       {/* Content */}
       <div className="px-4 -mt-12 max-w-2xl mx-auto w-full space-y-8">
-        {/* Date badge */}
-        <div>
-          {/* Calendar badge — square, white bg so gradient doesn't bleed */}
-          <div className="w-16 rounded-lg overflow-hidden shadow-md bg-background">
+        {/* Date badge + RSVP status row */}
+        <div className="flex items-center justify-between">
+          {/* Calendar badge — square, fully opaque */}
+          <div className="w-16 rounded-lg overflow-hidden shadow-md border border-border bg-background">
             <div className="bg-primary text-primary-foreground text-center py-1">
               <span className="text-xs font-semibold uppercase">
                 {format(parsedDate, "MMM")}
@@ -642,18 +642,18 @@ const EventDetail: React.FC = () => {
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Title + RSVP status */}
-        <div>
           {currentRsvp && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
               {currentRsvp.status === "attending"
                 ? "You're Going"
                 : "Not Going"}
             </div>
           )}
+        </div>
+
+        {/* Title */}
+        <div>
           <h1 className="text-2xl font-bold">{event.title}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {formattedDate} at {startTime}
@@ -665,34 +665,35 @@ const EventDetail: React.FC = () => {
           )}
         </div>
 
-        {/* Event type row (no Club here anymore) */}
-        <div>
-          <p className="text-xs text-muted-foreground">Event Type</p>
-          <div className="flex items-center gap-1.5 font-semibold">
-            {typeConfig?.icon}
-            {typeConfig?.label ?? event.event_type}
-          </div>
-        </div>
-
         {/* Details section */}
         <div className="space-y-4">
           <h2 className="text-lg font-bold">Details</h2>
 
+          {/* Event type */}
+          <div className="flex items-start gap-3">
+            {typeConfig ? (
+              <typeConfig.Icon className="h-5 w-5 text-muted-foreground mt-0.5" />
+            ) : (
+              <Swords className="h-5 w-5 text-muted-foreground mt-0.5" />
+            )}
+            <p className="text-sm">
+              {typeConfig?.label ?? event.event_type}
+            </p>
+          </div>
+
           {/* Date + time */}
           <div className="flex items-start gap-3">
             <CalendarIcon className="h-5 w-5 text-muted-foreground mt-0.5" />
-            <div>
-              <p className="text-sm">
-                {formattedDate}
-                {startTime && (
-                  <>
-                    {" "}
-                    at {startTime}
-                    {endTime && ` - ${endTime}`}
-                  </>
-                )}
-              </p>
-            </div>
+            <p className="text-sm">
+              {formattedDate}
+              {startTime && (
+                <>
+                  {" "}
+                  at {startTime}
+                  {endTime && ` - ${endTime}`}
+                </>
+              )}
+            </p>
           </div>
 
           {/* Location */}
@@ -824,13 +825,7 @@ const EventDetail: React.FC = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant={
-                  currentRsvp?.status === "attending"
-                    ? "default"
-                    : currentRsvp?.status === "declined"
-                      ? "destructive"
-                      : "outline"
-                }
+                variant="secondary"
                 className="gap-1.5"
                 disabled={rsvpMutation.isPending}
               >
