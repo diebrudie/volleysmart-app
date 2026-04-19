@@ -27,7 +27,7 @@ export interface PlannedEvent {
   status: EventStatus;
   created_at: string;
   updated_at: string;
-  clubs?: { id: string; name: string } | null;
+  clubs?: { id: string; name: string; image_url?: string | null } | null;
   locations?: { name: string; address?: string | null } | null;
   event_rsvp?: Array<{ status: RsvpStatus; player_id: string }>;
 }
@@ -51,7 +51,7 @@ export async function fetchUpcomingEvents(
 
   const selectFields = `
     *,
-    clubs!planned_events_club_id_fkey(id, name),
+    clubs!planned_events_club_id_fkey(id, name, image_url),
     locations!planned_events_location_id_fkey(name, address),
     event_rsvp(status, player_id)
   `;
@@ -134,7 +134,7 @@ export async function fetchSingleEvent(
   const { data, error } = await supabase
     .from("planned_events")
     .select(
-      `*, clubs!planned_events_club_id_fkey(id, name), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id)`
+      `*, clubs!planned_events_club_id_fkey(id, name, image_url), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id)`
     )
     .eq("id", eventId)
     .single();
@@ -205,4 +205,40 @@ export async function createPlannedEvent(
   }
 
   return event as { id: string };
+}
+
+export interface UpdateEventInput {
+  title?: string;
+  event_type?: EventType;
+  date?: string;
+  start_time?: string; // HH:MM
+  end_time?: string; // HH:MM
+  location_id?: string | null;
+  is_public?: boolean;
+  max_players?: number | null;
+  notes?: string | null;
+}
+
+/** Update an existing planned event. */
+export async function updatePlannedEvent(
+  eventId: string,
+  input: UpdateEventInput
+): Promise<void> {
+  const updates: Record<string, unknown> = {};
+  if (input.title !== undefined) updates.title = input.title;
+  if (input.event_type !== undefined) updates.event_type = input.event_type;
+  if (input.date !== undefined) updates.date = input.date;
+  if (input.start_time !== undefined)
+    updates.start_time = `${input.start_time}:00`;
+  if (input.end_time !== undefined) updates.end_time = `${input.end_time}:00`;
+  if (input.location_id !== undefined) updates.location_id = input.location_id;
+  if (input.is_public !== undefined) updates.is_public = input.is_public;
+  if (input.max_players !== undefined) updates.max_players = input.max_players;
+  if (input.notes !== undefined) updates.notes = input.notes;
+
+  const { error } = await supabase
+    .from("planned_events")
+    .update(updates)
+    .eq("id", eventId);
+  if (error) throw error;
 }

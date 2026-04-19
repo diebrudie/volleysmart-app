@@ -17,8 +17,13 @@ import {
   Users,
   Dumbbell,
   Trophy,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +37,19 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,9 +57,13 @@ import {
   fetchSingleEvent,
   deletePlannedEvent,
   upsertRsvp,
+  updatePlannedEvent,
   type PlannedEvent,
   type RsvpStatus,
+  type EventType,
+  type UpdateEventInput,
 } from "@/integrations/supabase/plannedEvents";
+import { EventLocationSelector } from "@/components/forms/EventLocationSelector";
 import { toast } from "sonner";
 
 // ─── Event type display config ──────────────────────────────────────────────
@@ -49,11 +71,21 @@ const EVENT_TYPE_CONFIG: Record<
   string,
   { label: string; icon: React.ReactNode }
 > = {
-  friendly_game: { label: "Friendly Game", icon: <Swords className="h-5 w-5" /> },
+  friendly_game: {
+    label: "Friendly Game",
+    icon: <Swords className="h-5 w-5" />,
+  },
   social_game: { label: "Social Game", icon: <Users className="h-5 w-5" /> },
   training: { label: "Training", icon: <Dumbbell className="h-5 w-5" /> },
   tournament: { label: "Tournament", icon: <Trophy className="h-5 w-5" /> },
 };
+
+const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] = [
+  { value: "friendly_game", label: "Friendly Game" },
+  { value: "social_game", label: "Social Game" },
+  { value: "training", label: "Training" },
+  { value: "tournament", label: "Tournament" },
+];
 
 // ─── RSVP attendee with profile info ─────────────────────────────────────────
 interface Attendee {
@@ -65,6 +97,222 @@ interface Attendee {
   primary_position: string | null;
 }
 
+// ─── Edit Event Sheet ────────────────────────────────────────────────────────
+interface EditEventSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  event: PlannedEvent;
+  onSave: (input: UpdateEventInput) => void;
+  saving: boolean;
+}
+
+const EditEventSheet: React.FC<EditEventSheetProps> = ({
+  open,
+  onOpenChange,
+  event,
+  onSave,
+  saving,
+}) => {
+  const [title, setTitle] = React.useState(event.title);
+  const [eventType, setEventType] = React.useState<EventType>(
+    event.event_type
+  );
+  const [date, setDate] = React.useState(event.date);
+  const [startTime, setStartTime] = React.useState(
+    event.start_time?.slice(0, 5) ?? "18:00"
+  );
+  const [endTime, setEndTime] = React.useState(
+    event.end_time?.slice(0, 5) ?? "20:00"
+  );
+  const [locationId, setLocationId] = React.useState<string | null>(
+    event.location_id
+  );
+  const [isPublic, setIsPublic] = React.useState(event.is_public);
+  const [maxPlayers, setMaxPlayers] = React.useState(
+    event.max_players?.toString() ?? ""
+  );
+  const [notes, setNotes] = React.useState(event.notes ?? "");
+
+  // Reset form when event changes or sheet opens
+  React.useEffect(() => {
+    if (open) {
+      setTitle(event.title);
+      setEventType(event.event_type);
+      setDate(event.date);
+      setStartTime(event.start_time?.slice(0, 5) ?? "18:00");
+      setEndTime(event.end_time?.slice(0, 5) ?? "20:00");
+      setLocationId(event.location_id);
+      setIsPublic(event.is_public);
+      setMaxPlayers(event.max_players?.toString() ?? "");
+      setNotes(event.notes ?? "");
+    }
+  }, [open, event]);
+
+  const handleSubmit = () => {
+    if (!title.trim()) {
+      toast.error("Event name is required");
+      return;
+    }
+    onSave({
+      title: title.trim(),
+      event_type: eventType,
+      date,
+      start_time: startTime,
+      end_time: endTime,
+      location_id: locationId,
+      is_public: isPublic,
+      max_players: maxPlayers ? parseInt(maxPlayers, 10) : null,
+      notes: notes.trim() || null,
+    });
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="h-[95dvh] flex flex-col p-0">
+        <SheetHeader className="px-4 pt-4 pb-2 border-b">
+          <SheetTitle>Edit Event</SheetTitle>
+        </SheetHeader>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+          {/* Event Name */}
+          <div className="space-y-1.5">
+            <Label>Event Name</Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Event name"
+            />
+          </div>
+
+          {/* Event Type */}
+          <div className="space-y-1.5">
+            <Label>Event Type</Label>
+            <Select
+              value={eventType}
+              onValueChange={(v) => setEventType(v as EventType)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {EVENT_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    <div className="flex items-center gap-2">
+                      {EVENT_TYPE_CONFIG[opt.value]?.icon}
+                      {opt.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date */}
+          <div className="space-y-1.5">
+            <Label>Date</Label>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </div>
+
+          {/* Start + End time */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Start Time</Label>
+              <Input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>End Time</Label>
+              <Input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Location */}
+          <EventLocationSelector
+            clubId={event.club_id}
+            value={locationId}
+            onValueChange={setLocationId}
+          />
+
+          {/* Max Players */}
+          <div className="space-y-1.5">
+            <Label>Max Players</Label>
+            <Input
+              type="number"
+              min="2"
+              max="100"
+              value={maxPlayers}
+              onChange={(e) => setMaxPlayers(e.target.value)}
+              placeholder="No limit"
+            />
+          </div>
+
+          {/* Visibility */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {isPublic ? (
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              )}
+              <div>
+                <p className="text-sm font-medium">
+                  {isPublic ? "Public Event" : "Club Members Only"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isPublic
+                    ? "Anyone can see this event"
+                    : "Only club members can see this"}
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsPublic(!isPublic)}
+            >
+              {isPublic ? "Make Private" : "Make Public"}
+            </Button>
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-1.5">
+            <Label>Description / Notes</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add a description or notes..."
+              rows={3}
+            />
+          </div>
+        </div>
+
+        {/* Fixed Save button */}
+        <div className="px-4 py-3 border-t pb-[max(env(safe-area-inset-bottom),12px)]">
+          <Button
+            className="w-full"
+            onClick={handleSubmit}
+            disabled={saving || !title.trim()}
+          >
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 const EventDetail: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -74,6 +322,7 @@ const EventDetail: React.FC = () => {
   const { user } = useAuth();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [editSheetOpen, setEditSheetOpen] = React.useState(false);
   const [showCreatedDialog, setShowCreatedDialog] = React.useState(
     searchParams.get("created") === "true"
   );
@@ -102,6 +351,37 @@ const EventDetail: React.FC = () => {
       return data;
     },
     enabled: !!user?.id,
+  });
+
+  // Fetch creator profile
+  const { data: creatorProfile } = useQuery({
+    queryKey: ["creator-profile", event?.created_by],
+    queryFn: async () => {
+      if (!event?.created_by) return null;
+      const { data } = await supabase
+        .from("players")
+        .select("first_name, last_name, image_url")
+        .eq("user_id", event.created_by)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!event?.created_by,
+  });
+
+  // Fetch club member count
+  const { data: memberCount } = useQuery({
+    queryKey: ["club_member_count", event?.club_id],
+    queryFn: async () => {
+      if (!event?.club_id) return 0;
+      const { count, error: err } = await supabase
+        .from("club_members")
+        .select("*", { count: "exact", head: true })
+        .eq("club_id", event.club_id)
+        .eq("is_active", true);
+      if (err) return 0;
+      return count ?? 0;
+    },
+    enabled: !!event?.club_id,
   });
 
   // Fetch attendee profiles (players who RSVPed)
@@ -151,6 +431,19 @@ const EventDetail: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
     },
     onError: () => toast.error("Failed to update RSVP"),
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: (input: UpdateEventInput) =>
+      updatePlannedEvent(eventId!, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
+      setEditSheetOpen(false);
+      toast.success("Event updated");
+    },
+    onError: () => toast.error("Failed to update event"),
   });
 
   // Delete mutation
@@ -265,6 +558,10 @@ const EventDetail: React.FC = () => {
 
   const typeConfig = EVENT_TYPE_CONFIG[event.event_type];
 
+  const creatorName = creatorProfile
+    ? `${creatorProfile.first_name} ${creatorProfile.last_name}`
+    : "Unknown";
+
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
       {/* Gradient hero */}
@@ -286,7 +583,29 @@ const EventDetail: React.FC = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled className="gap-2">
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: event.title,
+                        url: window.location.href.split("?")[0],
+                      });
+                    } else {
+                      navigator.clipboard.writeText(
+                        window.location.href.split("?")[0]
+                      );
+                      toast.success("Link copied to clipboard");
+                    }
+                  }}
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share event
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => setEditSheetOpen(true)}
+                >
                   <Pencil className="h-4 w-4" />
                   Edit event
                 </DropdownMenuItem>
@@ -305,16 +624,16 @@ const EventDetail: React.FC = () => {
 
       {/* Content */}
       <div className="px-4 -mt-12 max-w-2xl mx-auto w-full space-y-8">
-        {/* Date badge + RSVP status */}
-        <div className="flex items-center justify-between">
-          {/* Calendar badge — square 1:1 */}
-          <div className="w-16 rounded-lg overflow-hidden shadow-md">
+        {/* Date badge */}
+        <div>
+          {/* Calendar badge — square, white bg so gradient doesn't bleed */}
+          <div className="w-16 rounded-lg overflow-hidden shadow-md bg-background">
             <div className="bg-primary text-primary-foreground text-center py-1">
               <span className="text-xs font-semibold uppercase">
                 {format(parsedDate, "MMM")}
               </span>
             </div>
-            <div className="bg-card text-card-foreground text-center py-1.5">
+            <div className="bg-background text-foreground text-center py-1.5">
               <span className="text-2xl font-bold leading-none block">
                 {format(parsedDate, "d")}
               </span>
@@ -323,18 +642,18 @@ const EventDetail: React.FC = () => {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Title + RSVP status */}
+        <div>
           {currentRsvp && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
               <User className="h-4 w-4" />
               {currentRsvp.status === "attending"
                 ? "You're Going"
                 : "Not Going"}
             </div>
           )}
-        </div>
-
-        {/* Title */}
-        <div>
           <h1 className="text-2xl font-bold">{event.title}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {formattedDate} at {startTime}
@@ -346,22 +665,12 @@ const EventDetail: React.FC = () => {
           )}
         </div>
 
-        {/* Event type + Club row */}
-        <div className="flex items-center gap-10">
-          <div>
-            <p className="text-xs text-muted-foreground">Event Type</p>
-            <div className="flex items-center gap-1.5 font-semibold">
-              {typeConfig?.icon}
-              {typeConfig?.label ?? event.event_type}
-            </div>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Club</p>
-            <p className="font-semibold">
-              {event.clubs?.name ?? (
-                <span className="text-muted-foreground">Personal</span>
-              )}
-            </p>
+        {/* Event type row (no Club here anymore) */}
+        <div>
+          <p className="text-xs text-muted-foreground">Event Type</p>
+          <div className="flex items-center gap-1.5 font-semibold">
+            {typeConfig?.icon}
+            {typeConfig?.label ?? event.event_type}
           </div>
         </div>
 
@@ -409,11 +718,68 @@ const EventDetail: React.FC = () => {
           )}
         </div>
 
+        {/* Hosted by section */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold">Hosted by</h2>
+          <div className="rounded-xl border shadow-sm overflow-hidden">
+            {/* Club row */}
+            {event.clubs && (
+              <div className="flex items-center gap-3 px-4 py-3">
+                {event.clubs.image_url ? (
+                  <img
+                    src={event.clubs.image_url}
+                    alt=""
+                    className="h-12 w-12 rounded-lg object-cover bg-muted"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                    <Users className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold">{event.clubs.name}</p>
+                  {memberCount !== undefined && memberCount > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {memberCount} {memberCount === 1 ? "Member" : "Members"}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Separator between club and creator */}
+            {event.clubs && <div className="border-t mx-4" />}
+
+            {/* Creator row */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              {creatorProfile?.image_url ? (
+                <img
+                  src={creatorProfile.image_url}
+                  alt=""
+                  className="h-12 w-12 rounded-full object-cover bg-muted"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      "/avatar-placeholder.svg";
+                  }}
+                />
+              ) : (
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                  <User className="h-6 w-6 text-muted-foreground" />
+                </div>
+              )}
+              <div>
+                <p className="font-semibold">{creatorName}</p>
+                <p className="text-sm text-muted-foreground">
+                  {isCreator ? "Organizer" : "Organizer"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* RSVP section */}
         <div className="space-y-3">
-          <h2 className="text-lg font-bold">
-            {attendingCount} Going
-          </h2>
+          <h2 className="text-lg font-bold">{attendingCount} Going</h2>
           {attendees.length > 0 ? (
             <div className="space-y-2">
               {attendees.map((a) => (
@@ -498,6 +864,17 @@ const EventDetail: React.FC = () => {
       </div>
 
       {createdDialog}
+
+      {/* Edit event sheet */}
+      {event && (
+        <EditEventSheet
+          open={editSheetOpen}
+          onOpenChange={setEditSheetOpen}
+          event={event}
+          onSave={(input) => updateMutation.mutate(input)}
+          saving={updateMutation.isPending}
+        />
+      )}
 
       {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
