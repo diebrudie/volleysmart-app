@@ -24,6 +24,14 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -41,6 +49,29 @@ import {
 import { EventCard } from "@/components/events/EventCard";
 import { useIsCompact } from "@/hooks/use-compact";
 import Navbar from "@/components/layout/Navbar";
+
+// ─── Filter types ─────────────────────────────────────────────────────────
+type RsvpFilterValue = "all" | "attending" | "maybe" | "declined" | "none";
+type EventTypeValue =
+  | "friendly_game"
+  | "social_game"
+  | "training"
+  | "tournament";
+
+const RSVP_OPTIONS: { value: RsvpFilterValue; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "attending", label: "Going" },
+  { value: "maybe", label: "Maybe" },
+  { value: "declined", label: "Not going" },
+  { value: "none", label: "Not responded" },
+];
+
+const EVENT_TYPE_OPTIONS: { value: EventTypeValue; label: string }[] = [
+  { value: "friendly_game", label: "Friendly Game" },
+  { value: "social_game", label: "Social Game" },
+  { value: "training", label: "Training" },
+  { value: "tournament", label: "Tournament" },
+];
 
 // ─── Mini calendar ────────────────────────────────────────────────────────
 interface MiniCalendarProps {
@@ -197,8 +228,8 @@ const EventList: React.FC<{
 const PastEventsList: React.FC<{
   events: PastEventRow[];
   isLoading: boolean;
-  onEventClick: (eventId: string) => void;
-}> = ({ events, isLoading, onEventClick }) => {
+  onViewDetails: (matchDayId: string) => void;
+}> = ({ events, isLoading, onViewDetails }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -219,9 +250,8 @@ const PastEventsList: React.FC<{
   return (
     <div className="rounded-xl border overflow-hidden">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-2 bg-muted/50 text-xs font-medium text-muted-foreground">
+      <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-muted/50 text-xs font-medium text-muted-foreground">
         <span>Event</span>
-        <span className="w-16 text-center">Club</span>
         <span className="w-14 text-center">Score</span>
         <span className="w-8" />
       </div>
@@ -230,7 +260,7 @@ const PastEventsList: React.FC<{
         <div
           key={e.id}
           className={cn(
-            "grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center px-3 py-2.5",
+            "grid grid-cols-[1fr_auto_auto] gap-2 items-center px-3 py-2.5",
             idx < events.length - 1 && "border-b"
           )}
         >
@@ -241,11 +271,6 @@ const PastEventsList: React.FC<{
               {format(parseISO(e.date), "MMM d, yyyy")}
             </p>
           </div>
-
-          {/* Club */}
-          <span className="w-16 text-xs text-muted-foreground text-center truncate">
-            {e.club_name ?? "—"}
-          </span>
 
           {/* Score */}
           <span className="w-14 text-center">
@@ -258,48 +283,26 @@ const PastEventsList: React.FC<{
             )}
           </span>
 
-          {/* View */}
+          {/* View details */}
           <button
             type="button"
-            onClick={() => onEventClick(e.id)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-            aria-label="View details"
+            onClick={() => e.match_day_id && onViewDetails(e.match_day_id)}
+            disabled={!e.match_day_id}
+            className={cn(
+              "w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
+              e.match_day_id
+                ? "hover:bg-muted text-muted-foreground"
+                : "text-muted-foreground/30 cursor-not-allowed"
+            )}
+            aria-label="View game details"
           >
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <Eye className="h-4 w-4" />
           </button>
         </div>
       ))}
     </div>
   );
 };
-
-// ─── Filter types ─────────────────────────────────────────────────────────
-type RsvpFilterValue = "all" | "attending" | "maybe" | "declined" | "none";
-type EventTypeFilterValue =
-  | "all"
-  | "friendly_game"
-  | "social_game"
-  | "training"
-  | "tournament";
-
-const RSVP_FILTER_OPTIONS: { value: RsvpFilterValue; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "attending", label: "Going" },
-  { value: "maybe", label: "Maybe" },
-  { value: "declined", label: "Not going" },
-  { value: "none", label: "Not responded" },
-];
-
-const EVENT_TYPE_FILTER_OPTIONS: {
-  value: EventTypeFilterValue;
-  label: string;
-}[] = [
-  { value: "all", label: "All types" },
-  { value: "friendly_game", label: "Friendly Game" },
-  { value: "social_game", label: "Social Game" },
-  { value: "training", label: "Training" },
-  { value: "tournament", label: "Tournament" },
-];
 
 // ─── Main page ────────────────────────────────────────────────────────────
 const UpcomingEvents: React.FC = () => {
@@ -316,9 +319,12 @@ const UpcomingEvents: React.FC = () => {
 
   // Filter state
   const [rsvpFilter, setRsvpFilter] = React.useState<RsvpFilterValue>("all");
-  const [eventTypeFilter, setEventTypeFilter] =
-    React.useState<EventTypeFilterValue>("all");
-  const [clubFilter, setClubFilter] = React.useState<string>("all");
+  const [eventTypeFilters, setEventTypeFilters] = React.useState<
+    Set<EventTypeValue>
+  >(new Set());
+  const [clubFilters, setClubFilters] = React.useState<Set<string>>(
+    new Set()
+  );
 
   // Data queries
   const { data: playerId } = useQuery({
@@ -358,18 +364,35 @@ const UpcomingEvents: React.FC = () => {
     return Array.from(names).sort();
   }, [events]);
 
+  // Toggle helpers for checkbox sets
+  const toggleEventType = React.useCallback((val: EventTypeValue) => {
+    setEventTypeFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(val)) next.delete(val);
+      else next.add(val);
+      return next;
+    });
+  }, []);
+
+  const toggleClub = React.useCallback((name: string) => {
+    setClubFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }, []);
+
   // Filter + sort upcoming events
   const visibleEvents: PlannedEvent[] = React.useMemo(() => {
     let list = events;
 
-    // Calendar day filter
     if (view === "calendar" && selectedDay) {
       list = list.filter(
         (e) => e.date === format(selectedDay, "yyyy-MM-dd")
       );
     }
 
-    // RSVP filter
     if (rsvpFilter !== "all" && playerId) {
       list = list.filter((e) => {
         const myStatus =
@@ -379,17 +402,16 @@ const UpcomingEvents: React.FC = () => {
       });
     }
 
-    // Event type filter
-    if (eventTypeFilter !== "all") {
-      list = list.filter((e) => e.event_type === eventTypeFilter);
+    if (eventTypeFilters.size > 0) {
+      list = list.filter((e) =>
+        eventTypeFilters.has(e.event_type as EventTypeValue)
+      );
     }
 
-    // Club filter
-    if (clubFilter !== "all") {
-      list = list.filter((e) => e.clubs?.name === clubFilter);
+    if (clubFilters.size > 0) {
+      list = list.filter((e) => e.clubs?.name && clubFilters.has(e.clubs.name));
     }
 
-    // Sort
     const sorted = [...list];
     sorted.sort((a, b) => {
       const cmp =
@@ -404,8 +426,8 @@ const UpcomingEvents: React.FC = () => {
     view,
     selectedDay,
     rsvpFilter,
-    eventTypeFilter,
-    clubFilter,
+    eventTypeFilters,
+    clubFilters,
     playerId,
     sortAsc,
   ]);
@@ -426,113 +448,116 @@ const UpcomingEvents: React.FC = () => {
   const handleEventClick = (eventId: string) =>
     navigate(`/events/${eventId}`);
 
+  const handleViewGameDetails = (matchDayId: string) =>
+    navigate(`/game-details/${matchDayId}`);
+
   const activeFilterCount =
     (rsvpFilter !== "all" ? 1 : 0) +
-    (eventTypeFilter !== "all" ? 1 : 0) +
-    (clubFilter !== "all" ? 1 : 0);
+    (eventTypeFilters.size > 0 ? 1 : 0) +
+    (clubFilters.size > 0 ? 1 : 0);
 
   // ── Tab toggle ──────────────────────────────────────────────────────────
-  const TabToggle = () => (
-    <div className="flex border rounded-lg overflow-hidden mb-3">
-      <button
-        type="button"
-        onClick={() => setTab("upcoming")}
-        className={cn(
-          "flex-1 px-4 py-2 text-sm font-medium transition-colors",
-          tab === "upcoming"
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-muted"
-        )}
-      >
-        Upcoming
-      </button>
-      <button
-        type="button"
-        onClick={() => setTab("past")}
-        className={cn(
-          "flex-1 px-4 py-2 text-sm font-medium transition-colors",
-          tab === "past"
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-muted"
-        )}
-      >
-        Past events
-      </button>
-    </div>
+  const TabToggle = React.useMemo(
+    () => (
+      <div className="flex border rounded-lg overflow-hidden mb-3">
+        <button
+          type="button"
+          onClick={() => setTab("upcoming")}
+          className={cn(
+            "flex-1 px-4 py-2 text-sm font-medium transition-colors",
+            tab === "upcoming"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted"
+          )}
+        >
+          Upcoming
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("past")}
+          className={cn(
+            "flex-1 px-4 py-2 text-sm font-medium transition-colors",
+            tab === "past"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted"
+          )}
+        >
+          Past events
+        </button>
+      </div>
+    ),
+    [tab]
   );
 
   // ── Controls row ────────────────────────────────────────────────────────
-  const ControlsRow = () => (
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2">
-        {/* Sort button */}
-        <button
-          type="button"
-          onClick={() => setSortAsc((prev) => !prev)}
-          className={cn(
-            "flex items-center justify-center h-8 w-8 border rounded-lg transition-colors",
-            "text-muted-foreground hover:bg-muted"
-          )}
-          aria-label={sortAsc ? "Sort descending" : "Sort ascending"}
-        >
-          <ArrowUpDown className="h-3.5 w-3.5" />
-        </button>
+  const ControlsRow = React.useMemo(
+    () => (
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSortAsc((prev) => !prev)}
+            className="flex items-center justify-center h-8 w-8 border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+            aria-label={sortAsc ? "Sort descending" : "Sort ascending"}
+          >
+            <ArrowUpDown className="h-3.5 w-3.5" />
+          </button>
 
-        {/* Filter button */}
-        <button
-          type="button"
-          onClick={() => setFilterOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filter
-          {activeFilterCount > 0 && (
-            <span className="ml-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => setFilterOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filter
+            {activeFilterCount > 0 && (
+              <span className="ml-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
 
-      {/* List/Calendar toggle — disabled on past tab */}
-      <div
-        className={cn(
-          "flex items-center border rounded-lg overflow-hidden",
-          tab === "past" && "opacity-40 pointer-events-none"
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => setView("list")}
+        <div
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
-            view === "list"
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted"
+            "flex items-center border rounded-lg overflow-hidden",
+            tab === "past" && "opacity-40 pointer-events-none"
           )}
         >
-          <List className="h-3.5 w-3.5" />
-          List
-        </button>
-        <button
-          type="button"
-          onClick={() => setView("calendar")}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
-            view === "calendar"
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted"
-          )}
-        >
-          <CalendarDays className="h-3.5 w-3.5" />
-          Calendar
-        </button>
+          <button
+            type="button"
+            onClick={() => setView("list")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
+              view === "list"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted"
+            )}
+          >
+            <List className="h-3.5 w-3.5" />
+            List
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("calendar")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
+              view === "calendar"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted"
+            )}
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Calendar
+          </button>
+        </div>
       </div>
-    </div>
+    ),
+    [sortAsc, activeFilterCount, tab, view]
   );
 
   // ── Filter drawer ───────────────────────────────────────────────────────
-  const FilterDrawer = () => (
+  const filterDrawer = (
     <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
       <SheetContent side="left" className="w-72 p-0 flex flex-col">
         <SheetHeader className="px-4 pt-4 pb-3 border-b">
@@ -540,87 +565,67 @@ const UpcomingEvents: React.FC = () => {
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
-          {/* RSVP filter */}
+          {/* RSVP filter — dropdown */}
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               RSVP Status
             </p>
-            <div className="flex flex-col gap-1">
-              {RSVP_FILTER_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setRsvpFilter(opt.value)}
-                  className={cn(
-                    "text-left px-3 py-2 rounded-lg text-sm transition-colors",
-                    rsvpFilter === opt.value
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <Select
+              value={rsvpFilter}
+              onValueChange={(v) => setRsvpFilter(v as RsvpFilterValue)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RSVP_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Event type filter */}
+          {/* Event type — checkboxes */}
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Event Type
             </p>
-            <div className="flex flex-col gap-1">
-              {EVENT_TYPE_FILTER_OPTIONS.map((opt) => (
-                <button
+            <div className="flex flex-col gap-2">
+              {EVENT_TYPE_OPTIONS.map((opt) => (
+                <label
                   key={opt.value}
-                  type="button"
-                  onClick={() => setEventTypeFilter(opt.value)}
-                  className={cn(
-                    "text-left px-3 py-2 rounded-lg text-sm transition-colors",
-                    eventTypeFilter === opt.value
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
-                  )}
+                  className="flex items-center gap-2.5 cursor-pointer"
                 >
-                  {opt.label}
-                </button>
+                  <Checkbox
+                    checked={eventTypeFilters.has(opt.value)}
+                    onCheckedChange={() => toggleEventType(opt.value)}
+                  />
+                  <span className="text-sm">{opt.label}</span>
+                </label>
               ))}
             </div>
           </div>
 
-          {/* Club filter */}
+          {/* Club — checkboxes */}
           {clubNames.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Club
               </p>
-              <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  onClick={() => setClubFilter("all")}
-                  className={cn(
-                    "text-left px-3 py-2 rounded-lg text-sm transition-colors",
-                    clubFilter === "all"
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
-                  )}
-                >
-                  All clubs
-                </button>
+              <div className="flex flex-col gap-2">
                 {clubNames.map((name) => (
-                  <button
+                  <label
                     key={name}
-                    type="button"
-                    onClick={() => setClubFilter(name)}
-                    className={cn(
-                      "text-left px-3 py-2 rounded-lg text-sm transition-colors",
-                      clubFilter === name
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                    )}
+                    className="flex items-center gap-2.5 cursor-pointer"
                   >
-                    {name}
-                  </button>
+                    <Checkbox
+                      checked={clubFilters.has(name)}
+                      onCheckedChange={() => toggleClub(name)}
+                    />
+                    <span className="text-sm">{name}</span>
+                  </label>
                 ))}
               </div>
             </div>
@@ -636,8 +641,8 @@ const UpcomingEvents: React.FC = () => {
               className="w-full"
               onClick={() => {
                 setRsvpFilter("all");
-                setEventTypeFilter("all");
-                setClubFilter("all");
+                setEventTypeFilters(new Set());
+                setClubFilters(new Set());
               }}
             >
               Clear all filters
@@ -663,7 +668,7 @@ const UpcomingEvents: React.FC = () => {
               </Button>
             </div>
 
-            <TabToggle />
+            {TabToggle}
 
             <div className="flex gap-8">
               {tab === "upcoming" && (
@@ -701,14 +706,14 @@ const UpcomingEvents: React.FC = () => {
                   <PastEventsList
                     events={sortedPastEvents}
                     isLoading={pastLoading}
-                    onEventClick={handleEventClick}
+                    onViewDetails={handleViewGameDetails}
                   />
                 )}
               </div>
             </div>
           </div>
         </main>
-        <FilterDrawer />
+        {filterDrawer}
       </div>
     );
   }
@@ -718,8 +723,8 @@ const UpcomingEvents: React.FC = () => {
     <div className="px-4 py-4 pb-24">
       <h1 className="text-xl font-bold mb-3">Events</h1>
 
-      <TabToggle />
-      <ControlsRow />
+      {TabToggle}
+      {ControlsRow}
 
       {tab === "upcoming" && view === "calendar" && (
         <div className="rounded-2xl border bg-card p-4 mb-4">
@@ -753,11 +758,11 @@ const UpcomingEvents: React.FC = () => {
         <PastEventsList
           events={sortedPastEvents}
           isLoading={pastLoading}
-          onEventClick={handleEventClick}
+          onViewDetails={handleViewGameDetails}
         />
       )}
 
-      <FilterDrawer />
+      {filterDrawer}
     </div>
   );
 };

@@ -118,6 +118,7 @@ export interface PastEventRow {
   team_a_wins: number;
   team_b_wins: number;
   has_score: boolean;
+  match_day_id: string | null;
 }
 
 /** Fetch past events with match scores. */
@@ -181,12 +182,15 @@ export async function fetchPastEvents(
 
   // Fetch match scores for these events via match_days
   const eventIds = uniqueEvents.map((e) => e.id);
-  let matchScores: Record<string, { a: number; b: number }> = {};
+  let matchData: Record<
+    string,
+    { a: number; b: number; matchDayId: string }
+  > = {};
 
   if (eventIds.length > 0) {
     const { data: matchDays } = await supabase
       .from("match_days")
-      .select("planned_event_id, matches(team_a_score, team_b_score)")
+      .select("id, planned_event_id, matches(team_a_score, team_b_score)")
       .in("planned_event_id", eventIds);
 
     for (const md of matchDays ?? []) {
@@ -200,21 +204,22 @@ export async function fetchPastEvents(
         if (sa > sb) a++;
         else if (sb > sa) b++;
       }
-      matchScores[md.planned_event_id] = { a, b };
+      matchData[md.planned_event_id] = { a, b, matchDayId: md.id };
     }
   }
 
   const rows: PastEventRow[] = uniqueEvents.map((e) => {
-    const score = matchScores[e.id];
+    const md = matchData[e.id];
     return {
       id: e.id,
       title: e.title,
       date: e.date,
       start_time: e.start_time,
       club_name: e.clubs?.name ?? null,
-      team_a_wins: score?.a ?? 0,
-      team_b_wins: score?.b ?? 0,
-      has_score: !!score,
+      team_a_wins: md?.a ?? 0,
+      team_b_wins: md?.b ?? 0,
+      has_score: !!md,
+      match_day_id: md?.matchDayId ?? null,
     };
   });
 
