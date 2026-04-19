@@ -109,10 +109,21 @@ export async function fetchUpcomingEvents(
   return unique;
 }
 
-/** Fetch past events (date < today) across the user's clubs + personal. */
+export interface PastEventRow {
+  id: string;
+  title: string;
+  date: string;
+  start_time: string;
+  club_name: string | null;
+  team_a_wins: number;
+  team_b_wins: number;
+  has_score: boolean;
+}
+
+/** Fetch past events with match scores. */
 export async function fetchPastEvents(
   userId: string
-): Promise<PlannedEvent[]> {
+): Promise<PastEventRow[]> {
   const { data: memberships } = await supabase
     .from("club_members")
     .select("club_id")
@@ -126,10 +137,8 @@ export async function fetchPastEvents(
   const today = new Date().toISOString().split("T")[0];
 
   const selectFields = `
-    *,
-    clubs!planned_events_club_id_fkey(id, name, image_url),
-    locations!planned_events_location_id_fkey(name, address),
-    event_rsvp(status, player_id)
+    id, title, date, start_time,
+    clubs!planned_events_club_id_fkey(name)
   `;
 
   const clubEventsPromise =
@@ -140,7 +149,6 @@ export async function fetchPastEvents(
           .in("club_id", clubIds)
           .lt("date", today)
           .order("date", { ascending: false })
-          .order("start_time", { ascending: false })
       : Promise.resolve({ data: [] as any[], error: null });
 
   const personalEventsPromise = supabase
@@ -149,8 +157,7 @@ export async function fetchPastEvents(
     .is("club_id", null)
     .eq("created_by", userId)
     .lt("date", today)
-    .order("date", { ascending: false })
-    .order("start_time", { ascending: false });
+    .order("date", { ascending: false });
 
   const [clubResult, personalResult] = await Promise.all([
     clubEventsPromise,
@@ -160,24 +167,59 @@ export async function fetchPastEvents(
   if (clubResult.error) throw clubResult.error;
   if (personalResult.error) throw personalResult.error;
 
-  const all = [
-    ...((clubResult.data ?? []) as PlannedEvent[]),
-    ...((personalResult.data ?? []) as PlannedEvent[]),
+  const allEvents = [
+    ...((clubResult.data ?? []) as any[]),
+    ...((personalResult.data ?? []) as any[]),
   ];
 
   const seen = new Set<string>();
-  const unique = all.filter((e) => {
+  const uniqueEvents = allEvents.filter((e) => {
     if (seen.has(e.id)) return false;
     seen.add(e.id);
     return true;
   });
 
-  unique.sort(
-    (a, b) =>
-      b.date.localeCompare(a.date) || b.start_time.localeCompare(a.start_time)
-  );
+  // Fetch match scores for these events via match_days
+  const eventIds = uniqueEvents.map((e) => e.id);
+  let matchScores: Record<string, { a: number; b: number }> = {};
 
-  return unique;
+  if (eventIds.length > 0) {
+    const { data: matchDays } = await supabase
+      .from("match_days")
+      .select("planned_event_id, matches(team_a_score, team_b_score)")
+      .in("planned_event_id", eventIds);
+
+    for (const md of matchDays ?? []) {
+      if (!md.planned_event_id || !md.matches?.length) continue;
+      let a = 0;
+      let b = 0;
+      for (const m of md.matches as any[]) {
+        const sa = m.team_a_score ?? 0;
+        const sb = m.team_b_score ?? 0;
+        if (sa + sb === 0) continue;
+        if (sa > sb) a++;
+        else if (sb > sa) b++;
+      }
+      matchScores[md.planned_event_id] = { a, b };
+    }
+  }
+
+  const rows: PastEventRow[] = uniqueEvents.map((e) => {
+    const score = matchScores[e.id];
+    return {
+      id: e.id,
+      title: e.title,
+      date: e.date,
+      start_time: e.start_time,
+      club_name: e.clubs?.name ?? null,
+      team_a_wins: score?.a ?? 0,
+      team_b_wins: score?.b ?? 0,
+      has_score: !!score,
+    };
+  });
+
+  rows.sort((a, b) => b.date.localeCompare(a.date));
+  return rows;
 }
 
 /** Upsert RSVP (insert or update on conflict). */

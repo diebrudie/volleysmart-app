@@ -32,7 +32,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
     >
       {/* Calendar badge */}
       <div className="w-14 rounded-lg overflow-hidden shadow-sm border border-border shrink-0">
-        <div className="bg-primary text-primary-foreground text-center py-0.5">
+        <div className="bg-[#EB534C] text-white text-center py-0.5">
           <span className="text-[10px] font-semibold uppercase">
             {format(parsedDate, "MMM")}
           </span>
