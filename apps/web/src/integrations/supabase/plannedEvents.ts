@@ -109,6 +109,77 @@ export async function fetchUpcomingEvents(
   return unique;
 }
 
+/** Fetch past events (date < today) across the user's clubs + personal. */
+export async function fetchPastEvents(
+  userId: string
+): Promise<PlannedEvent[]> {
+  const { data: memberships } = await supabase
+    .from("club_members")
+    .select("club_id")
+    .eq("user_id", userId)
+    .eq("is_active", true);
+
+  const clubIds = (memberships ?? [])
+    .map((m) => m.club_id)
+    .filter(Boolean) as string[];
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const selectFields = `
+    *,
+    clubs!planned_events_club_id_fkey(id, name, image_url),
+    locations!planned_events_location_id_fkey(name, address),
+    event_rsvp(status, player_id)
+  `;
+
+  const clubEventsPromise =
+    clubIds.length > 0
+      ? supabase
+          .from("planned_events")
+          .select(selectFields)
+          .in("club_id", clubIds)
+          .lt("date", today)
+          .order("date", { ascending: false })
+          .order("start_time", { ascending: false })
+      : Promise.resolve({ data: [] as any[], error: null });
+
+  const personalEventsPromise = supabase
+    .from("planned_events")
+    .select(selectFields)
+    .is("club_id", null)
+    .eq("created_by", userId)
+    .lt("date", today)
+    .order("date", { ascending: false })
+    .order("start_time", { ascending: false });
+
+  const [clubResult, personalResult] = await Promise.all([
+    clubEventsPromise,
+    personalEventsPromise,
+  ]);
+
+  if (clubResult.error) throw clubResult.error;
+  if (personalResult.error) throw personalResult.error;
+
+  const all = [
+    ...((clubResult.data ?? []) as PlannedEvent[]),
+    ...((personalResult.data ?? []) as PlannedEvent[]),
+  ];
+
+  const seen = new Set<string>();
+  const unique = all.filter((e) => {
+    if (seen.has(e.id)) return false;
+    seen.add(e.id);
+    return true;
+  });
+
+  unique.sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) || b.start_time.localeCompare(a.start_time)
+  );
+
+  return unique;
+}
+
 /** Upsert RSVP (insert or update on conflict). */
 export async function upsertRsvp(
   eventId: string,

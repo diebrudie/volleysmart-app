@@ -11,88 +11,29 @@ import {
   startOfWeek,
   endOfWeek,
 } from "date-fns";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
   List,
   ChevronLeft,
   ChevronRight,
   Plus,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import {
   fetchUpcomingEvents,
-  upsertRsvp,
+  fetchPastEvents,
   type PlannedEvent,
-  type RsvpStatus,
 } from "@/integrations/supabase/plannedEvents";
 import { EventCard } from "@/components/events/EventCard";
 import { useIsCompact } from "@/hooks/use-compact";
 import Navbar from "@/components/layout/Navbar";
 
-// ─── User profile chip ────────────────────────────────────────────────────────
-const UserChip: React.FC<{ userId: string }> = ({ userId }) => {
-  const [profile, setProfile] = React.useState<{
-    first_name?: string | null;
-    last_name?: string | null;
-    image_url?: string | null;
-    skill_rating?: number | null;
-  } | null>(null);
-
-  React.useEffect(() => {
-    let active = true;
-    supabase
-      .from("players")
-      .select("first_name, last_name, image_url, skill_rating")
-      .eq("user_id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (active && data) setProfile(data);
-      });
-    return () => {
-      active = false;
-    };
-  }, [userId]);
-
-  if (!profile) return null;
-
-  const initials = [profile.first_name?.[0], profile.last_name?.[0]]
-    .filter(Boolean)
-    .join("")
-    .toUpperCase();
-
-  return (
-    <div className="flex items-center gap-3">
-      <div className="h-10 w-10 rounded-full overflow-hidden bg-muted flex items-center justify-center shrink-0">
-        {profile.image_url ? (
-          <img
-            src={profile.image_url}
-            alt="Avatar"
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span className="text-sm font-semibold">{initials || "?"}</span>
-        )}
-      </div>
-      <div>
-        <p className="text-sm font-medium leading-none">
-          {[profile.first_name, profile.last_name].filter(Boolean).join(" ")}
-        </p>
-        {profile.skill_rating != null && (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Level {profile.skill_rating}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ─── Mini calendar ────────────────────────────────────────────────────────────
+// ─── Mini calendar ────────────────────────────────────────────────────────
 interface MiniCalendarProps {
   events: PlannedEvent[];
   month: Date;
@@ -126,7 +67,9 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <span className="text-sm font-medium">{format(month, "MMMM yyyy")}</span>
+        <span className="text-sm font-medium">
+          {format(month, "MMMM yyyy")}
+        </span>
         <button
           type="button"
           onClick={() => onMonthChange(addMonths(month, 1))}
@@ -167,8 +110,8 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({
                 isSelected
                   ? "bg-primary text-primary-foreground"
                   : isToday
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-muted"
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-muted"
               )}
             >
               {day.getDate()}
@@ -188,15 +131,20 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({
   );
 };
 
-// ─── Event list ───────────────────────────────────────────────────────────────
+// ─── Event list ───────────────────────────────────────────────────────────
 const EventList: React.FC<{
   events: PlannedEvent[];
   isLoading: boolean;
-  playerId: string | null;
-  onRsvp: (eventId: string, status: RsvpStatus) => void;
-  rsvpLoading: boolean;
+  onEventClick: (eventId: string) => void;
   onCreateEvent: () => void;
-}> = ({ events, isLoading, playerId, onRsvp, rsvpLoading, onCreateEvent }) => {
+  emptyLabel?: string;
+}> = ({
+  events,
+  isLoading,
+  onEventClick,
+  onCreateEvent,
+  emptyLabel = "No upcoming events",
+}) => {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -210,7 +158,7 @@ const EventList: React.FC<{
       <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
         <CalendarDays className="h-12 w-12 text-muted-foreground" />
         <div>
-          <p className="font-medium">No upcoming events</p>
+          <p className="font-medium">{emptyLabel}</p>
           <p className="text-sm text-muted-foreground mt-1">
             Create one to get started
           </p>
@@ -229,42 +177,24 @@ const EventList: React.FC<{
         <EventCard
           key={event.id}
           event={event}
-          playerId={playerId}
-          onRsvp={onRsvp}
-          rsvpLoading={rsvpLoading}
+          onClick={() => onEventClick(event.id)}
         />
       ))}
     </div>
   );
 };
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Main page ────────────────────────────────────────────────────────────
 const UpcomingEvents: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const isCompact = useIsCompact();
 
+  const [tab, setTab] = React.useState<"upcoming" | "past">("upcoming");
   const [view, setView] = React.useState<"list" | "calendar">("list");
   const [calendarMonth, setCalendarMonth] = React.useState(new Date());
   const [selectedDay, setSelectedDay] = React.useState<Date | null>(null);
-  const [rsvpFilter, setRsvpFilter] = React.useState<
-    "all" | "attending" | "maybe" | "declined" | "none"
-  >("all");
-
-  const { data: playerId } = useQuery({
-    queryKey: ["my-player-id", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase
-        .from("players")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      return data?.id ?? null;
-    },
-    enabled: !!user?.id,
-  });
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["upcoming-events", user?.id],
@@ -273,69 +203,103 @@ const UpcomingEvents: React.FC = () => {
     retry: 1,
   });
 
-  const rsvpMutation = useMutation({
-    mutationFn: ({ eventId, status }: { eventId: string; status: RsvpStatus }) =>
-      upsertRsvp(eventId, playerId!, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
-    },
+  const { data: pastEvents = [], isLoading: pastLoading } = useQuery({
+    queryKey: ["past-events", user?.id],
+    queryFn: () => fetchPastEvents(user!.id),
+    enabled: !!user?.id && tab === "past",
+    retry: 1,
   });
 
+  const activeEvents = tab === "upcoming" ? events : pastEvents;
+  const activeLoading = tab === "upcoming" ? isLoading : pastLoading;
+
   const visibleEvents: PlannedEvent[] = React.useMemo(() => {
-    let list =
-      view === "calendar" && selectedDay
-        ? events.filter((e) => e.date === format(selectedDay, "yyyy-MM-dd"))
-        : events;
-
-    if (rsvpFilter !== "all" && playerId) {
-      list = list.filter((e) => {
-        const myStatus =
-          e.event_rsvp?.find((r) => r.player_id === playerId)?.status ?? null;
-        if (rsvpFilter === "none") return myStatus === null;
-        return myStatus === rsvpFilter;
-      });
+    if (view === "calendar" && selectedDay) {
+      return activeEvents.filter(
+        (e) => e.date === format(selectedDay, "yyyy-MM-dd")
+      );
     }
-
-    return list;
-  }, [events, view, selectedDay, rsvpFilter, playerId]);
-
-  const handleRsvp = (eventId: string, status: RsvpStatus) => {
-    if (!playerId) return;
-    rsvpMutation.mutate({ eventId, status });
-  };
+    return activeEvents;
+  }, [activeEvents, view, selectedDay]);
 
   const handleDaySelect = (day: Date) =>
     setSelectedDay((prev) => (prev && isSameDay(prev, day) ? null : day));
 
-  const RsvpFilterBar = () => (
-    <div className="flex flex-wrap gap-1.5 mb-4">
-      {(
-        [
-          { key: "all", label: "All" },
-          { key: "attending", label: "Going" },
-          { key: "maybe", label: "Maybe" },
-          { key: "declined", label: "Can't go" },
-          { key: "none", label: "Not responded" },
-        ] as const
-      ).map(({ key, label }) => (
-        <button
-          key={key}
-          type="button"
-          onClick={() => setRsvpFilter(key)}
-          className={cn(
-            "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-            rsvpFilter === key
-              ? "bg-primary text-primary-foreground border-primary"
-              : "border-border text-muted-foreground hover:bg-muted"
-          )}
-        >
-          {label}
-        </button>
-      ))}
+  const handleEventClick = (eventId: string) =>
+    navigate(`/events/${eventId}`);
+
+  // ── Tab toggle component ──────────────────────────────────────────────
+  const TabToggle = () => (
+    <div className="flex border rounded-lg overflow-hidden mb-3">
+      <button
+        type="button"
+        onClick={() => setTab("upcoming")}
+        className={cn(
+          "flex-1 px-4 py-2 text-sm font-medium transition-colors",
+          tab === "upcoming"
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:bg-muted"
+        )}
+      >
+        Upcoming
+      </button>
+      <button
+        type="button"
+        onClick={() => setTab("past")}
+        className={cn(
+          "flex-1 px-4 py-2 text-sm font-medium transition-colors",
+          tab === "past"
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:bg-muted"
+        )}
+      >
+        Past events
+      </button>
     </div>
   );
 
-  // ── Desktop layout ─────────────────────────────────────────────────────────
+  // ── Filter + view controls ────────────────────────────────────────────
+  const ControlsRow = () => (
+    <div className="flex items-center justify-between mb-4">
+      <button
+        type="button"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+      >
+        <SlidersHorizontal className="h-3.5 w-3.5" />
+        Filter
+      </button>
+      <div className="flex items-center border rounded-lg overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setView("list")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
+            view === "list"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <List className="h-3.5 w-3.5" />
+          List
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("calendar")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
+            view === "calendar"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <CalendarDays className="h-3.5 w-3.5" />
+          Calendar
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Desktop layout ─────────────────────────────────────────────────────
   if (!isCompact) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -343,18 +307,20 @@ const UpcomingEvents: React.FC = () => {
         <main className="flex-grow">
           <div className="max-w-6xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between mb-6">
-              {user?.id && <UserChip userId={user.id} />}
+              <h1 className="text-xl font-bold">Events</h1>
               <Button onClick={() => navigate("/events/new")} size="sm">
                 <Plus className="h-4 w-4 mr-1.5" />
                 Create Event
               </Button>
             </div>
 
+            <TabToggle />
+
             <div className="flex gap-8">
               <aside className="w-64 shrink-0">
                 <div className="rounded-2xl border bg-card p-4 sticky top-20">
                   <MiniCalendar
-                    events={events}
+                    events={activeEvents}
                     month={calendarMonth}
                     onMonthChange={setCalendarMonth}
                     selectedDay={selectedDay}
@@ -373,19 +339,14 @@ const UpcomingEvents: React.FC = () => {
               </aside>
 
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-semibold mb-4">
-                  {selectedDay
-                    ? `Events on ${format(selectedDay, "MMMM d")}`
-                    : "Upcoming Events"}
-                </h1>
-                <RsvpFilterBar />
                 <EventList
                   events={visibleEvents}
-                  isLoading={isLoading}
-                  playerId={playerId ?? null}
-                  onRsvp={handleRsvp}
-                  rsvpLoading={rsvpMutation.isPending}
+                  isLoading={activeLoading}
+                  onEventClick={handleEventClick}
                   onCreateEvent={() => navigate("/events/new")}
+                  emptyLabel={
+                    tab === "past" ? "No past events" : "No upcoming events"
+                  }
                 />
               </div>
             </div>
@@ -395,45 +356,18 @@ const UpcomingEvents: React.FC = () => {
     );
   }
 
-  // ── Mobile / tablet ────────────────────────────────────────────────────────
+  // ── Mobile / tablet ────────────────────────────────────────────────────
   return (
     <div className="px-4 py-4 pb-24">
-      <div className="flex items-center justify-between mb-4">
-        {user?.id && <UserChip userId={user.id} />}
-        <div className="flex items-center border rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setView("list")}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
-              view === "list"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            )}
-          >
-            <List className="h-3.5 w-3.5" />
-            List
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("calendar")}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
-              view === "calendar"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            )}
-          >
-            <CalendarDays className="h-3.5 w-3.5" />
-            Calendar
-          </button>
-        </div>
-      </div>
+      <h1 className="text-xl font-bold mb-3">Events</h1>
+
+      <TabToggle />
+      <ControlsRow />
 
       {view === "calendar" && (
         <div className="rounded-2xl border bg-card p-4 mb-4">
           <MiniCalendar
-            events={events}
+            events={activeEvents}
             month={calendarMonth}
             onMonthChange={setCalendarMonth}
             selectedDay={selectedDay}
@@ -451,21 +385,14 @@ const UpcomingEvents: React.FC = () => {
         </div>
       )}
 
-      <h1 className="text-lg font-semibold mb-3">
-        {view === "calendar" && selectedDay
-          ? `Events on ${format(selectedDay, "MMMM d")}`
-          : "Upcoming Events"}
-      </h1>
-
-      <RsvpFilterBar />
-
       <EventList
         events={visibleEvents}
-        isLoading={isLoading}
-        playerId={playerId ?? null}
-        onRsvp={handleRsvp}
-        rsvpLoading={rsvpMutation.isPending}
+        isLoading={activeLoading}
+        onEventClick={handleEventClick}
         onCreateEvent={() => navigate("/events/new")}
+        emptyLabel={
+          tab === "past" ? "No past events" : "No upcoming events"
+        }
       />
     </div>
   );
