@@ -187,12 +187,14 @@ const EventList: React.FC<{
   onEventClick: (eventId: string) => void;
   onCreateEvent: () => void;
   emptyLabel?: string;
+  currentPlayerId?: string | null;
 }> = ({
   events,
   isLoading,
   onEventClick,
   onCreateEvent,
   emptyLabel = "No upcoming events",
+  currentPlayerId,
 }) => {
   if (isLoading) {
     return (
@@ -226,7 +228,7 @@ const EventList: React.FC<{
         <EventCard
           key={event.id}
           event={event}
-          currentPlayerId={playerId}
+          currentPlayerId={currentPlayerId}
           onClick={() => onEventClick(event.id)}
         />
       ))}
@@ -810,6 +812,7 @@ const UpcomingEvents: React.FC = () => {
                     isLoading={isLoading}
                     onEventClick={handleEventClick}
                     onCreateEvent={() => navigate("/events/new")}
+                    currentPlayerId={playerId}
                   />
                 ) : (
                   <PastEventsList
@@ -863,6 +866,7 @@ const UpcomingEvents: React.FC = () => {
           isLoading={isLoading}
           onEventClick={handleEventClick}
           onCreateEvent={() => navigate("/events/new")}
+          currentPlayerId={playerId}
         />
       ) : (
         <PastEventsList

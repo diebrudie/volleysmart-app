@@ -63,6 +63,19 @@ interface MemberRow {
   first_name: string;
   last_name: string;
   image_url: string | null;
+  primary_position: string | null;
+}
+
+/**
+ * Format display name: "Isabel B." or "Isabel C.B." for multi-part names.
+ * First name + first initial of remaining parts.
+ */
+function formatDisplayName(firstName: string, lastName: string): string {
+  const parts = `${firstName} ${lastName}`.trim().split(/\s+/);
+  if (parts.length <= 1) return parts[0] ?? "";
+  const display = parts[0];
+  const initials = parts.slice(1).map((p) => `${p[0]}.`).join("");
+  return `${display} ${initials}`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────
@@ -163,11 +176,11 @@ const ClubOverview: React.FC = () => {
       if (error) throw error;
       if (!rows?.length) return [] as MemberRow[];
 
-      // 2. Get player data by user_id
+      // 2. Get player data + positions by user_id
       const userIds = rows.map((r) => r.user_id);
       const { data: players, error: pErr } = await supabase
         .from("players")
-        .select("user_id, first_name, last_name, image_url")
+        .select("user_id, first_name, last_name, image_url, player_positions(is_primary, positions(name))")
         .in("user_id", userIds);
       if (pErr) throw pErr;
 
@@ -175,17 +188,21 @@ const ClubOverview: React.FC = () => {
         (players ?? []).map((p: any) => [p.user_id, p])
       );
 
-      // 3. Merge
-      return rows.map((m: any) => {
+      // 3. Merge and sort by first name A→Z
+      const merged = rows.map((m: any) => {
         const p = playerMap.get(m.user_id);
+        const primaryPos = (p?.player_positions ?? []).find((pp: any) => pp.is_primary);
         return {
           user_id: m.user_id,
           role: m.role,
           first_name: p?.first_name ?? "",
           last_name: p?.last_name ?? "",
           image_url: p?.image_url ?? null,
+          primary_position: primaryPos?.positions?.name ?? null,
         };
       }) as MemberRow[];
+      merged.sort((a, b) => a.first_name.localeCompare(b.first_name));
+      return merged;
     },
     enabled: !!clubId,
   });
@@ -351,23 +368,23 @@ const ClubOverview: React.FC = () => {
             const canSelect =
               manageMode && m.role !== "admin" && m.user_id !== user?.id;
             const isSelected = selectedUserIds.includes(m.user_id);
+            const toggleSelect = () => {
+              if (!canSelect) return;
+              setSelectedUserIds((prev) =>
+                isSelected
+                  ? prev.filter((id) => id !== m.user_id)
+                  : [...prev, m.user_id]
+              );
+            };
             return (
-              <button
+              <div
                 key={m.user_id}
-                type="button"
-                onClick={() => {
-                  if (manageMode && canSelect) {
-                    setSelectedUserIds((prev) =>
-                      isSelected
-                        ? prev.filter((id) => id !== m.user_id)
-                        : [...prev, m.user_id]
-                    );
-                  } else if (!manageMode) {
-                    navigate(`/user/${m.user_id}`);
-                  }
-                }}
+                role={manageMode && canSelect ? "button" : undefined}
+                tabIndex={manageMode && canSelect ? 0 : undefined}
+                onClick={manageMode ? toggleSelect : undefined}
                 className={cn(
-                  "w-full flex items-center gap-3 py-3 text-left hover:bg-muted/50 transition-colors",
+                  "w-full flex items-center gap-3 py-3 text-left",
+                  manageMode && canSelect && "cursor-pointer hover:bg-muted/50 transition-colors",
                   idx < members.length - 1 && "border-b"
                 )}
               >
@@ -376,14 +393,8 @@ const ClubOverview: React.FC = () => {
                     checked={isSelected}
                     disabled={!canSelect}
                     className="shrink-0"
-                    onCheckedChange={() => {
-                      if (!canSelect) return;
-                      setSelectedUserIds((prev) =>
-                        isSelected
-                          ? prev.filter((id) => id !== m.user_id)
-                          : [...prev, m.user_id]
-                      );
-                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    onCheckedChange={toggleSelect}
                   />
                 )}
                 <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0 flex items-center justify-center">
@@ -402,13 +413,16 @@ const ClubOverview: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {m.first_name} {m.last_name}
+                    {formatDisplayName(m.first_name, m.last_name)}
                   </p>
-                  {m.role === "admin" && (
-                    <p className="text-xs text-muted-foreground">Admin</p>
+                  {m.primary_position && (
+                    <p className="text-xs text-muted-foreground">{m.primary_position}</p>
                   )}
                 </div>
-              </button>
+                {m.role === "admin" && (
+                  <span className="text-xs text-muted-foreground shrink-0">Admin</span>
+                )}
+              </div>
             );
           })}
         </div>
@@ -496,6 +510,7 @@ const ClubOverview: React.FC = () => {
           club={{
             id: club.id,
             name: club.name,
+            description: club.description,
             image_url: club.image_url,
             slug: club.slug,
             city: club.city,
