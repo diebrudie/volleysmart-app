@@ -223,7 +223,7 @@ const Clubs = () => {
     setClubId(clubId); // set it globally
     localStorage.setItem("lastVisitedClub", clubId);
 
-    navigate(`/dashboard/${clubId}`);
+    navigate(`/clubs/${clubId}`);
   };
 
   const handleEditClick = (e: React.MouseEvent, club: ClubWithDetails) => {

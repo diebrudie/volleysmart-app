@@ -36,6 +36,7 @@ import ClubGuard from "@/components/routing/ClubGuard";
 import FaqsPage from "@/pages/FaqsPage";
 import Archive from "@/pages/Archive";
 import EventDetail from "@/pages/EventDetail";
+import ClubOverview from "@/pages/ClubOverview";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -108,6 +109,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Clubs />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/clubs/:clubId"
+      element={
+        <ProtectedRoute>
+          <ClubOverview />
         </ProtectedRoute>
       }
     />

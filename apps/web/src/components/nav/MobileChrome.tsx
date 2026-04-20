@@ -23,6 +23,7 @@ const HIDE_CHROME = [
   /^\/edit-game\/[^/]+\/[^/]+\/?$/,
   /^\/events\/new\/?$/, // Create Event flow
   /^\/events\/[^/]+\/?$/, // /events/:eventId (Event Detail)
+  /^\/clubs\/[^/]+\/?$/, // /clubs/:clubId (Club Overview)
   /^\/join-club\/?$/, // /join-club
   /^\/new-club\/?$/, // /new-club
   /^\/user\/[^/]+\/?$/, // /user/:userId (Profile)
