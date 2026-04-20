@@ -940,7 +940,6 @@ const Game = () => {
           </div>
         )}
         </div>
-      </div>
 
       {/* Delete confirmation dialog */}
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
