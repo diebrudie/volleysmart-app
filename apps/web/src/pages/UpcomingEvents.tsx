@@ -248,58 +248,66 @@ const PastEventsList: React.FC<{
   }
 
   return (
-    <div className="rounded-xl border overflow-hidden">
-      {/* Header */}
-      <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 bg-muted/50 text-xs font-medium text-muted-foreground">
-        <span>Event</span>
-        <span className="w-14 text-center">Score</span>
-        <span className="w-8" />
-      </div>
-      {/* Rows */}
-      {events.map((e, idx) => (
-        <div
-          key={e.id}
-          className={cn(
-            "grid grid-cols-[1fr_auto_auto] gap-2 items-center px-3 py-2.5",
-            idx < events.length - 1 && "border-b"
-          )}
-        >
-          {/* Event name + date */}
-          <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{e.title}</p>
-            <p className="text-xs text-muted-foreground">
-              {format(parseISO(e.date), "MMM d, yyyy")}
-            </p>
-          </div>
+    <div className="space-y-0">
+      {events.map((e, idx) => {
+        const winner =
+          e.has_score
+            ? e.team_a_wins > e.team_b_wins
+              ? "Team A"
+              : e.team_b_wins > e.team_a_wins
+                ? "Team B"
+                : null
+            : null;
 
-          {/* Score */}
-          <span className="w-14 text-center">
-            {e.has_score ? (
-              <span className="text-sm font-semibold">
-                {e.team_a_wins}–{e.team_b_wins}
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">—</span>
-            )}
-          </span>
-
-          {/* View details */}
-          <button
-            type="button"
-            onClick={() => e.match_day_id && onViewDetails(e.match_day_id)}
-            disabled={!e.match_day_id}
+        return (
+          <div
+            key={e.id}
             className={cn(
-              "w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
-              e.match_day_id
-                ? "hover:bg-muted text-muted-foreground"
-                : "text-muted-foreground/30 cursor-not-allowed"
+              "flex items-center gap-4 px-3 py-3",
+              idx < events.length - 1 && "border-b"
             )}
-            aria-label="View game details"
           >
-            <Eye className="h-4 w-4" />
-          </button>
-        </div>
-      ))}
+            {/* Date + title (left) */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">
+                {format(parseISO(e.date), "MMM. d, yyyy")}
+              </p>
+              <p className="text-sm font-medium text-primary truncate">
+                {e.title}
+              </p>
+            </div>
+
+            {/* Score (center) */}
+            <div className="shrink-0 w-16 text-center">
+              {e.has_score ? (
+                <span className="text-base font-semibold tracking-wider">
+                  {e.team_a_wins} – {e.team_b_wins}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+            </div>
+
+            {/* Winner badge or view button (right) */}
+            <div className="shrink-0 w-20 flex justify-end">
+              {winner ? (
+                <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  {winner}
+                </span>
+              ) : e.match_day_id ? (
+                <button
+                  type="button"
+                  onClick={() => onViewDetails(e.match_day_id!)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  View
+                </button>
+              ) : null}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -361,8 +369,11 @@ const UpcomingEvents: React.FC = () => {
     events.forEach((e) => {
       if (e.clubs?.name) names.add(e.clubs.name);
     });
+    pastEvents.forEach((e) => {
+      if (e.club_name) names.add(e.club_name);
+    });
     return Array.from(names).sort();
-  }, [events]);
+  }, [events, pastEvents]);
 
   // Toggle helpers for checkbox sets
   const toggleEventType = React.useCallback((val: EventTypeValue) => {
@@ -434,13 +445,28 @@ const UpcomingEvents: React.FC = () => {
 
   // Sort past events
   const sortedPastEvents: PastEventRow[] = React.useMemo(() => {
-    const sorted = [...pastEvents];
-    sorted.sort((a, b) => {
+    let list = [...pastEvents];
+
+    // Apply event type filter
+    if (eventTypeFilters.size > 0) {
+      list = list.filter((e) =>
+        eventTypeFilters.has(e.event_type as EventTypeValue)
+      );
+    }
+
+    // Apply club filter
+    if (clubFilters.size > 0) {
+      list = list.filter(
+        (e) => e.club_name && clubFilters.has(e.club_name)
+      );
+    }
+
+    list.sort((a, b) => {
       const cmp = a.date.localeCompare(b.date);
       return sortAsc ? cmp : -cmp;
     });
-    return sorted;
-  }, [pastEvents, sortAsc]);
+    return list;
+  }, [pastEvents, sortAsc, eventTypeFilters, clubFilters]);
 
   const handleDaySelect = (day: Date) =>
     setSelectedDay((prev) => (prev && isSameDay(prev, day) ? null : day));

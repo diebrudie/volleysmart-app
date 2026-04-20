@@ -114,6 +114,7 @@ export interface PastEventRow {
   title: string;
   date: string;
   start_time: string;
+  event_type: string;
   club_name: string | null;
   team_a_wins: number;
   team_b_wins: number;
@@ -138,7 +139,7 @@ export async function fetchPastEvents(
   const today = new Date().toISOString().split("T")[0];
 
   const selectFields = `
-    id, title, date, start_time,
+    id, title, date, start_time, event_type,
     clubs!planned_events_club_id_fkey(name)
   `;
 
@@ -215,6 +216,7 @@ export async function fetchPastEvents(
       title: e.title,
       date: e.date,
       start_time: e.start_time,
+      event_type: e.event_type ?? "friendly_game",
       club_name: e.clubs?.name ?? null,
       team_a_wins: md?.a ?? 0,
       team_b_wins: md?.b ?? 0,
