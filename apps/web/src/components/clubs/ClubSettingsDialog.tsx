@@ -377,21 +377,20 @@ const ClubSettingsDialog = ({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[95dvh] flex flex-col p-0 rounded-t-2xl">
-        {/* Header — matches Edit Event */}
+      <SheetContent side="bottom" className="max-h-[90vh] flex flex-col p-0 rounded-t-2xl">
+        {/* Header */}
         <SheetHeader className="px-4 pt-4 pb-2 border-b">
-          <div className="flex items-center justify-between gap-4">
-            <SheetTitle>Club Settings</SheetTitle>
-            {club.slug && (
-              <div className="shrink-0">
-                <CopyableClubId slug={club.slug} compact />
-              </div>
-            )}
-          </div>
+          <SheetTitle>Club Settings</SheetTitle>
         </SheetHeader>
 
-        {/* Scrollable form — matches Edit Event */}
+        {/* Scrollable form */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+          {/* Club ID — below the header divider */}
+          {club.slug && (
+            <div className="flex justify-end">
+              <CopyableClubId slug={club.slug} compact />
+            </div>
+          )}
           {/* Club Name */}
           <div className="space-y-1.5">
             <Label htmlFor="club-name">Club Name</Label>

@@ -10,8 +10,8 @@ import {
   BarChart3,
   TrendingUp,
   Plus,
-  Clock,
   CalendarDays,
+  MapPin,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -215,7 +215,7 @@ const ClubOverview: React.FC = () => {
     );
   }
 
-  const createdYear = format(parseISO(club.created_at), "yyyy");
+  const createdLabel = format(parseISO(club.created_at), "MMM. yyyy");
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
@@ -263,11 +263,11 @@ const ClubOverview: React.FC = () => {
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5" />
-            Playing since {createdYear}
+            Club created in {createdLabel}
           </span>
           {club.city && (
             <span className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" />
+              <MapPin className="h-3.5 w-3.5" />
               {club.city}
             </span>
           )}
