@@ -1,9 +1,9 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Phase 9 — Create Event UX overhaul + Event Detail page
-- Last change: 6 Create Event UX improvements + Event Detail page + success dialog
-- Next step: Fix remaining bugs (event not shown in Home feed), then Phase 10
+- Working on: Phase 10 — Quick fixes & polish
+- Last change: Phase 10 items (today highlight, location fix, maybe removal, menu cleanup)
+- Next step: Phase 11 — Club Overview page
 
 ## Phase 9 completed work
 1. ~~**Members view toggle padding**~~: Fixed — h-7 w-7 items inside p-1 container

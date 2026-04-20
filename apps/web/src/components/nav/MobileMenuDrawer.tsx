@@ -2,15 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import {
-  User,
-  MoonStar,
-  Settings,
-  Binoculars,
-  Trophy,
-  LogOut,
-  HelpCircle,
-} from "lucide-react";
+import { MoonStar, LogOut, HelpCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ThemePicker from "./ThemePicker";
@@ -78,11 +70,6 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
 
           <div className="p-4 space-y-3">
             <MenuItem
-              icon={<User className="h-5 w-5" />}
-              label="Profile"
-              onClick={() => go(`/user/${user?.id ?? ""}`)}
-            />
-            <MenuItem
               icon={<MoonStar className="h-5 w-5" />}
               label="Theme"
               onClick={() => setThemeOpen(true)}
@@ -92,29 +79,6 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
               label="FAQs"
               onClick={() => go("/faqs")}
             />
-            <MenuItem
-              icon={<Settings className="h-5 w-5" />}
-              label="Settings"
-              disabled
-            />
-          </div>
-
-          <div className="px-4 pt-6">
-            <h3 className="text-sm text-muted-foreground mb-2">Clubs</h3>
-            <div className="space-y-3">
-              <MenuItem
-                icon={<Binoculars className="h-5 w-5" />}
-                label="Discover other Clubs"
-                disabled
-                onClick={() => go("/clubs/discover", true)}
-              />
-              <MenuItem
-                icon={<Trophy className="h-5 w-5" />}
-                label="Start a Tournament"
-                disabled
-                onClick={() => go("/tournaments/new", true)}
-              />
-            </div>
           </div>
 
           <div className="mt-10 px-4 pb-6">

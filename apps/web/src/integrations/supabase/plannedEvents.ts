@@ -7,7 +7,7 @@ export type EventType =
   | "tournament";
 
 export type EventStatus = "open" | "confirmed" | "cancelled" | "completed";
-export type RsvpStatus = "attending" | "declined" | "maybe";
+export type RsvpStatus = "attending" | "declined";
 
 export interface PlannedEvent {
   id: string;

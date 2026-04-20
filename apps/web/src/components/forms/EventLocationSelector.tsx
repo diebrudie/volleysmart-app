@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { MapPin, Search, Pencil, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ export const EventLocationSelector = ({
   value,
   onValueChange,
 }: EventLocationSelectorProps) => {
+  const { user } = useAuth();
   const [locationName, setLocationName] = useState("");
   const [address, setAddress] = useState("");
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
@@ -52,25 +54,72 @@ export const EventLocationSelector = ({
   const queryClient = useQueryClient();
   const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
-  // Fetch saved locations
+  // Fetch saved locations — when a club is selected, show that club's locations.
+  // When no club (personal event), show ALL locations from user's clubs + clubless ones.
   const { data: locations = [] } = useQuery({
-    queryKey: ["eventLocations", clubId],
+    queryKey: ["eventLocations", clubId, user?.id],
     queryFn: async (): Promise<LocationRecord[]> => {
-      let query = supabase
-        .from("locations")
-        .select("id, name, address, club_id")
-        .order("name");
-
       if (clubId) {
-        query = query.eq("club_id", clubId);
-      } else {
-        query = query.is("club_id", null);
+        const { data, error } = await supabase
+          .from("locations")
+          .select("id, name, address, club_id")
+          .eq("club_id", clubId)
+          .order("name");
+        if (error) throw error;
+        return data || [];
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
+      // No club selected — fetch locations from all user's clubs + clubless
+      const { data: memberships } = await supabase
+        .from("club_members")
+        .select("club_id")
+        .eq("user_id", user!.id)
+        .eq("is_active", true);
+
+      const memberClubIds = (memberships ?? [])
+        .map((m) => m.club_id)
+        .filter(Boolean) as string[];
+
+      // Fetch club locations + clubless locations in parallel
+      const clubLocsPromise =
+        memberClubIds.length > 0
+          ? supabase
+              .from("locations")
+              .select("id, name, address, club_id")
+              .in("club_id", memberClubIds)
+              .order("name")
+          : Promise.resolve({ data: [] as LocationRecord[], error: null });
+
+      const personalLocsPromise = supabase
+        .from("locations")
+        .select("id, name, address, club_id")
+        .is("club_id", null)
+        .order("name");
+
+      const [clubResult, personalResult] = await Promise.all([
+        clubLocsPromise,
+        personalLocsPromise,
+      ]);
+
+      if (clubResult.error) throw clubResult.error;
+      if (personalResult.error) throw personalResult.error;
+
+      const all = [
+        ...((clubResult.data ?? []) as LocationRecord[]),
+        ...((personalResult.data ?? []) as LocationRecord[]),
+      ];
+
+      // Deduplicate by id and sort by name
+      const seen = new Set<string>();
+      return all
+        .filter((l) => {
+          if (seen.has(l.id)) return false;
+          seen.add(l.id);
+          return true;
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
     },
+    enabled: !!user?.id,
   });
 
   // Hydrate from value prop (when editing or value set externally)
@@ -243,11 +292,15 @@ export const EventLocationSelector = ({
         });
         onValueChange(selectedLocationId);
       } else if (!selectedLocationId) {
-        // Create new location
+        // Create new location — address is required
+        if (!address.trim()) {
+          toast.error("Please add an address for the new location.");
+          return;
+        }
         const insertPayload: Record<string, any> = {
           club_id: clubId,
           name: trimmedName,
-          address: address.trim() || null,
+          address: address.trim(),
         };
         if (latLng) {
           insertPayload.latitude = latLng[1];
@@ -393,7 +446,9 @@ export const EventLocationSelector = ({
 
       {/* Address */}
       <div className="space-y-1.5" ref={addressRef}>
-        <Label className="text-sm">Address</Label>
+        <Label className="text-sm">
+          Address {!selectedLocationId && locationName.trim() && "*"}
+        </Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           {(() => {

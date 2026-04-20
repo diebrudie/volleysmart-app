@@ -1,5 +1,5 @@
 import * as React from "react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isToday } from "date-fns";
 import { Clock, Users, CalendarClock, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlannedEvent } from "@/integrations/supabase/plannedEvents";
@@ -11,6 +11,7 @@ interface EventCardProps {
 
 export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   const parsedDate = parseISO(event.date);
+  const isTodayEvent = isToday(parsedDate);
   const dateLabel = format(parsedDate, "EEE, MMM d");
   const timeLabel = event.start_time.slice(0, 5);
   const attendingCount =
@@ -27,14 +28,26 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
       className={cn(
         "w-full flex items-center gap-3 p-3 rounded-2xl border bg-card shadow-sm",
         "cursor-pointer hover:bg-muted/50 transition-colors text-left",
-        event.status === "cancelled" && "opacity-60"
+        event.status === "cancelled" && "opacity-60",
+        isTodayEvent &&
+          "border-primary/60 bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/30"
       )}
     >
       {/* Calendar badge */}
-      <div className="w-14 rounded-lg overflow-hidden shadow-sm border border-border shrink-0">
-        <div className="bg-[#EB534C] text-white text-center py-0.5">
+      <div
+        className={cn(
+          "w-14 rounded-lg overflow-hidden shadow-sm border shrink-0",
+          isTodayEvent ? "border-primary" : "border-border"
+        )}
+      >
+        <div
+          className={cn(
+            "text-white text-center py-0.5",
+            isTodayEvent ? "bg-primary" : "bg-[#EB534C]"
+          )}
+        >
           <span className="text-[10px] font-semibold uppercase">
-            {format(parsedDate, "MMM")}
+            {isTodayEvent ? "Today" : format(parsedDate, "MMM")}
           </span>
         </div>
         <div className="bg-white dark:bg-card text-foreground text-center py-1">
@@ -49,9 +62,16 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
 
       {/* Event info */}
       <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <h3 className="font-semibold text-sm leading-tight truncate">
-          {event.title}
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-sm leading-tight truncate">
+            {event.title}
+          </h3>
+          {isTodayEvent && (
+            <span className="shrink-0 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground">
+              Today
+            </span>
+          )}
+        </div>
         <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 shrink-0" />
