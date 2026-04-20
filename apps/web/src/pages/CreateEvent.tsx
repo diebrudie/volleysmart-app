@@ -738,16 +738,22 @@ const CreateEvent: React.FC = () => {
               </div>
             </div>
 
-            {/* Notes */}
+            {/* Description / Notes */}
             <div className="space-y-1.5">
-              <Label htmlFor="notes">Notes (optional)</Label>
+              <Label htmlFor="notes">Description / Notes (optional)</Label>
               <Textarea
                 id="notes"
                 placeholder="Any extra info for participants…"
                 value={form.notes}
-                onChange={(e) => set("notes", e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 100) set("notes", e.target.value);
+                }}
+                maxLength={100}
                 rows={3}
               />
+              <p className="text-xs text-muted-foreground text-right">
+                {form.notes.length}/100
+              </p>
             </div>
 
             {/* Save as template */}

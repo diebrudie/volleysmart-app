@@ -286,15 +286,21 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
             </Button>
           </div>
 
-          {/* Notes */}
+          {/* Description / Notes */}
           <div className="space-y-1.5">
-            <Label>Description / Notes</Label>
+            <Label>Description / Notes (optional)</Label>
             <Textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value.length <= 100) setNotes(e.target.value);
+              }}
+              maxLength={100}
               placeholder="Add a description or notes..."
               rows={3}
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {notes.length}/100
+            </p>
           </div>
         </div>
 
@@ -563,7 +569,7 @@ const EventDetail: React.FC = () => {
     : "Unknown";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-24">
+    <div className="min-h-screen bg-background flex flex-col pb-32">
       {/* Gradient hero */}
       <div className="relative h-48 bg-gradient-to-br from-primary/30 via-primary/10 to-background">
         {/* Top bar overlay */}
@@ -669,18 +675,6 @@ const EventDetail: React.FC = () => {
         <div className="space-y-4">
           <h2 className="text-lg font-bold">Details</h2>
 
-          {/* Event type */}
-          <div className="flex items-start gap-3">
-            {typeConfig ? (
-              <typeConfig.Icon className="h-5 w-5 text-muted-foreground mt-0.5" />
-            ) : (
-              <Swords className="h-5 w-5 text-muted-foreground mt-0.5" />
-            )}
-            <p className="text-sm">
-              {typeConfig?.label ?? event.event_type}
-            </p>
-          </div>
-
           {/* Date + time */}
           <div className="flex items-start gap-3">
             <CalendarIcon className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -711,9 +705,24 @@ const EventDetail: React.FC = () => {
             </div>
           )}
 
-          {/* Notes */}
+          {/* Event type */}
+          <div className="flex items-start gap-3">
+            {typeConfig ? (
+              <typeConfig.Icon className="h-5 w-5 text-muted-foreground mt-0.5" />
+            ) : (
+              <Swords className="h-5 w-5 text-muted-foreground mt-0.5" />
+            )}
+            <p className="text-sm">
+              {typeConfig?.label ?? event.event_type}
+            </p>
+          </div>
+
+          {/* Description / Notes */}
           {event.notes && (
-            <div className="rounded-lg border p-3">
+            <div className="space-y-1">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Description / Notes
+              </h3>
               <p className="text-sm">{event.notes}</p>
             </div>
           )}
@@ -820,7 +829,7 @@ const EventDetail: React.FC = () => {
       </div>
 
       {/* Fixed bottom bar: RSVP dropdown + Start Game */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 py-3 bg-background border-t pb-[max(env(safe-area-inset-bottom),12px)]">
+      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white dark:bg-card border-t pb-[max(env(safe-area-inset-bottom),12px)]">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
