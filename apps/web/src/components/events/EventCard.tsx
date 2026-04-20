@@ -1,15 +1,16 @@
 import * as React from "react";
 import { format, parseISO, isToday } from "date-fns";
-import { Clock, Users, CalendarClock, ChevronRight } from "lucide-react";
+import { Clock, Users, CalendarClock, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlannedEvent } from "@/integrations/supabase/plannedEvents";
 
 interface EventCardProps {
   event: PlannedEvent;
   onClick?: () => void;
+  currentPlayerId?: string | null;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPlayerId }) => {
   const parsedDate = parseISO(event.date);
   const isTodayEvent = isToday(parsedDate);
   const dateLabel = format(parsedDate, "EEE, MMM d");
@@ -17,8 +18,17 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   const attendingCount =
     event.event_rsvp?.filter((r) => r.status === "attending").length ?? 0;
 
+  // Current user's RSVP status
+  const myRsvp = currentPlayerId
+    ? event.event_rsvp?.find((r) => r.player_id === currentPlayerId)
+    : undefined;
+
+  const deadlineIsToday = event.rsvp_deadline
+    ? isToday(parseISO(event.rsvp_deadline))
+    : false;
+
   const deadlineLabel = event.rsvp_deadline
-    ? `RSVP by ${format(parseISO(event.rsvp_deadline), "MMM d")}`
+    ? `RSVP by ${deadlineIsToday ? "today" : format(parseISO(event.rsvp_deadline), "MMM d")}`
     : null;
 
   return (
@@ -83,12 +93,22 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
             <Users className="h-3.5 w-3.5 shrink-0" />
             <span>{attendingCount} attending</span>
           </div>
-          {deadlineLabel && (
+          {myRsvp?.status === "attending" ? (
+            <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-medium">You're going</span>
+            </div>
+          ) : myRsvp?.status === "declined" ? (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <XCircle className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-medium">You declined</span>
+            </div>
+          ) : deadlineLabel ? (
             <div className="flex items-center gap-1.5">
               <CalendarClock className="h-3.5 w-3.5 shrink-0" />
               <span>{deadlineLabel}</span>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
   ArrowLeft,
@@ -12,13 +12,27 @@ import {
   Plus,
   Clock,
   CalendarDays,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { buildImageUrl } from "@/utils/buildImageUrl";
-import { fetchMemberCount } from "@/integrations/supabase/clubMembers";
+import { fetchMemberCount, deactivateMembersByUserIds } from "@/integrations/supabase/clubMembers";
+import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { EventCard } from "@/components/events/EventCard";
 import { ClubInviteSharePanel } from "@/components/clubs/ClubInviteSharePanel";
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
@@ -58,6 +72,14 @@ const ClubOverview: React.FC = () => {
   const { user } = useAuth();
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const membersSectionRef = React.useRef<HTMLDivElement>(null);
+  const { data: currentPlayerId } = useCurrentPlayerId();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [manageMode, setManageMode] = React.useState(false);
+  const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([]);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
 
   // Club details
   const { data: club, isLoading: clubLoading } = useQuery({
@@ -127,24 +149,43 @@ const ClubOverview: React.FC = () => {
     enabled: !!clubId,
   });
 
-  // Members list
+  // Members list — two queries because there's no FK from club_members to players
   const { data: members = [] } = useQuery({
     queryKey: ["club-members-list", clubId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // 1. Get active club members
+      const { data: rows, error } = await supabase
         .from("club_members")
-        .select("user_id, role, players!inner(first_name, last_name, image_url)")
+        .select("user_id, role")
         .eq("club_id", clubId!)
         .eq("is_active", true)
         .order("role");
       if (error) throw error;
-      return (data ?? []).map((m: any) => ({
-        user_id: m.user_id,
-        role: m.role,
-        first_name: m.players?.first_name ?? "",
-        last_name: m.players?.last_name ?? "",
-        image_url: m.players?.image_url ?? null,
-      })) as MemberRow[];
+      if (!rows?.length) return [] as MemberRow[];
+
+      // 2. Get player data by user_id
+      const userIds = rows.map((r) => r.user_id);
+      const { data: players, error: pErr } = await supabase
+        .from("players")
+        .select("user_id, first_name, last_name, image_url")
+        .in("user_id", userIds);
+      if (pErr) throw pErr;
+
+      const playerMap = new Map(
+        (players ?? []).map((p: any) => [p.user_id, p])
+      );
+
+      // 3. Merge
+      return rows.map((m: any) => {
+        const p = playerMap.get(m.user_id);
+        return {
+          user_id: m.user_id,
+          role: m.role,
+          first_name: p?.first_name ?? "",
+          last_name: p?.last_name ?? "",
+          image_url: p?.image_url ?? null,
+        };
+      }) as MemberRow[];
     },
     enabled: !!clubId,
   });
@@ -235,7 +276,7 @@ const ClubOverview: React.FC = () => {
           <ActionButton
             icon={<Users className="h-5 w-5" />}
             label="Members"
-            onClick={() => navigate(`/members/${clubId}`)}
+            onClick={() => membersSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
           />
           <ActionButton
             icon={<BarChart3 className="h-5 w-5" />}
@@ -267,6 +308,7 @@ const ClubOverview: React.FC = () => {
         {nextEvent ? (
           <EventCard
             event={nextEvent}
+            currentPlayerId={currentPlayerId}
             onClick={() => navigate(`/events/${nextEvent.id}`)}
           />
         ) : (
@@ -288,45 +330,153 @@ const ClubOverview: React.FC = () => {
       </div>
 
       {/* Members list */}
-      <div className="px-4 pt-6">
-        <h2 className="text-lg font-bold mb-3">Members</h2>
-        <div className="space-y-0">
-          {members.map((m, idx) => (
+      <div className="px-4 pt-6" ref={membersSectionRef}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold">Members</h2>
+          {isAdmin && (
             <button
-              key={m.user_id}
               type="button"
-              onClick={() => navigate(`/user/${m.user_id}`)}
-              className={cn(
-                "w-full flex items-center gap-3 py-3 text-left hover:bg-muted/50 transition-colors",
-                idx < members.length - 1 && "border-b"
-              )}
+              className="text-sm font-medium text-primary"
+              onClick={() => {
+                setManageMode((v) => !v);
+                setSelectedUserIds([]);
+              }}
             >
-              <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0 flex items-center justify-center">
-                {m.image_url ? (
-                  <img
-                    src={buildImageUrl(m.image_url, { w: 80 })}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm font-medium">
-                    {m.first_name?.[0]}
-                    {m.last_name?.[0]}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {m.first_name} {m.last_name}
-                </p>
-                {m.role === "admin" && (
-                  <p className="text-xs text-muted-foreground">Admin</p>
-                )}
-              </div>
+              {manageMode ? "Done" : "Manage"}
             </button>
-          ))}
+          )}
         </div>
+        <div className="space-y-0">
+          {members.map((m, idx) => {
+            const canSelect =
+              manageMode && m.role !== "admin" && m.user_id !== user?.id;
+            const isSelected = selectedUserIds.includes(m.user_id);
+            return (
+              <button
+                key={m.user_id}
+                type="button"
+                onClick={() => {
+                  if (manageMode && canSelect) {
+                    setSelectedUserIds((prev) =>
+                      isSelected
+                        ? prev.filter((id) => id !== m.user_id)
+                        : [...prev, m.user_id]
+                    );
+                  } else if (!manageMode) {
+                    navigate(`/user/${m.user_id}`);
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 py-3 text-left hover:bg-muted/50 transition-colors",
+                  idx < members.length - 1 && "border-b"
+                )}
+              >
+                {manageMode && (
+                  <Checkbox
+                    checked={isSelected}
+                    disabled={!canSelect}
+                    className="shrink-0"
+                    onCheckedChange={() => {
+                      if (!canSelect) return;
+                      setSelectedUserIds((prev) =>
+                        isSelected
+                          ? prev.filter((id) => id !== m.user_id)
+                          : [...prev, m.user_id]
+                      );
+                    }}
+                  />
+                )}
+                <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                  {m.image_url ? (
+                    <img
+                      src={buildImageUrl(m.image_url, { w: 80 })}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-medium">
+                      {m.first_name?.[0]}
+                      {m.last_name?.[0]}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {m.first_name} {m.last_name}
+                  </p>
+                  {m.role === "admin" && (
+                    <p className="text-xs text-muted-foreground">Admin</p>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Remove selected members */}
+        {manageMode && selectedUserIds.length > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            className="mt-4 w-full"
+            onClick={() => setConfirmOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-1.5" />
+            Remove {selectedUserIds.length}{" "}
+            {selectedUserIds.length === 1 ? "member" : "members"}
+          </Button>
+        )}
       </div>
+
+      {/* Confirm remove dialog */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove members?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedUserIds.length === 1
+                ? "This member will be removed from the club."
+                : `${selectedUserIds.length} members will be removed from the club.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                setDeleting(true);
+                try {
+                  await deactivateMembersByUserIds(clubId!, selectedUserIds);
+                  queryClient.invalidateQueries({
+                    queryKey: ["club-members-list", clubId],
+                  });
+                  queryClient.invalidateQueries({
+                    queryKey: ["club-member-count", clubId],
+                  });
+                  toast({
+                    title: "Removed",
+                    description: `${selectedUserIds.length} member${selectedUserIds.length > 1 ? "s" : ""} removed.`,
+                  });
+                  setSelectedUserIds([]);
+                  setManageMode(false);
+                } catch {
+                  toast({
+                    title: "Error",
+                    description: "Failed to remove members.",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setDeleting(false);
+                  setConfirmOpen(false);
+                }
+              }}
+            >
+              {deleting ? "Removing…" : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Invite sheet */}
       <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>

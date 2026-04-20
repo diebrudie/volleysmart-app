@@ -4,13 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -399,24 +399,22 @@ const ClubSettingsDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader className="mb-4 mt-5 text-left">
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto">
+        <SheetHeader className="mb-4 text-left">
           <div className="flex items-end justify-between gap-4">
-            {/* Left: title + subtitle */}
             <div className="space-y-1">
-              <DialogTitle>Club Settings</DialogTitle>
-              <DialogDescription>Edit your club details.</DialogDescription>
+              <SheetTitle>Club Settings</SheetTitle>
+              <SheetDescription>Edit your club details.</SheetDescription>
             </div>
 
-            {/* Club ID (slug) display - full width, copyable */}
             {club.slug && (
               <div className="shrink-0">
                 <CopyableClubId slug={club.slug} compact />
               </div>
             )}
           </div>
-        </DialogHeader>
+        </SheetHeader>
 
         <div className="space-y-5">
           <div className="flex flex-col gap-2">
@@ -636,7 +634,7 @@ const ClubSettingsDialog = ({
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2 mt-3">
+        <SheetFooter className="flex gap-2 mt-3">
           <Button variant="outline" onClick={onClose} className="flex-1">
             Cancel
           </Button>
@@ -647,9 +645,9 @@ const ClubSettingsDialog = ({
           >
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 };
 

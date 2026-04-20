@@ -49,6 +49,7 @@ import {
 } from "@/integrations/supabase/plannedEvents";
 import { EventCard } from "@/components/events/EventCard";
 import { useIsCompact } from "@/hooks/use-compact";
+import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import Navbar from "@/components/layout/Navbar";
 
 // ─── Filter types ─────────────────────────────────────────────────────────
@@ -225,6 +226,7 @@ const EventList: React.FC<{
         <EventCard
           key={event.id}
           event={event}
+          currentPlayerId={playerId}
           onClick={() => onEventClick(event.id)}
         />
       ))}
@@ -357,19 +359,7 @@ const UpcomingEvents: React.FC = () => {
     React.useState<MonthFilterValue>("all");
 
   // Data queries
-  const { data: playerId } = useQuery({
-    queryKey: ["my-player-id", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await (await import("@/integrations/supabase/client"))
-        .supabase.from("players")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      return data?.id ?? null;
-    },
-    enabled: !!user?.id,
-  });
+  const { data: playerId } = useCurrentPlayerId();
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["upcoming-events", user?.id],
