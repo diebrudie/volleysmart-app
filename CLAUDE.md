@@ -4,7 +4,7 @@
 - Working on: Phase 12 — Game Flow Unification
 - Last change: Phase 12 — unified Game page, Start Game from events, nav updates
 - Current branch: `feat/phase-12-game-flow-unification` (branched from `feat/phase-11-club-overview`)
-- Next step: Test & polish Phase 12, then merge
+- Next step: Phase 12 UI polish (see remaining items below), then merge
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -18,6 +18,15 @@ Branches stack on each other (not merged to main yet):
 5. **Dashboard → redirect wrapper**: `/dashboard/:clubId` now redirects to `/game/:latestMatchDayId` or shows empty state
 6. **Navigation updates**: All `/game-details/` links → `/game/`, all `/dashboard/` links → `/clubs/` or `/game/` as appropriate
 7. **Files updated**: Archive, Games, UpcomingEvents, NewGame, EditGame, InviteMembers, NotFound, Navbar, App.tsx, AppRoutes.tsx
+8. **Gradient hero + semantic styling**: Applied ClubOverview-style gradient header, back arrow, 3-dots dropdown, semantic color classes (bg-card, text-foreground, etc.)
+
+### Phase 12 remaining polish (Game page)
+1. **Remove top Navbar**: Game page should have NO top navbar — only the gradient hero with back arrow + 3-dots menu
+2. **Teams: single-row players**: Each player must be one row only — truncate position with `...` (no wrapping)
+3. **Calendar icon on date**: Add Calendar icon next to the date in the info row below the title
+4. **Location on second row**: Move Location + total players to a second info row (row 1: club name + date, row 2: location + players)
+5. **SetBox font consistency**: "SET X" label in SetBox uses a different font — update to match the app's standard font
+6. **Add Set button gating**: Add Set button should only work/appear once the 5th set has scores entered
 
 ## Phase 11 completed work (Club Overview)
 1. ~~**Club Overview page**~~: New `/clubs/:clubId` route with hero, club info, action buttons, upcoming event, members list
