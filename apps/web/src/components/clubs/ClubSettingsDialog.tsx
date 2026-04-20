@@ -384,13 +384,7 @@ const ClubSettingsDialog = ({
         </SheetHeader>
 
         {/* Scrollable form */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
-          {/* Club ID — below the header divider */}
-          {club.slug && (
-            <div className="flex justify-end">
-              <CopyableClubId slug={club.slug} compact />
-            </div>
-          )}
+        <div className="flex-1 overflow-y-auto px-4 py-4 pb-8 space-y-5">
           {/* Club Name */}
           <div className="space-y-1.5">
             <Label htmlFor="club-name">Club Name</Label>
@@ -616,6 +610,13 @@ const ClubSettingsDialog = ({
               />
             </div>
           </div>
+
+          {/* Club ID */}
+          {club.slug && (
+            <div className="flex justify-end">
+              <CopyableClubId slug={club.slug} compact />
+            </div>
+          )}
         </div>
 
         {/* Fixed bottom buttons — matches Edit Event */}
