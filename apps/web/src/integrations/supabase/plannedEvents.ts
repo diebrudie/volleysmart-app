@@ -120,6 +120,7 @@ export interface PastEventRow {
   team_b_wins: number;
   has_score: boolean;
   match_day_id: string | null;
+  rsvp_status: RsvpStatus | null; // user's own RSVP for this event
 }
 
 /** Fetch past events with match scores. */
@@ -138,9 +139,18 @@ export async function fetchPastEvents(
 
   const today = new Date().toISOString().split("T")[0];
 
+  // Get the user's player_id for RSVP lookup
+  const { data: playerRow } = await supabase
+    .from("players")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const playerId = playerRow?.id ?? null;
+
   const selectFields = `
     id, title, date, start_time, event_type,
-    clubs!planned_events_club_id_fkey(name)
+    clubs!planned_events_club_id_fkey(name),
+    event_rsvp(status, player_id)
   `;
 
   const clubEventsPromise =
@@ -211,6 +221,11 @@ export async function fetchPastEvents(
 
   const rows: PastEventRow[] = uniqueEvents.map((e) => {
     const md = matchData[e.id];
+    const myRsvp = playerId
+      ? (e.event_rsvp as any[] | undefined)?.find(
+          (r: any) => r.player_id === playerId
+        )?.status ?? null
+      : null;
     return {
       id: e.id,
       title: e.title,
@@ -222,6 +237,7 @@ export async function fetchPastEvents(
       team_b_wins: md?.b ?? 0,
       has_score: !!md,
       match_day_id: md?.matchDayId ?? null,
+      rsvp_status: myRsvp as RsvpStatus | null,
     };
   });
 

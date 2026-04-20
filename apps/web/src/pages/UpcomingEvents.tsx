@@ -10,6 +10,7 @@ import {
   subMonths,
   startOfWeek,
   endOfWeek,
+  isWithinInterval,
 } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -22,7 +23,7 @@ import {
   ArrowUpDown,
   Eye,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -51,7 +52,7 @@ import { useIsCompact } from "@/hooks/use-compact";
 import Navbar from "@/components/layout/Navbar";
 
 // ─── Filter types ─────────────────────────────────────────────────────────
-type RsvpFilterValue = "all" | "attending" | "maybe" | "declined" | "none";
+type RsvpFilterValue = "all" | "attending" | "declined" | "none";
 type EventTypeValue =
   | "friendly_game"
   | "social_game"
@@ -61,7 +62,6 @@ type EventTypeValue =
 const RSVP_OPTIONS: { value: RsvpFilterValue; label: string }[] = [
   { value: "all", label: "All" },
   { value: "attending", label: "Going" },
-  { value: "maybe", label: "Maybe" },
   { value: "declined", label: "Not going" },
   { value: "none", label: "Not responded" },
 ];
@@ -71,6 +71,14 @@ const EVENT_TYPE_OPTIONS: { value: EventTypeValue; label: string }[] = [
   { value: "social_game", label: "Social Game" },
   { value: "training", label: "Training" },
   { value: "tournament", label: "Tournament" },
+];
+
+type MonthFilterValue = "all" | "current" | "last" | "next";
+const MONTH_FILTER_OPTIONS: { value: MonthFilterValue; label: string }[] = [
+  { value: "all", label: "All months" },
+  { value: "current", label: "This month" },
+  { value: "last", label: "Last month" },
+  { value: "next", label: "Next month" },
 ];
 
 // ─── Mini calendar ────────────────────────────────────────────────────────
@@ -229,7 +237,8 @@ const PastEventsList: React.FC<{
   events: PastEventRow[];
   isLoading: boolean;
   onViewDetails: (matchDayId: string) => void;
-}> = ({ events, isLoading, onViewDetails }) => {
+  onEventClick: (eventId: string) => void;
+}> = ({ events, isLoading, onViewDetails, onEventClick }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -249,65 +258,71 @@ const PastEventsList: React.FC<{
 
   return (
     <div className="space-y-0">
-      {events.map((e, idx) => {
-        const winner =
-          e.has_score
-            ? e.team_a_wins > e.team_b_wins
-              ? "Team A"
-              : e.team_b_wins > e.team_a_wins
-                ? "Team B"
-                : null
-            : null;
+      {/* Table header */}
+      <div className="flex items-center gap-4 px-3 py-2 border-b">
+        <div className="flex-1 min-w-0">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Date
+          </span>
+        </div>
+        <div className="shrink-0 w-16 text-center">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Score
+          </span>
+        </div>
+        <div className="shrink-0 w-20 text-right">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Details
+          </span>
+        </div>
+      </div>
 
-        return (
-          <div
-            key={e.id}
-            className={cn(
-              "flex items-center gap-4 px-3 py-3",
-              idx < events.length - 1 && "border-b"
-            )}
-          >
-            {/* Date + title (left) */}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">
-                {format(parseISO(e.date), "MMM. d, yyyy")}
-              </p>
-              <p className="text-sm font-medium text-primary truncate">
-                {e.title}
-              </p>
-            </div>
-
-            {/* Score (center) */}
-            <div className="shrink-0 w-16 text-center">
-              {e.has_score ? (
-                <span className="text-base font-semibold tracking-wider">
-                  {e.team_a_wins} – {e.team_b_wins}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">—</span>
-              )}
-            </div>
-
-            {/* Winner badge or view button (right) */}
-            <div className="shrink-0 w-20 flex justify-end">
-              {winner ? (
-                <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                  {winner}
-                </span>
-              ) : e.match_day_id ? (
-                <button
-                  type="button"
-                  onClick={() => onViewDetails(e.match_day_id!)}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                  View
-                </button>
-              ) : null}
-            </div>
+      {events.map((e, idx) => (
+        <div
+          key={e.id}
+          className={cn(
+            "flex items-center gap-4 px-3 py-3",
+            idx < events.length - 1 && "border-b"
+          )}
+        >
+          {/* Date + title (left) */}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground">
+              {format(parseISO(e.date), "MMM. d, yyyy")}
+            </p>
+            <p className="text-sm font-medium text-primary truncate">
+              {e.title}
+            </p>
           </div>
-        );
-      })}
+
+          {/* Score (center) */}
+          <div className="shrink-0 w-16 text-center">
+            {e.has_score ? (
+              <span className="text-base font-semibold tracking-wider">
+                {e.team_a_wins} – {e.team_b_wins}
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground">—</span>
+            )}
+          </div>
+
+          {/* View button (right) — always visible */}
+          <div className="shrink-0 w-20 flex justify-end">
+            <button
+              type="button"
+              onClick={() =>
+                e.match_day_id
+                  ? onViewDetails(e.match_day_id)
+                  : onEventClick(e.id)
+              }
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              View
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
@@ -316,13 +331,18 @@ const PastEventsList: React.FC<{
 const UpcomingEvents: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isCompact = useIsCompact();
 
-  const [tab, setTab] = React.useState<"upcoming" | "past">("upcoming");
+  // Restore tab from location state (e.g. coming back from GameDetail)
+  const initialTab =
+    (location.state as any)?.tab === "past" ? "past" : "upcoming";
+
+  const [tab, setTab] = React.useState<"upcoming" | "past">(initialTab);
   const [view, setView] = React.useState<"list" | "calendar">("list");
   const [calendarMonth, setCalendarMonth] = React.useState(new Date());
   const [selectedDay, setSelectedDay] = React.useState<Date | null>(null);
-  const [sortAsc, setSortAsc] = React.useState(true);
+  const [sortAsc, setSortAsc] = React.useState(initialTab === "upcoming");
   const [filterOpen, setFilterOpen] = React.useState(false);
 
   // Filter state
@@ -333,6 +353,8 @@ const UpcomingEvents: React.FC = () => {
   const [clubFilters, setClubFilters] = React.useState<Set<string>>(
     new Set()
   );
+  const [monthFilter, setMonthFilter] =
+    React.useState<MonthFilterValue>("all");
 
   // Data queries
   const { data: playerId } = useQuery({
@@ -394,6 +416,28 @@ const UpcomingEvents: React.FC = () => {
     });
   }, []);
 
+  // When switching tabs, set sort default (ASC for upcoming, DESC for past)
+  const handleTabChange = React.useCallback(
+    (newTab: "upcoming" | "past") => {
+      setTab(newTab);
+      setSortAsc(newTab === "upcoming");
+    },
+    []
+  );
+
+  // Month filter helper
+  const monthInterval = React.useMemo(() => {
+    if (monthFilter === "all") return null;
+    const now = new Date();
+    const base =
+      monthFilter === "current"
+        ? now
+        : monthFilter === "last"
+          ? subMonths(now, 1)
+          : addMonths(now, 1);
+    return { start: startOfMonth(base), end: endOfMonth(base) };
+  }, [monthFilter]);
+
   // Filter + sort upcoming events
   const visibleEvents: PlannedEvent[] = React.useMemo(() => {
     let list = events;
@@ -423,6 +467,12 @@ const UpcomingEvents: React.FC = () => {
       list = list.filter((e) => e.clubs?.name && clubFilters.has(e.clubs.name));
     }
 
+    if (monthInterval) {
+      list = list.filter((e) =>
+        isWithinInterval(parseISO(e.date), monthInterval)
+      );
+    }
+
     const sorted = [...list];
     sorted.sort((a, b) => {
       const cmp =
@@ -441,11 +491,23 @@ const UpcomingEvents: React.FC = () => {
     clubFilters,
     playerId,
     sortAsc,
+    monthInterval,
   ]);
 
-  // Sort past events
+  // Filter + sort past events
   const sortedPastEvents: PastEventRow[] = React.useMemo(() => {
     let list = [...pastEvents];
+
+    // RSVP filter — for past events, no RSVP counts as "declined"
+    if (rsvpFilter !== "all") {
+      list = list.filter((e) => {
+        const status = e.rsvp_status; // null means never responded
+        if (rsvpFilter === "none") return status === null;
+        if (rsvpFilter === "declined")
+          return status === "declined" || status === null;
+        return status === rsvpFilter;
+      });
+    }
 
     // Apply event type filter
     if (eventTypeFilters.size > 0) {
@@ -461,12 +523,19 @@ const UpcomingEvents: React.FC = () => {
       );
     }
 
+    // Apply month filter
+    if (monthInterval) {
+      list = list.filter((e) =>
+        isWithinInterval(parseISO(e.date), monthInterval)
+      );
+    }
+
     list.sort((a, b) => {
       const cmp = a.date.localeCompare(b.date);
       return sortAsc ? cmp : -cmp;
     });
     return list;
-  }, [pastEvents, sortAsc, eventTypeFilters, clubFilters]);
+  }, [pastEvents, sortAsc, rsvpFilter, eventTypeFilters, clubFilters, monthInterval]);
 
   const handleDaySelect = (day: Date) =>
     setSelectedDay((prev) => (prev && isSameDay(prev, day) ? null : day));
@@ -475,12 +544,13 @@ const UpcomingEvents: React.FC = () => {
     navigate(`/events/${eventId}`);
 
   const handleViewGameDetails = (matchDayId: string) =>
-    navigate(`/game-details/${matchDayId}`);
+    navigate(`/game-details/${matchDayId}`, { state: { fromTab: "past" } });
 
   const activeFilterCount =
     (rsvpFilter !== "all" ? 1 : 0) +
     (eventTypeFilters.size > 0 ? 1 : 0) +
-    (clubFilters.size > 0 ? 1 : 0);
+    (clubFilters.size > 0 ? 1 : 0) +
+    (monthFilter !== "all" ? 1 : 0);
 
   // ── Tab toggle ──────────────────────────────────────────────────────────
   const TabToggle = React.useMemo(
@@ -488,7 +558,7 @@ const UpcomingEvents: React.FC = () => {
       <div className="flex border rounded-lg overflow-hidden mb-3">
         <button
           type="button"
-          onClick={() => setTab("upcoming")}
+          onClick={() => handleTabChange("upcoming")}
           className={cn(
             "flex-1 px-4 py-2 text-sm font-medium transition-colors",
             tab === "upcoming"
@@ -500,7 +570,7 @@ const UpcomingEvents: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => setTab("past")}
+          onClick={() => handleTabChange("past")}
           className={cn(
             "flex-1 px-4 py-2 text-sm font-medium transition-colors",
             tab === "past"
@@ -512,7 +582,7 @@ const UpcomingEvents: React.FC = () => {
         </button>
       </div>
     ),
-    [tab]
+    [tab, handleTabChange]
   );
 
   // ── Controls row ────────────────────────────────────────────────────────
@@ -613,6 +683,28 @@ const UpcomingEvents: React.FC = () => {
             </Select>
           </div>
 
+          {/* Month filter — dropdown */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Month
+            </p>
+            <Select
+              value={monthFilter}
+              onValueChange={(v) => setMonthFilter(v as MonthFilterValue)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTH_FILTER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Event type — checkboxes */}
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -669,6 +761,7 @@ const UpcomingEvents: React.FC = () => {
                 setRsvpFilter("all");
                 setEventTypeFilters(new Set());
                 setClubFilters(new Set());
+                setMonthFilter("all");
               }}
             >
               Clear all filters
@@ -733,6 +826,7 @@ const UpcomingEvents: React.FC = () => {
                     events={sortedPastEvents}
                     isLoading={pastLoading}
                     onViewDetails={handleViewGameDetails}
+                    onEventClick={handleEventClick}
                   />
                 )}
               </div>
@@ -785,6 +879,7 @@ const UpcomingEvents: React.FC = () => {
           events={sortedPastEvents}
           isLoading={pastLoading}
           onViewDetails={handleViewGameDetails}
+          onEventClick={handleEventClick}
         />
       )}
 

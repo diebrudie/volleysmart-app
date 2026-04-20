@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
@@ -99,10 +99,19 @@ interface MatchDayData {
 const GameDetail = () => {
   const { matchDayId } = useParams<{ matchDayId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { clubId, setClubId } = useClub();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const goBack = () => {
+    if ((location.state as any)?.fromTab === "past") {
+      navigate("/home", { state: { tab: "past" } });
+    } else {
+      navigate(-1);
+    }
+  };
 
   const [editing, setEditing] = useState(false);
   const [editedGames, setEditedGames] = useState<Match[]>([]);
@@ -483,7 +492,7 @@ const GameDetail = () => {
               The match you're looking for doesn't exist or you don't have
               access to it.
             </p>
-            <Button onClick={() => navigate(-1)}>Go Back</Button>
+            <Button onClick={() => goBack()}>Go Back</Button>
           </div>
         </div>
       </div>
@@ -545,7 +554,7 @@ const GameDetail = () => {
                 variant="outline"
                 size="icon"
                 className="mr-4"
-                onClick={() => navigate(-1)}
+                onClick={() => goBack()}
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
