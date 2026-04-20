@@ -717,16 +717,15 @@ const EventDetail: React.FC = () => {
             </p>
           </div>
 
-          {/* Description / Notes */}
-          {event.notes && (
-            <div className="space-y-1">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                Description / Notes
-              </h3>
-              <p className="text-sm">{event.notes}</p>
-            </div>
-          )}
         </div>
+
+        {/* Description / Notes section */}
+        {event.notes && (
+          <div className="space-y-2">
+            <h2 className="text-lg font-bold">Description / Notes</h2>
+            <p className="text-sm">{event.notes}</p>
+          </div>
+        )}
 
         {/* Hosted by section */}
         <div className="space-y-3">
