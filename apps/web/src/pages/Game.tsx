@@ -3,8 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
-  ChevronLeft,
-  Calendar,
+  ArrowLeft,
   MapPin,
   Pencil,
   Trophy,
@@ -12,12 +11,11 @@ import {
   Save,
   X,
   Trash,
-  ChevronDown,
   CalendarCheck,
+  MoreHorizontal,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +37,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
-import Navbar from "@/components/layout/Navbar";
 import SetBox from "@/components/match/SetBox";
 import AddSetBox from "@/components/match/AddSetBox";
 import { LocationSelector } from "@/components/forms/LocationSelector";
@@ -478,29 +475,21 @@ const Game = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <Spinner className="h-8 w-8" />
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Spinner className="h-8 w-8" />
       </div>
     );
   }
 
   if (error || !matchData) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
-              Match not found
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              The match you're looking for doesn't exist or you don't have access.
-            </p>
-            <Button onClick={goBack}>Go Back</Button>
-          </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Match not found</h2>
+          <p className="text-muted-foreground mb-4">
+            The match you're looking for doesn't exist or you don't have access.
+          </p>
+          <Button onClick={goBack}>Go Back</Button>
         </div>
       </div>
     );
@@ -551,11 +540,6 @@ const Game = () => {
       : "Tie"
     : "TBD";
 
-  const totalScore = {
-    teamA: matchData.matches.reduce((sum, g) => sum + g.team_a_score, 0),
-    teamB: matchData.matches.reduce((sum, g) => sum + g.team_b_score, 0),
-  };
-
   const matchWinner =
     teamAWins > teamBWins
       ? "Team A"
@@ -569,15 +553,7 @@ const Game = () => {
   const today = new Date();
   const isMatchToday = matchDate.toDateString() === today.toDateString();
 
-  const formatDateLong = (date: Date) =>
-    date.toLocaleDateString("en-US", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-
-  const formatDateMobile = (date: Date) => {
+  const formatDateShort = (date: Date) => {
     const weekday = new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(date);
     const monthShort = new Intl.DateTimeFormat("en-US", { month: "short" }).format(date);
     return `${weekday}, ${monthShort}. ${date.getDate()}, ${date.getFullYear()}`;
@@ -586,476 +562,385 @@ const Game = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="min-h-screen bg-background flex flex-col pb-24">
+      {/* Gradient hero (short, ClubOverview style) */}
+      <div className="relative h-28 sm:h-32">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/60 to-primary/20" />
+        <div className="absolute inset-0 bg-black/20" />
 
-      <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-          {/* Header */}
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center">
-              <Button
-                variant="outline"
-                size="icon"
-                className="mr-4"
-                onClick={goBack}
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {isMatchToday ? "Today's Game" : "Game Details"}
-                </h1>
-                {matchData.clubs?.name && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {matchData.clubs.name}
-                  </p>
-                )}
-              </div>
-            </div>
+        {/* Back button — top left */}
+        <button
+          onClick={goBack}
+          className="absolute top-4 left-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
 
-            <div className="flex gap-2 flex-wrap">
-              {/* Edit Teams button (inline, within edit window) */}
-              {isEditingAllowed && isAdminOrEditor && (
-                <Button
-                  variant="action"
-                  icon={<Pencil className="h-4 w-4" />}
-                  onClick={() =>
-                    navigate(
-                      `/edit-game/${matchData.club_id}/${matchData.id}`
-                    )
-                  }
-                  size="sm"
-                >
-                  Edit Teams
-                </Button>
-              )}
-
-              {/* View Event link */}
-              {matchData.planned_event_id && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    navigate(`/events/${matchData.planned_event_id}`)
-                  }
-                >
-                  <CalendarCheck className="h-4 w-4 mr-1" />
-                  View Event
-                </Button>
-              )}
-
-              {/* Actions dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="action" size="sm">
-                    Actions
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align={isMobile ? "start" : "end"}
-                  className="w-56"
-                >
-                  <DropdownMenuItem
-                    onClick={handleCreateSameTeams}
-                    className="text-gray-700 dark:text-gray-300"
-                  >
-                    <Trophy className="mr-2 h-4 w-4" />
-                    New Game w. same Teams
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {canEditScores && !editing && (
-                    <DropdownMenuItem
-                      onClick={() => setEditing(true)}
-                      className="text-gray-700 dark:text-gray-300"
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit Scores
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    onClick={() => setIsEditingLocation(true)}
-                    className="text-gray-700 dark:text-gray-300"
-                  >
-                    <MapPin className="mr-2 h-4 w-4" />
-                    Edit Location
-                  </DropdownMenuItem>
-                  {isAdminOrEditor && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => setConfirmDeleteOpen(true)}
-                        className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-                      >
-                        <Trash className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          {/* Match Info Row */}
-          <Card className="mb-6">
-            <CardContent className="p-3 sm:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-top">
-                  <Calendar className="h-5 w-5 mt-0.5 text-volleyball-primary dark:text-blue-400 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
-                      <span className="hidden sm:inline">{formatDateLong(matchDate)}</span>
-                      <span className="sm:hidden">{formatDateMobile(matchDate)}</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-top">
-                  <MapPin className="h-5 w-5 mt-0.5 text-volleyball-primary dark:text-blue-400 mr-2 flex-shrink-0" />
-                  <div className="flex-grow">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Location</p>
-                    {isEditingLocation ? (
-                      <div className="space-y-2">
-                        <LocationSelector
-                          clubId={matchData.club_id}
-                          value={matchData.location_id || undefined}
-                          onValueChange={async (locationId) => {
-                            try {
-                              const { error } = await supabase
-                                .from("match_days")
-                                .update({ location_id: locationId })
-                                .eq("id", matchData.id);
-                              if (error) throw error;
-                              toast({ title: "Location updated", duration: 1500 });
-                              setIsEditingLocation(false);
-                              refetch();
-                            } catch (err) {
-                              console.error("Error updating location:", err);
-                              toast({ title: "Error", description: "Failed to update location.", variant: "destructive", duration: 2000 });
-                            }
-                          }}
-                          placeholder="Select or create location"
-                          className="max-w-xs"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsEditingLocation(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <p
-                        className="font-medium text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-                        onClick={() => setIsEditingLocation(true)}
-                      >
-                        {matchData.locations?.name || "Click to set location"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-top">
-                  <Trophy className="h-5 w-5 mt-0.5 text-volleyball-primary dark:text-blue-400 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Result</p>
-                    <p className="font-medium text-lg text-gray-900 dark:text-gray-100">
-                      <span className={teamAWins > teamBWins ? "font-bold text-red-500" : ""}>
-                        {teamAWins}
-                      </span>
-                      <span className="mx-2">-</span>
-                      <span className={teamBWins > teamAWins ? "font-bold text-emerald-500" : ""}>
-                        {teamBWins}
-                      </span>
-                      <span className="ml-2 text-sm text-gray-500">
-                        ({hasPlayedAnySet ? winner : "TBD"})
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Teams (side-by-side, Dashboard style) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="flex h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-              {/* Team A */}
-              <div className="w-1/2 bg-white dark:bg-gray-800 p-0">
-                <h3 className="bg-red-500 dark:bg-red-600 text-white py-1 px-2 text-center">
-                  Team A
-                </h3>
-                <ul className="space-y-0.5 p-4">
-                  {teamAPlayers.map((player, index) => (
-                    <li key={player.id} className="text-sm">
-                      <div className="font-medium text-gray-900 dark:text-gray-100">
-                        <span className="block sm:inline">
-                          {index + 1}. {player.name}
-                          {player.position && (
-                            <span className="hidden sm:inline"> - </span>
-                          )}
-                        </span>
-                        {player.position && (
-                          <span className="block sm:inline text-xs sm:text-sm text-gray-600 dark:text-gray-400 sm:font-medium">
-                            {player.position}
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {/* Team B */}
-              <div className="w-1/2 bg-white dark:bg-gray-800 p-0">
-                <h3 className="bg-emerald-500 dark:bg-emerald-600 text-white py-1 px-2 text-center">
-                  Team B
-                </h3>
-                <ul className="space-y-0.5 p-4">
-                  {teamBPlayers.map((player, index) => (
-                    <li key={player.id} className="text-sm">
-                      <div className="font-medium text-gray-900 dark:text-gray-100">
-                        <span className="block sm:inline">
-                          {index + 1}. {player.name}
-                          {player.position && (
-                            <span className="hidden sm:inline"> - </span>
-                          )}
-                        </span>
-                        {player.position && (
-                          <span className="block sm:inline text-xs sm:text-sm text-gray-600 dark:text-gray-400 sm:font-medium">
-                            {player.position}
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Score overview card */}
-            <div className="h-full">
-              <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 h-full flex flex-col">
-                <div className="bg-volleyball-primary dark:bg-blue-700 text-white p-4 text-center">
-                  <h2 className="text-2xl font-bold">SCORE</h2>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-6 text-center flex-grow flex flex-col justify-center">
-                  <h3 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">
-                    {hasPlayedAnySet ? winner : "TBD"}
-                  </h3>
-                  <div className="text-5xl font-bold">
-                    <span className="text-red-500">{teamAWins}</span> -{" "}
-                    <span className="text-emerald-500">{teamBWins}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sets (Dashboard-style SetBox grid) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="md:row-span-2 order-1">
-              <SetBox
-                setNumber={1}
-                teamAScore={scoresByNumber.get(1)?.teamA ?? null}
-                teamBScore={scoresByNumber.get(1)?.teamB ?? null}
-                onScoreUpdate={handleSetScoreUpdate}
-                isLarge={true}
-                isEditingAllowed={isEditingAllowed && isAdminOrEditor}
-              />
-            </div>
-            <div className="order-2">
-              <SetBox
-                setNumber={2}
-                teamAScore={scoresByNumber.get(2)?.teamA ?? null}
-                teamBScore={scoresByNumber.get(2)?.teamB ?? null}
-                onScoreUpdate={handleSetScoreUpdate}
-                isEditingAllowed={isEditingAllowed && isAdminOrEditor}
-              />
-            </div>
-            <div className="order-3 md:order-4">
-              <SetBox
-                setNumber={3}
-                teamAScore={scoresByNumber.get(3)?.teamA ?? null}
-                teamBScore={scoresByNumber.get(3)?.teamB ?? null}
-                onScoreUpdate={handleSetScoreUpdate}
-                isEditingAllowed={isEditingAllowed && isAdminOrEditor}
-              />
-            </div>
-            <div className="order-4 md:order-3">
-              <SetBox
-                setNumber={4}
-                teamAScore={scoresByNumber.get(4)?.teamA ?? null}
-                teamBScore={scoresByNumber.get(4)?.teamB ?? null}
-                onScoreUpdate={handleSetScoreUpdate}
-                isEditingAllowed={isEditingAllowed && isAdminOrEditor}
-              />
-            </div>
-            <div className="order-5 md:order-4">
-              <SetBox
-                setNumber={5}
-                teamAScore={scoresByNumber.get(5)?.teamA ?? null}
-                teamBScore={scoresByNumber.get(5)?.teamB ?? null}
-                onScoreUpdate={handleSetScoreUpdate}
-                isEditingAllowed={isEditingAllowed && isAdminOrEditor}
-              />
-            </div>
-            {extraSets.map((m) => (
-              <div key={m.id} className="order-6">
-                <SetBox
-                  setNumber={m.game_number}
-                  teamAScore={m.team_a_score}
-                  teamBScore={m.team_b_score}
-                  onScoreUpdate={handleSetScoreUpdate}
-                  onDelete={isEditingAllowed && isAdminOrEditor ? handleDeleteSet : undefined}
-                  isEditingAllowed={isEditingAllowed && isAdminOrEditor}
-                  isDeletable={m.game_number > 5 && isEditingAllowed && isAdminOrEditor}
-                />
-              </div>
-            ))}
+        {/* 3-dot menu — top right */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="absolute top-4 right-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center">
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
             {isEditingAllowed && isAdminOrEditor && (
-              <div className="order-7">
-                <AddSetBox onClick={handleAddSet} disabled={!canAddAnotherSet} />
-              </div>
+              <DropdownMenuItem
+                onClick={() =>
+                  navigate(`/edit-game/${matchData.club_id}/${matchData.id}`)
+                }
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Teams
+              </DropdownMenuItem>
             )}
-          </div>
+            <DropdownMenuItem
+              onClick={() => setIsEditingLocation(true)}
+            >
+              <MapPin className="mr-2 h-4 w-4" />
+              Edit Location
+            </DropdownMenuItem>
+            {matchData.planned_event_id && (
+              <DropdownMenuItem
+                onClick={() =>
+                  navigate(`/events/${matchData.planned_event_id}`)
+                }
+              >
+                <CalendarCheck className="mr-2 h-4 w-4" />
+                View Event
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-          {/* Match Scores table (from GameDetail, toggled via Edit Scores action) */}
-          {editing && (
-            <Card className="mb-8">
-              <CardContent className="p-3 sm:p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-                  Edit Match Scores
-                </h3>
-                <div className="rounded-md border dark:border-gray-700 overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-800">
-                      <tr>
-                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Set
-                        </th>
-                        <th className="px-2 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Team A
-                        </th>
-                        <th className="px-2 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Team B
-                        </th>
-                        <th className="pl-6 pr-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Winner
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                      {editedGames
-                        .sort((a, b) => a.game_number - b.game_number)
-                        .map((game, index) => (
-                          <tr key={game.id}>
-                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100 text-sm">
-                              Set {game.game_number}
-                            </td>
-                            <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right">
-                              <Input
-                                type="number"
-                                min="0"
-                                value={game.team_a_score}
-                                onChange={(e) =>
-                                  handleScoreChange(index, "team_a_score", e.target.value)
-                                }
-                                className="w-16 inline-block text-right"
-                              />
-                            </td>
-                            <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right">
-                              <Input
-                                type="number"
-                                min="0"
-                                value={game.team_b_score}
-                                onChange={(e) =>
-                                  handleScoreChange(index, "team_b_score", e.target.value)
-                                }
-                                className="w-16 inline-block text-right"
-                              />
-                            </td>
-                            <td className="pl-6 pr-2 sm:px-6 py-4 whitespace-nowrap">
-                              {game.team_a_score + game.team_b_score > 0 ? (
-                                <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    game.team_a_score > game.team_b_score
-                                      ? "bg-red-500/10 text-red-600 dark:bg-red-900/20 dark:text-red-400"
-                                      : game.team_b_score > game.team_a_score
-                                      ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
-                                      : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                                  }`}
-                                >
-                                  {game.team_a_score > game.team_b_score
-                                    ? "Team A"
-                                    : game.team_b_score > game.team_a_score
-                                    ? "Team B"
-                                    : "Tie"}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 dark:text-gray-500 text-xs">
-                                  Not played
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      <tr className="bg-gray-50 dark:bg-gray-800 font-semibold">
-                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          Total Points
-                        </td>
-                        <td className="px-2 sm:px-6 py-4 text-right text-gray-900 dark:text-gray-100">
-                          {editedGames.reduce((s, g) => s + g.team_a_score, 0)}
-                        </td>
-                        <td className="px-2 sm:px-6 py-4 text-right text-gray-900 dark:text-gray-100">
-                          {editedGames.reduce((s, g) => s + g.team_b_score, 0)}
-                        </td>
-                        <td className="pl-6 pr-2 sm:px-6 py-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              matchWinner === "Team A"
-                                ? "bg-red-500/10 text-red-600 dark:bg-red-900/20 dark:text-red-400"
-                                : matchWinner === "Team B"
-                                ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
-                                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                            }`}
-                          >
-                            {matchWinner}
-                          </span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-4 flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditing(false);
-                      setEditedGames([...matchData.matches]);
-                    }}
-                    className="flex items-center gap-1"
-                  >
-                    <X className="h-4 w-4" />
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleSaveChanges}
-                    className="flex items-center gap-1"
-                  >
-                    <Save className="h-4 w-4" />
-                    Save Changes
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Title + info row */}
+      <div className="px-4 pt-5 space-y-3">
+        <h1 className="text-2xl font-bold">
+          {isMatchToday ? "Today's Game" : "Game Details"}
+        </h1>
+
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          {matchData.clubs?.name && (
+            <span className="flex items-center gap-1.5">
+              <Trophy className="h-3.5 w-3.5" />
+              {matchData.clubs.name}
+            </span>
+          )}
+          <span className="flex items-center gap-1.5">
+            {formatDateShort(matchDate)}
+          </span>
+          {matchData.locations?.name && (
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" />
+              {matchData.locations.name}
+            </span>
+          )}
+          <span className="flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5" />
+            {teamAPlayers.length + teamBPlayers.length} players
+          </span>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="px-4 mt-6 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Location editing inline */}
+        {isEditingLocation && (
+          <div className="rounded-lg border border-border p-4 space-y-3 bg-card">
+            <p className="text-sm font-medium">Update Location</p>
+            <LocationSelector
+              clubId={matchData.club_id}
+              value={matchData.location_id || undefined}
+              onValueChange={async (locationId) => {
+                try {
+                  const { error } = await supabase
+                    .from("match_days")
+                    .update({ location_id: locationId })
+                    .eq("id", matchData.id);
+                  if (error) throw error;
+                  toast({ title: "Location updated", duration: 1500 });
+                  setIsEditingLocation(false);
+                  refetch();
+                } catch (err) {
+                  console.error("Error updating location:", err);
+                  toast({ title: "Error", description: "Failed to update location.", variant: "destructive", duration: 2000 });
+                }
+              }}
+              placeholder="Select or create location"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditingLocation(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+
+        {/* Teams (side-by-side) */}
+        <div className="rounded-lg overflow-hidden border border-border">
+          <div className="flex">
+            <div className="w-1/2 bg-card">
+              <h3 className="bg-red-500 dark:bg-red-600 text-white py-2 px-3 text-center text-sm font-semibold">
+                Team A
+              </h3>
+              <ul className="space-y-1 p-3">
+                {teamAPlayers.map((player, index) => (
+                  <li key={player.id} className="text-sm">
+                    <span className="font-medium">
+                      {index + 1}. {player.name}
+                    </span>
+                    {player.position && player.position !== "No Position" && (
+                      <span className="text-xs text-muted-foreground ml-1">
+                        — {player.position}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="w-1/2 bg-card border-l border-border">
+              <h3 className="bg-emerald-500 dark:bg-emerald-600 text-white py-2 px-3 text-center text-sm font-semibold">
+                Team B
+              </h3>
+              <ul className="space-y-1 p-3">
+                {teamBPlayers.map((player, index) => (
+                  <li key={player.id} className="text-sm">
+                    <span className="font-medium">
+                      {index + 1}. {player.name}
+                    </span>
+                    {player.position && player.position !== "No Position" && (
+                      <span className="text-xs text-muted-foreground ml-1">
+                        — {player.position}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Score overview */}
+        <div className="rounded-lg overflow-hidden border border-border">
+          <div className="bg-primary text-primary-foreground py-3 text-center">
+            <h2 className="text-lg font-bold tracking-wide">SCORE</h2>
+          </div>
+          <div className="bg-card p-6 text-center">
+            <p className="text-2xl font-bold mb-2">
+              {hasPlayedAnySet ? winner : "TBD"}
+            </p>
+            <div className="text-5xl font-bold">
+              <span className="text-red-500">{teamAWins}</span>
+              <span className="mx-2 text-muted-foreground">-</span>
+              <span className="text-emerald-500">{teamBWins}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Sets grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:row-span-2 order-1">
+            <SetBox
+              setNumber={1}
+              teamAScore={scoresByNumber.get(1)?.teamA ?? null}
+              teamBScore={scoresByNumber.get(1)?.teamB ?? null}
+              onScoreUpdate={handleSetScoreUpdate}
+              isLarge={true}
+              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+            />
+          </div>
+          <div className="order-2">
+            <SetBox
+              setNumber={2}
+              teamAScore={scoresByNumber.get(2)?.teamA ?? null}
+              teamBScore={scoresByNumber.get(2)?.teamB ?? null}
+              onScoreUpdate={handleSetScoreUpdate}
+              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+            />
+          </div>
+          <div className="order-3 md:order-4">
+            <SetBox
+              setNumber={3}
+              teamAScore={scoresByNumber.get(3)?.teamA ?? null}
+              teamBScore={scoresByNumber.get(3)?.teamB ?? null}
+              onScoreUpdate={handleSetScoreUpdate}
+              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+            />
+          </div>
+          <div className="order-4 md:order-3">
+            <SetBox
+              setNumber={4}
+              teamAScore={scoresByNumber.get(4)?.teamA ?? null}
+              teamBScore={scoresByNumber.get(4)?.teamB ?? null}
+              onScoreUpdate={handleSetScoreUpdate}
+              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+            />
+          </div>
+          <div className="order-5 md:order-4">
+            <SetBox
+              setNumber={5}
+              teamAScore={scoresByNumber.get(5)?.teamA ?? null}
+              teamBScore={scoresByNumber.get(5)?.teamB ?? null}
+              onScoreUpdate={handleSetScoreUpdate}
+              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+            />
+          </div>
+          {extraSets.map((m) => (
+            <div key={m.id} className="order-6">
+              <SetBox
+                setNumber={m.game_number}
+                teamAScore={m.team_a_score}
+                teamBScore={m.team_b_score}
+                onScoreUpdate={handleSetScoreUpdate}
+                onDelete={isEditingAllowed && isAdminOrEditor ? handleDeleteSet : undefined}
+                isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+                isDeletable={m.game_number > 5 && isEditingAllowed && isAdminOrEditor}
+              />
+            </div>
+          ))}
+          {isEditingAllowed && isAdminOrEditor && (
+            <div className="order-7">
+              <AddSetBox onClick={handleAddSet} disabled={!canAddAnotherSet} />
+            </div>
           )}
         </div>
-      </main>
+
+        {/* Edit Scores table */}
+        {editing && (
+          <div className="rounded-xl border border-border bg-card p-3 sm:p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-4 text-foreground">
+              Edit Match Scores
+            </h3>
+            <div className="rounded-md border border-border overflow-x-auto">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Set
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Team A
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Team B
+                    </th>
+                    <th className="pl-6 pr-2 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Winner
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-card divide-y divide-border">
+                  {editedGames
+                    .sort((a, b) => a.game_number - b.game_number)
+                    .map((game, index) => (
+                      <tr key={game.id}>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap font-medium text-foreground text-sm">
+                          Set {game.game_number}
+                        </td>
+                        <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={game.team_a_score}
+                            onChange={(e) =>
+                              handleScoreChange(index, "team_a_score", e.target.value)
+                            }
+                            className="w-16 inline-block text-right"
+                          />
+                        </td>
+                        <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={game.team_b_score}
+                            onChange={(e) =>
+                              handleScoreChange(index, "team_b_score", e.target.value)
+                            }
+                            className="w-16 inline-block text-right"
+                          />
+                        </td>
+                        <td className="pl-6 pr-2 sm:px-6 py-4 whitespace-nowrap">
+                          {game.team_a_score + game.team_b_score > 0 ? (
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                game.team_a_score > game.team_b_score
+                                  ? "bg-red-500/10 text-red-600 dark:bg-red-900/20 dark:text-red-400"
+                                  : game.team_b_score > game.team_a_score
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {game.team_a_score > game.team_b_score
+                                ? "Team A"
+                                : game.team_b_score > game.team_a_score
+                                ? "Team B"
+                                : "Tie"}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">
+                              Not played
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  <tr className="bg-muted font-semibold">
+                    <td className="px-3 sm:px-6 py-4 text-sm text-foreground">
+                      Total Points
+                    </td>
+                    <td className="px-2 sm:px-6 py-4 text-right text-foreground">
+                      {editedGames.reduce((s, g) => s + g.team_a_score, 0)}
+                    </td>
+                    <td className="px-2 sm:px-6 py-4 text-right text-foreground">
+                      {editedGames.reduce((s, g) => s + g.team_b_score, 0)}
+                    </td>
+                    <td className="pl-6 pr-2 sm:px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          matchWinner === "Team A"
+                            ? "bg-red-500/10 text-red-600 dark:bg-red-900/20 dark:text-red-400"
+                            : matchWinner === "Team B"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {matchWinner}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setEditing(false);
+                  setEditedGames([...matchData.matches]);
+                }}
+                className="flex items-center gap-1"
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleSaveChanges}
+                className="flex items-center gap-1"
+              >
+                <Save className="h-4 w-4" />
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        )}
+        </div>
+      </div>
 
       {/* Delete confirmation dialog */}
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
