@@ -14,6 +14,7 @@ import PlayerOnboarding from "@/pages/PlayerOnboarding";
 import Dashboard from "@/pages/Dashboard";
 import Games from "@/pages/Games";
 import GameDetail from "@/pages/GameDetail";
+import Game from "@/pages/Game";
 import Players from "@/pages/Players";
 import Members from "@/pages/Members";
 import MembersGlobal from "@/pages/MembersGlobal";
@@ -204,6 +205,15 @@ const AppRoutes = () => (
       }
     />
 
+    <Route
+      path="/game/:matchDayId"
+      element={
+        <ProtectedRoute>
+          <Game />
+        </ProtectedRoute>
+      }
+    />
+    {/* Legacy redirect */}
     <Route
       path="/game-details/:matchDayId"
       element={

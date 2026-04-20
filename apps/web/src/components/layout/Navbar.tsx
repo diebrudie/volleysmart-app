@@ -542,7 +542,7 @@ const Navbar = () => {
           size="sm"
           linkTo={
             isAuthenticated && membershipStatus === "active" && clubId
-              ? `/dashboard/${clubId}`
+              ? `/clubs/${clubId}`
               : "/clubs"
           }
         />

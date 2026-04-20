@@ -1,14 +1,23 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Phase 12 (next)
-- Last change: Phase 11 — Club Overview page completed
-- Current branch: `feat/phase-11-club-overview` (branched from `feat/phase-10-quick-fixes-polish`)
-- Next step: Merge Phase 11 to main, start Phase 12
+- Working on: Phase 12 — Game Flow Unification
+- Last change: Phase 12 — unified Game page, Start Game from events, nav updates
+- Current branch: `feat/phase-12-game-flow-unification` (branched from `feat/phase-11-club-overview`)
+- Next step: Test & polish Phase 12, then merge
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
-- `main` → `feat/phase-9-create-event-improvements` → `feat/phase-10-quick-fixes-polish` → `feat/phase-11-club-overview`
+- `main` → `feat/phase-9-create-event-improvements` → `feat/phase-10-quick-fixes-polish` → `feat/phase-11-club-overview` → `feat/phase-12-game-flow-unification`
+
+## Phase 12 in-progress work (Game Flow Unification)
+1. **Unified `/game/:matchDayId` page**: New `Game.tsx` merges Dashboard + GameDetail — teams, SetBox scores, actions dropdown, edit scores table, location editing, delete, "New game w/ same teams"
+2. **Start Game from EventDetail**: Creates match_day linked via `planned_event_id`, auto-generates teams from attending players using `assignTeams()`, navigates to `/game/:matchDayId`
+3. **View Game button**: Once a game exists for an event, EventDetail shows "View Game" instead of "Start Game" (non-creators also see it)
+4. **DB migration**: Unique partial index on `match_days.planned_event_id` prevents duplicate games per event
+5. **Dashboard → redirect wrapper**: `/dashboard/:clubId` now redirects to `/game/:latestMatchDayId` or shows empty state
+6. **Navigation updates**: All `/game-details/` links → `/game/`, all `/dashboard/` links → `/clubs/` or `/game/` as appropriate
+7. **Files updated**: Archive, Games, UpcomingEvents, NewGame, EditGame, InviteMembers, NotFound, Navbar, App.tsx, AppRoutes.tsx
 
 ## Phase 11 completed work (Club Overview)
 1. ~~**Club Overview page**~~: New `/clubs/:clubId` route with hero, club info, action buttons, upcoming event, members list
@@ -49,7 +58,8 @@ Branches stack on each other (not merged to main yet):
 - `apps/web/src/integrations/supabase/plannedEvents.ts` — event CRUD + fetch + RSVP + delete + past events
 - `apps/web/src/integrations/supabase/clubMembers.ts` — club member queries + deactivation
 - `apps/web/src/pages/Clubs.tsx` — Clubs list (navigates to /clubs/:clubId)
-- `apps/web/src/pages/Dashboard.tsx` — Current game overview (will become /game/:matchDayId in Phase 12)
+- `apps/web/src/pages/Game.tsx` — Unified game page (/game/:matchDayId) — teams, scores, actions
+- `apps/web/src/pages/Dashboard.tsx` — Redirect wrapper (latest game → /game/:id, or empty state)
 - `apps/web/src/components/nav/MobileChrome.tsx` — Route-based navbar visibility
 - `apps/web/src/routes/AppRoutes.tsx` — All routes
 
@@ -67,7 +77,7 @@ Branches stack on each other (not merged to main yet):
 - Phase 9: Completed — Create Event improvements + Event Detail page + Home redesign
 - Phase 10: Completed — Quick fixes (today highlight, location fix, menu cleanup, description/notes)
 - Phase 11: Completed — Club Overview page (hero, members, settings sheet, RSVP display, admin management)
-- Phase 12: Next — Game Flow Unification (Start Game → /game/:matchDayId, event lifecycle, game details improvements)
+- Phase 12: In progress — Game Flow Unification (unified /game/:matchDayId, Start Game from events, nav link migration)
 - Phase 13: UI Consistency Pass (Members, Profile, GameDetail — unified typography/spacing)
 - Phase 14: Advanced Filters (custom month range, filter by city)
 - Phase 15: Settings page & Notification preferences

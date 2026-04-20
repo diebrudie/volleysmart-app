@@ -536,7 +536,7 @@ const UpcomingEvents: React.FC = () => {
     navigate(`/events/${eventId}`);
 
   const handleViewGameDetails = (matchDayId: string) =>
-    navigate(`/game-details/${matchDayId}`, { state: { fromTab: "past" } });
+    navigate(`/game/${matchDayId}`, { state: { fromTab: "past" } });
 
   const activeFilterCount =
     (rsvpFilter !== "all" ? 1 : 0) +

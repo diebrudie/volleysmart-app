@@ -55,7 +55,7 @@ const InviteMembers = () => {
 
   const handleSkip = () => {
     if (clubId) {
-      navigate(`/dashboard/${clubId}`);
+      navigate(`/clubs/${clubId}`);
     } else {
       navigate("/clubs");
     }
@@ -63,7 +63,7 @@ const InviteMembers = () => {
 
   const handleGoToDashboard = () => {
     if (clubId) {
-      navigate(`/dashboard/${clubId}`);
+      navigate(`/clubs/${clubId}`);
     } else {
       navigate("/clubs");
     }

@@ -151,7 +151,7 @@ const BootGate = ({ children }: { children: React.ReactNode }) => {
         lastPrivatePath && lastPrivatePath !== "/"
           ? lastPrivatePath
           : lastVisitedClub
-          ? `/dashboard/${lastVisitedClub}`
+          ? `/clubs/${lastVisitedClub}`
           : "/clubs";
 
       if (target !== location.pathname) {

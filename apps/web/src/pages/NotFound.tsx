@@ -19,7 +19,7 @@ const NotFound = () => {
     if (isAuthenticated) {
       const lastVisitedClub = localStorage.getItem("lastVisitedClub");
       if (lastVisitedClub) {
-        navigate(`/dashboard/${lastVisitedClub}`);
+        navigate(`/clubs/${lastVisitedClub}`);
       } else {
         navigate("/clubs");
       }

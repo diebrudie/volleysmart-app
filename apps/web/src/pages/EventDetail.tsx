@@ -65,6 +65,10 @@ import {
 } from "@/integrations/supabase/plannedEvents";
 import { EventLocationSelector } from "@/components/forms/EventLocationSelector";
 import { toast } from "sonner";
+import { assignTeams } from "@/features/teams/assignLineup";
+import type { PlayerForTeams } from "@/features/teams/assignLineup";
+import { normalizeRole } from "@/features/teams/positions";
+import { format } from "date-fns";
 
 // ─── Event type display config ──────────────────────────────────────────────
 const EVENT_TYPE_CONFIG: Record<
@@ -462,6 +466,127 @@ const EventDetail: React.FC = () => {
     },
     onError: () => toast.error("Failed to delete event"),
   });
+
+  // Check if a game already exists for this event
+  const { data: linkedMatchDay } = useQuery({
+    queryKey: ["event-match-day", eventId],
+    queryFn: async () => {
+      if (!eventId) return null;
+      const { data } = await supabase
+        .from("match_days")
+        .select("id" as unknown as string)
+        .eq("planned_event_id" as any, eventId)
+        .maybeSingle();
+      return data as { id: string } | null;
+    },
+    enabled: !!eventId,
+  });
+
+  const [isStartingGame, setIsStartingGame] = React.useState(false);
+
+  const handleStartGame = async () => {
+    if (!event || !user?.id || !eventId) return;
+
+    const attending = attendees.filter((a) => a.status === "attending");
+    if (attending.length < 4) {
+      toast.error("At least 4 attending players are needed to start a game");
+      return;
+    }
+
+    setIsStartingGame(true);
+    try {
+      // Fetch full player data for team assignment (skill_rating + positions)
+      const playerIds = attending.map((a) => a.player_id);
+      const { data: playersData } = await supabase
+        .from("players")
+        .select(
+          `id, skill_rating,
+           player_positions(is_primary, positions(name))`
+        )
+        .in("id", playerIds);
+
+      // Build PlayerForTeams array
+      const playersForTeams: PlayerForTeams[] = (playersData ?? []).map(
+        (p: any) => {
+          const positions = p.player_positions ?? [];
+          const primary = positions.find((pp: any) => pp.is_primary);
+          const secondary = positions.find((pp: any) => !pp.is_primary);
+          return {
+            id: p.id,
+            score: p.skill_rating ?? 50,
+            mainPosition: normalizeRole(primary?.positions?.name),
+            secondaryPosition: secondary?.positions?.name
+              ? normalizeRole(secondary.positions.name)
+              : null,
+          };
+        }
+      );
+
+      // Generate teams
+      const teamAssignment = assignTeams(playersForTeams);
+
+      // Create match_day linked to this event
+      const { data: matchDay, error: mdError } = await supabase
+        .from("match_days")
+        .insert({
+          date: event.date,
+          created_by: user.id,
+          club_id: event.club_id,
+          team_generated: true,
+          location_id: event.location_id,
+          planned_event_id: eventId,
+        } as any)
+        .select()
+        .single();
+
+      if (mdError) throw mdError;
+
+      // Create 5 matches (sets)
+      const matches = Array.from({ length: 5 }, (_, i) => ({
+        match_day_id: matchDay.id,
+        game_number: i + 1,
+        team_a_score: 0,
+        team_b_score: 0,
+        added_by_user_id: user.id,
+      }));
+      const { error: mError } = await supabase
+        .from("matches")
+        .insert(matches)
+        .select();
+      if (mError) throw mError;
+
+      // Create game_players from team assignment
+      const allGamePlayers = [
+        ...teamAssignment.teamA,
+        ...teamAssignment.teamB,
+      ].map((ap) => ({
+        match_day_id: matchDay.id,
+        player_id: ap.id,
+        team_name: ap.team,
+        original_team_name: ap.team,
+        manually_adjusted: false,
+        position_played: ap.assignedPosition,
+      }));
+
+      const { error: gpError } = await supabase
+        .from("game_players")
+        .insert(allGamePlayers);
+      if (gpError) throw gpError;
+
+      const compromiseNote =
+        teamAssignment.compromises.length > 0
+          ? ` Note: ${teamAssignment.compromises.join("; ")}`
+          : "";
+      toast.success(`Game started!${compromiseNote}`);
+
+      navigate(`/game/${matchDay.id}`);
+    } catch (error) {
+      console.error("Error starting game:", error);
+      toast.error("Failed to start game. Please try again.");
+    } finally {
+      setIsStartingGame(false);
+    }
+  };
 
   // Render the success dialog even during loading so it's visible immediately
   const createdDialog = (
@@ -863,12 +988,32 @@ const EventDetail: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Start Game (creator only, future feature) */}
-          {isCreator && (
-            <Button className="flex-1" disabled>
-              Start Game
+          {/* Start Game / View Game */}
+          {isCreator && linkedMatchDay ? (
+            <Button
+              className="flex-1"
+              variant="outline"
+              onClick={() => navigate(`/game/${linkedMatchDay.id}`)}
+            >
+              View Game
             </Button>
-          )}
+          ) : isCreator ? (
+            <Button
+              className="flex-1"
+              onClick={handleStartGame}
+              disabled={isStartingGame || attendees.filter((a) => a.status === "attending").length < 4}
+            >
+              {isStartingGame ? "Starting..." : "Start Game"}
+            </Button>
+          ) : linkedMatchDay ? (
+            <Button
+              className="flex-1"
+              variant="outline"
+              onClick={() => navigate(`/game/${linkedMatchDay.id}`)}
+            >
+              View Game
+            </Button>
+          ) : null}
         </div>
       </div>
 

@@ -489,7 +489,7 @@ const Archive: React.FC = () => {
 
                         {/* Details */}
                         <TableCell className="text-right">
-                          <Link to={`/game-details/${row.match_day_id}`}>
+                          <Link to={`/game/${row.match_day_id}`}>
                             <Button variant="action" size="sm">
                               Details
                             </Button>

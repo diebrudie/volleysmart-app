@@ -484,7 +484,7 @@ const EditGame = () => {
           <div className="text-center">
             <p className="text-red-600">Game not found</p>
             <Button
-              onClick={() => navigate(`/dashboard/${clubId}`)}
+              onClick={() => navigate(`/game/${gameId}`)}
               className="mt-4"
             >
               Back to Dashboard
@@ -902,7 +902,7 @@ const EditGame = () => {
         duration: 1500,
       });
 
-      navigate(`/dashboard/${clubId}`);
+      navigate(`/game/${gameId}`);
     } catch (error) {
       console.error("Error saving changes:", error);
       toast({
@@ -925,7 +925,7 @@ const EditGame = () => {
                 variant="outline"
                 size="icon"
                 className="mr-4"
-                onClick={() => navigate(`/dashboard/${clubId}`)}
+                onClick={() => navigate(`/game/${gameId}`)}
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>

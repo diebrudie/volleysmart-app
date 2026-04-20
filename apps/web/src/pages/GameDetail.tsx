@@ -454,7 +454,7 @@ const GameDetail = () => {
       });
 
       // 5. Navigate to dashboard
-      navigate(`/dashboard/${matchData.club_id}`);
+      navigate(`/game/${matchDay.id}`);
     } catch (error) {
       console.error("Error creating new game:", error);
       toast({
