@@ -1,53 +1,70 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Phase 10 — Quick fixes & polish
-- Last change: Phase 10 items (today highlight, location fix, maybe removal, menu cleanup)
-- Next step: Phase 11 — Club Overview page
+- Working on: Phase 11 — Club Overview page (IN PROGRESS)
+- Last change: Initial Club Overview page created, needs testing and bug fixes
+- Current branch: `feat/phase-11-club-overview` (branched from `feat/phase-10-quick-fixes-polish`)
+- Next step: Test Club Overview, fix bugs, continue Phase 11 refinements
+
+## Branching strategy
+Branches stack on each other (not merged to main yet):
+- `main` → `feat/phase-9-create-event-improvements` → `feat/phase-10-quick-fixes-polish` → `feat/phase-11-club-overview`
+
+## Phase 11 work so far (Club Overview — IN PROGRESS)
+- New `/clubs/:clubId` route with `ClubOverview.tsx`
+- Hero section: club image background (gradient fallback), back button, settings gear (admin)
+- Club info: name, "Playing since [year]", city, member count, description
+- Action buttons row: Invite (share sheet), Members (navigate), Event Insights (disabled), Stats (disabled)
+- Upcoming Event section: next event card + "Create an event" link
+- Members list: avatars, names, admin badges, clickable → profile
+- Clubs tab now navigates to `/clubs/:clubId` instead of `/dashboard/:clubId`
+- Club Overview hidden from mobile chrome (HIDE_CHROME)
+- **Needs:** Testing, bug fixes, UX refinements based on user feedback
+
+## Phase 10 completed work (Quick Fixes & Polish)
+1. ~~**Today's event highlight**~~: EventCard shows primary border, tinted bg, "Today" badge on calendar + title
+2. ~~**Location bug fix**~~: EventLocationSelector shows saved locations from ALL user's clubs when no club selected
+3. ~~**Address mandatory for new locations**~~: Validation toast if address is empty for new location
+4. ~~**Remove "Maybe" RSVP**~~: Removed from `RsvpStatus` type (already removed from filter UI)
+5. ~~**Menu drawer cleanup**~~: Removed Profile, Settings, Discover Clubs, Start Tournament; kept Theme + FAQs + Logout
+6. ~~**Description/Notes label**~~: Renamed to "Description / Notes (optional)" with 100 char max + counter
+7. ~~**EventDetail notes display**~~: Own standalone section with bold heading, no border
+8. ~~**Details section reorder**~~: Date → Location → Event type
+9. ~~**Bottom bar fix**~~: Solid white/card background with z-50, content padding pb-32
 
 ## Phase 9 completed work
-1. ~~**Members view toggle padding**~~: Fixed — h-7 w-7 items inside p-1 container
-2. ~~**Address with house number fails**~~: Fixed — rewrote EventLocationSelector to two-field design
-3. ~~**Location selector UX**~~: Name locks after selection (readOnly + X clear), address disabled until name exists, pencil icon to edit
-4. ~~**Event type cards layout**~~: Horizontal row (icon + title), Templates moved to bottom sheet drawer with delete
-5. ~~**Club selector**~~: Replaced buttons with Select dropdown, "No club" default
-6. ~~**Event name label**~~: Renamed "Event title" to "Event name"
-7. ~~**End time field**~~: Added DB column + form field side-by-side with Start time
-8. ~~**RSVP dropdown**~~: Replaced buttons with Select, Custom shows toggle button + inline calendar
-9. ~~**Template improvements**~~: end_time + notes now saved in templates
-10. ~~**Success dialog**~~: After event creation, shows dialog with "View event" + "Dismiss"
-11. ~~**Event Detail page**~~: New `/events/:eventId` route with full event overview
-
-## Phase 9 remaining bugs
-1. **Created event not shown in Home**: Event is created successfully but doesn't appear in the feed. Likely issue in `fetchUpcomingEvents()` — the `locations(name, address)` select may cause a PostgREST error, or the clubless events query isn't returning results.
-2. **Overall Create Event flow**: End-to-end testing still needed.
+1-11. See git history on `feat/phase-9-create-event-improvements` branch
 
 ## Key files
+- `apps/web/src/pages/ClubOverview.tsx` — Club overview page (NEW, Phase 11)
 - `apps/web/src/pages/CreateEvent.tsx` — 3-step event creation with success dialog
-- `apps/web/src/pages/EventDetail.tsx` — Event detail page with RSVP, attendees, delete
+- `apps/web/src/pages/EventDetail.tsx` — Event detail page with RSVP, attendees, delete, edit sheet
+- `apps/web/src/pages/UpcomingEvents.tsx` — Home tab (upcoming + past events, filters, month filter)
+- `apps/web/src/components/events/EventCard.tsx` — Event card with today highlight
 - `apps/web/src/components/forms/EventLocationSelector.tsx` — two-field location picker (name + address with Mapbox)
-- `apps/web/src/integrations/supabase/plannedEvents.ts` — event CRUD + fetch + RSVP + delete
-- `apps/web/src/integrations/supabase/eventTemplates.ts` — template CRUD API
-- `apps/web/src/components/events/EventCard.tsx` — event card with RSVP
-- `apps/web/src/pages/UpcomingEvents.tsx` — Home tab (upcoming events)
-- `apps/web/src/routes/AppRoutes.tsx` — routing (includes `/events/:eventId`)
+- `apps/web/src/integrations/supabase/plannedEvents.ts` — event CRUD + fetch + RSVP + delete + past events
+- `apps/web/src/pages/Clubs.tsx` — Clubs list (now navigates to /clubs/:clubId)
+- `apps/web/src/pages/GameDetail.tsx` — Post-game details (back nav preserves tab state)
+- `apps/web/src/pages/Dashboard.tsx` — Current game overview (will become /game/:matchDayId in Phase 12)
+- `apps/web/src/components/nav/MobileMenuDrawer.tsx` — Cleaned up menu (Theme, FAQs, Logout)
+- `apps/web/src/components/nav/MobileChrome.tsx` — Route-based navbar visibility
+- `apps/web/src/routes/AppRoutes.tsx` — All routes
 
-## Branch
-- Current branch: `feat/phase-9-create-event-improvements`
-- DB migrations applied:
-  - `20260419000001_phase9_templates_location_noclub.sql` (event_templates, locations columns, RLS)
-  - `20260419000002_add_end_time_to_planned_events.sql` (end_time column)
+## DB migrations applied
+- `20260419000001_phase9_templates_location_noclub.sql` (event_templates, locations columns, RLS)
+- `20260419000002_add_end_time_to_planned_events.sql` (end_time column)
 
 ## Known issues
 1. **Home CORS**: Supabase returns `Access-Control-Allow-Origin` for a specific preview deployment URL. Wildcard in Redirect URLs doesn't work for CORS.
 2. **club_members filters**: Some files use `.eq("status", "active")` instead of `.eq("is_active", true)`. Fixed in `plannedEvents.ts` and `CreateEvent.tsx`, but `Clubs.tsx`, `JoinClub.tsx`, `clubMembers.ts` still use `status`.
-
-## Future features to add
-- **Map integration**: Replace gradient hero on EventDetail with interactive map (Mapbox) showing event location
-- **Edit event**: EventDetail 3-dot menu "Edit event" currently disabled — needs EditEvent page
-- **Start Game**: Button on EventDetail triggers team creation + opens sets/points view
+3. **Created event not shown in Home**: May still need testing — possible PostgREST error in `fetchUpcomingEvents()` with locations join.
 
 ## Phases overview
 - Phases 1-8: Completed (nav, events, RSVP, archive, clubs, members, bug fixes)
-- Phase 9: In progress — Create Event improvements + Event Detail page
-- Phase 10: Next — Notification left drawer + Chat pages (final phase)
+- Phase 9: Completed — Create Event improvements + Event Detail page + Home redesign
+- Phase 10: Completed — Quick fixes (today highlight, location fix, menu cleanup, description/notes)
+- Phase 11: **IN PROGRESS** — Club Overview page (initial build done, needs testing/fixes)
+- Phase 12: Next — Game Flow Unification (Start Game → /game/:matchDayId, event lifecycle, game details improvements)
+- Phase 13: UI Consistency Pass (Members, Profile, GameDetail — unified typography/spacing)
+- Phase 14: Advanced Filters (custom month range, filter by city)
+- Phase 15: Settings page & Notification preferences
