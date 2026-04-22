@@ -359,7 +359,7 @@ const Clubs = () => {
           <div className="mb-8">
             {/* Desktop Layout */}
             <div className="hidden sm:flex justify-between items-center">
-              <h1 className="text-4xl font-serif text-gray-900 dark:text-gray-100">
+              <h1 className="text-4xl font-bold text-foreground">
                 Your clubs
               </h1>
               <div className="flex gap-4">
@@ -382,7 +382,7 @@ const Clubs = () => {
 
             {/* Mobile Layout */}
             <div className="sm:hidden">
-              <h1 className="text-4xl font-serif text-gray-900 dark:text-gray-100 mb-4">
+              <h1 className="text-4xl font-bold text-foreground mb-4">
                 Your clubs
               </h1>
               <div className="flex flex-wrap gap-3 justify-end">
@@ -412,11 +412,11 @@ const Clubs = () => {
               {userClubs.map((club) => (
                 <Card
                   key={club.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow relative bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                  className="cursor-pointer hover:shadow-lg transition-shadow relative bg-card border-border"
                   onClick={() => handleClubClick(club.id)}
                 >
                   <CardHeader className="p-0">
-                    <div className="aspect-video w-full bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
+                    <div className="aspect-video w-full bg-muted rounded-t-lg overflow-hidden">
                       {club.image_url ? (
                         <img
                           src={buildImageUrl(club.image_url ?? "", { w: 720 })} // q=60, format=avif by default
@@ -436,7 +436,7 @@ const Clubs = () => {
                   </CardHeader>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-semibold flex-1 pr-2 text-gray-900 dark:text-gray-100">
+                      <h3 className="text-lg font-semibold flex-1 pr-2 text-foreground">
                         {club.name}
                       </h3>
                       {isClubAdmin(club) && (
@@ -447,16 +447,14 @@ const Clubs = () => {
                               size="sm"
                               aria-label="Open club menu"
                               className="h-8 w-8 p-0 rounded-md
-             text-gray-600 hover:text-gray-900 hover:bg-gray-100
-             dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-700"
+             text-muted-foreground hover:text-foreground hover:bg-muted"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
-                            className="w-40 p-2 bg-white border border-gray-200 shadow-md
-             dark:bg-gray-800 dark:border-gray-700"
+                            className="w-40 p-2 bg-popover border border-border shadow-md"
                             align="end"
                           >
                             <div className="flex flex-col space-y-1">
@@ -464,8 +462,7 @@ const Clubs = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="w-full justify-start
-             text-gray-700 hover:text-gray-900 hover:bg-gray-100
-             dark:text-gray-200 dark:hover:text-white dark:hover:bg-gray-700"
+             text-foreground hover:bg-muted"
                                 onClick={(e) => handleEditClick(e, club)}
                                 icon={<Edit className="h-4 w-4" />}
                               >
@@ -488,12 +485,12 @@ const Clubs = () => {
                       )}
                     </div>
                     {/* Playing since */}
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <p className="text-sm text-muted-foreground mb-2">
                       Playing since {formatDate(club.created_at)}
                     </p>
                     <div className="flex justify-between items-center">
                       {/* Location */}
-                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 mb-1">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                         <MapPin
                           className="h-4 w-4 shrink-0"
                           aria-hidden="true"
@@ -505,7 +502,7 @@ const Clubs = () => {
 
                       {/* Club ID shown as plain text (non-clickable) */}
                       {/* {club.slug && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                           Club ID:{" "}
                           <span className="font-mono font-semibold">
                             {club.slug}
@@ -519,7 +516,7 @@ const Clubs = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400 text-lg mb-6">
+              <p className="text-muted-foreground text-lg mb-6">
                 You haven't joined any clubs yet.
               </p>
             </div>

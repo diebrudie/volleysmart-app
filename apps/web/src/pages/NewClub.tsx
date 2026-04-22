@@ -280,19 +280,19 @@ const NewClub = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-lg">
         <Button
           variant="ghost"
           onClick={handleBack}
-          className="mb-6 p-0 h-auto font-normal text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent dark:hover:bg-transparent"
+          className="mb-6 p-0 h-auto font-normal text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent"
           icon={<ArrowLeft className="h-4 w-4" />}
         >
           Back
         </Button>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 pt-6 sm:p-8">
-          <h1 className="text-2xl font-semibold text-left mb-6 text-gray-900 dark:text-gray-100">
+        <div className="bg-card rounded-lg shadow-md border border-border p-4 pt-6 sm:p-8">
+          <h1 className="text-2xl font-semibold text-left mb-6 text-foreground">
             Create a New Club
           </h1>
 
@@ -460,7 +460,7 @@ const NewClub = () => {
                       alt="Club preview"
                       className="object-cover"
                     />
-                    <AvatarFallback className="bg-gray-200 dark:bg-gray-700">
+                    <AvatarFallback className="bg-muted">
                       📷
                     </AvatarFallback>
                   </Avatar>
@@ -473,9 +473,9 @@ const NewClub = () => {
                     htmlFor="club-image-upload"
                     className="cursor-pointer inline-block"
                   >
-                    <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors bg-white dark:bg-gray-800 w-fit">
-                      <Upload className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                    <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-border rounded-lg hover:border-muted-foreground transition-colors bg-card w-fit">
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-foreground">
                         {imagePreview ? "Change Photo" : "Upload Photo"}
                       </span>
                     </div>

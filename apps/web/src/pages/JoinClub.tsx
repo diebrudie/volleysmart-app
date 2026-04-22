@@ -207,20 +207,20 @@ const JoinClub = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <Button
           variant="ghost"
           onClick={handleBack}
-          className="mb-6 p-0 h-auto font-normal text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent dark:hover:bg-transparent"
+          className="mb-6 p-0 h-auto font-normal text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent"
           icon={<ArrowLeft className="h-4 w-4" />}
         >
           Back
         </Button>
 
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <h1 className="text-2xl font-semibold text-center text-gray-900 dark:text-gray-100">
+            <h1 className="text-2xl font-semibold text-center text-foreground">
               Join a club
             </h1>
           </CardHeader>
@@ -246,7 +246,7 @@ const JoinClub = () => {
                     checked={isAssociationMember}
                     onChange={(e) => setIsAssociationMember(e.target.checked)}
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-muted-foreground">
                     I am a member of this association.
                   </span>
 
@@ -254,7 +254,7 @@ const JoinClub = () => {
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-xs text-gray-600 dark:border-gray-600 dark:text-gray-300"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-xs text-muted-foreground"
                         aria-label="What does member association mean?"
                       >
                         ?
@@ -263,7 +263,7 @@ const JoinClub = () => {
                     <PopoverContent
                       side="top"
                       align="center"
-                      className="max-w-xs text-sm leading-snug text-gray-800 dark:text-gray-100"
+                      className="max-w-xs text-sm leading-snug text-popover-foreground"
                     >
                       Member Association means you are a paid member of the
                       club. If you are not sure, leave this unchecked.

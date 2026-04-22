@@ -326,7 +326,7 @@ const Members = () => {
         <CardContent className="p-4">
           <div className="flex items-center space-x-4">
             {/* Avatar */}
-            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+            <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
               {player.image_url ? (
                 <img
                   src={player.image_url}
@@ -339,7 +339,7 @@ const Members = () => {
                     target.style.display = "none";
                     target.parentElement!.innerHTML = `
                       <div class="w-full h-full bg-gray-300 flex items-center justify-center">
-                        <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-8 h-8 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
                           <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                         </svg>
                       </div>
@@ -356,7 +356,7 @@ const Members = () => {
                     target.style.display = "none";
                     target.parentElement!.innerHTML = `
                       <div class="w-full h-full bg-gray-300 flex items-center justify-center">
-                        <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-8 h-8 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
                           <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                         </svg>
                       </div>
@@ -373,7 +373,7 @@ const Members = () => {
                   <h3 className="font-semibold text-lg truncate">
                     {player.first_name} {lastNameInitial}.
                   </h3>
-                  <p className="text-gray-600 text-sm font-medium truncate">
+                  <p className="text-muted-foreground text-sm font-medium truncate">
                     {primaryPosition}
                   </p>
                 </div>
@@ -381,7 +381,7 @@ const Members = () => {
                 {/* Volleyball Badge and Join Date */}
                 <div className="flex items-center space-x-3 flex-shrink-0">
                   {/* Join Date - Hidden on mobile */}
-                  <div className="hidden sm:block text-right text-sm text-gray-500">
+                  <div className="hidden sm:block text-right text-sm text-muted-foreground">
                     <p className="text-xs">
                       Joined:{" "}
                       {new Date(
@@ -441,7 +441,7 @@ const Members = () => {
           <div className="mb-8">
             {/* Mobile: stack; Desktop: row */}
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <h1 className="text-4xl font-serif">Club's Members</h1>
+              <h1 className="text-4xl font-bold">Club's Members</h1>
 
               <Button
                 onClick={() => setIsInviteModalOpen(true)}
@@ -493,7 +493,7 @@ const Members = () => {
                     {clubMeta?.slug ? (
                       <ClubInviteSharePanel joinCode={clubMeta.slug} />
                     ) : (
-                      <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                      <p className="text-sm text-muted-foreground text-center">
                         We could not load your club join code. Please reload the
                         page and try again.
                       </p>
@@ -518,7 +518,7 @@ const Members = () => {
                     {clubMeta?.slug ? (
                       <ClubInviteSharePanel joinCode={clubMeta.slug} />
                     ) : (
-                      <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                      <p className="text-sm text-muted-foreground text-center">
                         We could not load your club join code. Please reload the
                         page and try again.
                       </p>
@@ -530,7 +530,7 @@ const Members = () => {
           </div>
 
           {/* Table Container */}
-          <Card className="border border-gray-200">
+          <Card className="border border-border">
             <CardContent className="p-4">
               {/* Club name header (smaller than H1, bigger than "XX Members") */}
               {clubMeta?.name && (
@@ -548,7 +548,7 @@ const Members = () => {
                   {/* Member Count and Delete Actions - Left side */}
                   <div className="flex items-center gap-4 flex-shrink-0">
                     <div className="flex items-center">
-                      <Users className="w-5 h-5 mr-2 text-gray-600" />
+                      <Users className="w-5 h-5 mr-2 text-muted-foreground" />
                       <span className="text-lg font-semibold">
                         {members?.length || 0} Members
                       </span>
@@ -582,7 +582,7 @@ const Members = () => {
                   <div className="flex items-center gap-4">
                     {/* Search */}
                     <div className="relative w-80">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Search members by name..."
                         value={searchTerm}
@@ -647,7 +647,7 @@ const Members = () => {
                   {/* Member Count and Delete Actions */}
                   <div className="space-y-3">
                     <div className="flex items-center">
-                      <Users className="w-5 h-5 mr-2 text-gray-600" />
+                      <Users className="w-5 h-5 mr-2 text-muted-foreground" />
                       <span className="text-lg font-semibold">
                         {members?.length || 0} Members
                       </span>
@@ -676,7 +676,7 @@ const Members = () => {
 
                   {/* Search - Full width */}
                   <div className="relative w-full">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search members by name..."
                       value={searchTerm}
@@ -712,7 +712,7 @@ const Members = () => {
                     </Select>
 
                     {/* View Toggle */}
-                    <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 flex-shrink-0">
+                    <div className="flex bg-muted rounded-lg p-1 flex-shrink-0">
                       <Button
                         variant={viewMode === "grid" ? "primary" : "ghost"}
                         size="sm"
@@ -804,8 +804,8 @@ const Members = () => {
                 members &&
                 members.length > 0 && (
                   <div className="text-center py-12">
-                    <Search className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-500 text-lg">
+                    <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground text-lg">
                       No members found matching "{searchTerm}"
                     </p>
                     <Button
@@ -820,7 +820,7 @@ const Members = () => {
 
               {members?.length === 0 && (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-muted-foreground text-lg">
                     No members found in this club.
                   </p>
                 </div>
