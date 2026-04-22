@@ -26,7 +26,7 @@ import TeamGenerator from "@/pages/TeamGenerator";
 import EditGame from "@/pages/EditGame";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
-import Start from "@/pages/Start";
+// Start page removed — /start now redirects to /home
 import NewClub from "@/pages/NewClub";
 import JoinClub from "@/pages/JoinClub";
 import InviteMembers from "@/pages/InviteMembers";
@@ -71,14 +71,7 @@ const AppRoutes = () => (
       }
     />
 
-    <Route
-      path="/start"
-      element={
-        <ProtectedRoute requiresCompletedOnboarding={false}>
-          <Start />
-        </ProtectedRoute>
-      }
-    />
+    <Route path="/start" element={<Navigate to="/home" replace />} />
 
     <Route
       path="/new-club"

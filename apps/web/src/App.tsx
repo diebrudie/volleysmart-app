@@ -109,7 +109,6 @@ const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
     "/forgot-password",
     "/reset-password",
     "/players/onboarding",
-    "/start",
     "/faqs",
   ];
 
@@ -117,7 +116,7 @@ const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
     <ThemeProvider
       isAuthenticated={isAuthenticated}
       enforceLightOnRoutes={enforceLightOnRoutes}
-      enforceLightAlwaysRoutes={["/players/onboarding", "/start"]}
+      enforceLightAlwaysRoutes={["/players/onboarding"]}
     >
       {children}
     </ThemeProvider>

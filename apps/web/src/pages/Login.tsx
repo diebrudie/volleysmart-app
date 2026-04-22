@@ -96,13 +96,13 @@ const Login = () => {
           const clubIds = await fetchUserClubIds(user.id);
 
           if (clubIds.length === 0) {
-            navigate("/start", { replace: true });
+            navigate("/home", { replace: true });
           } else {
             navigate("/home", { replace: true });
           }
         } catch (clubError) {
           console.error("Error checking club membership:", clubError);
-          navigate("/start", { replace: true });
+          navigate("/home", { replace: true });
           return;
         }
       } catch (err) {

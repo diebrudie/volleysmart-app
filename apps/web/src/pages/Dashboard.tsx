@@ -74,7 +74,7 @@ const Dashboard = () => {
         navigate("/clubs");
         return;
       }
-      navigate("/start");
+      navigate("/home");
     };
     checkUserClub();
   }, [user, navigate, userClubId]);

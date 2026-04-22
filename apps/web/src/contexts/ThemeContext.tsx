@@ -152,10 +152,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     "/forgot-password",
     "/reset-password",
     "/players/onboarding",
-    "/start",
     "/faqs",
   ],
-  enforceLightAlwaysRoutes = ["/players/onboarding", "/start"],
+  enforceLightAlwaysRoutes = ["/players/onboarding"],
 }) => {
   const { user } = useAuth();
   const location = useLocation();

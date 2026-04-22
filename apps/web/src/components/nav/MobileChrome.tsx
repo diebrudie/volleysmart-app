@@ -29,7 +29,7 @@ const HIDE_CHROME = [
   /^\/new-club\/?$/, // /new-club
   /^\/user\/[^/]+\/?$/, // /user/:userId (Profile)
   /^\/manage-requests\/?$/, // /manage-requests
-  /^\/start\/?$/,
+  /^\/start\/?$/, // redirects to /home
   /^\/invite-members(\/[^/]+)?\/?$/,
 ];
 

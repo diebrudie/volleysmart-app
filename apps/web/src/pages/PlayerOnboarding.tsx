@@ -376,7 +376,7 @@ const PlayerOnboarding = () => {
           description: "Player profile already exists!",
           duration: 1500,
         });
-        navigate("/start", { replace: true });
+        navigate("/home", { replace: true });
         return;
       }
 
@@ -474,7 +474,7 @@ const PlayerOnboarding = () => {
         duration: 1500,
       });
 
-      navigate("/start", { replace: true });
+      navigate("/home", { replace: true });
     } catch (error) {
       console.error("🚨 Error creating player:", error);
       const errorMessage =
@@ -496,10 +496,10 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-8 text-center max-w-2xl mx-auto">
             <div className="space-y-4">
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-4xl font-bold text-foreground">
                 🏐 Let's Complete Your Player Profile
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-400">
+              <p className="text-xl text-muted-foreground">
                 Help us get to know your volleyball style so we can match you
                 with the right team!
               </p>
@@ -507,8 +507,8 @@ const PlayerOnboarding = () => {
 
             {/* Show name fields when they couldn't be read from OAuth/email metadata */}
             {!namesAutoFilled && (
-              <div className="text-left space-y-3 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="text-left space-y-3 bg-muted/50 rounded-lg p-4">
+                <p className="text-sm font-medium text-foreground">
                   First, tell us your name:
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -536,7 +536,7 @@ const PlayerOnboarding = () => {
               </div>
             )}
 
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-muted-foreground">
               This will take about 2-4 minutes to complete.
             </p>
           </div>
@@ -547,7 +547,7 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div className="text-center">
               <div className="mb-2 flex items-center justify-center gap-2">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                <h2 className="text-2xl font-bold text-foreground">
                   What's your main position on the court?
                 </h2>
 
@@ -558,7 +558,7 @@ const PlayerOnboarding = () => {
                       type="button"
                       aria-label="Show positions help"
                       onClick={() => setIsPositionsHelpOpen(true)}
-                      className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
                       style={{ aspectRatio: "1 / 1", flex: "0 0 auto" }}
                     >
                       <HelpCircle className="h-4 w-4" />
@@ -567,7 +567,7 @@ const PlayerOnboarding = () => {
                   <TooltipContent>Show positions diagram</TooltipContent>
                 </Tooltip>
               </div>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 This is the position you feel most comfortable playing.
               </p>
             </div>
@@ -577,8 +577,8 @@ const PlayerOnboarding = () => {
                   key={position.id}
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     answers.primaryPosition === position.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground bg-card"
                   }`}
                 >
                   <input
@@ -594,7 +594,7 @@ const PlayerOnboarding = () => {
                     }
                     className="mr-3"
                   />
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <span className="font-medium text-foreground">
                     {position.name}
                   </span>
                 </label>
@@ -608,7 +608,7 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div className="text-center">
               <div className="mb-2 flex items-center justify-center gap-2">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                <h2 className="text-2xl font-bold text-foreground">
                   What other positions can you play? *
                 </h2>
 
@@ -619,7 +619,7 @@ const PlayerOnboarding = () => {
                       type="button"
                       aria-label="Show positions help"
                       onClick={() => setIsPositionsHelpOpen(true)}
-                      className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
                       style={{ aspectRatio: "1 / 1", flex: "0 0 auto" }}
                     >
                       <HelpCircle className="h-4 w-4" />
@@ -629,7 +629,7 @@ const PlayerOnboarding = () => {
                 </Tooltip>
               </div>
 
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 Select at least one other position that you're comfortable
                 playing
               </p>
@@ -642,8 +642,8 @@ const PlayerOnboarding = () => {
                     key={position.id}
                     className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                       answers.secondaryPositions.includes(position.id)
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400"
-                        : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-muted-foreground bg-card"
                     }`}
                   >
                     <input
@@ -657,7 +657,7 @@ const PlayerOnboarding = () => {
                       }
                       className="mr-3"
                     />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                    <span className="font-medium text-foreground">
                       {position.name}
                     </span>
                   </label>
@@ -670,10 +670,10 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 How would you rate your current skill level?
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 This helps us understand your general playing experience.
               </p>
             </div>
@@ -688,8 +688,8 @@ const PlayerOnboarding = () => {
                   key={option.value}
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     answers.generalSkillLevel === option.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground bg-card"
                   }`}
                 >
                   <input
@@ -705,7 +705,7 @@ const PlayerOnboarding = () => {
                     }
                     className="mr-3"
                   />
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <span className="font-medium text-foreground">
                     {option.label}
                   </span>
                 </label>
@@ -718,7 +718,7 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 Are you receiving regular volleyball training?
               </h2>
             </div>
@@ -735,8 +735,8 @@ const PlayerOnboarding = () => {
                   key={option.value}
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     answers.trainingStatus === option.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground bg-card"
                   }`}
                 >
                   <input
@@ -752,7 +752,7 @@ const PlayerOnboarding = () => {
                     }
                     className="mr-3"
                   />
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <span className="font-medium text-foreground">
                     {option.label}
                   </span>
                 </label>
@@ -765,7 +765,7 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 At what level do you usually compete?
               </h2>
             </div>
@@ -783,8 +783,8 @@ const PlayerOnboarding = () => {
                   key={option.value}
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     answers.competitionLevel === option.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground bg-card"
                   }`}
                 >
                   <input
@@ -801,7 +801,7 @@ const PlayerOnboarding = () => {
                     }
                     className="mr-3"
                   />
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <span className="font-medium text-foreground">
                     {option.label}
                   </span>
                 </label>
@@ -814,10 +814,10 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 How would you describe your performance during games?
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 Pick the option that best reflects your typical performance
                 level.
               </p>
@@ -853,8 +853,8 @@ const PlayerOnboarding = () => {
                   key={option.value}
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     answers.gamePerformance === option.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground bg-card"
                   }`}
                 >
                   <input
@@ -870,7 +870,7 @@ const PlayerOnboarding = () => {
                     }
                     className="mr-3"
                   />
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <span className="font-medium text-foreground">
                     {option.label}
                   </span>
                 </label>
@@ -883,10 +883,10 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 How many volleyball matches have you played?
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 Include both competitive and casual matches.
               </p>
             </div>
@@ -905,8 +905,8 @@ const PlayerOnboarding = () => {
                   key={option.value}
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     answers.matchExperience === option.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground bg-card"
                   }`}
                 >
                   <input
@@ -922,7 +922,7 @@ const PlayerOnboarding = () => {
                     }
                     className="mr-3"
                   />
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <span className="font-medium text-foreground">
                     {option.label}
                   </span>
                 </label>
@@ -935,10 +935,10 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 What's your height?
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 This helps us create balanced teams for blocking and attacking.
               </p>
             </div>
@@ -958,7 +958,7 @@ const PlayerOnboarding = () => {
                   }
                   className="text-center"
                 />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-muted-foreground">
                   cm
                 </span>
               </div>
@@ -975,12 +975,12 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6 w-full">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 When's your birthday?
               </h2>
             </div>
             <div className="relative">
-              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none z-10" />
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
               <Input
                 type="date"
                 value={answers.birthday}
@@ -994,7 +994,7 @@ const PlayerOnboarding = () => {
                     setSelectedDate(new Date(e.target.value));
                   }
                 }}
-                className="w-full min-w-0 text-left dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:[color-scheme:dark] pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                className="w-full min-w-0 text-left dark:bg-card dark:border-border dark:text-foreground dark:[color-scheme:dark] pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
                 placeholder="YYYY-MM-DD"
               />
             </div>
@@ -1006,10 +1006,10 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 What's your gender?
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 This helps us create balanced teams.
               </p>
             </div>
@@ -1023,8 +1023,8 @@ const PlayerOnboarding = () => {
                   key={option.value}
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     answers.gender === option.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground bg-card"
                   }`}
                 >
                   <input
@@ -1040,7 +1040,7 @@ const PlayerOnboarding = () => {
                     }
                     className="mr-3"
                   />
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <span className="font-medium text-foreground">
                     {option.label}
                   </span>
                 </label>
@@ -1053,10 +1053,10 @@ const PlayerOnboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 Upload a profile picture
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 Add a photo so your teammates can recognize you!
               </p>
             </div>
@@ -1067,16 +1067,16 @@ const PlayerOnboarding = () => {
                   alt="Profile preview"
                   className="object-cover"
                 />
-                <AvatarFallback className="text-2xl bg-gray-200 dark:bg-gray-700">
+                <AvatarFallback className="text-2xl bg-muted">
                   📷
                 </AvatarFallback>
               </Avatar>
 
               <div className="flex flex-col space-y-3">
                 <Label htmlFor="image-upload" className="cursor-pointer">
-                  <div className="flex items-center justify-center space-x-2 px-6 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors bg-white dark:bg-gray-800">
-                    <Upload className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <div className="flex items-center justify-center space-x-2 px-6 py-3 border-2 border-dashed border-border rounded-lg hover:border-muted-foreground transition-colors bg-card">
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium text-foreground">
                       {imageFile ? "Change Photo" : "Upload Photo"}
                     </span>
                   </div>
@@ -1118,20 +1118,19 @@ const PlayerOnboarding = () => {
   };
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 py-6 md:py-8">
         <div
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-8
-             min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)]
+          className="min-h-[calc(100vh-3rem)] md:min-h-[calc(100vh-4rem)]
              flex flex-col"
         >
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-muted-foreground">
                 Step {currentStep + 1} of {totalSteps}
               </span>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-muted-foreground">
                 {Math.round(((currentStep + 1) / totalSteps) * 100)}% Complete
               </span>
             </div>
@@ -1147,7 +1146,7 @@ const PlayerOnboarding = () => {
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
             {/* Previous Button */}
             <Button
               type="button"
@@ -1209,7 +1208,7 @@ const PlayerOnboarding = () => {
                 {/* Close X (top-right) */}
                 <DrawerClose
                   className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
-                   border bg-white/90 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                   border border-border bg-card/90 shadow hover:bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                   aria-label="Close"
                 >
                   <X className="h-4 w-4" />
@@ -1252,8 +1251,8 @@ const PlayerOnboarding = () => {
                 key={index}
                 className={`h-2 w-2 rounded-full ${
                   index <= currentStep
-                    ? "bg-blue-500 dark:bg-blue-400"
-                    : "bg-gray-300 dark:bg-gray-600"
+                    ? "bg-primary"
+                    : "bg-border"
                 }`}
               />
             ))}
