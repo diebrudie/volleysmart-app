@@ -41,7 +41,8 @@ export async function fetchUpcomingEvents(
     .from("club_members")
     .select("club_id")
     .eq("user_id", userId)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("status", "active");
 
   const clubIds = (memberships ?? [])
     .map((m) => m.club_id)
@@ -131,7 +132,8 @@ export async function fetchPastEvents(
     .from("club_members")
     .select("club_id")
     .eq("user_id", userId)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("status", "active");
 
   const clubIds = (memberships ?? [])
     .map((m) => m.club_id)

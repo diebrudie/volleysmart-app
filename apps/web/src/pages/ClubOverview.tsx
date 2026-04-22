@@ -128,6 +128,7 @@ const ClubOverview: React.FC = () => {
         .eq("club_id", clubId!)
         .eq("user_id", user!.id)
         .eq("is_active", true)
+        .eq("status", "active")
         .maybeSingle();
       return data?.role ?? null;
     },
@@ -172,6 +173,7 @@ const ClubOverview: React.FC = () => {
         .select("user_id, role")
         .eq("club_id", clubId!)
         .eq("is_active", true)
+        .eq("status", "active")
         .order("role");
       if (error) throw error;
       if (!rows?.length) return [] as MemberRow[];

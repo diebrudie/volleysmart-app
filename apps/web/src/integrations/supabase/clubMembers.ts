@@ -287,7 +287,8 @@ export async function fetchActiveMembersBasic(
       "club_id, id, joined_at, user_id, is_active, role, member_association"
     )
     .eq("club_id", clubId)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("status", "active");
 
   if (error) throw error;
   return (data ?? []) as ClubMemberBasic[];
