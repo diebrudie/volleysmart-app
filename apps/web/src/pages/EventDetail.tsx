@@ -19,6 +19,7 @@ import {
   Trophy,
   Eye,
   EyeOff,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   fetchSingleEvent,
   deletePlannedEvent,
+  cancelPlannedEvent,
   upsertRsvp,
   updatePlannedEvent,
   type PlannedEvent,
@@ -469,6 +471,17 @@ const EventDetail: React.FC = () => {
     onError: () => toast.error("Failed to update event"),
   });
 
+  // Cancel mutation (sets status to 'cancelled', notifies members)
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelPlannedEvent(eventId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
+      queryClient.invalidateQueries({ queryKey: ["single-event", eventId] });
+      toast.success("Event cancelled");
+    },
+    onError: () => toast.error("Failed to cancel event"),
+  });
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: () => deletePlannedEvent(eventId!),
@@ -753,6 +766,15 @@ const EventDetail: React.FC = () => {
                   <Pencil className="h-4 w-4" />
                   Edit event
                 </DropdownMenuItem>
+                {event.status !== "cancelled" && (
+                  <DropdownMenuItem
+                    className="gap-2 text-amber-600 focus:text-amber-600"
+                    onClick={() => cancelMutation.mutate()}
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Cancel event
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   className="gap-2 text-destructive focus:text-destructive"
                   onClick={() => setDeleteDialogOpen(true)}

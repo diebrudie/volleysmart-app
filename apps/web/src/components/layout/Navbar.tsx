@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useIsCompact } from "@/hooks/use-compact";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
+import { fetchUnreadCount } from "@/integrations/supabase/notifications";
 
 import { useClub } from "@/contexts/ClubContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -129,8 +131,14 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
-  //const [isAccountOpen, setIsAccountOpen] = useState(false);
   const { clubId, membershipStatus, initialized } = useClub();
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["unreadNotificationCount", user?.id],
+    queryFn: () => fetchUnreadCount(user!.id),
+    enabled: !!user?.id,
+    staleTime: 30 * 1000,
+  });
 
   // Player profile for avatar + names — must be declared BEFORE any early return
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(
@@ -403,11 +411,16 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Notifications (coming soon)"
-                  disabled
-                  className="text-muted-foreground opacity-40 cursor-not-allowed"
+                  aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+                  onClick={() => navigate("/notifications")}
+                  className="relative text-foreground hover:bg-muted"
                 >
                   <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[1rem] rounded-full bg-destructive text-[10px] font-bold text-white flex items-center justify-center px-1">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </Button>
                 <Button
                   variant="ghost"

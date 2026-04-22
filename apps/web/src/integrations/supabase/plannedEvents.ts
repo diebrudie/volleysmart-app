@@ -287,6 +287,15 @@ export async function deletePlannedEvent(eventId: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Cancel a planned event (sets status to 'cancelled', triggers notification). */
+export async function cancelPlannedEvent(eventId: string): Promise<void> {
+  const { error } = await supabase
+    .from("planned_events")
+    .update({ status: "cancelled" })
+    .eq("id", eventId);
+  if (error) throw error;
+}
+
 export interface CreateEventInput {
   title: string;
   event_type: EventType;

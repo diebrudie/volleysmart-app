@@ -39,6 +39,7 @@ import FaqsPage from "@/pages/FaqsPage";
 import Archive from "@/pages/Archive";
 import EventDetail from "@/pages/EventDetail";
 import ClubOverview from "@/pages/ClubOverview";
+import Notifications from "@/pages/Notifications";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -74,6 +75,14 @@ const AppRoutes = () => (
 
     <Route path="/start" element={<Navigate to="/home" replace />} />
 
+    <Route
+      path="/notifications"
+      element={
+        <ProtectedRoute>
+          <Notifications />
+        </ProtectedRoute>
+      }
+    />
     <Route
       path="/new-club"
       element={
