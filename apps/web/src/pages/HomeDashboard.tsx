@@ -343,23 +343,11 @@ const HomeDashboard: React.FC = () => {
                     {format(parseISO(lastGame.date), "d MMM yyyy")}
                   </p>
                   <div className="flex items-center justify-center gap-3 pt-2">
-                    <span
-                      className={`text-4xl font-bold ${
-                        lastGame.winner === "Team A"
-                          ? "text-red-500"
-                          : "text-muted-foreground"
-                      }`}
-                    >
+                    <span className="text-4xl font-bold text-red-500">
                       {lastGame.teamAWins}
                     </span>
                     <span className="text-2xl font-bold text-foreground">-</span>
-                    <span
-                      className={`text-4xl font-bold ${
-                        lastGame.winner === "Team B"
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-muted-foreground"
-                      }`}
-                    >
+                    <span className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
                       {lastGame.teamBWins}
                     </span>
                   </div>
