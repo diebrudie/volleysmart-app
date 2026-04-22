@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Upload, ArrowLeft, HelpCircle } from "lucide-react";
@@ -35,6 +36,7 @@ const NewClub = () => {
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = useForm<NewClubFormData>({
     defaultValues: {
@@ -154,6 +156,7 @@ const NewClub = () => {
         .from("clubs")
         .insert({
           name: data.name,
+          description: data.description?.trim() || null,
           image_url: imageUrl,
           created_by: user.id,
           slug: clubIdentifier,
@@ -240,6 +243,22 @@ const NewClub = () => {
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-foreground">
+              Description (optional)
+            </Label>
+            <Textarea
+              placeholder="Tell people about your club..."
+              className="bg-muted/50 border-border resize-none min-h-[80px]"
+              maxLength={200}
+              {...register("description")}
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {watch("description")?.length ?? 0}/200
+            </p>
           </div>
 
           {/* City */}
