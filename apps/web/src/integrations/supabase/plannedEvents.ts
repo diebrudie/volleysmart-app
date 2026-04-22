@@ -29,7 +29,7 @@ export interface PlannedEvent {
   updated_at: string;
   clubs?: { id: string; name: string; image_url?: string | null } | null;
   locations?: { name: string; address?: string | null } | null;
-  event_rsvp?: Array<{ status: RsvpStatus; player_id: string }>;
+  event_rsvp?: Array<{ status: RsvpStatus; player_id: string; responded_at?: string | null }>;
 }
 
 /** Fetch all upcoming events across every club the user is an active member of,
@@ -270,7 +270,7 @@ export async function fetchSingleEvent(
   const { data, error } = await supabase
     .from("planned_events")
     .select(
-      `*, clubs!planned_events_club_id_fkey(id, name, image_url), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id)`
+      `*, clubs!planned_events_club_id_fkey(id, name, image_url), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id, responded_at)`
     )
     .eq("id", eventId)
     .single();

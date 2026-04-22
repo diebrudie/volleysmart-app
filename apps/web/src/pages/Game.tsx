@@ -47,6 +47,13 @@ import { normalizeRole, CANONICAL_ORDER } from "@/features/teams/positions";
 import type { CanonicalRole } from "@/features/teams/positions";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+/** Shorten two-word positions: "Outside Hitter" → "O. Hitter", "Middle Blocker" → "M. Blocker" */
+const shortenPosition = (pos: string): string => {
+  const parts = pos.split(" ");
+  if (parts.length === 2) return `${parts[0][0]}. ${parts[1]}`;
+  return pos;
+};
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface GamePlayerData {
@@ -147,8 +154,10 @@ const Game = () => {
   const goBack = () => {
     if ((loc.state as any)?.fromTab === "past") {
       navigate("/home", { state: { tab: "past" } });
+    } else if (clubId) {
+      navigate(`/clubs/${clubId}`);
     } else {
-      navigate(-1);
+      navigate("/clubs");
     }
   };
 
@@ -702,8 +711,8 @@ const Game = () => {
                       {player.name}
                     </span>
                     {player.position && player.position !== "No Position" && (
-                      <span className="text-xs text-muted-foreground ml-1 truncate shrink-0 max-w-[5rem]">
-                        — {player.position}
+                      <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
+                        — {shortenPosition(player.position)}
                       </span>
                     )}
                   </li>
@@ -724,8 +733,8 @@ const Game = () => {
                       {player.name}
                     </span>
                     {player.position && player.position !== "No Position" && (
-                      <span className="text-xs text-muted-foreground ml-1 truncate shrink-0 max-w-[5rem]">
-                        — {player.position}
+                      <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
+                        — {shortenPosition(player.position)}
                       </span>
                     )}
                   </li>

@@ -394,11 +394,15 @@ const EventDetail: React.FC = () => {
     enabled: !!event?.club_id,
   });
 
-  // Fetch attendee profiles (players who RSVPed)
-  const attendingPlayerIds =
-    event?.event_rsvp
-      ?.filter((r) => r.status === "attending")
-      .map((r) => r.player_id) ?? [];
+  // Fetch attendee profiles (players who RSVPed), ordered by RSVP time
+  const attendingRsvps =
+    event?.event_rsvp?.filter((r) => r.status === "attending") ?? [];
+  const attendingPlayerIds = attendingRsvps.map((r) => r.player_id);
+
+  // Build a map of player_id → responded_at for sorting
+  const rsvpTimeMap = new Map(
+    attendingRsvps.map((r) => [r.player_id, r.responded_at ?? ""])
+  );
 
   const { data: attendees = [] } = useQuery({
     queryKey: ["event-attendees", eventId, attendingPlayerIds],
@@ -412,7 +416,7 @@ const EventDetail: React.FC = () => {
         )
         .in("id", attendingPlayerIds);
 
-      return (players ?? []).map((p: any) => {
+      const mapped = (players ?? []).map((p: any) => {
         const primaryPos = (p.player_positions ?? []).find(
           (pp: any) => pp.is_primary
         );
@@ -425,6 +429,15 @@ const EventDetail: React.FC = () => {
           primary_position: primaryPos?.positions?.name ?? null,
         };
       });
+
+      // Sort by RSVP time (earliest first)
+      mapped.sort((a, b) => {
+        const tA = rsvpTimeMap.get(a.player_id) ?? "";
+        const tB = rsvpTimeMap.get(b.player_id) ?? "";
+        return tA.localeCompare(tB);
+      });
+
+      return mapped;
     },
     enabled: attendingPlayerIds.length > 0,
   });
