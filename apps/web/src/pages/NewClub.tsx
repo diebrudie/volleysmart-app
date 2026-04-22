@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,6 @@ import {
 interface NewClubFormData {
   name: string;
   description?: string;
-  city?: string;
-  country?: string;
-  country_code?: string;
   is_club_discoverable: boolean;
 }
 
@@ -57,14 +54,6 @@ const NewClub = () => {
   const [location, setLocation] = useState<LocationValue | null>(null);
   const { setClubId } = useClub();
 
-  const [showManual, setShowManual] = useState(false);
-  const hasMapbox = Boolean(
-    import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
-  );
-
-  useEffect(() => {
-    if (!hasMapbox) setShowManual(true);
-  }, [hasMapbox]);
 
   const generateClubIdentifier = () => {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -168,9 +157,9 @@ const NewClub = () => {
           image_url: imageUrl,
           created_by: user.id,
           slug: clubIdentifier,
-          city: location?.city ?? (data.city || null),
-          country: location?.country ?? (data.country || null),
-          country_code: location?.countryCode ?? (data.country_code || null),
+          city: location?.city ?? null,
+          country: location?.country ?? null,
+          country_code: location?.countryCode ?? null,
           is_club_discoverable: data.is_club_discoverable ?? false,
         })
         .select("id")
@@ -242,7 +231,7 @@ const NewClub = () => {
 
           {/* Club Name */}
           <div className="space-y-2">
-            <Label className="text-sm text-primary/70 font-medium">Club Name</Label>
+            <Label className="text-sm font-medium text-foreground">Club Name</Label>
             <Input
               placeholder="e.g., Beach Volleyball Berlin"
               className="h-12 bg-muted/50 border-border"
@@ -259,80 +248,18 @@ const NewClub = () => {
               value={location}
               onChange={setLocation}
               label="City"
-              labelExtra={
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:border-foreground"
-                      aria-label="City selection help"
-                    >
-                      <HelpCircle className="h-3.5 w-3.5" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="start"
-                    sideOffset={8}
-                    avoidCollisions
-                    collisionPadding={12}
-                    className="text-sm max-w-xs rounded-md border bg-popover p-3 text-popover-foreground shadow-md"
-                  >
-                    Please make sure you select a City from the dropdown.
-                  </PopoverContent>
-                </Popover>
-              }
               placeholder="Type the city your Club is located..."
             />
-
-            {!location && (
-              <button
-                type="button"
-                className="text-xs underline text-muted-foreground hover:text-foreground"
-                onClick={() => setShowManual((v) => !v)}
-              >
-                {showManual
-                  ? "Hide manual entry"
-                  : "Can't find your city? Enter manually"}
-              </button>
-            )}
-
-            {showManual && !location && (
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">City</Label>
-                  <Input
-                    placeholder="Berlin"
-                    className="h-10 bg-muted/50 border-border text-sm"
-                    {...register("city")}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Country</Label>
-                  <Input
-                    placeholder="Germany"
-                    className="h-10 bg-muted/50 border-border text-sm"
-                    {...register("country")}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Code</Label>
-                  <Input
-                    placeholder="DE"
-                    className="h-10 bg-muted/50 border-border text-sm"
-                    {...register("country_code", {
-                      setValueAs: (v) =>
-                        typeof v === "string" ? v.toUpperCase() : v,
-                      maxLength: { value: 2, message: "Use 2 letters" },
-                    })}
-                  />
-                </div>
-              </div>
+            {location && (
+              <p className="text-xs text-muted-foreground">
+                {location.city}{location.country ? `, ${location.country}` : ""}
+              </p>
             )}
           </div>
 
           {/* Club Image */}
           <div className="space-y-2">
-            <Label className="text-sm text-primary/70 font-medium">
+            <Label className="text-sm font-medium text-foreground">
               Club Image (optional)
             </Label>
             <div className="flex items-center gap-4">

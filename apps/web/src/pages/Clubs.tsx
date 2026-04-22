@@ -600,7 +600,7 @@ const Clubs = () => {
           <div className="p-4">
             <form onSubmit={handleJoinSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="drawer-club-id" className="text-sm text-primary/70 font-medium">Club ID</Label>
+                <Label htmlFor="drawer-club-id" className="text-sm font-medium text-foreground">Club ID</Label>
                 <Input
                   id="drawer-club-id"
                   type="text"
