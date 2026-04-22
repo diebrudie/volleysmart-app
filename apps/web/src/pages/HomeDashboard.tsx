@@ -346,8 +346,8 @@ const HomeDashboard: React.FC = () => {
                     <span
                       className={`text-4xl font-bold ${
                         lastGame.winner === "Team A"
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-red-500"
+                          ? "text-red-500"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {lastGame.teamAWins}
@@ -357,7 +357,7 @@ const HomeDashboard: React.FC = () => {
                       className={`text-4xl font-bold ${
                         lastGame.winner === "Team B"
                           ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-red-500"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {lastGame.teamBWins}
@@ -368,7 +368,11 @@ const HomeDashboard: React.FC = () => {
                       <span className="text-muted-foreground">Draw</span>
                     ) : (
                       <>
-                        <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                        <span className={`font-medium ${
+                          lastGame.winner === "Team A"
+                            ? "text-red-500"
+                            : "text-emerald-600 dark:text-emerald-400"
+                        }`}>
                           {lastGame.winner}
                         </span>{" "}
                         <span className="font-medium text-foreground">wins</span>
