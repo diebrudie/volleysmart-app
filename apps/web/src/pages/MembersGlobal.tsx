@@ -225,9 +225,7 @@ const MembersGlobal: React.FC = () => {
           .from("club_members")
           .select("id", { count: "exact", head: true })
           .eq("club_id", c.id)
-          .eq("is_active", false)
-          .is("activated_at", null)
-          .is("rejected_at", null);
+          .eq("status", "pending");
         return count ?? 0;
       },
       staleTime: 60_000,

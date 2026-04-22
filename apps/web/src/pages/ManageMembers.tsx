@@ -15,11 +15,10 @@ import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-// Extended row with club info and player image
+// Extended row with club info
 interface RequestRow extends ManageMemberRow {
   club_name: string;
   club_id: string;
-  image_url: string | null;
 }
 
 function timeAgo(dateStr: string | null): string {
@@ -107,23 +106,11 @@ export default function ManageMembers() {
             // Only show pending requests
             const pending = rows.filter((r) => r.status === "pending");
 
-            // Fetch player images
-            const userIds = pending.map((r) => r.user_id).filter(Boolean);
-            let imageMap = new Map<string, string | null>();
-            if (userIds.length > 0) {
-              const { data: players } = await supabase
-                .from("players")
-                .select("user_id, image_url")
-                .in("user_id", userIds);
-              players?.forEach((p) => imageMap.set(p.user_id, p.image_url));
-            }
-
             pending.forEach((r) => {
               results.push({
                 ...r,
                 club_name: clubNameById.get(clubId) ?? "Unknown Club",
                 club_id: clubId,
-                image_url: imageMap.get(r.user_id) ?? null,
               });
             });
           } catch (err) {
