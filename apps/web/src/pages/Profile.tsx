@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, HelpCircle, X, Pencil, Calendar } from "lucide-react";
+import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -390,7 +390,7 @@ const Profile = () => {
       <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
-            onClick={handleBack}
+            onClick={isEditing ? handleCancelEdit : handleBack}
             className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -486,11 +486,14 @@ const Profile = () => {
                 <p className="text-xs text-primary/70 font-medium mb-2">Personal Details</p>
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-foreground">
                   {profile.gender && (
-                    <span className="capitalize font-medium">{profile.gender}</span>
+                    <span className="flex items-center gap-1.5 capitalize font-medium">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      {profile.gender}
+                    </span>
                   )}
                   {profile.birthday && (
                     <span className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Cake className="h-3.5 w-3.5 text-muted-foreground" />
                       {new Date(profile.birthday).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -498,7 +501,12 @@ const Profile = () => {
                       })}
                     </span>
                   )}
-                  {profile.height_cm && <span>{profile.height_cm} cm</span>}
+                  {profile.height_cm && (
+                    <span className="flex items-center gap-1.5">
+                      <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
+                      {profile.height_cm} cm
+                    </span>
+                  )}
                 </div>
               </div>
             )}
