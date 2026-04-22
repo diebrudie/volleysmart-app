@@ -93,87 +93,80 @@ export const SortablePlayer = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center p-2 rounded-md border bg-card text-card-foreground",
+        "flex items-center px-3 py-3 bg-card",
         isDragging ? "opacity-75 bg-muted" : ""
       )}
       {...attributes}
     >
-      {/* Drag Handle — only this starts the drag */}
+      {/* Drag Handle */}
       <button
         type="button"
         aria-label="Drag to reorder"
-        // The handle gets the listeners so ONLY it starts the drag
         {...dragListeners}
         className={cn(
-          "px-1 touch-none", // touch-none prevents native scroll from stealing the gesture
+          "shrink-0 touch-none",
           isEditingPosition
             ? "cursor-not-allowed opacity-50"
             : "cursor-grab active:cursor-grabbing"
         )}
       >
-        <GripVertical className="h-4 w-4 text-gray-400" />
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
       </button>
 
       {/* Player Info */}
-      <div className="ml-2 flex-grow flex items-center justify-between">
-        <div className="flex items-center">
-          <span className="font-medium">{player.name}</span>
-          <span className="mx-2">-</span>
+      <div className="ml-2 flex-grow flex items-center min-w-0">
+        <span className="font-medium whitespace-nowrap">{player.name}</span>
+        <span className="mx-1.5 text-muted-foreground">–</span>
 
-          {/* Position Display/Edit */}
-          <div className="flex items-center gap-2">
-            {isEditingPosition ? (
-              <div className="flex items-center gap-2">
-                <Select value={tempPosition} onValueChange={handleSelectChange}>
-                  <SelectTrigger className="w-auto min-w-[120px] h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availablePositions.map((position) => (
-                      <SelectItem key={position.id} value={position.name}>
-                        {position.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={handlePositionSave}
-                >
-                  <Check className="h-3 w-3 text-green-600" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={handlePositionCancel}
-                >
-                  <X className="h-3 w-3 text-red-600" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <span
-                  className="text-xs rounded px-1.5 py-0.5 bg-gray-200 text-black cursor-pointer hover:bg-gray-300 transition-colors"
-                  onClick={handlePositionClick}
-                  title="Click to edit position"
-                >
-                  {player.preferredPosition}
-                </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 opacity-50 hover:opacity-100"
-                  onClick={handlePositionClick}
-                >
-                  <Edit2 className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
+        {/* Position Display/Edit */}
+        {isEditingPosition ? (
+          <div className="flex items-center gap-1.5">
+            <Select value={tempPosition} onValueChange={handleSelectChange}>
+              <SelectTrigger className="w-auto min-w-[120px] h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availablePositions.map((position) => (
+                  <SelectItem key={position.id} value={position.name}>
+                    {position.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              onClick={handlePositionSave}
+            >
+              <Check className="h-3 w-3 text-green-600" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              onClick={handlePositionCancel}
+            >
+              <X className="h-3 w-3 text-red-600" />
+            </Button>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <span
+              className="text-xs rounded-md px-2 py-0.5 bg-muted text-foreground cursor-pointer hover:bg-foreground transition-colors whitespace-nowrap"
+              onClick={handlePositionClick}
+              title="Click to edit position"
+            >
+              {player.preferredPosition}
+            </span>
+            <button
+              className="h-6 w-6 shrink-0 flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
+              onClick={handlePositionClick}
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </li>
   );

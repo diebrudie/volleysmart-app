@@ -30,6 +30,7 @@ interface MemberCardProps {
    * We hide the "Admin" chip when isAdmin is true.
    */
   isAdmin?: boolean;
+  isCurrentUser?: boolean;
   isSelected?: boolean;
   onSelectionChange?: (checked: boolean) => void;
 }
@@ -37,6 +38,7 @@ interface MemberCardProps {
 export const MemberCard = ({
   member,
   isAdmin = false,
+  isCurrentUser = false,
   isSelected = false,
   onSelectionChange,
 }: MemberCardProps) => {
@@ -121,34 +123,19 @@ export const MemberCard = ({
         {/* Content Section - Left aligned with relative positioning for badge */}
         <CardContent className="p-4 relative">
           <div className="text-left space-y-1">
-            <h3 className="font-semibold text-lg">
-              {member.first_name} {lastNameInitial}.
-            </h3>
-            <p className="text-gray-600 text-sm font-medium">
+            <div className="flex items-baseline justify-between gap-1">
+              <h3 className="font-semibold text-lg truncate">
+                {member.first_name} {lastNameInitial}.
+              </h3>
+              {isCurrentUser && (
+                <span className="shrink-0 text-xs text-muted-foreground">You</span>
+              )}
+            </div>
+            <p className="text-muted-foreground text-sm font-medium">
               {primaryPosition}
             </p>
           </div>
 
-          {/* Volleyball Badge - bottom right of content area (unchanged) */}
-          {member.member_association && (
-            <div className="absolute bottom-4 right-4 w-5 h-5">
-              <img
-                src="/volleyball.svg"
-                alt="Club member"
-                className="w-full h-full"
-                onError={(e) => {
-                  // Fallback if volleyball SVG doesn't load (kept as-is)
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                  target.parentElement!.innerHTML = `
-                    <div class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-                      <span class="text-white text-xs font-bold">V</span>
-                    </div>
-                  `;
-                }}
-              />
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

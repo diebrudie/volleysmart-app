@@ -7,80 +7,140 @@ import {
   listManageMembers,
   approveMembership,
   rejectMembership,
-  removeMember,
-  changeMemberRole,
-  updateMemberAssociation,
+  type ManageMemberRow,
 } from "@/integrations/supabase/members";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ChevronLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import Navbar from "@/components/layout/Navbar";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+
+// Extended row with club info
+interface RequestRow extends ManageMemberRow {
+  club_name: string;
+  club_id: string;
+}
+
+function timeAgo(dateStr: string | null): string {
+  if (!dateStr) return "";
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "1 day ago";
+  return `${diffDays} days ago`;
+}
 
 export default function ManageMembers() {
-  const { clubId: clubIdFromCtx, setClubId } = useClub();
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
-  const clubId = urlClubId ?? clubIdFromCtx ?? undefined;
+  const { clubId: clubIdFromCtx, setClubId } = useClub();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
+  // If we have a URL clubId, set it in context
   useEffect(() => {
     if (urlClubId) setClubId(urlClubId);
   }, [urlClubId, setClubId]);
 
-  const {
-    data: isAdmin,
-    isLoading: adminLoading,
-    error: adminError,
-  } = useIsAdmin(clubId);
+  // Fetch all clubs where user is admin
+  const { data: adminClubs = [], isLoading: clubsLoading } = useQuery({
+    queryKey: ["admin-clubs", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data: memberships } = await supabase
+        .from("club_members")
+        .select("club_id, role")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .eq("role", "admin");
 
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+      if (!memberships?.length) {
+        // Also check clubs created by user
+        const { data: created } = await supabase
+          .from("clubs")
+          .select("id, name")
+          .eq("created_by", user.id)
+          .eq("status", "active");
+        return (created ?? []).map((c) => ({ club_id: c.id, name: c.name }));
+      }
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["members.manage", clubId],
-    enabled: !!clubId && isAdmin === true,
-    queryFn: () => listManageMembers(clubId!),
+      const clubIds = memberships.map((m) => m.club_id).filter(Boolean) as string[];
+      const { data: clubs } = await supabase
+        .from("clubs")
+        .select("id, name")
+        .in("id", clubIds)
+        .eq("status", "active");
+
+      return (clubs ?? []).map((c) => ({ club_id: c.id, name: c.name }));
+    },
+    enabled: !!user?.id,
+  });
+
+  // Determine which clubs to fetch requests for
+  const targetClubIds = useMemo(() => {
+    if (urlClubId) return [urlClubId];
+    return adminClubs.map((c) => c.club_id);
+  }, [urlClubId, adminClubs]);
+
+  const clubNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    adminClubs.forEach((c) => map.set(c.club_id, c.name));
+    return map;
+  }, [adminClubs]);
+
+  // Fetch pending requests from all admin clubs
+  const { data: allRequests = [], isLoading: requestsLoading } = useQuery({
+    queryKey: ["manage-requests-all", targetClubIds],
+    queryFn: async (): Promise<RequestRow[]> => {
+      if (!targetClubIds.length) return [];
+
+      const results: RequestRow[] = [];
+
+      await Promise.all(
+        targetClubIds.map(async (clubId) => {
+          try {
+            const rows = await listManageMembers(clubId);
+            // Only show pending requests
+            const pending = rows.filter((r) => r.status === "pending");
+
+            pending.forEach((r) => {
+              results.push({
+                ...r,
+                club_name: clubNameById.get(clubId) ?? "Unknown Club",
+                club_id: clubId,
+              });
+            });
+          } catch (err) {
+            console.error(`Error fetching requests for club ${clubId}:`, err);
+          }
+        })
+      );
+
+      // Sort by requested_at desc (newest first)
+      results.sort((a, b) => {
+        const aTime = a.requested_at ? new Date(a.requested_at).getTime() : 0;
+        const bTime = b.requested_at ? new Date(b.requested_at).getTime() : 0;
+        return bTime - aTime;
+      });
+
+      return results;
+    },
+    enabled: targetClubIds.length > 0,
   });
 
   const invalidateAll = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["members.manage", clubId] }),
-      queryClient.invalidateQueries({ queryKey: ["clubMembers", clubId] }),
-      queryClient.invalidateQueries({
-        queryKey: ["pendingRequestsCount", clubId],
-      }),
+      queryClient.invalidateQueries({ queryKey: ["manage-requests-all"] }),
+      ...targetClubIds.map((id) =>
+        queryClient.invalidateQueries({ queryKey: ["members.manage", id] })
+      ),
+      ...targetClubIds.map((id) =>
+        queryClient.invalidateQueries({ queryKey: ["pendingRequestsCount", id] })
+      ),
     ]);
-  };
-
-  const onUnknownError = (e: unknown, title: string) => {
-    const msg = e instanceof Error ? e.message : "Unknown error";
-    toast({ title, description: msg, variant: "destructive" });
-  };
-
-  const requestRemove = (id: string) => {
-    setPendingRemoveId(id);
-    setConfirmOpen(true);
-  };
-
-  const confirmRemove = () => {
-    if (pendingRemoveId) {
-      removeMut.mutate(pendingRemoveId);
-    }
-    setConfirmOpen(false);
-    setPendingRemoveId(null);
   };
 
   const approveMut = useMutation({
@@ -89,7 +149,13 @@ export default function ManageMembers() {
       await invalidateAll();
       toast({ title: "Membership approved", duration: 1500 });
     },
-    onError: (e) => onUnknownError(e, "Approval failed"),
+    onError: (e) => {
+      toast({
+        title: "Approval failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    },
   });
 
   const rejectMut = useMutation({
@@ -98,251 +164,124 @@ export default function ManageMembers() {
       await invalidateAll();
       toast({ title: "Request rejected", duration: 1500 });
     },
-    onError: (e) => onUnknownError(e, "Reject failed"),
-  });
-
-  const removeMut = useMutation({
-    mutationFn: (id: string) => removeMember(id),
-    onSuccess: async () => {
-      await invalidateAll();
-      toast({ title: "Member removed", duration: 1500 });
-    },
-    onError: (e) => onUnknownError(e, "Remove failed"),
-  });
-
-  const associationMut = useMutation({
-    mutationFn: (p: { id: string; member_association: boolean }) =>
-      updateMemberAssociation(p.id, p.member_association),
-    onSuccess: async () => {
-      await invalidateAll();
-      toast({ title: "Paid membership updated", duration: 1500 });
-    },
-    onError: (e) => onUnknownError(e, "Paid membership update failed"),
-  });
-
-  const roleMut = useMutation({
-    mutationFn: (p: { id: string; role: "admin" | "editor" | "member" }) =>
-      changeMemberRole(p.id, p.role),
-    onSuccess: async () => {
-      await invalidateAll();
-      toast({ title: "Role updated", duration: 1500 });
-    },
-    onError: (e) => onUnknownError(e, "Role update failed"),
-  });
-
-  const rows = useMemo(() => {
-    // Hide removed members and the current user (admin)
-    // Sort priority:
-    //  1) pending requests first (pinned at top)
-    //  2) A→Z by first_name
-    const currentUserId = user?.id ?? null;
-    return (data ?? [])
-      .filter((m) => m.status !== "removed" && m.user_id !== currentUserId)
-      .slice()
-      .sort((a, b) => {
-        const aPending = a.status === "pending";
-        const bPending = b.status === "pending";
-        if (aPending && !bPending) return -1;
-        if (!aPending && bPending) return 1;
-        return (a.first_name ?? "").localeCompare(b.first_name ?? "");
+    onError: (e) => {
+      toast({
+        title: "Reject failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
       });
-  }, [data, user?.id]);
+    },
+  });
 
-  if (adminLoading) {
-    return (
-      <div className="p-8 flex items-center gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        Checking admin permissions…
-      </div>
-    );
-  }
+  const isLoading = clubsLoading || requestsLoading;
 
-  if (adminError || isAdmin === false) {
-    return <Navigate to={`/members/${clubId}`} replace />;
+  // If no admin clubs and not loading, redirect
+  if (!clubsLoading && adminClubs.length === 0 && !urlClubId) {
+    return <Navigate to="/members" replace />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-
-      <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Heading row */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="mr-4"
-                  onClick={() => navigate(`/members/${clubId}`)}
-                  aria-label="Back"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <h1 className="text-4xl font-serif">Manage Requests</h1>
-              </div>
-              <div />
-            </div>
-          </div>
-
-          <Card>
-            <CardContent>
-              {isLoading ? (
-                <div className="p-6 flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Loading members…
-                </div>
-              ) : error ? (
-                <div className="text-destructive">Failed to load members.</div>
-              ) : (
-                // Keep horizontal scroll for narrow screens
-                <div className="w-full overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="border-b">
-                      <tr>
-                        <th className="py-2 pt-5 text-left w-1/3">Name</th>
-
-                        {/* Status column: fixed width */}
-                        <th className="py-2 pt-5 text-left w-32">Status</th>
-
-                        {/* Mobile header */}
-                        <th className="py-2 pt-5 text-center align-middle w-20 min-w-[4.5rem] table-cell sm:hidden">
-                          M. Ass.
-                        </th>
-
-                        {/* Desktop header */}
-                        <th className="py-2 pt-5 text-center align-middle w-32 hidden sm:table-cell">
-                          Association
-                        </th>
-
-                        {/* Actions column: slightly wider for buttons */}
-                        <th className="py-2 pt-5 text-left w-40">Actions</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {rows.map((m) => (
-                        <tr
-                          key={m.membership_id}
-                          className="border-b last:border-0"
-                        >
-                          {/* Name (non-wrapping) */}
-                          <td className="py-2 pr-4 whitespace-nowrap">
-                            {[m.first_name, m.last_name]
-                              .filter(Boolean)
-                              .join(" ") || "—"}
-                          </td>
-
-                          {/* Status */}
-                          <td className="py-2 pr-4 sm:pr-6 capitalize">
-                            <span
-                              className={
-                                m.status === "pending"
-                                  ? "text-yellow-600"
-                                  : m.status === "active"
-                                  ? "text-green-600"
-                                  : "text-gray-500"
-                              }
-                            >
-                              {m.status}
-                            </span>
-                          </td>
-
-                          {/* Paid member toggle / Member Association */}
-                          <td className="py-2 px-2 w-20 sm:w-32 min-w-[4.5rem]">
-                            <div className="flex justify-center">
-                              <Checkbox
-                                className="h-4 w-4"
-                                checked={m.member_association ?? false}
-                                onCheckedChange={(checked) =>
-                                  associationMut.mutate({
-                                    id: m.membership_id,
-                                    member_association: Boolean(checked),
-                                  })
-                                }
-                                aria-label="Toggle paid association membership"
-                              />
-                            </div>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="py-2">
-                            <div className="flex gap-2">
-                              {m.status === "pending" && (
-                                <>
-                                  {/* Reject */}
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() =>
-                                      rejectMut.mutate(m.membership_id)
-                                    }
-                                  >
-                                    <span className="sm:hidden">✕</span>
-                                    <span className="hidden sm:inline">
-                                      Reject
-                                    </span>
-                                  </Button>
-
-                                  {/* Approve */}
-                                  <Button
-                                    size="sm"
-                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                    onClick={() =>
-                                      approveMut.mutate(m.membership_id)
-                                    }
-                                  >
-                                    <span className="sm:hidden">✓</span>
-                                    <span className="hidden sm:inline">
-                                      Approve
-                                    </span>
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-
-                      {rows.length === 0 && (
-                        <tr>
-                          <td
-                            className="py-6 text-center opacity-60"
-                            colSpan={4}
-                          >
-                            No memberships found for this club.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="flex items-center justify-center relative h-14 px-4">
+          <button
+            onClick={() => navigate("/members")}
+            className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-base font-semibold">Manage Requests</h1>
         </div>
+      </div>
 
-        {/* Confirm remove dialog */}
-        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Remove member</DialogTitle>
-              <DialogDescription>
-                This will revoke the member’s access to this club. Are you sure
-                you want to continue?
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={confirmRemove}>
-                Confirm remove
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      {/* Content */}
+      <main className="flex-grow">
+        <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+          <h2 className="text-lg font-bold text-foreground mb-4">
+            All Club Requests
+          </h2>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin h-7 w-7 rounded-full border-2 border-muted border-t-foreground" />
+            </div>
+          ) : allRequests.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground text-sm">
+                No pending requests.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {allRequests.map((req) => (
+                <div
+                  key={req.membership_id}
+                  className="flex gap-3 rounded-xl border border-border bg-card p-3"
+                >
+                  {/* Profile image — rounded, 1:1 */}
+                  <div className="w-14 h-14 shrink-0 rounded-full bg-muted overflow-hidden">
+                    {req.image_url ? (
+                      <img
+                        src={req.image_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-base font-semibold">
+                        {req.first_name?.[0]}
+                        {req.last_name?.[0]}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info + actions */}
+                  <div className="flex-1 flex flex-col justify-between min-w-0">
+                    {/* Top row: name + time ago */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-foreground truncate">
+                          {[req.first_name, req.last_name]
+                            .filter(Boolean)
+                            .join(" ") || "Unknown"}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate mt-1">
+                          {req.club_name}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0">
+                        {timeAgo(req.requested_at)}
+                      </span>
+                    </div>
+
+                    {/* Action buttons — Reject first, Accept second */}
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 flex-1 text-xs"
+                        onClick={() => rejectMut.mutate(req.membership_id)}
+                        disabled={approveMut.isPending || rejectMut.isPending}
+                      >
+                        Reject
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-8 flex-1 text-xs"
+                        onClick={() => approveMut.mutate(req.membership_id)}
+                        disabled={approveMut.isPending || rejectMut.isPending}
+                      >
+                        Accept
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

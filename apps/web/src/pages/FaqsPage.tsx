@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, ChangeEvent } from "react";
 import Navbar from "@/components/layout/Navbar";
+import { BackButton } from "@/components/ui/back-button";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -84,6 +85,9 @@ const FaqsPage = () => {
       <main className="flex-1">
         <section className="pt-8 pb-16 sm:pt-24 sm:pb-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-4">
+              <BackButton />
+            </div>
             <header className="text-center mb-8 sm:mb-10">
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
                 FAQs

@@ -19,12 +19,17 @@ const PUBLIC_PREFIXES = [
 
 // Routes that must NOT show mobile chrome (top + bottom)
 const HIDE_CHROME = [
-  /^\/new-game\/[^/]+$/, // /new-game/:clubId
+  /^\/new-game\/[^/]+$/, // /new-game/:clubId (legacy)
   /^\/edit-game\/[^/]+\/[^/]+\/?$/,
+  /^\/events\/new\/?$/, // Create Event flow
+  /^\/events\/[^/]+\/?$/, // /events/:eventId (Event Detail)
+  /^\/clubs\/[^/]+\/?$/, // /clubs/:clubId (Club Overview)
+  /^\/game\/[^/]+\/?$/, // /game/:matchDayId (Game page)
   /^\/join-club\/?$/, // /join-club
   /^\/new-club\/?$/, // /new-club
   /^\/user\/[^/]+\/?$/, // /user/:userId (Profile)
-  /^\/start\/?$/,
+  /^\/manage-requests\/?$/, // /manage-requests
+  /^\/start\/?$/, // redirects to /home
   /^\/invite-members(\/[^/]+)?\/?$/,
 ];
 

@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
+import { useIsCompact } from "@/hooks/use-compact";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { useClub } from "@/contexts/ClubContext";
 import {
@@ -24,6 +26,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
   MoreVertical,
   UserPlus,
   UsersRound,
@@ -38,8 +46,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { buildImageUrl } from "@/utils/buildImageUrl";
 import {
   fetchActiveMemberClubsWithDetails,
+  fetchPendingMembershipRequests,
   MemberClubWithDetails,
+  PendingClubRequest,
 } from "@/integrations/supabase/clubMembers";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 interface ClubWithDetails {
   id: string;
@@ -74,11 +85,11 @@ type CreatedClubRow = {
 };
 
 type ClubRow = Database["public"]["Tables"]["clubs"]["Row"];
-type ClubIdRow = Pick<ClubRow, "id">;
 
 const Clubs = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isCompact = useIsCompact();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedClub, setSelectedClub] = useState<ClubWithDetails | null>(
@@ -91,6 +102,18 @@ const Clubs = () => {
   );
   const { setClubId } = useClub();
 
+  // Slider state
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const clubCount = useRef(0);
+
+  // Join Club drawer state
+  const [joinDrawerOpen, setJoinDrawerOpen] = useState(false);
+  const [clubIdInput, setClubIdInput] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+  const [isAssociationMember, setIsAssociationMember] = useState(false);
+  const PENDING_CLUB_JOIN_KEY = "pendingClubJoinSlug";
+
   useEffect(() => {
     const lastClub = localStorage.getItem("lastVisitedClub");
     if (lastClub) {
@@ -98,36 +121,33 @@ const Clubs = () => {
     }
   }, [setClubId]);
 
+  // Observe scroll position for dot indicators
+  useEffect(() => {
+    const el = sliderRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const scrollLeft = el.scrollLeft;
+      const cardWidth = el.firstElementChild
+        ? (el.firstElementChild as HTMLElement).offsetWidth + 12 // gap
+        : 1;
+      setActiveSlide(Math.round(scrollLeft / cardWidth));
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Query to fetch all clubs user is a member of
   const { data: userClubs, isLoading } = useQuery({
     queryKey: ["userClubs", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // Get clubs where user is a member (centralized)
       const memberClubs = await fetchActiveMemberClubsWithDetails(user.id);
 
-      /**
-       * Only show active clubs created by the user.
-       * RLS also hides deleted clubs, but we add an explicit filter for clarity.
-       */
       const { data: createdClubs, error: createdError } = await supabase
         .from("clubs")
         .select(
-          `
-    id,
-    name,
-    image_url,
-    created_at,
-    created_by,
-    description,
-    slug,
-    status,
-    city,
-    country,
-    country_code,
-    is_club_discoverable
-  `
+          `id, name, image_url, created_at, created_by, description, slug, status, city, country, country_code, is_club_discoverable`
         )
         .eq("created_by", user.id)
         .eq("status", "active");
@@ -137,10 +157,8 @@ const Clubs = () => {
       const memberClubsTyped = (memberClubs ?? []) as MemberClubWithDetails[];
       const createdClubsTyped = (createdClubs ?? []) as CreatedClubRow[];
 
-      // Combine and format results
       const allClubs: ClubWithDetails[] = [];
 
-      // Add member clubs
       memberClubsTyped.forEach((member) => {
         if (member.clubs) {
           allClubs.push({
@@ -162,7 +180,6 @@ const Clubs = () => {
         }
       });
 
-      // Add created clubs (if not already included)
       createdClubsTyped.forEach((club) => {
         if (!allClubs.find((c) => c.id === club.id)) {
           allClubs.push({
@@ -184,7 +201,6 @@ const Clubs = () => {
         }
       });
 
-      // Get creator names for all clubs
       const creatorIds = [...new Set(allClubs.map((club) => club.created_by))];
       if (creatorIds.length > 0) {
         const { data: creators } = await supabase
@@ -192,7 +208,6 @@ const Clubs = () => {
           .select("user_id, first_name, last_name")
           .in("user_id", creatorIds);
 
-        // Map creator names to clubs
         allClubs.forEach((club) => {
           const creator = creators?.find((c) => c.user_id === club.created_by);
           if (creator) {
@@ -202,26 +217,90 @@ const Clubs = () => {
         });
       }
 
+      clubCount.current = allClubs.length;
       return allClubs;
     },
     enabled: !!user?.id,
   });
 
-  const handleCreateClub = () => {
+  // Query pending membership requests
+  const { data: pendingRequests = [] } = useQuery({
+    queryKey: ["pendingClubRequests", user?.id],
+    queryFn: () => fetchPendingMembershipRequests(user!.id),
+    enabled: !!user?.id,
+  });
 
-    navigate("/new-club");
+  const handleCreateClub = () => navigate("/new-club");
+  const handleJoinClub = () => {
+    // Prefill from localStorage pending slug
+    const storedCid = (localStorage.getItem(PENDING_CLUB_JOIN_KEY) ?? "").trim();
+    if (storedCid) setClubIdInput(storedCid);
+    setJoinDrawerOpen(true);
   };
 
-  const handleJoinClub = () => {
+  const handleJoinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.id || !clubIdInput.trim()) return;
 
-    navigate("/join-club");
+    setIsJoining(true);
+    try {
+      const slug = clubIdInput.trim().toLowerCase();
+      await supabase.auth.getUser();
+
+      const { data: visibleClub, error: visibleErr } = await supabase
+        .from("clubs")
+        .select("id")
+        .eq("status", "active")
+        .ilike("slug", slug)
+        .maybeSingle();
+
+      if (!visibleErr && visibleClub?.id) {
+        localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
+        toast({ title: "Already a member", description: "You are already a member of this club.", duration: 2500 });
+        setJoinDrawerOpen(false);
+        setClubIdInput("");
+        return;
+      }
+
+      const { error: rpcErr } = await supabase.rpc("request_join_by_slug", {
+        p_slug: slug,
+        p_member_association: isAssociationMember,
+      });
+
+      if (rpcErr) {
+        const err = rpcErr as PostgrestError;
+        const msg = String(err.message || "").toLowerCase();
+
+        if (err.code === "23505" || msg.includes("club_members_club_id_user_id_key")) {
+          toast({ title: "Request already sent", description: "You already have a pending request or are a member.", duration: 3500 });
+          return;
+        }
+        if (msg.includes("club_not_found_or_deleted")) {
+          toast({ title: "Club not found", description: "This club isn't available.", variant: "destructive", duration: 3000 });
+          return;
+        }
+        toast({ title: "Couldn't join", description: "Join request failed. Please try again.", variant: "destructive", duration: 3000 });
+        return;
+      }
+
+      localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
+      toast({ title: "Request sent", description: "Your request was sent to the club admins.", duration: 3500 });
+      queryClient.invalidateQueries({ queryKey: ["pendingClubRequests"] });
+      setJoinDrawerOpen(false);
+      setClubIdInput("");
+      setIsAssociationMember(false);
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive", duration: 3000 });
+    } finally {
+      setIsJoining(false);
+    }
   };
 
   const handleClubClick = (clubId: string) => {
-    setClubId(clubId); // set it globally
+    setClubId(clubId);
     localStorage.setItem("lastVisitedClub", clubId);
-
-    navigate(`/dashboard/${clubId}`);
+    navigate(`/clubs/${clubId}`);
   };
 
   const handleEditClick = (e: React.MouseEvent, club: ClubWithDetails) => {
@@ -236,13 +315,9 @@ const Clubs = () => {
     setShowDeleteDialog(true);
   };
 
-  /**
-   * Soft delete handler (type-safe, no row return on UPDATE, verify by refetch)
-   */
   const handleConfirmDelete = async () => {
     if (!clubToDelete || !user?.id) return;
 
-    // Optimistically remove from caches that list user's clubs
     const keys = [["userClubs", user.id] as const, ["userClubs"] as const];
 
     for (const key of keys) {
@@ -254,10 +329,6 @@ const Clubs = () => {
     }
 
     try {
-      /**
-       * IMPORTANT: use returning:'minimal' to avoid PostgREST trying to SELECT
-       * the updated row, which RLS hides once status='deleted' → 403 otherwise.
-       */
       const { error } = await supabase
         .from("clubs")
         .update({
@@ -268,12 +339,10 @@ const Clubs = () => {
 
       if (error) throw error;
 
-      // Revalidate the authoritative lists
       await Promise.all(
         keys.map((key) => queryClient.invalidateQueries({ queryKey: key }))
       );
 
-      // Verify: if the club still shows up after refetch, the update did not take effect (RLS / stale id)
       const latest =
         queryClient.getQueryData<ClubRow[] | undefined>([
           "userClubs",
@@ -290,7 +359,6 @@ const Clubs = () => {
         );
       }
 
-      // Safety: clear lastVisitedClub if it pointed to this club
       if (localStorage.getItem("lastVisitedClub") === clubToDelete.id) {
         localStorage.removeItem("lastVisitedClub");
       }
@@ -301,7 +369,6 @@ const Clubs = () => {
         duration: 1500,
       });
     } catch (err) {
-      // Roll back by refetching from server
       await Promise.all(
         keys.map((key) => queryClient.invalidateQueries({ queryKey: key }))
       );
@@ -335,17 +402,10 @@ const Clubs = () => {
     return club.role === "admin" || club.created_by === user?.id;
   };
 
-  const getCreatorDisplayName = (club: ClubWithDetails) => {
-    if (club.created_by === user?.id) {
-      return "You";
-    }
-    return `${club.creator_first_name} ${club.creator_last_name}`;
-  };
-
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-        <Navbar />
+      <div className="min-h-screen flex flex-col">
+        {!isCompact && <Navbar />}
         <div className="flex-grow flex items-center justify-center">
           <Spinner className="h-8 w-8" />
         </div>
@@ -354,180 +414,198 @@ const Clubs = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-
-      <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header with title and buttons */}
-          <div className="mb-8">
-            {/* Desktop Layout */}
-            <div className="hidden sm:flex justify-between items-center">
-              <h1 className="text-4xl font-serif text-gray-900 dark:text-gray-100">
-                Your clubs
-              </h1>
-              <div className="flex gap-4">
-                <Button
-                  variant="action"
-                  icon={<UsersRound className="h-4 w-4" />}
-                  onClick={handleJoinClub}
-                >
-                  Join a Club
-                </Button>
-                <Button
-                  variant="secondary"
-                  icon={<UserPlus className="h-4 w-4" />}
-                  onClick={handleCreateClub}
-                >
-                  Create a Club
-                </Button>
-              </div>
-            </div>
-
-            {/* Mobile Layout */}
-            <div className="sm:hidden">
-              <h1 className="text-4xl font-serif text-gray-900 dark:text-gray-100 mb-4">
-                Your clubs
-              </h1>
-              <div className="flex flex-wrap gap-3 justify-end">
-                <Button
-                  variant="action"
-                  icon={<UsersRound className="h-4 w-4" />}
-                  onClick={handleJoinClub}
-                  className="flex-1 min-w-[140px] max-w-[200px]"
-                >
-                  Join a Club
-                </Button>
-                <Button
-                  variant="secondary"
-                  icon={<UserPlus className="h-4 w-4" />}
-                  onClick={handleCreateClub}
-                  className="flex-1 min-w-[140px] max-w-[200px]"
-                >
-                  Create a Club
-                </Button>
-              </div>
-            </div>
+    <div className="min-h-screen flex flex-col bg-background">
+      {!isCompact && <Navbar />}
+      <main className="flex-grow pb-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          {/* Action buttons */}
+          <div className="flex gap-3 mb-6">
+            <Button
+              variant="outline"
+              onClick={handleJoinClub}
+              className="flex-1 h-12 justify-center"
+            >
+              <UsersRound className="mr-2 h-4 w-4" />
+              Join a Club
+            </Button>
+            <Button
+              onClick={handleCreateClub}
+              className="flex-1 h-12 justify-center"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Create a Club
+            </Button>
           </div>
 
-          {/* Clubs grid */}
-          {userClubs && userClubs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {userClubs.map((club) => (
-                <Card
-                  key={club.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow relative bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                  onClick={() => handleClubClick(club.id)}
+          {/* Your Clubs */}
+          <section className="mb-8">
+            <h2 className="text-xl font-bold text-foreground mb-4">Your Clubs</h2>
+
+            {userClubs && userClubs.length > 0 ? (
+              <>
+                {/* Horizontal slider */}
+                <div
+                  ref={sliderRef}
+                  className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4"
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollPaddingInline: "1rem" }}
                 >
-                  <CardHeader className="p-0">
-                    <div className="aspect-video w-full bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
-                      {club.image_url ? (
-                        <img
-                          src={buildImageUrl(club.image_url ?? "", { w: 720 })} // q=60, format=avif by default
-                          alt={club.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                          <span className="text-white text-2xl font-bold">
-                            {club.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-semibold flex-1 pr-2 text-gray-900 dark:text-gray-100">
-                        {club.name}
-                      </h3>
-                      {isClubAdmin(club) && (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              aria-label="Open club menu"
-                              className="h-8 w-8 p-0 rounded-md
-             text-gray-600 hover:text-gray-900 hover:bg-gray-100
-             dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-700"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-40 p-2 bg-white border border-gray-200 shadow-md
-             dark:bg-gray-800 dark:border-gray-700"
-                            align="end"
-                          >
-                            <div className="flex flex-col space-y-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start
-             text-gray-700 hover:text-gray-900 hover:bg-gray-100
-             dark:text-gray-200 dark:hover:text-white dark:hover:bg-gray-700"
-                                onClick={(e) => handleEditClick(e, club)}
-                                icon={<Edit className="h-4 w-4" />}
-                              >
-                                Edit Club
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start
-             text-red-600 hover:text-red-700 hover:bg-red-50
-             dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
-                                onClick={(e) => handleDeleteClick(e, club)}
-                                icon={<Trash className="h-4 w-4" />}
-                              >
-                                Delete Club
-                              </Button>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      )}
-                    </div>
-                    {/* Playing since */}
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      Playing since {formatDate(club.created_at)}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      {/* Location */}
-                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 mb-1">
-                        <MapPin
-                          className="h-4 w-4 shrink-0"
-                          aria-hidden="true"
-                        />
-                        <span className="truncate">
-                          {club.city ? club.city : "Location not set"}
-                        </span>
+                  {userClubs.map((club) => (
+                    <div
+                      key={club.id}
+                      className="snap-start shrink-0 w-[85vw] sm:w-[340px] border border-border rounded-xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => handleClubClick(club.id)}
+                    >
+                      {/* Image */}
+                      <div className="aspect-[16/10] w-full bg-muted overflow-hidden">
+                        {club.image_url ? (
+                          <img
+                            src={buildImageUrl(club.image_url ?? "", { w: 720 })}
+                            alt={club.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                            <span className="text-white text-2xl font-bold">
+                              {club.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Club ID shown as plain text (non-clickable) */}
-                      {/* {club.slug && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Club ID:{" "}
-                          <span className="font-mono font-semibold">
-                            {club.slug}
-                          </span>
+                      {/* Info */}
+                      <div className="p-3">
+                        <div className="flex items-start justify-between mb-1">
+                          <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                            <h3 className="text-base font-semibold text-foreground truncate">
+                              {club.name}
+                            </h3>
+                            {isClubAdmin(club) && (
+                              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase">
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                          {isClubAdmin(club) && (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button
+                                  className="h-7 w-7 shrink-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label="Club menu"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-40 p-2 bg-popover border border-border shadow-md"
+                                align="end"
+                              >
+                                <div className="flex flex-col space-y-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full justify-start text-foreground hover:bg-muted"
+                                    onClick={(e) => handleEditClick(e, club)}
+                                    icon={<Edit className="h-4 w-4" />}
+                                  >
+                                    Edit Club
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+                                    onClick={(e) => handleDeleteClick(e, club)}
+                                    icon={<Trash className="h-4 w-4" />}
+                                  >
+                                    Delete Club
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Playing since {formatDate(club.created_at)}
                         </p>
-                      )} */}
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                          <span className="truncate">
+                            {club.city ? club.city : "Location not set"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400 text-lg mb-6">
-                You haven't joined any clubs yet.
-              </p>
-            </div>
-          )}
+                  ))}
+                  {/* Spacer to preserve right padding in scroll container */}
+                  <div className="shrink-0 w-1" aria-hidden="true" />
+                </div>
+
+                {/* Dot indicators */}
+                {userClubs.length > 1 && (
+                  <div className="flex justify-center gap-1.5 pt-3">
+                    {userClubs.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                          i === activeSlide ? "bg-muted-foreground" : "bg-border"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : pendingRequests.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-base">
+                  You haven't joined any clubs yet.
+                </p>
+              </div>
+            ) : null}
+
+            {/* Pending requests */}
+            {pendingRequests.length > 0 && (
+              <div className={`space-y-3 ${userClubs && userClubs.length > 0 ? "mt-4" : ""}`}>
+                {pendingRequests.map((req) => (
+                  <div
+                    key={req.club_id}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
+                  >
+                    {/* Placeholder avatar */}
+                    <div className="h-12 w-12 shrink-0 rounded-full bg-muted flex items-center justify-center">
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        {req.clubs?.name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+
+                    {/* Club info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {req.clubs?.name ?? "Unknown Club"}
+                      </p>
+                      {req.clubs?.city && (
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {req.clubs.city}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Pending badge */}
+                    <span className="shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      Pending
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Discover */}
+          <section>
+            <h2 className="text-xl font-bold text-foreground mb-4">Discover</h2>
+            <div className="h-44 rounded-xl bg-muted/50 border border-border" />
+          </section>
         </div>
       </main>
 
@@ -550,7 +628,7 @@ const Clubs = () => {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              club "{clubToDelete?.name}" and remove the club from everyone’s
+              club "{clubToDelete?.name}" and remove the club from everyone's
               view.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -565,6 +643,70 @@ const Clubs = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Join Club Drawer */}
+      <Drawer open={joinDrawerOpen} onOpenChange={setJoinDrawerOpen}>
+        <DrawerContent className="max-h-[85dvh]">
+          <DrawerHeader className="border-b border-border pb-3">
+            <DrawerTitle className="text-center text-base font-semibold">Join a Club</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4">
+            <form onSubmit={handleJoinSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="drawer-club-id" className="text-sm font-medium text-foreground">Club ID</Label>
+                <Input
+                  id="drawer-club-id"
+                  type="text"
+                  placeholder="AB12C"
+                  value={clubIdInput}
+                  onChange={(e) => setClubIdInput(e.target.value)}
+                  className="h-12 bg-muted/50 border-border"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center gap-2 py-2">
+                <input
+                  id="drawer-assoc-member"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border"
+                  checked={isAssociationMember}
+                  onChange={(e) => setIsAssociationMember(e.target.checked)}
+                />
+                <span className="text-sm text-muted-foreground">
+                  I am a member of this association.
+                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-xs text-muted-foreground"
+                      aria-label="What does member association mean?"
+                    >
+                      ?
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="top"
+                    align="center"
+                    className="max-w-xs text-sm leading-snug text-popover-foreground"
+                  >
+                    Member Association means you are a paid member of the club. If you are not sure, leave this unchecked.
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-12"
+                disabled={isJoining || !clubIdInput.trim()}
+              >
+                {isJoining ? "Joining..." : "Join Club"}
+              </Button>
+            </form>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

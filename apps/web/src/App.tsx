@@ -109,7 +109,6 @@ const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
     "/forgot-password",
     "/reset-password",
     "/players/onboarding",
-    "/start",
     "/faqs",
   ];
 
@@ -117,7 +116,7 @@ const AuthAwareThemeWrapper = ({ children }: { children: React.ReactNode }) => {
     <ThemeProvider
       isAuthenticated={isAuthenticated}
       enforceLightOnRoutes={enforceLightOnRoutes}
-      enforceLightAlwaysRoutes={["/players/onboarding", "/start"]}
+      enforceLightAlwaysRoutes={["/players/onboarding"]}
     >
       {children}
     </ThemeProvider>
@@ -151,7 +150,7 @@ const BootGate = ({ children }: { children: React.ReactNode }) => {
         lastPrivatePath && lastPrivatePath !== "/"
           ? lastPrivatePath
           : lastVisitedClub
-          ? `/dashboard/${lastVisitedClub}`
+          ? `/clubs/${lastVisitedClub}`
           : "/clubs";
 
       if (target !== location.pathname) {

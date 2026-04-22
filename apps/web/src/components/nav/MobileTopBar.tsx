@@ -1,16 +1,60 @@
 import * as React from "react";
-import Logo from "@/components/common/Logo";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Bell, MessageSquare, Menu } from "lucide-react";
 import MobileMenuDrawer from "./MobileMenuDrawer";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-/** Thin top bar that mimics native PWA chrome. Renders only on compact screens (parent wrapper controls). */
+/** Route-to-title mapping for the top bar. */
+function getPageTitle(pathname: string): string {
+  if (/^\/clubs(\/|$)/.test(pathname)) return "Clubs";
+  if (/^\/events(\/|$)/.test(pathname)) return "Events";
+  if (/^\/members(\/|$)/.test(pathname)) return "Members";
+  if (/^\/games(\/|$)/.test(pathname)) return "Games";
+  return "Home";
+}
+
+/** Thin top bar with profile picture, page title, and action icons. */
 const MobileTopBar: React.FC = () => {
-  const [open, setOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
   const { resolvedTheme } = useTheme();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const iconColor =
     resolvedTheme === "dark" ? "text-gray-200" : "text-gray-900";
+
+  // Fetch player profile for avatar
+  const [profile, setProfile] = React.useState<{
+    first_name?: string | null;
+    last_name?: string | null;
+    image_url?: string | null;
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (!user?.id) return;
+    let active = true;
+    supabase
+      .from("players")
+      .select("first_name, last_name, image_url")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active && data) setProfile(data);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
+
+  const initials = profile
+    ? [profile.first_name?.[0], profile.last_name?.[0]]
+        .filter(Boolean)
+        .join("")
+        .toUpperCase()
+    : "";
 
   return (
     <>
@@ -18,20 +62,69 @@ const MobileTopBar: React.FC = () => {
         className="fixed top-0 left-0 right-0 z-50 h-14 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70
                    border-b flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),0px)]"
       >
-        <Logo size="sm" linkTo="/dashboard" />
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Open menu"
-          onClick={() => setOpen(true)}
-          className="text-foreground hover:bg-muted focus:bg-muted active:bg-muted hover:text-foreground focus-visible:text-foreground active:text-foreground dark:text-foreground dark:hover:text-foreground dark:focus-visible:text-foreground dark:active:text-foreground"
+        {/* Profile avatar */}
+        <button
+          type="button"
+          onClick={() => user?.id && navigate(`/user/${user.id}`)}
+          className="h-8 w-8 rounded-full overflow-hidden bg-muted flex items-center justify-center shrink-0"
+          aria-label="Profile"
         >
-          <Menu className={`h-5 w-5 ${iconColor}`} />
-        </Button>
+          {profile?.image_url ? (
+            <img
+              src={profile.image_url}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          ) : (
+            <span className="text-xs font-semibold">{initials || "?"}</span>
+          )}
+        </button>
+
+        {/* Centered title */}
+        <span className="absolute left-1/2 -translate-x-1/2 text-base font-semibold">
+          {getPageTitle(pathname)}
+        </span>
+
+        {/* Action icons */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Chats (coming soon)"
+            disabled
+            className="text-muted-foreground opacity-40 cursor-not-allowed"
+          >
+            <MessageSquare className="h-5 w-5" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Notifications (coming soon)"
+            disabled
+            className="text-muted-foreground opacity-40 cursor-not-allowed"
+          >
+            <Bell className="h-5 w-5" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Open menu"
+            onClick={() => setMenuOpen(true)}
+            className="text-foreground hover:bg-muted"
+          >
+            <Menu className={`h-5 w-5 ${iconColor}`} />
+          </Button>
+        </div>
       </header>
-      {/* Push page content below top bar height; bottom nav adds padding itself */}
+
+      {/* Push page content below top bar */}
       <div className="h-14" aria-hidden="true" />
-      <MobileMenuDrawer open={open} onOpenChange={setOpen} />
+      <MobileMenuDrawer open={menuOpen} onOpenChange={setMenuOpen} />
     </>
   );
 };

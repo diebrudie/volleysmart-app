@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 // Pages
 import Home from "@/pages/Home";
+import HomeDashboard from "@/pages/HomeDashboard";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import VerifyEmail from "@/pages/VerifyEmail";
@@ -14,15 +15,19 @@ import PlayerOnboarding from "@/pages/PlayerOnboarding";
 import Dashboard from "@/pages/Dashboard";
 import Games from "@/pages/Games";
 import GameDetail from "@/pages/GameDetail";
+import Game from "@/pages/Game";
 import Players from "@/pages/Players";
 import Members from "@/pages/Members";
+import MembersGlobal from "@/pages/MembersGlobal";
 import ManageMembers from "@/pages/ManageMembers";
+import UpcomingEvents from "@/pages/UpcomingEvents";
+import CreateEvent from "@/pages/CreateEvent";
 import PlayerDetail from "@/pages/PlayerDetail";
 import TeamGenerator from "@/pages/TeamGenerator";
 import EditGame from "@/pages/EditGame";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
-import Start from "@/pages/Start";
+// Start page removed — /start now redirects to /home
 import NewClub from "@/pages/NewClub";
 import JoinClub from "@/pages/JoinClub";
 import InviteMembers from "@/pages/InviteMembers";
@@ -31,6 +36,9 @@ import Profile from "@/pages/Profile";
 import Clubs from "@/pages/Clubs";
 import ClubGuard from "@/components/routing/ClubGuard";
 import FaqsPage from "@/pages/FaqsPage";
+import Archive from "@/pages/Archive";
+import EventDetail from "@/pages/EventDetail";
+import ClubOverview from "@/pages/ClubOverview";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -38,7 +46,7 @@ const HomeRoute = () => {
   if (isLoading) return null;
 
   if (isAuthenticated) {
-    return <Navigate to="/clubs" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   return <Home />;
@@ -64,14 +72,7 @@ const AppRoutes = () => (
       }
     />
 
-    <Route
-      path="/start"
-      element={
-        <ProtectedRoute requiresCompletedOnboarding={false}>
-          <Start />
-        </ProtectedRoute>
-      }
-    />
+    <Route path="/start" element={<Navigate to="/home" replace />} />
 
     <Route
       path="/new-club"
@@ -106,6 +107,14 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
+    <Route
+      path="/clubs/:clubId"
+      element={
+        <ProtectedRoute>
+          <ClubOverview />
+        </ProtectedRoute>
+      }
+    />
 
     <Route
       path="/new-game/:clubId"
@@ -135,8 +144,52 @@ const AppRoutes = () => (
       }
     />
 
-    {/* Safety redirect: bare /dashboard → /clubs */}
-    <Route path="/dashboard" element={<Navigate to="/clubs" replace />} />
+    {/* Global tabs */}
+    <Route
+      path="/home"
+      element={
+        <ProtectedRoute>
+          <HomeDashboard />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/events"
+      element={
+        <ProtectedRoute>
+          <UpcomingEvents />
+        </ProtectedRoute>
+      }
+    />
+    {/* Backward compat redirect */}
+    <Route path="/archive" element={<Navigate to="/events" replace />} />
+    <Route
+      path="/members"
+      element={
+        <ProtectedRoute>
+          <MembersGlobal />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/events/new"
+      element={
+        <ProtectedRoute>
+          <CreateEvent />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/events/:eventId"
+      element={
+        <ProtectedRoute>
+          <EventDetail />
+        </ProtectedRoute>
+      }
+    />
+
+    {/* Safety redirects */}
+    <Route path="/dashboard" element={<Navigate to="/home" replace />} />
     <Route
       path="/games/:clubId"
       element={
@@ -148,6 +201,15 @@ const AppRoutes = () => (
       }
     />
 
+    <Route
+      path="/game/:matchDayId"
+      element={
+        <ProtectedRoute>
+          <Game />
+        </ProtectedRoute>
+      }
+    />
+    {/* Legacy redirect */}
     <Route
       path="/game-details/:matchDayId"
       element={
@@ -177,6 +239,14 @@ const AppRoutes = () => (
 
     <Route
       path="/clubs/:clubId/manage"
+      element={
+        <ProtectedRoute>
+          <ManageMembers />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/manage-requests"
       element={
         <ProtectedRoute>
           <ManageMembers />

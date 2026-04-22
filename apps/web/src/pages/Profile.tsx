@@ -1,13 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +15,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, Upload, HelpCircle, X } from "lucide-react";
+import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Drawer,
   DrawerContent,
@@ -32,6 +34,7 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
+import { Spinner } from "@/components/ui/spinner";
 
 interface PlayerProfile {
   id: string;
@@ -57,7 +60,7 @@ interface Position {
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,64 +75,41 @@ const Profile = () => {
   >([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isPositionsHelpOpen, setIsPositionsHelpOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isOwnProfile = user?.id === userId;
 
   const navigate = useNavigate();
-  const location = useLocation();
 
-  /**
-   * Go back logic:
-   * - If browser history is available → navigate(-1)
-   * - Else use lastPrivatePath from RoutePersistence
-   * - Else fallback to /clubs
-   */
   const handleBack = () => {
-    const last = localStorage.getItem("lastPrivatePath");
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    if (last && last !== location.pathname) {
-      navigate(last);
-      return;
-    }
-    navigate("/clubs");
+    navigate(-1);
   };
 
-  // Track changes for Personal Info
-  const hasPersonalInfoChanges = () => {
+  // Track if anything has changed
+  const hasChanges = () => {
     if (!profile || !originalProfile) return false;
-    return (
+    const personalChanged =
       profile.first_name !== originalProfile.first_name ||
       profile.last_name !== originalProfile.last_name ||
       profile.birthday !== originalProfile.birthday ||
       profile.gender !== originalProfile.gender ||
       profile.height_cm !== originalProfile.height_cm ||
       profile.bio !== originalProfile.bio ||
-      imageFile !== null
-    );
-  };
+      imageFile !== null;
 
-  // Track changes for Skills
-  const hasSkillsChanges = () => {
-    if (!profile || !originalProfile) return false;
+    if (personalChanged) return true;
 
-    // Check skill rating change
-    if (profile.skill_rating !== originalProfile.skill_rating) return true;
-
-    // Check positions changes
     if (playerPositions.length !== originalPlayerPositions.length) return true;
-
-    // Check if positions content has changed
     const sortedCurrent = [...playerPositions].sort((a, b) =>
       a.position_id.localeCompare(b.position_id)
     );
     const sortedOriginal = [...originalPlayerPositions].sort((a, b) =>
       a.position_id.localeCompare(b.position_id)
     );
-
     return JSON.stringify(sortedCurrent) !== JSON.stringify(sortedOriginal);
   };
 
@@ -141,12 +121,18 @@ const Profile = () => {
     }
   }, [userId]);
 
-  // Fetch player positions after profile is loaded
   useEffect(() => {
     if (profile?.id) {
       fetchPlayerPositions();
     }
   }, [profile?.id]);
+
+  // Get the email for the profile user
+  useEffect(() => {
+    if (isOwnProfile && user?.email) {
+      setUserEmail(user.email);
+    }
+  }, [isOwnProfile, user?.email]);
 
   const fetchProfile = async () => {
     try {
@@ -223,14 +209,13 @@ const Profile = () => {
     }
   };
 
-  const handlePersonalInfoSave = async () => {
+  const handleSave = async () => {
     if (!profile || !isOwnProfile) return;
 
     setSaving(true);
     try {
       let imageUrl = profile.image_url;
 
-      // Upload image if selected
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
         const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
@@ -245,12 +230,6 @@ const Profile = () => {
             uploadError.message?.includes("policy")
           ) {
             console.warn("Storage policy warning:", uploadError.message);
-            toast({
-              title: "Notice",
-              description:
-                "Image upload failed, but profile will be updated without new image.",
-              variant: "default",
-            });
           } else {
             throw uploadError;
           }
@@ -258,11 +237,11 @@ const Profile = () => {
           const {
             data: { publicUrl },
           } = supabase.storage.from("player-images").getPublicUrl(fileName);
-
           imageUrl = publicUrl;
         }
       }
 
+      // Update profile (skill_rating is NOT updated — it's automatic)
       const { error } = await supabase
         .from("players")
         .update({
@@ -278,40 +257,12 @@ const Profile = () => {
 
       if (error) throw error;
 
-      const updatedProfile = { ...profile, image_url: imageUrl };
-      setProfile(updatedProfile);
-      setOriginalProfile(updatedProfile);
-      setImageFile(null);
-
-      toast({
-        title: "Success",
-        description: "Personal information updated successfully",
-        duration: 1500,
-      });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update personal information",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSkillsSave = async () => {
-    if (!profile || !isOwnProfile) return;
-
-    setSaving(true);
-    try {
-      // Delete existing positions
+      // Update positions
       await supabase
         .from("player_positions")
         .delete()
         .eq("player_id", profile.id);
 
-      // Insert new positions
       if (playerPositions.length > 0) {
         const { error: positionsError } = await supabase
           .from("player_positions")
@@ -322,37 +273,26 @@ const Profile = () => {
               is_primary: pos.is_primary,
             }))
           );
-
         if (positionsError) throw positionsError;
       }
 
-      // Update skill rating
-      const { error: profileError } = await supabase
-        .from("players")
-        .update({
-          skill_rating: profile.skill_rating,
-        })
-        .eq("id", profile.id);
-
-      if (profileError) throw profileError;
-
-      // Update original values after successful save
-      setOriginalProfile({
-        ...originalProfile!,
-        skill_rating: profile.skill_rating,
-      });
+      const updatedProfile = { ...profile, image_url: imageUrl };
+      setProfile(updatedProfile);
+      setOriginalProfile(updatedProfile);
       setOriginalPlayerPositions([...playerPositions]);
+      setImageFile(null);
+      setIsEditing(false);
 
       toast({
-        title: "Success",
-        description: "Volleyball skills updated successfully",
+        title: "Profile updated",
+        description: "Your changes have been saved.",
         duration: 1500,
       });
     } catch (error) {
-      console.error("Error updating skills:", error);
+      console.error("Error updating profile:", error);
       toast({
         title: "Error",
-        description: "Failed to update volleyball skills",
+        description: "Failed to update profile",
         variant: "destructive",
       });
     } finally {
@@ -367,468 +307,558 @@ const Profile = () => {
     }
   };
 
-  const getPrimaryPosition = () => {
+  const getPrimaryPositionId = () => {
     const primary = playerPositions.find((pos) => pos.is_primary);
-    return primary
-      ? positions.find((p) => p.id === primary.position_id)?.name
-      : "";
+    return primary?.position_id ?? "";
   };
+
+  const getPrimaryPositionName = () => {
+    const id = getPrimaryPositionId();
+    return positions.find((p) => p.id === id)?.name ?? "";
+  };
+
+  const getSecondaryPositionIds = () =>
+    playerPositions.filter((p) => !p.is_primary).map((p) => p.position_id);
 
   const updatePrimaryPosition = (positionId: string) => {
-    const newPositions = playerPositions.filter((pos) => !pos.is_primary);
-    newPositions.push({ position_id: positionId, is_primary: true });
-    setPlayerPositions(newPositions);
+    const secondaries = playerPositions.filter((pos) => !pos.is_primary);
+    // Remove from secondaries if it was there
+    const filtered = secondaries.filter((s) => s.position_id !== positionId);
+    filtered.push({ position_id: positionId, is_primary: true });
+    setPlayerPositions(filtered);
   };
 
-  const toggleSecondaryPosition = (positionId: string, checked: boolean) => {
-    if (checked) {
+  const updateSecondaryPosition = (positionId: string) => {
+    const primary = playerPositions.find((p) => p.is_primary);
+    // If it's the primary, ignore
+    if (primary?.position_id === positionId) return;
+
+    const isAlreadySecondary = playerPositions.some(
+      (p) => p.position_id === positionId && !p.is_primary
+    );
+
+    if (isAlreadySecondary) {
+      // Remove it
+      setPlayerPositions(
+        playerPositions.filter((p) => p.position_id !== positionId || p.is_primary)
+      );
+    } else {
+      // Add it
       setPlayerPositions([
         ...playerPositions,
         { position_id: positionId, is_primary: false },
       ]);
-    } else {
-      setPlayerPositions(
-        playerPositions.filter((pos) => pos.position_id !== positionId)
-      );
     }
   };
 
   const formatMemberSince = (createdAt: string) => {
     const date = new Date(createdAt);
     return date.toLocaleDateString("en-US", {
-      day: "2-digit",
       month: "short",
       year: "numeric",
     });
   };
 
+  const handleCancelEdit = () => {
+    setProfile(originalProfile ? { ...originalProfile } : null);
+    setPlayerPositions([...originalPlayerPositions]);
+    setImageFile(null);
+    setIsEditing(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+    setIsDeleting(true);
+    try {
+      // Delete profile image from storage if it exists
+      if (profile?.image_url) {
+        try {
+          const url = new URL(profile.image_url);
+          const pathParts = url.pathname.split("/player-images/");
+          if (pathParts[1]) {
+            await supabase.storage
+              .from("player-images")
+              .remove([decodeURIComponent(pathParts[1])]);
+          }
+        } catch {
+          // Storage cleanup is best-effort
+        }
+      }
+
+      // Call RPC to clear image_url and delete auth user
+      const { error } = await (supabase as any).rpc("delete_own_account");
+      if (error) throw error;
+
+      toast({
+        title: "Account deleted",
+        description: "Your account has been permanently deleted.",
+        duration: 3000,
+      });
+
+      await logout();
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  // ── Loading / error states ──────────────────────────────────────────────────
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto py-6 px-4">
-          <Button
-            variant="outline"
-            size="icon"
-            className="mr-4"
-            onClick={handleBack}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center justify-center h-64">
-            <div className="text-lg text-gray-900 dark:text-gray-100">
-              Loading...
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Spinner className="h-8 w-8" />
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto py-6 px-4">
-          <Button
-            variant="outline"
-            size="icon"
-            className="mr-4"
+      <div className="min-h-screen bg-background">
+        <div className="max-w-2xl mx-auto py-6 px-4">
+          <button
             onClick={handleBack}
+            className="h-9 w-9 rounded-full border border-border flex items-center justify-center mb-6"
           >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center justify-center h-64">
-            <div className="text-lg text-gray-900 dark:text-gray-100">
-              Profile not found
-            </div>
-          </div>
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <p className="text-lg text-muted-foreground text-center mt-12">
+            Profile not found
+          </p>
         </div>
       </div>
     );
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
-    <div className="min-h-screen">
-      <div className="max-w-4xl mx-auto py-8 px-4">
-        <div className="flex flex-col mb-3">
-          <div className="flex items-center mb-9">
-            <Button
-              variant="outline"
-              size="icon"
-              className="mr-4"
-              onClick={handleBack}
+    <div className="min-h-screen bg-background" style={{ paddingBottom: isEditing ? '5rem' : undefined }}>
+      {/* Header bar */}
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="flex items-center justify-center relative h-14 px-4">
+          <button
+            onClick={isEditing ? handleCancelEdit : handleBack}
+            className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-base font-semibold">Profile</h1>
+          {isOwnProfile && !isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="absolute right-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
             >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Profile
-            </h1>
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4">
+        {/* Avatar + Name + Email */}
+        <div className="flex items-center gap-5 pt-6 pb-4">
+          <div className="relative shrink-0">
+            <Avatar className="h-20 w-20">
+              <AvatarImage
+                src={
+                  imageFile
+                    ? URL.createObjectURL(imageFile)
+                    : profile.image_url ?? undefined
+                }
+                alt="Profile"
+                className="object-cover"
+              />
+              <AvatarFallback className="text-xl bg-muted">
+                {profile.first_name?.[0]}
+                {profile.last_name?.[0]}
+              </AvatarFallback>
+            </Avatar>
+            {isEditing && (
+              <label
+                htmlFor="image-upload"
+                className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-sm"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+              </label>
+            )}
           </div>
-          <div className="mb-8">
-            <h2 className="text-3xl font-serif text-gray-900 dark:text-gray-100">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold text-foreground">
               {profile.first_name} {profile.last_name}
             </h2>
-            {userCreatedAt && (
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Member since {formatMemberSince(userCreatedAt)}
-              </p>
-            )}
-            {!isOwnProfile && (
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Viewing player profile
-              </p>
+            {userEmail && (
+              <p className="text-sm text-muted-foreground mt-0.5">{userEmail}</p>
             )}
           </div>
         </div>
 
-        <Tabs defaultValue="personal" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="personal">Personal Info</TabsTrigger>
-            <TabsTrigger value="skills">Volleyball Info</TabsTrigger>
-          </TabsList>
+        {/* Member since + Skill row */}
+        <div className="flex items-end justify-between py-3 border-b border-border">
+          {userCreatedAt && (
+            <div>
+              <p className="text-xs text-primary/70 font-medium">Member since</p>
+              <p className="text-lg font-bold text-foreground">
+                {formatMemberSince(userCreatedAt)}
+              </p>
+            </div>
+          )}
+          {profile.skill_rating != null && (
+            <div className="text-right">
+              <p className="text-xs text-primary/70 font-medium">Skill</p>
+              <p className="text-lg font-bold text-foreground">{profile.skill_rating}</p>
+            </div>
+          )}
+        </div>
 
-          <TabsContent value="personal">
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-                <CardDescription>
-                  {isOwnProfile
-                    ? "Update your personal details"
-                    : "Personal details"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center space-x-6">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage
-                      src={
-                        imageFile
-                          ? URL.createObjectURL(imageFile)
-                          : profile.image_url ?? undefined
-                      }
-                      alt="Profile"
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="text-lg">
-                      {profile.first_name?.[0]}
-                      {profile.last_name?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  {isOwnProfile && (
-                    <div>
-                      <Label htmlFor="image-upload" className="cursor-pointer">
-                        <div className="flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                          <Upload className="h-4 w-4" />
-                          <span>Upload new photo</span>
-                        </div>
-                      </Label>
-                      <Input
-                        id="image-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageUpload}
-                      />
-                    </div>
+        {/* ── View mode ─────────────────────────────────────── */}
+        {!isEditing ? (
+          <div className="space-y-0">
+            {/* Bio */}
+            {profile.bio && (
+              <div className="py-4 border-b border-border">
+                <p className="text-sm text-foreground">{profile.bio}</p>
+              </div>
+            )}
+
+            {/* Personal Details */}
+            {(profile.gender || profile.birthday || profile.height_cm) && (
+              <div className="py-4 border-b border-border">
+                <p className="text-xs text-primary/70 font-medium mb-2">Personal Details</p>
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-foreground">
+                  {profile.gender && (
+                    <span className="flex items-center gap-1.5 capitalize font-medium">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      {profile.gender}
+                    </span>
+                  )}
+                  {profile.birthday && (
+                    <span className="flex items-center gap-1.5">
+                      <Cake className="h-3.5 w-3.5 text-muted-foreground" />
+                      {new Date(profile.birthday).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+                  )}
+                  {profile.height_cm && (
+                    <span className="flex items-center gap-1.5">
+                      <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
+                      {profile.height_cm} cm
+                    </span>
                   )}
                 </div>
+              </div>
+            )}
 
-                <div>
-                  <Label htmlFor="email">Email</Label>
+            {/* Positions */}
+            {playerPositions.length > 0 && (
+              <div className="py-4 border-b border-border">
+                <p className="text-xs text-primary/70 font-medium mb-3">Positions</p>
+                <div className="flex flex-wrap gap-2">
+                  {playerPositions
+                    .sort((a, b) => (a.is_primary === b.is_primary ? 0 : a.is_primary ? -1 : 1))
+                    .map((pp) => {
+                    const pos = positions.find((p) => p.id === pp.position_id);
+                    if (!pos) return null;
+                    return (
+                      <span
+                        key={pp.position_id}
+                        className={`text-sm px-3.5 py-1.5 rounded-full border ${
+                          pp.is_primary
+                            ? "border-primary/40 bg-primary/5 text-primary font-semibold"
+                            : "border-border bg-card text-muted-foreground"
+                        }`}
+                      >
+                        {pos.name}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── Edit mode ─────────────────────────────────────── */
+          <div className="py-6 space-y-6">
+            {/* Personal info */}
+            <div className="space-y-4">
+              <h2 className="text-xs text-primary/70 font-medium">Personal Info</h2>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="firstName" className="text-xs text-muted-foreground">First Name</Label>
                   <Input
-                    id="email"
-                    value={user?.email || ""}
-                    disabled
-                    className="bg-gray-100 dark:bg-gray-800"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={profile.first_name}
-                      onChange={(e) =>
-                        setProfile({ ...profile, first_name: e.target.value })
-                      }
-                      disabled={!isOwnProfile}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={profile.last_name}
-                      onChange={(e) =>
-                        setProfile({ ...profile, last_name: e.target.value })
-                      }
-                      disabled={!isOwnProfile}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="birthday">Birthday</Label>
-                    <Input
-                      id="birthday"
-                      type="date"
-                      value={profile.birthday || ""}
-                      onChange={(e) =>
-                        setProfile({ ...profile, birthday: e.target.value })
-                      }
-                      disabled={!isOwnProfile}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="height">Height (cm)</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      min="100"
-                      max="250"
-                      value={profile.height_cm || ""}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          height_cm: e.target.value
-                            ? parseInt(e.target.value)
-                            : null,
-                        })
-                      }
-                      placeholder="e.g. 175"
-                      disabled={!isOwnProfile}
-                    />
-                  </div>
-                  <div>
-                    <Label>Gender</Label>
-                    <Select
-                      value={profile.gender}
-                      onValueChange={(value) =>
-                        setProfile({ ...profile, gender: value })
-                      }
-                      disabled={!isOwnProfile}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="diverse">Diverse</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={profile.bio || ""}
+                    id="firstName"
+                    value={profile.first_name}
                     onChange={(e) =>
-                      setProfile({ ...profile, bio: e.target.value })
+                      setProfile({ ...profile, first_name: e.target.value })
                     }
-                    placeholder="Tell us about yourself..."
-                    disabled={!isOwnProfile}
-                    rows={4}
+                    className="bg-muted/50 border-border"
                   />
                 </div>
-
-                {isOwnProfile && (
-                  <Button
-                    variant="primary"
-                    onClick={handlePersonalInfoSave}
-                    disabled={saving || !hasPersonalInfoChanges()}
-                    className="w-full"
-                  >
-                    {saving ? "Saving..." : "Save Changes"}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="skills">
-            <Card>
-              <CardHeader>
-                <CardTitle>Volleyball Information</CardTitle>
-                <CardDescription>
-                  {isOwnProfile
-                    ? "Update your volleyball skills and preferences"
-                    : "Volleyball skills and preferences"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {profile.skill_rating && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <div className="text-center">
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        Overall Skill Level
-                      </Label>
-                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-                        {profile.skill_rating}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        out of 100
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-base font-medium">
-                      Main Position
-                    </Label>
-                    <button
-                      type="button"
-                      aria-label="Show court positions"
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-muted-foreground hover:text-foreground"
-                      onClick={() => setIsPositionsHelpOpen(true)}
-                    >
-                      <HelpCircle className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <Select
-                    value={
-                      getPrimaryPosition()
-                        ? positions.find((p) => p.name === getPrimaryPosition())
-                            ?.id
-                        : ""
+                <div className="space-y-1.5">
+                  <Label htmlFor="lastName" className="text-xs text-muted-foreground">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={profile.last_name}
+                    onChange={(e) =>
+                      setProfile({ ...profile, last_name: e.target.value })
                     }
-                    onValueChange={updatePrimaryPosition}
-                    disabled={!isOwnProfile}
+                    className="bg-muted/50 border-border"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="birthday" className="text-xs text-muted-foreground">Birthday</Label>
+                  <Input
+                    id="birthday"
+                    type="date"
+                    value={profile.birthday || ""}
+                    onChange={(e) =>
+                      setProfile({ ...profile, birthday: e.target.value })
+                    }
+                    className="bg-muted/50 border-border"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="height" className="text-xs text-muted-foreground">Height (cm)</Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    min="100"
+                    max="250"
+                    value={profile.height_cm || ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        height_cm: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
+                      })
+                    }
+                    placeholder="175"
+                    className="bg-muted/50 border-border"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Gender</Label>
+                  <Select
+                    value={profile.gender}
+                    onValueChange={(value) =>
+                      setProfile({ ...profile, gender: value })
+                    }
                   >
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Select your main position" />
+                    <SelectTrigger className="bg-muted/50 border-border">
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {positions.map((position) => (
-                        <SelectItem key={position.id} value={position.id}>
-                          {position.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="diverse">Diverse</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">
-                    Secondary Positions
-                  </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {positions.map((position) => {
-                      const isPrimary = playerPositions.some(
-                        (p) => p.position_id === position.id && p.is_primary
-                      );
-                      const isSecondary = playerPositions.some(
-                        (p) => p.position_id === position.id && !p.is_primary
-                      );
+              <div className="space-y-1.5">
+                <Label htmlFor="bio" className="text-xs text-muted-foreground">Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={profile.bio || ""}
+                  onChange={(e) =>
+                    setProfile({ ...profile, bio: e.target.value })
+                  }
+                  placeholder="Tell us about yourself..."
+                  rows={3}
+                  className="bg-muted/50 border-border"
+                />
+              </div>
+            </div>
 
-                      return (
-                        <div
-                          key={position.id}
-                          className={`flex items-center space-x-3 p-3 border rounded-lg transition-colors ${
-                            isPrimary
-                              ? "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                              : isSecondary
-                              ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700"
-                              : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            id={`secondary-${position.id}`}
-                            checked={isSecondary}
-                            disabled={isPrimary || !isOwnProfile}
-                            onChange={(e) =>
-                              toggleSecondaryPosition(
-                                position.id,
-                                e.target.checked
-                              )
-                            }
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
-                          />
-                          <Label
-                            htmlFor={`secondary-${position.id}`}
-                            className={`flex-1 text-sm font-medium cursor-pointer ${
-                              isPrimary
-                                ? "text-gray-400 dark:text-gray-500"
-                                : "text-gray-700 dark:text-gray-300"
-                            }`}
-                          >
-                            {position.name}
-                            {isPrimary && (
-                              <span className="ml-2 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full">
-                                Primary
-                              </span>
-                            )}
-                          </Label>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Select additional positions you can play effectively
-                  </p>
-                </div>
-
-                {isOwnProfile && (
-                  <Button
-                    variant="primary"
-                    onClick={handleSkillsSave}
-                    disabled={saving || !hasSkillsChanges()}
-                    className="w-full h-12"
-                  >
-                    {saving ? "Saving..." : "Save Changes"}
-                  </Button>
-                )}
-
-                {/* Positions helper drawer */}
-                <Drawer
-                  open={isPositionsHelpOpen}
-                  onOpenChange={setIsPositionsHelpOpen}
-                  shouldScaleBackground
+            {/* Positions */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs text-primary/70 font-medium">Positions</h2>
+                <button
+                  type="button"
+                  aria-label="Show court positions"
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground"
+                  onClick={() => setIsPositionsHelpOpen(true)}
                 >
-                  <DrawerContent className="pb-6">
-                    <DrawerClose
-                      aria-label="Close"
-                      className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              {/* Main Position */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Main Position</Label>
+                <Select
+                  value={getPrimaryPositionId()}
+                  onValueChange={updatePrimaryPosition}
+                >
+                  <SelectTrigger className="h-11 bg-muted/50 border-border">
+                    <SelectValue placeholder="Select your main position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {positions.map((position) => (
+                      <SelectItem key={position.id} value={position.id}>
+                        {position.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Secondary Positions — tap to toggle */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Secondary Positions</Label>
+                <div className="flex flex-wrap gap-2">
+                  {positions.map((position) => {
+                    const isPrimary = getPrimaryPositionId() === position.id;
+                    const isSecondary = getSecondaryPositionIds().includes(position.id);
+
+                    if (isPrimary) return null; // Don't show primary in secondary list
+
+                    return (
+                      <button
+                        key={position.id}
+                        type="button"
+                        onClick={() => updateSecondaryPosition(position.id)}
+                        className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
+                          isSecondary
+                            ? "border-primary/40 bg-primary/10 text-primary font-medium"
+                            : "border-border bg-muted/30 text-muted-foreground hover:border-muted-foreground"
+                        }`}
+                      >
+                        {position.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Tap to toggle secondary positions
+                </p>
+              </div>
+            </div>
+
+            {/* Delete Account — only visible in edit mode */}
+            <div className="pt-8 pb-4">
+              <button
+                onClick={() => setShowDeleteDialog(true)}
+                className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete my account
+              </button>
+            </div>
+
+          </div>
+        )}
+      </div>
+
+      {/* Positions helper drawer */}
+      <Drawer
+        open={isPositionsHelpOpen}
+        onOpenChange={setIsPositionsHelpOpen}
+        shouldScaleBackground
+      >
+        <DrawerContent className="pb-6">
+          <DrawerClose
+            aria-label="Close"
+            className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
              border border-border bg-background/90 text-foreground shadow
              hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      <X className="h-4 w-4" />
-                    </DrawerClose>
+          >
+            <X className="h-4 w-4" />
+          </DrawerClose>
 
-                    <DrawerHeader className="pt-8">
-                      <DrawerTitle>Volleyball court positions</DrawerTitle>
-                      <DrawerDescription>
-                        Reference diagram to pick your positions.
-                      </DrawerDescription>
-                    </DrawerHeader>
+          <DrawerHeader className="pt-8">
+            <DrawerTitle>Volleyball court positions</DrawerTitle>
+            <DrawerDescription>
+              Reference diagram to pick your positions.
+            </DrawerDescription>
+          </DrawerHeader>
 
-                    <div className="px-4 pb-2">
-                      <div className="mx-auto w-full md:max-w-3xl">
-                        <img
-                          src="/positions-volleyball-players-en.png"
-                          alt="Volleyball player positions on court"
-                          className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
-                        />
-                        <p className="mt-3 text-center text-sm text-muted-foreground">
-                          Use this diagram to confirm your primary and secondary
-                          roles.
-                        </p>
-                      </div>
-                    </div>
-                  </DrawerContent>
-                </Drawer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+          <div className="px-4 pb-2">
+            <div className="mx-auto w-full md:max-w-3xl">
+              <img
+                src="/positions-volleyball-players-en.png"
+                alt="Volleyball player positions on court"
+                className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
+              />
+              <p className="mt-3 text-center text-sm text-muted-foreground">
+                Use this diagram to confirm your primary and secondary
+                roles.
+              </p>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Delete Account Confirmation */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete your account and profile picture. You
+              will lose access to the app. Your name and past activity will
+              remain visible in event and game history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Fixed Save / Cancel bar (edit mode only) */}
+      {isEditing && (
+        <div className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border px-4 py-3 pb-[calc(theme(spacing.3)+env(safe-area-inset-bottom))]">
+          <div className="max-w-2xl mx-auto flex gap-3">
+            <Button
+              variant="outline"
+              onClick={handleCancelEdit}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving || !hasChanges()}
+              className="flex-1"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

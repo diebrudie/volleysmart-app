@@ -350,7 +350,7 @@ const SetBox: React.FC<SetBoxProps> = ({
     >
       <h3
         className={cn(
-          "font-serif mb-4 text-center font-bold text-gray-900 dark:text-gray-100",
+          "mb-4 text-center font-bold text-foreground",
           "text-xl"
         )}
       >
@@ -359,14 +359,14 @@ const SetBox: React.FC<SetBoxProps> = ({
 
       <div
         className={cn(
-          "font-bold mb-3 text-center whitespace-nowrap min-w-0 overflow-hidden text-gray-900 dark:text-gray-100",
+          "font-bold mb-3 text-center whitespace-nowrap min-w-0 overflow-hidden text-foreground",
           "text-3xl"
         )}
       >
         {hasBeenPlayed ? teamAScore : "0"} - {hasBeenPlayed ? teamBScore : "0"}
       </div>
 
-      <p className="text-sm text-center text-gray-700 dark:text-gray-300">
+      <p className="text-sm text-center text-muted-foreground">
         Team A vs. Team B
       </p>
 
@@ -386,7 +386,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                     className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors"
                     aria-label={`Delete Set ${setNumber}`}
                   >
-                    <Trash2 className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                    <Trash2 className="h-5 w-5 text-muted-foreground" />
                   </button>
                 )}
                 <DialogTrigger asChild>
@@ -394,7 +394,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                     className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors"
                     aria-label={`Edit Set ${setNumber}`}
                   >
-                    <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                    <Pencil className="h-5 w-5 text-muted-foreground" />
                   </button>
                 </DialogTrigger>
               </div>
@@ -478,7 +478,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                     className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors"
                     aria-label={`Delete Set ${setNumber}`}
                   >
-                    <Trash2 className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                    <Trash2 className="h-5 w-5 text-muted-foreground" />
                   </button>
                 )}
                 <DrawerTrigger asChild>
@@ -486,7 +486,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                     className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-md transition-colors"
                     aria-label={`Edit Set ${setNumber}`}
                   >
-                    <Pencil className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                    <Pencil className="h-5 w-5 text-muted-foreground" />
                   </button>
                 </DrawerTrigger>
               </div>

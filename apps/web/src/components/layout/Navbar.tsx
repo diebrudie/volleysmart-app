@@ -12,6 +12,8 @@ import {
   User,
   UserPlus,
   HelpCircle,
+  Bell,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
@@ -196,6 +198,7 @@ const Navbar = () => {
     /^\/edit-game\/[^/]+\/[^/]+\/?$/,
     /^\/join-club\/?$/,
     /^\/new-club\/?$/,
+    /^\/events\/new\/?$/,
   ];
   const suppressChrome = HIDE_NAV_ROUTES.some((rx) => rx.test(pathname));
 
@@ -245,18 +248,15 @@ const Navbar = () => {
     navigate("/");
   };
 
-  /**
-   * Only show restricted tabs if the user is an ACTIVE member of the current club.
-   * Otherwise no tabs are exposed.
-   */
-  const navItems =
-    isAuthenticated && initialized && membershipStatus === "active" && clubId
-      ? [
-          { label: "Dashboard", path: `/dashboard/${clubId}`, visible: true },
-          { label: "Archive", path: `/games/${clubId}`, visible: true },
-          { label: "Members", path: `/members/${clubId}`, visible: true },
-        ]
-      : [];
+  // Global nav items — shown to all authenticated users, no club dependency
+  const navItems = isAuthenticated
+    ? [
+        { label: "Home", path: "/home", visible: true },
+        { label: "Events", path: "/events", visible: true },
+        { label: "Clubs", path: "/clubs", visible: true },
+        { label: "Members", path: "/members", visible: true },
+      ]
+    : [];
 
   const accountItems = [
     { label: "Profile", path: `/user/${user?.id}`, icon: User },
@@ -368,17 +368,7 @@ const Navbar = () => {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 lg:border-none">
           <div className="flex items-center">
-            {/* /* If authenticated and we have a clubId → send to that club’s
-            dashboard. * If authenticated but NO clubId → send to /clubs
-            (fallback). * If not authenticated → send to homepage (/). */}
-            <Logo
-              size="sm"
-              linkTo={
-                isAuthenticated && membershipStatus === "active" && clubId
-                  ? `/dashboard/${clubId}`
-                  : "/clubs"
-              }
-            />
+            <Logo size="sm" linkTo={isAuthenticated ? "/home" : "/"} />
           </div>
 
           <div className="flex-grow hidden md:flex justify-center">
@@ -397,20 +387,39 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            {isAuthenticated &&
-              initialized &&
-              membershipStatus === "active" &&
-              clubId && (
+          <div className="flex items-center space-x-2">
+            {isAuthenticated && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => navigate("/events/new")}
+              >
+                Create Event
+              </Button>
+            )}
+
+            {isAuthenticated && (
+              <>
                 <Button
-                  variant="primary"
-                  onClick={() => {
-                    navigate(`/new-game/${clubId}`);
-                  }}
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Notifications (coming soon)"
+                  disabled
+                  className="text-muted-foreground opacity-40 cursor-not-allowed"
                 >
-                  Create Game
+                  <Bell className="h-5 w-5" />
                 </Button>
-              )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Chats (coming soon)"
+                  disabled
+                  className="text-muted-foreground opacity-40 cursor-not-allowed"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                </Button>
+              </>
+            )}
 
             <ThemeToggle
               className="rounded-md p-2
@@ -533,7 +542,7 @@ const Navbar = () => {
           size="sm"
           linkTo={
             isAuthenticated && membershipStatus === "active" && clubId
-              ? `/dashboard/${clubId}`
+              ? `/clubs/${clubId}`
               : "/clubs"
           }
         />

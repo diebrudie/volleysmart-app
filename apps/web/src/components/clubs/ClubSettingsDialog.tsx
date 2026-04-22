@@ -4,18 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FileInput } from "@/components/ui/file-input";
 import CopyableClubId from "@/components/clubs/CopyableClubId";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import CityLocationSelector, {
@@ -36,7 +33,8 @@ interface ClubSettingsDialogProps {
     id: string;
     name: string;
     image_url: string | null;
-    slug: string; // 5-char Club ID
+    slug: string;
+    description?: string | null;
     city?: string | null;
     country?: string | null;
     country_code?: string | null;
@@ -44,9 +42,9 @@ interface ClubSettingsDialogProps {
   };
 }
 
-// Used to compute hasChanges reliably even after a refresh.
 type InitialSnapshot = {
   name: string;
+  description: string;
   image_url: string | null;
   city: string;
   country: string;
@@ -57,6 +55,7 @@ type InitialSnapshot = {
 
 type ClubRow = {
   name: string;
+  description: string | null;
   image_url: string | null;
   slug: string;
   city: string | null;
@@ -76,16 +75,16 @@ const ClubSettingsDialog = ({
   const queryClient = useQueryClient();
 
   const [name, setName] = useState(club.name);
-  const [imageFile, setImageFile] = useState<File | null>(null); // new upload
+  const [description, setDescription] = useState(club.description ?? "");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
     club.image_url ?? null
-  ); // show existing or selected
-  const [existingImageRemoved, setExistingImageRemoved] = useState(false); // mark DB image for deletion
-  const [fileName, setFileName] = useState<string | null>(null); // newly picked file name
-  const [fileInputKey, setFileInputKey] = useState<number>(0); // reset input
+  );
+  const [existingImageRemoved, setExistingImageRemoved] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileInputKey, setFileInputKey] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Location + discoverability state
   const [location, setLocation] = useState<LocationValue | null>(() => {
     if (club.city && club.country && club.country_code) {
       return {
@@ -107,15 +106,14 @@ const ClubSettingsDialog = ({
     !!club.is_club_discoverable
   );
 
-  // Baseline snapshot of fields as loaded from DB when dialog opens.
   const [initial, setInitial] = useState<InitialSnapshot>({
     name: club.name,
+    description: club.description ?? "",
     image_url: club.image_url ?? null,
     city: club.city ?? "",
     country: club.country ?? "",
     country_code: (club.country_code ?? "").toUpperCase(),
     is_club_discoverable: !!club.is_club_discoverable,
-    // modified_at is optional in props; will be set after fetch
     modified_at: undefined,
   });
 
@@ -129,8 +127,6 @@ const ClubSettingsDialog = ({
     if (!hasMapbox) setShowManual(true);
   }, [hasMapbox]);
 
-  // Reset form when dialog opens with new club data
-
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -141,7 +137,7 @@ const ClubSettingsDialog = ({
         const { data, error } = await supabase
           .from("clubs")
           .select(
-            "name, image_url, slug, city, country, country_code, is_club_discoverable, modified_at"
+            "name, description, image_url, slug, city, country, country_code, is_club_discoverable, modified_at"
           )
           .eq("id", club.id)
           .single();
@@ -151,6 +147,7 @@ const ClubSettingsDialog = ({
             ? (data as ClubRow)
             : {
                 name: club.name,
+                description: club.description ?? null,
                 image_url: club.image_url ?? null,
                 slug: club.slug,
                 city: club.city ?? null,
@@ -162,8 +159,8 @@ const ClubSettingsDialog = ({
 
         if (cancelled) return;
 
-        // Reset UI state from fresh data
         setName(effective.name);
+        setDescription(effective.description ?? "");
         setImageFile(null);
         setFileName(null);
         setExistingImageRemoved(false);
@@ -188,10 +185,11 @@ const ClubSettingsDialog = ({
           String(effective.country_code ?? "").toUpperCase()
         );
         setIsDiscoverable(Boolean(effective.is_club_discoverable));
-        setShowManual(!hasMapbox && !hasLoc); // manual if no token & no existing loc
+        setShowManual(!hasMapbox && !hasLoc);
 
         setInitial({
           name: effective.name,
+          description: effective.description ?? "",
           image_url: effective.image_url ?? null,
           city: effective.city ?? "",
           country: effective.country ?? "",
@@ -210,9 +208,6 @@ const ClubSettingsDialog = ({
     };
   }, [isOpen, club?.id, hasMapbox]);
 
-  /**
-   * Selecting a new file replaces any existing preview and cancels "removed" state.
-   */
   const handleImageChange = (file: File) => {
     setImageFile(file);
     setFileName(file?.name ?? null);
@@ -225,10 +220,6 @@ const ClubSettingsDialog = ({
     reader.readAsDataURL(file);
   };
 
-  /**
-   * Remove the currently *stored* image (when editing).
-   * Sets preview to null and marks for DB update (image_url -> null).
-   */
   const handleRemoveExistingImage = () => {
     setExistingImageRemoved(true);
     setImageFile(null);
@@ -237,20 +228,16 @@ const ClubSettingsDialog = ({
     setFileInputKey((k) => k + 1);
   };
 
-  /**
-   * Clear a *newly selected* file before saving.
-   */
   const handleClearSelectedImage = () => {
     setImageFile(null);
     setFileName(null);
-    // If the club had an existing image and we did not mark it removed, restore its preview
     setImagePreview(existingImageRemoved ? null : club.image_url ?? null);
     setFileInputKey((k) => k + 1);
   };
 
-  // Check if there are any changes
   const hasChanges =
     name.trim() !== initial.name ||
+    description.trim() !== initial.description ||
     imageFile !== null ||
     existingImageRemoved === true ||
     (location?.city ?? manualCity) !== initial.city ||
@@ -262,7 +249,6 @@ const ClubSettingsDialog = ({
   const handleSave = async () => {
     if (!user?.id) return;
 
-    // Small helpers to normalize payload
     const norm = (s: string | null | undefined): string | null => {
       const v = (s ?? "").trim();
       return v.length ? v : null;
@@ -276,12 +262,10 @@ const ClubSettingsDialog = ({
     try {
       let imageUrl: string | null = club.image_url;
 
-      // If user explicitly removed existing image and did not pick a new one
       if (existingImageRemoved && !imageFile) {
         imageUrl = null;
       }
 
-      // Upload a *new* image if selected
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
         const storageName = `${club.id}_${Date.now()}.${fileExt}`;
@@ -296,7 +280,6 @@ const ClubSettingsDialog = ({
             uploadError.message?.includes("policy")
           ) {
             console.warn("Storage policy warning:", uploadError.message);
-            // allow continue with previous imageUrl/null
           } else {
             throw uploadError;
           }
@@ -308,9 +291,9 @@ const ClubSettingsDialog = ({
         }
       }
 
-      // Build normalized payload for all edited fields
       const payload = {
         name: name.trim(),
+        description: norm(description),
         image_url: imageUrl,
         city: norm(location?.city ?? manualCity),
         country: norm(location?.country ?? manualCountry),
@@ -318,24 +301,17 @@ const ClubSettingsDialog = ({
         is_club_discoverable: isDiscoverable,
       };
 
-      // Persist and force return of updated row
       const { data: updated, error: updateError } = await supabase
         .from("clubs")
         .update(payload)
         .eq("id", club.id)
         .select(
-          "id, name, image_url, city, country, country_code, is_club_discoverable, modified_at"
+          "id, name, description, image_url, city, country, country_code, is_club_discoverable, modified_at"
         )
         .maybeSingle();
 
       if (updateError) throw updateError;
       if (!updated) {
-        console.warn(
-          "[ClubSettingsDialog] No row updated. Check RLS or id filter.",
-          {
-            clubId: club.id,
-          }
-        );
         toast({
           title: "Not saved",
           description: "No changes were persisted. Please try again.",
@@ -345,9 +321,9 @@ const ClubSettingsDialog = ({
         return;
       }
 
-      // Rehydrate local snapshot/UI from DB truth
       setInitial({
         name: updated.name,
+        description: updated.description ?? "",
         image_url: updated.image_url ?? null,
         city: updated.city ?? "",
         country: updated.country ?? "",
@@ -357,6 +333,7 @@ const ClubSettingsDialog = ({
       });
 
       setName(updated.name);
+      setDescription(updated.description ?? "");
       setImagePreview(updated.image_url ?? null);
 
       const hasLoc = Boolean(
@@ -381,8 +358,8 @@ const ClubSettingsDialog = ({
         duration: 2000,
       });
 
-      // keep caches in sync
       queryClient.invalidateQueries({ queryKey: ["userClubs"] });
+      queryClient.invalidateQueries({ queryKey: ["club-detail", club.id] });
 
       onClose();
     } catch (error) {
@@ -399,27 +376,17 @@ const ClubSettingsDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader className="mb-4 mt-5 text-left">
-          <div className="flex items-end justify-between gap-4">
-            {/* Left: title + subtitle */}
-            <div className="space-y-1">
-              <DialogTitle>Club Settings</DialogTitle>
-              <DialogDescription>Edit your club details.</DialogDescription>
-            </div>
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent side="bottom" className="max-h-[90vh] flex flex-col p-0 rounded-t-2xl">
+        {/* Header */}
+        <SheetHeader className="px-4 pt-4 pb-2 border-b">
+          <SheetTitle>Club Settings</SheetTitle>
+        </SheetHeader>
 
-            {/* Club ID (slug) display - full width, copyable */}
-            {club.slug && (
-              <div className="shrink-0">
-                <CopyableClubId slug={club.slug} compact />
-              </div>
-            )}
-          </div>
-        </DialogHeader>
-
-        <div className="space-y-5">
-          <div className="flex flex-col gap-2">
+        {/* Scrollable form */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 pb-8 space-y-5">
+          {/* Club Name */}
+          <div className="space-y-1.5">
             <Label htmlFor="club-name">Club Name</Label>
             <Input
               id="club-name"
@@ -429,25 +396,42 @@ const ClubSettingsDialog = ({
             />
           </div>
 
+          {/* Description */}
+          <div className="space-y-1.5">
+            <Label htmlFor="club-description">
+              Description / Notes (optional)
+            </Label>
+            <div className="relative">
+              <Textarea
+                id="club-description"
+                value={description}
+                onChange={(e) => {
+                  if (e.target.value.length <= 200) setDescription(e.target.value);
+                }}
+                placeholder="Tell people about your club…"
+                rows={3}
+              />
+              <span className="absolute bottom-2 right-3 text-xs text-muted-foreground">
+                {description.length}/200
+              </span>
+            </div>
+          </div>
+
           {/* Club Image */}
-          <div className="flex flex-col gap-2">
+          <div className="space-y-1.5">
             <Label htmlFor="club-image">Club Image</Label>
 
-            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-              {/* Left: circular preview (Avatar) with overlay X when an image exists */}
+            <div className="flex items-center gap-4">
               <div className="relative">
-                <Avatar className="h-24 w-24">
+                <Avatar className="h-20 w-20">
                   <AvatarImage
                     src={imagePreview || ""}
                     alt="Club preview"
                     className="object-cover"
                   />
-                  <AvatarFallback className="bg-gray-200 dark:bg-gray-700">
-                    📷
-                  </AvatarFallback>
+                  <AvatarFallback className="bg-muted" />
                 </Avatar>
 
-                {/* Show overlay X only when there is an image preview (existing or newly chosen) */}
                 {imagePreview && (
                   <button
                     type="button"
@@ -456,24 +440,22 @@ const ClubSettingsDialog = ({
                         ? handleClearSelectedImage
                         : handleRemoveExistingImage
                     }
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-red-600 hover:text-red-700 text-sm leading-none"
+                    className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-background border border-border text-destructive hover:text-destructive/80 text-xs leading-none flex items-center justify-center"
                     aria-label="Remove image"
-                    title="Remove image"
                   >
                     ×
                   </button>
                 )}
               </div>
 
-              {/* Right: dashed upload button and filename line */}
               <div className="flex-1">
                 <label
                   htmlFor="club-image-upload"
                   className="cursor-pointer inline-block"
                 >
-                  <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors bg-white dark:bg-gray-800 w-fit">
-                    <Upload className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-muted-foreground/30 rounded-lg hover:border-muted-foreground/50 transition-colors w-fit">
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
                       {imagePreview ? "Change Photo" : "Upload Photo"}
                     </span>
                   </div>
@@ -489,18 +471,16 @@ const ClubSettingsDialog = ({
                   }}
                 />
 
-                {/* Green filename only for a newly chosen file; red × clears selection */}
                 {fileName && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-sm text-green-600 dark:text-green-400">
-                      ✓ {fileName}
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="text-xs text-green-600 dark:text-green-400">
+                      {fileName}
                     </span>
                     <button
                       type="button"
                       onClick={handleClearSelectedImage}
-                      className="text-red-600 hover:text-red-700 text-sm"
+                      className="text-destructive hover:text-destructive/80 text-xs"
                       aria-label="Remove selected image"
-                      title="Remove selected image"
                     >
                       ×
                     </button>
@@ -510,8 +490,8 @@ const ClubSettingsDialog = ({
             </div>
           </div>
 
-          {/* City (autocomplete with Mapbox) */}
-          <div className="space-y-3">
+          {/* City */}
+          <div className="space-y-1.5">
             <CityLocationSelector
               value={location}
               onChange={(val) => {
@@ -520,12 +500,10 @@ const ClubSettingsDialog = ({
                   setManualCity(val.city);
                   setManualCountry(val.country);
                   setManualCountryCode(val.countryCode.toUpperCase());
-                  // optional: hide manual if we got a proper selection
                   setShowManual(false);
                 }
               }}
               onTextChange={(text) => {
-                // user is free-typing, reflect into manual fields so save persists it
                 setLocation(null);
                 setManualCity(text);
                 setManualCountry("");
@@ -551,7 +529,6 @@ const ClubSettingsDialog = ({
               placeholder="Type the city your Club is located…"
             />
 
-            {/* Manual entry toggle & note */}
             {!location && (
               <div className="flex items-center justify-between">
                 <button
@@ -565,16 +542,15 @@ const ClubSettingsDialog = ({
                 </button>
                 {!hasMapbox && (
                   <span className="text-xs text-muted-foreground">
-                    Mapbox disabled—use manual entry.
+                    Mapbox disabled — use manual entry.
                   </span>
                 )}
               </div>
             )}
 
-            {/* Manual fields (hidden by default unless toggled) */}
             {showManual && !location && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
                   <Label>City</Label>
                   <Input
                     placeholder="e.g., Berlin"
@@ -582,7 +558,7 @@ const ClubSettingsDialog = ({
                     onChange={(e) => setManualCity(e.target.value)}
                   />
                 </div>
-                <div>
+                <div className="space-y-1.5">
                   <Label>Country</Label>
                   <Input
                     placeholder="e.g., Germany"
@@ -590,7 +566,7 @@ const ClubSettingsDialog = ({
                     onChange={(e) => setManualCountry(e.target.value)}
                   />
                 </div>
-                <div>
+                <div className="space-y-1.5">
                   <Label>Country code</Label>
                   <Input
                     placeholder="e.g., DE"
@@ -605,7 +581,7 @@ const ClubSettingsDialog = ({
           </div>
 
           {/* Discoverability toggle */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <Label htmlFor="is_club_discoverable" className="m-0">
                 Make this club discoverable
@@ -634,22 +610,32 @@ const ClubSettingsDialog = ({
               />
             </div>
           </div>
+
+          {/* Club ID */}
+          {club.slug && (
+            <div className="flex justify-end">
+              <CopyableClubId slug={club.slug} compact />
+            </div>
+          )}
         </div>
 
-        <DialogFooter className="flex gap-2 mt-3">
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isLoading || !name.trim() || !hasChanges}
-            className="flex-1"
-          >
-            {isLoading ? "Saving..." : "Save Changes"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {/* Fixed bottom buttons — matches Edit Event */}
+        <div className="px-4 py-3 border-t pb-[max(env(safe-area-inset-bottom),12px)]">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isLoading || !name.trim() || !hasChanges}
+              className="flex-1"
+            >
+              {isLoading ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
 

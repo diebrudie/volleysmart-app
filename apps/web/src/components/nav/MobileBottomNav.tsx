@@ -1,23 +1,13 @@
 import * as React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Archive as ArchiveIcon,
-  Users,
-  Building2,
-  Plus,
-} from "lucide-react";
-import { useClub } from "@/contexts/ClubContext";
+import { Home, Users, Building2, Plus, CalendarDays } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 /**
- * Fixed bottom tab bar with a prominent center "+" action.
- * Tabs are always visible but disabled if there is no active clubId.
- * Covers safe area and sits above page content. Test
+ * Fixed global bottom tab bar. Tabs are always active — no club context required.
+ * Center FAB opens the Create Event flow.
  */
 const MobileBottomNav: React.FC = () => {
-  const { clubId } = useClub();
-  const disabled = !clubId;
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
@@ -27,7 +17,6 @@ const MobileBottomNav: React.FC = () => {
     const checkStandalone = () =>
       typeof window !== "undefined" &&
       (window.matchMedia("(display-mode: standalone)").matches ||
-        // iOS Safari PWA
         (window.navigator as any)?.standalone === true);
 
     setIsStandalone(checkStandalone());
@@ -40,37 +29,21 @@ const MobileBottomNav: React.FC = () => {
 
   // Safety-net: after any visual-viewport resize on iOS PWA (e.g., keyboard
   // show/hide triggered by a modal), fire a no-op scroll so iOS reanchors all
-  // position:fixed elements — including this nav — to the correct bottom.
+  // position:fixed elements to the correct bottom.
   React.useEffect(() => {
     if (!isStandalone) return;
     const vv = window.visualViewport;
     if (!vv) return;
-
-    const onResize = () => {
-      requestAnimationFrame(() => window.scrollBy(0, 0));
-    };
-
+    const onResize = () => requestAnimationFrame(() => window.scrollBy(0, 0));
     vv.addEventListener("resize", onResize);
     return () => vv.removeEventListener("resize", onResize);
   }, [isStandalone]);
 
-  // Always follow the DOM-resolved theme so the nav matches the real background.
   const effectiveIsDark = resolvedTheme === "dark";
-
-  // Active color depends on effective theme:
   const activeColorClass = effectiveIsDark ? "text-white" : "text-primary";
-
   const navBackgroundClass = isStandalone
     ? "bg-background"
     : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70";
-
-  const go = (to: string, isDisabled: boolean) => {
-    if (isDisabled) return;
-    navigate(to);
-  };
-
-  // helpers to build club paths
-  const withClub = (base: string) => `${base}/${clubId as string}`;
 
   const isActive = (pattern: RegExp) => pattern.test(pathname);
 
@@ -81,13 +54,7 @@ const MobileBottomNav: React.FC = () => {
       role="navigation"
       aria-label="Primary"
     >
-      {/*
-       * iOS PWA scroll-drift guard: extends the nav background below the
-       * safe-area boundary so any momentary gap during momentum scrolling
-       * is filled with the same background colour instead of exposing
-       * page content. Must NOT use transform on the nav itself (that is
-       * what causes the drift in the first place).
-       */}
+      {/* iOS PWA scroll-drift guard */}
       <div
         className="absolute top-full inset-x-0 h-16 pointer-events-none"
         style={{ background: "hsl(var(--background))" }}
@@ -95,53 +62,48 @@ const MobileBottomNav: React.FC = () => {
       />
       <div className="mx-auto max-w-xl px-2 pb-3">
         <div className="relative grid grid-cols-5 items-center h-16">
-          <TabButton
-            icon={<LayoutDashboard className="h-5 w-5" />}
-            label="Dashboard"
-            active={isActive(/^\/dashboard\//)}
-            disabled={disabled}
-            onClick={() => go(withClub("/dashboard"), disabled)}
+          <TabLink
+            to="/home"
+            icon={<Home className="h-5 w-5" />}
+            label="Home"
+            active={isActive(/^\/home(\/|$)/)}
             activeColor={activeColorClass}
           />
-          <TabButton
-            icon={<ArchiveIcon className="h-5 w-5" />}
-            label="Archive"
-            active={isActive(/^\/games\//)}
-            disabled={disabled}
-            onClick={() => go(withClub("/games"), disabled)}
+
+          <TabLink
+            to="/events"
+            icon={<CalendarDays className="h-5 w-5" />}
+            label="Events"
+            active={isActive(/^\/events(\/|$)/)}
             activeColor={activeColorClass}
           />
-          {/*  Center empty slot so the FAB doesn't cover any tab */}
+
+          {/* Center empty slot so the FAB doesn't cover any tab */}
           <div aria-hidden className="h-full" />
-          {/* Center FAB */}
+
+          {/* Center FAB — Create Event */}
           <button
             type="button"
-            aria-label="New Game"
-            className={`absolute left-1/2 -translate-x-1/2 -top-2 rounded-full h-14 w-14 flex items-center justify-center
-            shadow-lg border ring-2 ring-background text-primary-foreground
-            ${
-              disabled
-                ? "bg-primary/40 cursor-not-allowed"
-                : "bg-primary hover:opacity-90"
-            }`}
-            onClick={() => go(withClub("/new-game"), disabled)}
-            disabled={disabled}
+            aria-label="Create Event"
+            className="absolute left-1/2 -translate-x-1/2 -top-2 rounded-full h-14 w-14 flex items-center justify-center
+              shadow-lg border ring-2 ring-background text-primary-foreground bg-primary hover:opacity-90"
+            onClick={() => navigate("/events/new")}
           >
             <Plus className="h-6 w-6" />
           </button>
-          <TabButton
-            icon={<Users className="h-5 w-5" />}
-            label="Members"
-            active={isActive(/^\/members\//)}
-            disabled={disabled}
-            onClick={() => go(withClub("/members"), disabled)}
-            activeColor={activeColorClass}
-          />
+
           <TabLink
             to="/clubs"
             icon={<Building2 className="h-5 w-5" />}
             label="Clubs"
             active={isActive(/^\/clubs(\/|$)/)}
+            activeColor={activeColorClass}
+          />
+          <TabLink
+            to="/members"
+            icon={<Users className="h-5 w-5" />}
+            label="Members"
+            active={isActive(/^\/members(\/|$)/)}
             activeColor={activeColorClass}
           />
         </div>
@@ -152,40 +114,13 @@ const MobileBottomNav: React.FC = () => {
 
 export default MobileBottomNav;
 
-type TabBaseProps = {
+type TabLinkProps = {
+  to: string;
   icon: React.ReactNode;
   label: string;
   active: boolean;
   activeColor: string;
 };
-type TabButtonProps = TabBaseProps & {
-  disabled?: boolean;
-  onClick: () => void;
-};
-type TabLinkProps = TabBaseProps & { to: string };
-
-const TabButton: React.FC<TabButtonProps> = ({
-  icon,
-  label,
-  active,
-  activeColor,
-  disabled,
-  onClick,
-}) => (
-  <button
-    type="button"
-    className={`flex flex-col items-center justify-center gap-1 text-xs h-full
-      ${active ? activeColor : "text-muted-foreground"}
-      ${disabled ? "opacity-50 cursor-not-allowed" : "hover:opacity-100"}`}
-    onClick={onClick}
-    disabled={disabled}
-    aria-current={active ? "page" : undefined}
-    aria-disabled={disabled}
-  >
-    {icon}
-    <span>{label}</span>
-  </button>
-);
 
 const TabLink: React.FC<TabLinkProps> = ({
   to,

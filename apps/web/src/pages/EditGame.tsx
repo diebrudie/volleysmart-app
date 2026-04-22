@@ -2,18 +2,16 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
+  ArrowLeft,
   Calendar as CalendarIcon,
   Shuffle,
   Save,
-  ChevronLeft,
 } from "lucide-react";
 import { LocationSelector } from "@/components/forms/LocationSelector";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { useClub } from "@/contexts/ClubContext";
 import {
@@ -136,30 +134,28 @@ const DroppableTeam = ({
   });
 
   return (
-    <Card>
-      <CardHeader className={cn("text-white", headerColor)}>
-        <CardTitle className="flex items-center">
-          <div
-            className={cn(
-              "h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-sm font-bold",
-              teamId === "team-a" ? "text-red-600" : "text-green-600"
-            )}
-          >
-            {teamId === "team-a" ? "A" : "B"}
-          </div>
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent
+    <div className="border border-border rounded-xl overflow-hidden bg-card">
+      <div className={cn("px-4 py-3 text-white flex items-center", headerColor)}>
+        <div
+          className={cn(
+            "h-7 w-7 rounded-full bg-white mr-3 flex items-center justify-center text-sm font-bold",
+            teamId === "team-a" ? "text-red-600" : "text-emerald-600"
+          )}
+        >
+          {teamId === "team-a" ? "A" : "B"}
+        </div>
+        <h3 className="font-semibold text-base">{title}</h3>
+      </div>
+      <div
         ref={setNodeRef}
         className={cn(
-          "p-0 min-h-[200px] transition-colors",
-          isOver && "bg-blue-50"
+          "min-h-[100px] transition-colors",
+          isOver && "bg-primary/10"
         )}
       >
         {children}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
@@ -464,11 +460,10 @@ const EditGame = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading game data...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-border mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading game data...</p>
           </div>
         </div>
       </div>
@@ -479,12 +474,11 @@ const EditGame = () => {
   if (!gameData) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-600">Game not found</p>
             <Button
-              onClick={() => navigate(`/dashboard/${clubId}`)}
+              onClick={() => navigate(`/game/${gameId}`)}
               className="mt-4"
             >
               Back to Dashboard
@@ -902,7 +896,7 @@ const EditGame = () => {
         duration: 1500,
       });
 
-      navigate(`/dashboard/${clubId}`);
+      navigate(`/game/${gameId}`);
     } catch (error) {
       console.error("Error saving changes:", error);
       toast({
@@ -915,32 +909,31 @@ const EditGame = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-background pb-24">
+      {/* Header */}
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="flex items-center justify-center relative h-14 px-4">
+          <button
+            onClick={() => navigate(`/game/${gameId}`)}
+            className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-base font-semibold">Edit Teams</h1>
+        </div>
+      </div>
+
       <main className="flex-grow">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <div className="flex items-center mb-7">
-              <Button
-                variant="outline"
-                size="icon"
-                className="mr-4"
-                onClick={() => navigate(`/dashboard/${clubId}`)}
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Edit Teams
-              </h1>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Controls — stacked full-width */}
+          <div className="pt-4 mb-6 space-y-3">
               {/* Date Picker */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "justify-start text-left font-normal w-full sm:w-auto",
+                      "justify-start text-left font-normal w-full h-12",
                       !date && "text-muted-foreground"
                     )}
                   >
@@ -991,47 +984,42 @@ const EditGame = () => {
                     }
                   }}
                   placeholder="Select or create location"
-                  className="w-full sm:w-[250px]"
+                  className="w-full h-12"
                 />
               )}
 
               {/* Edit Players Button */}
               <Button
-                variant="action"
-                icon={
-                  <svg
-                    className="h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.75}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    {/* user circle + shoulders */}
-                    <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Z" />
-                    <path d="M5 21a7 7 0 0 1 14 0" />
-                    {/* small pen overlay */}
-                    <path d="M19.65 7.3l-3.17 3.18 1.05 1.05 3.17-3.17a.75.75 0 0 0 0-1.06l-.99-.99a.75.75 0 0 0-1.06 0Z" />
-                  </svg>
-                }
+                variant="outline"
                 onClick={() => setPlayersModalOpen(true)}
-                className="w-full sm:w-auto text-foreground"
+                className="w-full h-12 justify-center"
               >
+                <svg
+                  className="mr-2 h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.75}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Z" />
+                  <path d="M5 21a7 7 0 0 1 14 0" />
+                  <path d="M19.65 7.3l-3.17 3.18 1.05 1.05 3.17-3.17a.75.75 0 0 0 0-1.06l-.99-.99a.75.75 0 0 0-1.06 0Z" />
+                </svg>
                 Edit Players
               </Button>
 
               {/* Shuffle Teams Button */}
               <Button
-                variant="action"
-                icon={<Shuffle className="h-4 w-4" />}
+                variant="outline"
                 onClick={handleShuffleTeams}
-                className="w-full sm:w-auto"
+                className="w-full h-12 justify-center"
               >
+                <Shuffle className="mr-2 h-4 w-4" />
                 Shuffle Teams
               </Button>
-            </div>
           </div>
 
           <DndContext
@@ -1050,7 +1038,7 @@ const EditGame = () => {
               document.body.classList.remove("vm-scroll-lock");
             }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 overscroll-contain">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8 overscroll-contain">
               {/* Team A */}
               <DroppableTeam
                 teamId="team-a"
@@ -1119,10 +1107,10 @@ const EditGame = () => {
             {/* Drag Overlay */}
             <DragOverlay>
               {activePlayer ? (
-                <div className="bg-card border-2 border-primary rounded-md p-2 shadow-lg opacity-95 text-card-foreground">
+                <div className="bg-card border-2 border-primary rounded-md px-3 py-3 shadow-lg opacity-95 text-card-foreground flex items-center">
                   <span className="font-medium">{activePlayer.name}</span>
-                  {" - "}
-                  <span className="text-xs rounded px-1.5 py-0.5 bg-muted text-muted-foreground">
+                  <span className="mx-1.5 text-muted-foreground">–</span>
+                  <span className="text-xs rounded-md px-2 py-0.5 bg-muted text-foreground">
                     {activePlayer.preferredPosition}
                   </span>
                 </div>
@@ -1132,7 +1120,7 @@ const EditGame = () => {
           {/* Last modified banner */}
           {auditInfo?.label && (
             <div className="flex justify-end mb-2">
-              <div className="text-sm text-gray-600 dark:text-gray-300">
+              <div className="text-sm text-muted-foreground">
                 Last modified by:{" "}
                 <span className="font-medium">{auditInfo.label}</span>
               </div>
@@ -1370,15 +1358,18 @@ const EditGame = () => {
             />
           )}
 
-          {/* Save Button */}
-          <div className="flex justify-end">
-            <Button onClick={handleSave} size="lg">
-              Save
-              <Save className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </main>
+
+      {/* Sticky Save Button */}
+      <div className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border px-4 py-3 pb-[calc(theme(spacing.3)+env(safe-area-inset-bottom))]">
+        <div className="max-w-6xl mx-auto flex justify-end">
+          <Button onClick={handleSave} size="lg">
+            Save
+            <Save className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

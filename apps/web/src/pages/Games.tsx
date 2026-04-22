@@ -596,7 +596,7 @@ const Games = () => {
 
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Link to={`/game-details/${match.match_day_id}`}>
+                              <Link to={`/game/${match.match_day_id}`}>
                                 <Button variant="action">View Details</Button>
                               </Link>
                               {isAdmin && selectedMatch === match.id && (

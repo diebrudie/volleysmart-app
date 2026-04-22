@@ -42,7 +42,47 @@
 - ✅ Multi-game scoring (up to 5 games per match day)
 - ✅ Match history and result tracking
 
-## 🔄 Phase 3: Enhancement & Polish (Current)
+## 🔄 Phase 3: Major Feature Extension (Current — April 2026)
+
+### Progress Log
+- ✅ **Nav & DB Foundation** (`feat/phase-1-nav-db-foundation`) — DB migration (planned_events, event_clubs, event_rsvp, messages, notifications + RLS policies); global MobileBottomNav (Home/Archive/+/Clubs/Members, no club dependency); MobileTopBar with Bell + Chat + Hamburger; routes /home, /archive, /members, /events/new added
+- ✅ **Home Tab + Create Event** (`feat/phase-2-3-events-home-create`) — UpcomingEvents page with list/calendar toggle, mini-calendar, RSVP inline actions, user profile chip; CreateEvent 3-step form (type → details → club/options) with RSVP deadline presets + custom date picker; Desktop Navbar updated to global links, Create Event button, Bell + Chat icons; EventCard component
+- ✅ **Archive Tab** (`feat/phase-4-archive-tab`) — Cross-club past games table: Date, Club, Score, Winner, Location, Details; filters by club/month/winner; sortable columns; Club column auto-hidden for single-club users; game count summary row
+- ✅ **Clubs & Members Tabs** (`feat/phase-5-6-clubs-members`) — Clubs.tsx: removed internal Navbar render (double-nav fix); Members tab: full MembersGlobal.tsx with cross-club member directory, search by name, filter by club/country, sort by first/last name A-Z + skill rating; deduplication of players across clubs; responsive grid (2→6 cols)
+- ✅ **Bug Fixes & Back Navigation** (`feat/phase-7-fixes`) — Desktop Navbar added to UpcomingEvents, Archive, MembersGlobal pages; MembersGlobal query refactored to join from `players!inner(club_members)` to fix RLS data loading; BackButton component created; back navigation added to Dashboard, Players, FaqsPage, GameDetail updated to use navigate(-1)
+
+- ✅ **Create Event Improvements** (`feat/phase-9-create-event-improvements`) — Event templates (DB-backed, per-user/club, save & apply from Step 1); Location selector with Mapbox address autocomplete replacing free-text input; "No club" personal events option; form step reorder (club moved to Step 2 before location); RLS updates for clubless events & locations; EventCard shows "Personal" label and address
+
+### Navigation Overhaul
+The app is being transformed from club-scoped to user-scoped navigation. New global bottom nav: Home | Archive | + FAB | Clubs | Members. New top bar: Logo | Notifications | Chat | Hamburger menu.
+
+### Planned Events & RSVP System
+- New `planned_events` table (event types: friendly_game, social_game, training, tournament)
+- RSVP system with custom deadlines, attending/declined/maybe states
+- Teams locked until game day — admin manually triggers team generation on day-of
+- Minimum 4 players required; creator alerted if minimum not met
+
+### Global Home Tab
+- Cross-club upcoming events feed (list + calendar toggle)
+- User profile chip (avatar + skill rating)
+- Inline RSVP actions per event card
+
+### Global Archive Tab
+- Cross-club past games table: Date | Club | Score | Winner | Details
+
+### Chat (per-club)
+- Real-time club chat using Supabase Realtime
+- In-app notification center for activity log
+
+### Global Members & Clubs Tabs
+- Members directory filterable across all user's clubs
+- Clubs tab for managing all memberships
+
+**Branch per phase:** `feat/phase-N-short-description` (see project-plan for full branching strategy)
+
+---
+
+## ✅ Phase 2: Core Features (Completed)
 
 ### User Experience Improvements
 

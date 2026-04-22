@@ -565,8 +565,8 @@ const NewGame = () => {
         duration: compromiseNote ? 4000 : 1500,
       });
 
-      // Navigate to the dashboard to see the game
-      navigate(`/dashboard/${clubId}`);
+      // Navigate to the new game
+      navigate(`/game/${matchDay.id}`);
     } catch (error: unknown) {
       console.error("Error creating game:", error);
       toast({
@@ -617,7 +617,7 @@ const NewGame = () => {
               variant="outline"
               size="icon"
               className="mr-4"
-              onClick={() => navigate(`/dashboard/${clubId}`)}
+              onClick={() => navigate(`/clubs/${clubId}`)}
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
