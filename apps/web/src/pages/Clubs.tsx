@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import { useIsCompact } from "@/hooks/use-compact";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { useClub } from "@/contexts/ClubContext";
 import {
@@ -24,6 +26,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
   MoreVertical,
   UserPlus,
   UsersRound,
@@ -40,6 +48,7 @@ import {
   fetchActiveMemberClubsWithDetails,
   MemberClubWithDetails,
 } from "@/integrations/supabase/clubMembers";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 interface ClubWithDetails {
   id: string;
@@ -95,6 +104,13 @@ const Clubs = () => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const clubCount = useRef(0);
+
+  // Join Club drawer state
+  const [joinDrawerOpen, setJoinDrawerOpen] = useState(false);
+  const [clubIdInput, setClubIdInput] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+  const [isAssociationMember, setIsAssociationMember] = useState(false);
+  const PENDING_CLUB_JOIN_KEY = "pendingClubJoinSlug";
 
   useEffect(() => {
     const lastClub = localStorage.getItem("lastVisitedClub");
@@ -206,7 +222,70 @@ const Clubs = () => {
   });
 
   const handleCreateClub = () => navigate("/new-club");
-  const handleJoinClub = () => navigate("/join-club");
+  const handleJoinClub = () => {
+    // Prefill from localStorage pending slug
+    const storedCid = (localStorage.getItem(PENDING_CLUB_JOIN_KEY) ?? "").trim();
+    if (storedCid) setClubIdInput(storedCid);
+    setJoinDrawerOpen(true);
+  };
+
+  const handleJoinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.id || !clubIdInput.trim()) return;
+
+    setIsJoining(true);
+    try {
+      const slug = clubIdInput.trim().toLowerCase();
+      await supabase.auth.getUser();
+
+      const { data: visibleClub, error: visibleErr } = await supabase
+        .from("clubs")
+        .select("id")
+        .eq("status", "active")
+        .ilike("slug", slug)
+        .maybeSingle();
+
+      if (!visibleErr && visibleClub?.id) {
+        localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
+        toast({ title: "Already a member", description: "You are already a member of this club.", duration: 2500 });
+        setJoinDrawerOpen(false);
+        setClubIdInput("");
+        return;
+      }
+
+      const { error: rpcErr } = await supabase.rpc("request_join_by_slug", {
+        p_slug: slug,
+        p_member_association: isAssociationMember,
+      });
+
+      if (rpcErr) {
+        const err = rpcErr as PostgrestError;
+        const msg = String(err.message || "").toLowerCase();
+
+        if (err.code === "23505" || msg.includes("club_members_club_id_user_id_key")) {
+          toast({ title: "Request already sent", description: "You already have a pending request or are a member.", duration: 3500 });
+          return;
+        }
+        if (msg.includes("club_not_found_or_deleted")) {
+          toast({ title: "Club not found", description: "This club isn't available.", variant: "destructive", duration: 3000 });
+          return;
+        }
+        toast({ title: "Couldn't join", description: "Join request failed. Please try again.", variant: "destructive", duration: 3000 });
+        return;
+      }
+
+      localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
+      toast({ title: "Request sent", description: "Your request was sent to the club admins.", duration: 3500 });
+      setJoinDrawerOpen(false);
+      setClubIdInput("");
+      setIsAssociationMember(false);
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive", duration: 3000 });
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   const handleClubClick = (clubId: string) => {
     setClubId(clubId);
@@ -357,7 +436,7 @@ const Clubs = () => {
                 {/* Horizontal slider */}
                 <div
                   ref={sliderRef}
-                  className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4"
+                  className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2"
                   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
                   {userClubs.map((club) => (
@@ -509,6 +588,70 @@ const Clubs = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Join Club Drawer */}
+      <Drawer open={joinDrawerOpen} onOpenChange={setJoinDrawerOpen}>
+        <DrawerContent className="max-h-[85dvh]">
+          <DrawerHeader className="border-b border-border pb-3">
+            <DrawerTitle className="text-center text-base font-semibold">Join a Club</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4">
+            <form onSubmit={handleJoinSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="drawer-club-id" className="text-sm text-primary/70 font-medium">Club ID</Label>
+                <Input
+                  id="drawer-club-id"
+                  type="text"
+                  placeholder="AB12C"
+                  value={clubIdInput}
+                  onChange={(e) => setClubIdInput(e.target.value)}
+                  className="h-12 bg-muted/50 border-border"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center gap-2 py-2">
+                <input
+                  id="drawer-assoc-member"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border"
+                  checked={isAssociationMember}
+                  onChange={(e) => setIsAssociationMember(e.target.checked)}
+                />
+                <span className="text-sm text-muted-foreground">
+                  I am a member of this association.
+                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-xs text-muted-foreground"
+                      aria-label="What does member association mean?"
+                    >
+                      ?
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="top"
+                    align="center"
+                    className="max-w-xs text-sm leading-snug text-popover-foreground"
+                  >
+                    Member Association means you are a paid member of the club. If you are not sure, leave this unchecked.
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-12"
+                disabled={isJoining || !clubIdInput.trim()}
+              >
+                {isJoining ? "Joining..." : "Join Club"}
+              </Button>
+            </form>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

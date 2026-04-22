@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Bell, MessageSquare, Menu } from "lucide-react";
 import MobileMenuDrawer from "./MobileMenuDrawer";
@@ -7,12 +7,21 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+/** Route-to-title mapping for the top bar. */
+function getPageTitle(pathname: string): string {
+  if (/^\/clubs(\/|$)/.test(pathname)) return "Clubs";
+  if (/^\/archive(\/|$)/.test(pathname)) return "Archive";
+  if (/^\/games(\/|$)/.test(pathname)) return "Games";
+  return "Home";
+}
+
 /** Thin top bar with profile picture, page title, and action icons. */
 const MobileTopBar: React.FC = () => {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const { resolvedTheme } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const iconColor =
     resolvedTheme === "dark" ? "text-gray-200" : "text-gray-900";
 
@@ -75,7 +84,7 @@ const MobileTopBar: React.FC = () => {
 
         {/* Centered title */}
         <span className="absolute left-1/2 -translate-x-1/2 text-base font-semibold">
-          Home
+          {getPageTitle(pathname)}
         </span>
 
         {/* Action icons */}
