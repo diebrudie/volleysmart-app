@@ -30,13 +30,14 @@ const HIDE_CHROME = [
   /^\/user\/[^/]+\/?$/, // /user/:userId (Profile)
   /^\/manage-requests\/?$/, // /manage-requests
   /^\/notifications\/?$/, // /notifications
+  /^\/faqs\/?$/, // /faqs
   /^\/start\/?$/, // redirects to /home
   /^\/invite-members(\/[^/]+)?\/?$/,
 ];
 
 // Routes where we want the top bar only (no bottom nav),
 // e.g. FAQs from inside the app
-const HIDE_BOTTOM_ONLY = [/^\/faqs\/?$/];
+const HIDE_BOTTOM_ONLY: RegExp[] = [];
 
 function isPublic(pathname: string): boolean {
   const p =
