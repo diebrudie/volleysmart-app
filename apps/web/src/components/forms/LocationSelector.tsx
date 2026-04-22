@@ -148,13 +148,13 @@ export const LocationSelector = ({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between border-gray-300 dark:border-gray-600",
+            "w-full justify-between border-border",
             !value && "text-muted-foreground",
             className
           )}
         >
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-gray-400" />
+            <MapPin className="h-4 w-4 text-muted-foreground" />
             {selectedLocation ? selectedLocation.name : placeholder}
           </div>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -189,7 +189,7 @@ export const LocationSelector = ({
                             value === location.id ? "opacity-100" : "opacity-0"
                           )}
                         />
-                        <MapPin className="mr-2 h-4 w-4 text-gray-400" />
+                        <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
                         {location.name}
                       </CommandItem>
                     ))}

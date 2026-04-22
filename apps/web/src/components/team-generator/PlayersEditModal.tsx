@@ -348,22 +348,18 @@ export function PlayersEditModal({
           "p-0 flex flex-col h-[95dvh]"
         )}
       >
-        {/* A11y-only title/description to satisfy Radix requirements without changing the visual header */}
         <DrawerTitle className="sr-only">Edit Players</DrawerTitle>
         <DrawerDescription className="sr-only">
           Edit the list of players for this game. Search, select or deselect
           players, and add guests.
         </DrawerDescription>
 
-        {/* Full-bleed yellow header with fixed height */}
-        <div ref={headerRef} className="bg-amber-500 relative rounded-t-md">
-          {/* Keep a constant height so it doesn't grow/shrink when search toggles */}
+        {/* Header */}
+        <div ref={headerRef} className="border-b border-border bg-card rounded-t-2xl">
           <div className="flex items-center justify-between px-4 sm:px-6 h-14">
-            {/* Keep title space occupied even when search is open on mobile */}
             <h3
               className={cn(
-                "text-base font-semibold text-black transition-opacity",
-                // Use 'invisible' (not 'hidden') so the left block still takes space
+                "text-base font-semibold text-foreground transition-opacity",
                 isSearchExpanded ? "invisible sm:visible" : "visible"
               )}
               aria-hidden={isSearchExpanded}
@@ -371,9 +367,7 @@ export function PlayersEditModal({
               Edit Players
             </h3>
 
-            {/* Right controls get a fixed width so alignment stays put */}
             <div className="relative flex items-center justify-end w-[180px] sm:w-[240px]">
-              {/* Search input is absolutely positioned within this fixed-width area */}
               <Input
                 placeholder="Search players..."
                 value={searchTerm}
@@ -390,7 +384,6 @@ export function PlayersEditModal({
                 )}
               />
 
-              {/* When search is closed, show the icons; they occupy same area */}
               <div
                 className={cn(
                   "flex items-center gap-3 transition-opacity",
@@ -400,18 +393,17 @@ export function PlayersEditModal({
                 )}
               >
                 <button
-                  className="rounded p-1 hover:bg-black/10"
+                  className="rounded p-1 hover:bg-muted"
                   onClick={() => setIsSearchExpanded(true)}
                   aria-label="Search"
                 >
-                  <Search className="h-4 w-4 text-black dark:text-black/90" />
+                  <Search className="h-4 w-4 text-muted-foreground" />
                 </button>
 
                 {filtered.length > 0 && (
                   <Checkbox
                     checked={allFilteredSelected}
                     onCheckedChange={handleSelectAllFiltered}
-                    className="data-[state=checked]:bg-black data-[state=checked]:border-black"
                     aria-label="Select all filtered"
                   />
                 )}
@@ -512,7 +504,7 @@ export function PlayersEditModal({
           )}
         </div>
 
-        <DrawerFooter className="px-4 sm:px-6 pt-3 pb-[calc(theme(spacing.6)+env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t">
+        <DrawerFooter className="px-4 sm:px-6 pt-3 pb-[calc(theme(spacing.3)+env(safe-area-inset-bottom))] flex flex-row justify-end gap-3 border-t border-border bg-card">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>

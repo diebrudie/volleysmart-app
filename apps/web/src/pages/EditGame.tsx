@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
+  ArrowLeft,
   Calendar as CalendarIcon,
   Shuffle,
   Save,
-  ChevronLeft,
 } from "lucide-react";
 import { LocationSelector } from "@/components/forms/LocationSelector";
 import { useQuery } from "@tanstack/react-query";
@@ -911,24 +911,27 @@ const EditGame = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background pb-24">
+      {/* Gradient hero */}
+      <div className="relative h-28 sm:h-32">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/60 to-primary/20" />
+        <div className="absolute inset-0 bg-black/20" />
+
+        {/* Back button — top left */}
+        <button
+          onClick={() => navigate(`/game/${gameId}`)}
+          className="absolute top-4 left-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+      </div>
+
       <main className="flex-grow">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <div className="flex items-center mb-7">
-              <Button
-                variant="outline"
-                size="icon"
-                className="mr-4"
-                onClick={() => navigate(`/game/${gameId}`)}
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <h1 className="text-3xl font-bold text-foreground">
-                Edit Teams
-              </h1>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Title + controls */}
+          <div className="pt-5 mb-6">
+            <h1 className="text-2xl font-bold mb-5">Edit Teams</h1>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
               {/* Date Picker */}
               <Popover>
                 <PopoverTrigger asChild>
@@ -1365,15 +1368,18 @@ const EditGame = () => {
             />
           )}
 
-          {/* Save Button */}
-          <div className="flex justify-end">
-            <Button onClick={handleSave} size="lg">
-              Save
-              <Save className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </main>
+
+      {/* Sticky Save Button */}
+      <div className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border px-4 py-3 pb-[calc(theme(spacing.3)+env(safe-area-inset-bottom))]">
+        <div className="max-w-6xl mx-auto flex justify-end">
+          <Button onClick={handleSave} size="lg">
+            Save
+            <Save className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
