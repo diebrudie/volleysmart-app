@@ -147,6 +147,7 @@ const Profile = () => {
           title: "Error",
           description: "Failed to load profile",
           variant: "destructive",
+          duration: 2000,
         });
         return;
       }
@@ -294,6 +295,7 @@ const Profile = () => {
         title: "Error",
         description: "Failed to update profile",
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setSaving(false);
@@ -370,6 +372,38 @@ const Profile = () => {
     if (!user?.id) return;
     setIsDeleting(true);
     try {
+      // Block deletion if the user is admin of any club with 2+ members
+      const { data: adminClubs } = await supabase
+        .from("club_members")
+        .select("club_id, clubs(name)")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .eq("role", "admin");
+
+      if (adminClubs?.length) {
+        // Check member counts for each admin club
+        for (const ac of adminClubs) {
+          const { count } = await supabase
+            .from("club_members")
+            .select("id", { count: "exact", head: true })
+            .eq("club_id", ac.club_id)
+            .eq("is_active", true);
+
+          if ((count ?? 0) >= 2) {
+            const clubName = (ac.clubs as any)?.name ?? "a club";
+            toast({
+              title: "Can't delete account",
+              description: `You are the admin of "${clubName}" which has other members. Transfer admin role or remove members first.`,
+              variant: "destructive",
+              duration: 2000,
+            });
+            setIsDeleting(false);
+            setShowDeleteDialog(false);
+            return;
+          }
+        }
+      }
+
       // Delete profile image from storage if it exists
       if (profile?.image_url) {
         try {
@@ -392,7 +426,7 @@ const Profile = () => {
       toast({
         title: "Account deleted",
         description: "Your account has been permanently deleted.",
-        duration: 3000,
+        duration: 2000,
       });
 
       await logout();
@@ -402,6 +436,7 @@ const Profile = () => {
         title: "Error",
         description: "Failed to delete account. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setIsDeleting(false);

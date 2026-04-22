@@ -354,6 +354,7 @@ const NewGame = () => {
         title: "Date required",
         description: "Please select a date for the game",
         variant: "destructive",
+        duration: 2000,
       });
       return;
     }
@@ -363,6 +364,7 @@ const NewGame = () => {
         title: "Location required",
         description: "Please select or create a location for the game",
         variant: "destructive",
+        duration: 2000,
       });
       return;
     }
@@ -372,6 +374,7 @@ const NewGame = () => {
         title: "Not enough players",
         description: "Please select at least 4 players to create teams",
         variant: "destructive",
+        duration: 2000,
       });
       return;
     }
@@ -381,6 +384,7 @@ const NewGame = () => {
         title: "Missing information",
         description: "Club or user information is missing",
         variant: "destructive",
+        duration: 2000,
       });
       return;
     }
@@ -562,7 +566,7 @@ const NewGame = () => {
       toast({
         title: "Game created!",
         description: baseDesc + compromiseNote,
-        duration: compromiseNote ? 4000 : 1500,
+        duration: 2000,
       });
 
       // Navigate to the new game
@@ -576,6 +580,7 @@ const NewGame = () => {
             ? error.message
             : "Failed to create game. Please try again.",
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setIsSubmitting(false);

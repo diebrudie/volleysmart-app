@@ -316,6 +316,7 @@ const ClubSettingsDialog = ({
           title: "Not saved",
           description: "No changes were persisted. Please try again.",
           variant: "destructive",
+          duration: 2000,
         });
         setIsLoading(false);
         return;

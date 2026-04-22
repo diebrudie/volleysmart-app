@@ -8,7 +8,6 @@ import {
   Swords,
   Users,
   Dumbbell,
-  Trophy,
   Globe,
   Lock,
   CalendarIcon,
@@ -90,14 +89,6 @@ const EVENT_TYPES: {
     icon: <Dumbbell className="h-6 w-6" />,
     color:
       "border-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-300",
-  },
-  {
-    value: "tournament",
-    label: "Tournament",
-    description: "Multi-club competitive event",
-    icon: <Trophy className="h-6 w-6" />,
-    color:
-      "border-purple-400 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300",
   },
 ];
 
@@ -508,49 +499,6 @@ const CreateEvent: React.FC = () => {
               </Select>
             </div>
 
-            {/* For tournaments: additional clubs */}
-            {form.event_type === "tournament" &&
-              form.club_id !== NO_CLUB &&
-              form.club_id &&
-              userClubs.length > 1 && (
-                <div className="space-y-1.5">
-                  <Label>Additional clubs (tournament)</Label>
-                  <div className="flex flex-col gap-2">
-                    {userClubs
-                      .filter((c) => c.id !== form.club_id)
-                      .map((club) => {
-                        const included = form.extra_club_ids.includes(club.id);
-                        return (
-                          <button
-                            key={club.id}
-                            type="button"
-                            onClick={() =>
-                              set(
-                                "extra_club_ids",
-                                included
-                                  ? form.extra_club_ids.filter(
-                                      (id) => id !== club.id
-                                    )
-                                  : [...form.extra_club_ids, club.id]
-                              )
-                            }
-                            className={cn(
-                              "flex items-center justify-between rounded-xl border px-4 py-3 text-sm text-left transition-colors",
-                              included
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:bg-muted"
-                            )}
-                          >
-                            <span>{club.name}</span>
-                            {included && (
-                              <Check className="h-4 w-4 text-primary" />
-                            )}
-                          </button>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
 
             {/* Title */}
             <div className="space-y-1.5">

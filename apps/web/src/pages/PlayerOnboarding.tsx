@@ -213,6 +213,7 @@ const PlayerOnboarding = () => {
         title: "Error",
         description: "Failed to load positions",
         variant: "destructive",
+        duration: 2000,
       });
     }
   };
@@ -225,6 +226,7 @@ const PlayerOnboarding = () => {
           title: "Error",
           description: "Image size must be less than 5MB",
           variant: "destructive",
+          duration: 2000,
         });
         return;
       }
@@ -234,6 +236,7 @@ const PlayerOnboarding = () => {
           title: "Error",
           description: "Please select a valid image file",
           variant: "destructive",
+          duration: 2000,
         });
         return;
       }
@@ -345,6 +348,7 @@ const PlayerOnboarding = () => {
         title: "Error",
         description: "Please answer all required questions",
         variant: "destructive",
+        duration: 2000,
       });
       return;
     }
@@ -357,6 +361,7 @@ const PlayerOnboarding = () => {
         title: "Error",
         description: "Please enter your first and last name to continue.",
         variant: "destructive",
+        duration: 2000,
       });
       setCurrentStep(0);
       return;
@@ -396,6 +401,7 @@ const PlayerOnboarding = () => {
             description:
               "Image upload failed, but profile will be created without photo.",
             variant: "default",
+            duration: 2000,
           });
         } else {
           const {
@@ -460,6 +466,7 @@ const PlayerOnboarding = () => {
             title: "Warning",
             description: "Player created but positions failed to save",
             variant: "destructive",
+            duration: 2000,
           });
         }
       }
@@ -483,6 +490,7 @@ const PlayerOnboarding = () => {
         title: "Error",
         description: `Failed to create player profile: ${errorMessage}`,
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setIsSubmitting(false);
