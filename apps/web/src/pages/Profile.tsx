@@ -15,7 +15,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler } from "lucide-react";
+import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Drawer,
   DrawerContent,
@@ -50,7 +60,7 @@ interface Position {
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,6 +78,8 @@ const Profile = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isPositionsHelpOpen, setIsPositionsHelpOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isOwnProfile = user?.id === userId;
 
@@ -354,6 +366,49 @@ const Profile = () => {
     setIsEditing(false);
   };
 
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+    setIsDeleting(true);
+    try {
+      // Delete profile image from storage if it exists
+      if (profile?.image_url) {
+        try {
+          const url = new URL(profile.image_url);
+          const pathParts = url.pathname.split("/player-images/");
+          if (pathParts[1]) {
+            await supabase.storage
+              .from("player-images")
+              .remove([decodeURIComponent(pathParts[1])]);
+          }
+        } catch {
+          // Storage cleanup is best-effort
+        }
+      }
+
+      // Call RPC to clear image_url and delete auth user
+      const { error } = await (supabase as any).rpc("delete_own_account");
+      if (error) throw error;
+
+      toast({
+        title: "Account deleted",
+        description: "Your account has been permanently deleted.",
+        duration: 3000,
+      });
+
+      await logout();
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   // ── Loading / error states ──────────────────────────────────────────────────
 
   if (loading) {
@@ -535,6 +590,18 @@ const Profile = () => {
                     );
                   })}
                 </div>
+              </div>
+            )}
+            {/* Delete Account */}
+            {isOwnProfile && (
+              <div className="pt-8 pb-4">
+                <button
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete my account
+                </button>
               </div>
             )}
           </div>
@@ -747,6 +814,30 @@ const Profile = () => {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Delete Account Confirmation */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete your account and profile picture. You
+              will lose access to the app. Your name and past activity will
+              remain visible in event and game history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Fixed Save / Cancel bar (edit mode only) */}
       {isEditing && (
