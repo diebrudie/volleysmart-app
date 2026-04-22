@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,15 +72,9 @@ const Profile = () => {
   const isOwnProfile = user?.id === userId;
 
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleBack = () => {
-    const last = localStorage.getItem("lastPrivatePath");
-    if (last && last !== location.pathname) {
-      navigate(last);
-      return;
-    }
-    navigate("/clubs");
+    navigate(-1);
   };
 
   // Track if anything has changed
@@ -391,7 +385,7 @@ const Profile = () => {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background" style={{ paddingBottom: isEditing ? '5rem' : undefined }}>
       {/* Header bar */}
       <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
@@ -703,23 +697,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Save / Cancel buttons */}
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={handleCancelEdit}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={saving || !hasChanges()}
-                className="flex-1"
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
           </div>
         )}
       </div>
@@ -762,6 +739,28 @@ const Profile = () => {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Fixed Save / Cancel bar (edit mode only) */}
+      {isEditing && (
+        <div className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border px-4 py-3 pb-[calc(theme(spacing.3)+env(safe-area-inset-bottom))]">
+          <div className="max-w-2xl mx-auto flex gap-3">
+            <Button
+              variant="outline"
+              onClick={handleCancelEdit}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving || !hasChanges()}
+              className="flex-1"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
