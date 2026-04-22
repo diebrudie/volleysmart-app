@@ -436,8 +436,8 @@ const Clubs = () => {
                 {/* Horizontal slider */}
                 <div
                   ref={sliderRef}
-                  className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2"
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                  className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4"
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollPaddingInline: "1rem" }}
                 >
                   {userClubs.map((club) => (
                     <div
@@ -521,6 +521,8 @@ const Clubs = () => {
                       </div>
                     </div>
                   ))}
+                  {/* Spacer to preserve right padding in scroll container */}
+                  <div className="shrink-0 w-1" aria-hidden="true" />
                 </div>
 
                 {/* Dot indicators */}
