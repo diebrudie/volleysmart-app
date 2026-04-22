@@ -6,7 +6,7 @@ INSERT INTO event_rsvp (event_id, player_id, status, responded_at)
 SELECT DISTINCT
   md.planned_event_id,
   gp.player_id,
-  'attending',
+  'attending'::rsvp_status,
   md.created_at
 FROM game_players gp
 JOIN match_days md ON md.id = gp.match_day_id
