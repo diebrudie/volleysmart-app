@@ -93,21 +93,21 @@ const MobileTopBar: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Chats"
-            onClick={() => navigate("/chats")}
-            className="text-foreground hover:bg-muted"
+            aria-label="Chats (coming soon)"
+            disabled
+            className="text-muted-foreground opacity-40 cursor-not-allowed"
           >
-            <MessageSquare className={`h-5 w-5 ${iconColor}`} />
+            <MessageSquare className="h-5 w-5" />
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Notifications"
-            onClick={() => navigate("/notifications")}
-            className="text-foreground hover:bg-muted"
+            aria-label="Notifications (coming soon)"
+            disabled
+            className="text-muted-foreground opacity-40 cursor-not-allowed"
           >
-            <Bell className={`h-5 w-5 ${iconColor}`} />
+            <Bell className="h-5 w-5" />
           </Button>
 
           <Button

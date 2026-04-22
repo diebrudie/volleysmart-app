@@ -592,18 +592,6 @@ const Profile = () => {
                 </div>
               </div>
             )}
-            {/* Delete Account */}
-            {isOwnProfile && (
-              <div className="pt-8 pb-4">
-                <button
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete my account
-                </button>
-              </div>
-            )}
           </div>
         ) : (
           /* ── Edit mode ─────────────────────────────────────── */
@@ -770,6 +758,17 @@ const Profile = () => {
                   Tap to toggle secondary positions
                 </p>
               </div>
+            </div>
+
+            {/* Delete Account — only visible in edit mode */}
+            <div className="pt-8 pb-4">
+              <button
+                onClick={() => setShowDeleteDialog(true)}
+                className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete my account
+              </button>
             </div>
 
           </div>
