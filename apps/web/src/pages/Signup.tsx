@@ -51,6 +51,7 @@ const Signup = () => {
       toast({
         title: "Passwords do not match",
         variant: "destructive",
+        duration: 2000,
       });
       return;
     }

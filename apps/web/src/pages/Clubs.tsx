@@ -256,7 +256,7 @@ const Clubs = () => {
 
       if (!visibleErr && visibleClub?.id) {
         localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
-        toast({ title: "Already a member", description: "You are already a member of this club.", duration: 2500 });
+        toast({ title: "Already a member", description: "You are already a member of this club.", duration: 2000 });
         setJoinDrawerOpen(false);
         setClubIdInput("");
         return;
@@ -272,26 +272,26 @@ const Clubs = () => {
         const msg = String(err.message || "").toLowerCase();
 
         if (err.code === "23505" || msg.includes("club_members_club_id_user_id_key")) {
-          toast({ title: "Request already sent", description: "You already have a pending request or are a member.", duration: 3500 });
+          toast({ title: "Request already sent", description: "You already have a pending request or are a member.", duration: 2000 });
           return;
         }
         if (msg.includes("club_not_found_or_deleted")) {
-          toast({ title: "Club not found", description: "This club isn't available.", variant: "destructive", duration: 3000 });
+          toast({ title: "Club not found", description: "This club isn't available.", variant: "destructive", duration: 2000 });
           return;
         }
-        toast({ title: "Couldn't join", description: "Join request failed. Please try again.", variant: "destructive", duration: 3000 });
+        toast({ title: "Couldn't join", description: "Join request failed. Please try again.", variant: "destructive", duration: 2000 });
         return;
       }
 
       localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
-      toast({ title: "Request sent", description: "Your request was sent to the club admins.", duration: 3500 });
+      toast({ title: "Request sent", description: "Your request was sent to the club admins.", duration: 2000 });
       queryClient.invalidateQueries({ queryKey: ["pendingClubRequests"] });
       setJoinDrawerOpen(false);
       setClubIdInput("");
       setIsAssociationMember(false);
     } catch (err) {
       console.error("Unexpected error:", err);
-      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive", duration: 3000 });
+      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive", duration: 2000 });
     } finally {
       setIsJoining(false);
     }

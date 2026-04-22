@@ -154,6 +154,7 @@ export default function ManageMembers() {
         title: "Approval failed",
         description: e instanceof Error ? e.message : "Unknown error",
         variant: "destructive",
+        duration: 2000,
       });
     },
   });
@@ -169,6 +170,7 @@ export default function ManageMembers() {
         title: "Reject failed",
         description: e instanceof Error ? e.message : "Unknown error",
         variant: "destructive",
+        duration: 2000,
       });
     },
   });

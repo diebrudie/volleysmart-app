@@ -60,6 +60,7 @@ const ResetPassword = () => {
           title: "Invalid or expired link",
           description: "Please request a new password reset link.",
           variant: "destructive",
+          duration: 2000,
         });
       }
     };
@@ -97,6 +98,7 @@ const ResetPassword = () => {
         description:
           error instanceof Error ? error.message : "Failed to reset password.",
         variant: "destructive",
+        duration: 2000,
       });
     } finally {
       setIsLoading(false);

@@ -1,11 +1,13 @@
 import * as React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Bell, MessageSquare, Menu } from "lucide-react";
 import MobileMenuDrawer from "./MobileMenuDrawer";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchUnreadCount } from "@/integrations/supabase/notifications";
 
 /** Route-to-title mapping for the top bar. */
 function getPageTitle(pathname: string): string {
@@ -25,6 +27,13 @@ const MobileTopBar: React.FC = () => {
   const { pathname } = useLocation();
   const iconColor =
     resolvedTheme === "dark" ? "text-gray-200" : "text-gray-900";
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["unreadNotificationCount", user?.id],
+    queryFn: () => fetchUnreadCount(user!.id),
+    enabled: !!user?.id,
+    staleTime: 30 * 1000,
+  });
 
   // Fetch player profile for avatar
   const [profile, setProfile] = React.useState<{
@@ -103,11 +112,14 @@ const MobileTopBar: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Notifications (coming soon)"
-            disabled
-            className="text-muted-foreground opacity-40 cursor-not-allowed"
+            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+            onClick={() => navigate("/notifications")}
+            className="relative text-foreground hover:bg-muted"
           >
             <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+            )}
           </Button>
 
           <Button

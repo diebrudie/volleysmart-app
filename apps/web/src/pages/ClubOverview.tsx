@@ -471,6 +471,7 @@ const ClubOverview: React.FC = () => {
                   toast({
                     title: "Removed",
                     description: `${selectedUserIds.length} member${selectedUserIds.length > 1 ? "s" : ""} removed.`,
+                    duration: 2000,
                   });
                   setSelectedUserIds([]);
                   setManageMode(false);
@@ -479,6 +480,7 @@ const ClubOverview: React.FC = () => {
                     title: "Error",
                     description: "Failed to remove members.",
                     variant: "destructive",
+                    duration: 2000,
                   });
                 } finally {
                   setDeleting(false);

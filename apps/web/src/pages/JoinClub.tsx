@@ -132,7 +132,7 @@ const JoinClub = () => {
         toast({
           title: "Already a member",
           description: "You are already a member of this club.",
-          duration: 2500,
+          duration: 2000,
         });
         navigate("/clubs");
         return;
@@ -157,7 +157,7 @@ const JoinClub = () => {
             title: "Request already sent",
             description:
               "You already have a membership request pending or you’re already a member. Please contact an admin if you need access.",
-            duration: 3500,
+            duration: 2000,
           });
           return;
         }
@@ -168,7 +168,7 @@ const JoinClub = () => {
             description:
               "This club isn’t available (it may have been deleted).",
             variant: "destructive",
-            duration: 3000,
+            duration: 2000,
           });
           return;
         }
@@ -177,7 +177,7 @@ const JoinClub = () => {
           title: "Couldn’t join",
           description: "Join request failed. Please try again.",
           variant: "destructive",
-          duration: 3000,
+          duration: 2000,
         });
         return;
       }
@@ -190,7 +190,7 @@ const JoinClub = () => {
         title: "Request sent",
         description:
           "Your request was sent to the club admins. You'll have to wait for approval.",
-        duration: 3500,
+        duration: 2000,
       });
       navigate("/clubs");
     } catch (err) {
@@ -199,7 +199,7 @@ const JoinClub = () => {
         title: "Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive",
-        duration: 3000,
+        duration: 2000,
       });
     } finally {
       setIsLoading(false);

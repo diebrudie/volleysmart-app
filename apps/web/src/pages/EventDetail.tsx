@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO, isToday } from "date-fns";
+import { format, parseISO, isToday, isPast } from "date-fns";
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -19,6 +19,7 @@ import {
   Trophy,
   Eye,
   EyeOff,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   fetchSingleEvent,
   deletePlannedEvent,
+  cancelPlannedEvent,
   upsertRsvp,
   updatePlannedEvent,
   type PlannedEvent,
@@ -469,6 +471,17 @@ const EventDetail: React.FC = () => {
     onError: () => toast.error("Failed to update event"),
   });
 
+  // Cancel mutation (sets status to 'cancelled', notifies members)
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelPlannedEvent(eventId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
+      queryClient.invalidateQueries({ queryKey: ["single-event", eventId] });
+      toast.success("Event cancelled");
+    },
+    onError: () => toast.error("Failed to cancel event"),
+  });
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: () => deletePlannedEvent(eventId!),
@@ -601,6 +614,22 @@ const EventDetail: React.FC = () => {
     }
   };
 
+  const eventUrl = window.location.href.split("?")[0];
+  const shareMessage = linkedMatchDay
+    ? (event?.date && isPast(parseISO(event.date)))
+      ? `Look how the last Volleyball Game finished. Super interesting!\n${eventUrl}`
+      : `Our Volleyball game is ready! Check the teams, and track points\n${eventUrl}`
+    : `Check this Volleyball Event, and let me know if you can make it\n${eventUrl}`;
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({ title: event?.title ?? "Event", text: shareMessage });
+    } else {
+      navigator.clipboard.writeText(shareMessage);
+      toast.success("Link copied to clipboard");
+    }
+  };
+
   // Render the success dialog even during loading so it's visible immediately
   const createdDialog = (
     <Dialog
@@ -629,19 +658,7 @@ const EventDetail: React.FC = () => {
           <div className="flex flex-col gap-2 w-full mt-2">
             <Button
               className="w-full gap-2"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: event?.title ?? "Event",
-                    url: window.location.href.split("?")[0],
-                  });
-                } else {
-                  navigator.clipboard.writeText(
-                    window.location.href.split("?")[0]
-                  );
-                  toast.success("Link copied to clipboard");
-                }
-              }}
+              onClick={handleShare}
             >
               <Share2 className="h-4 w-4" />
               Share event
@@ -729,19 +746,7 @@ const EventDetail: React.FC = () => {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   className="gap-2"
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: event.title,
-                        url: window.location.href.split("?")[0],
-                      });
-                    } else {
-                      navigator.clipboard.writeText(
-                        window.location.href.split("?")[0]
-                      );
-                      toast.success("Link copied to clipboard");
-                    }
-                  }}
+                  onClick={handleShare}
                 >
                   <Share2 className="h-4 w-4" />
                   Share event
@@ -753,6 +758,15 @@ const EventDetail: React.FC = () => {
                   <Pencil className="h-4 w-4" />
                   Edit event
                 </DropdownMenuItem>
+                {event.status !== "cancelled" && (
+                  <DropdownMenuItem
+                    className="gap-2 text-amber-600 focus:text-amber-600"
+                    onClick={() => cancelMutation.mutate()}
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Cancel event
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   className="gap-2 text-destructive focus:text-destructive"
                   onClick={() => setDeleteDialogOpen(true)}

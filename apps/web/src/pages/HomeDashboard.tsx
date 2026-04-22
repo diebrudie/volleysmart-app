@@ -292,6 +292,7 @@ const HomeDashboard: React.FC = () => {
                   </div>
                   <Button
                     className="w-full"
+                    variant={todaysEvent.matchDayId ? "outline" : "default"}
                     onClick={() =>
                       todaysEvent.matchDayId
                         ? navigate(`/game/${todaysEvent.matchDayId}`)

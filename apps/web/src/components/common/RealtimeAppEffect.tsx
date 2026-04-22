@@ -161,7 +161,36 @@ export default function RealtimeAppEffect() {
     };
   }, [clubId, invalidateFamilies]);
 
-  // 3) Failsafe: verify membership occasionally when Realtime is quiet.
+  // 3) Notifications realtime — user-scoped
+  useEffect(() => {
+    const userId = user?.id;
+    if (!userId) return;
+
+    const ch = supabase
+      .channel(`rt:notifications:user:${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        async () => {
+          await qc.invalidateQueries({ queryKey: ["notifications", userId] });
+          await qc.invalidateQueries({
+            queryKey: ["unreadNotificationCount", userId],
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user?.id, qc]);
+
+  // 4) Failsafe: verify membership occasionally when Realtime is quiet.
   //    - Only runs when online
   //    - Backs off from 30s → 60s → 120s on stability
   //    - Resets to 30s after navigation focus/visibility
