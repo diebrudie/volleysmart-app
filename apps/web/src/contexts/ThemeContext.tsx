@@ -80,16 +80,22 @@ const updateMetaThemeColor = (shouldBeDark: boolean) => {
     color = shouldBeDark ? "#020617" : "#f9fafb";
   }
 
-  let meta = document.querySelector(
-    'meta[name="theme-color"]'
-  ) as HTMLMetaElement | null;
-  if (!meta) {
+  // Remove any extra theme-color metas (e.g. media-specific duplicates from
+  // index.html) so only one remains and the browser/PWA never gets confused.
+  const allMetas = document.querySelectorAll('meta[name="theme-color"]');
+  let meta: HTMLMetaElement;
+  if (allMetas.length === 0) {
     meta = document.createElement("meta");
     meta.name = "theme-color";
     document.head.appendChild(meta);
+  } else {
+    meta = allMetas[0] as HTMLMetaElement;
+    // Remove duplicates
+    for (let i = 1; i < allMetas.length; i++) {
+      allMetas[i].remove();
+    }
   }
   meta.setAttribute("content", color);
-  // Clear media so the value always applies in standalone/PWA contexts.
   meta.removeAttribute("media");
 };
 

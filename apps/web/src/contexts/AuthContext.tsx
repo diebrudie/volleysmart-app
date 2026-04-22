@@ -366,8 +366,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         duration: 1500,
       });
 
-      // Redirect to home page instead of /start
-      window.location.href = "/";
+      // Redirect to login page
+      window.location.href = "/login";
     } catch (error) {
       console.error("Logout error:", error);
       toast({
