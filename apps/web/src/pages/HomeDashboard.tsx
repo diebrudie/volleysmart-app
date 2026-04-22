@@ -2,7 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { parseISO, format, startOfMonth, endOfMonth } from "date-fns";
-import { CalendarDays, Trophy, TrendingUp } from "lucide-react";
+import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,10 +32,10 @@ function useUserClubs(userId: string | undefined) {
   });
 }
 
-function useTodaysEvents(userId: string | undefined) {
+function useTodaysEvents(userId: string | undefined, playerId: string | null | undefined) {
   const todayStr = format(new Date(), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["home-todays-events", userId, todayStr],
+    queryKey: ["home-todays-events", userId, playerId, todayStr],
     queryFn: async () => {
       if (!userId) return null;
 
@@ -56,7 +56,7 @@ function useTodaysEvents(userId: string | undefined) {
         .select(
           `id, title, date, club_id,
            clubs!planned_events_club_id_fkey(name),
-           event_rsvp(status)`
+           event_rsvp(status, player_id)`
         )
         .in("club_id", clubIds)
         .eq("date", todayStr)
@@ -73,9 +73,11 @@ function useTodaysEvents(userId: string | undefined) {
         .eq("planned_event_id" as any, todayEvent.id)
         .maybeSingle();
 
-      const attendingCount = (todayEvent.event_rsvp ?? []).filter(
-        (r: any) => r.status === "attending"
-      ).length;
+      const rsvps = (todayEvent.event_rsvp ?? []) as any[];
+      const attendingCount = rsvps.filter((r) => r.status === "attending").length;
+      const currentUserRsvp = playerId
+        ? rsvps.find((r) => r.player_id === playerId)?.status ?? null
+        : null;
 
       return {
         eventId: todayEvent.id,
@@ -83,6 +85,7 @@ function useTodaysEvents(userId: string | undefined) {
         clubName: (todayEvent.clubs as any)?.name ?? "",
         attendingCount,
         matchDayId: (matchDay as any)?.id ?? null,
+        currentUserRsvp,
       };
     },
     enabled: !!userId,
@@ -201,7 +204,7 @@ const HomeDashboard: React.FC = () => {
   const { data: clubs = [] } = useUserClubs(user?.id);
   const clubIds = clubs.map((c) => c.id).filter(Boolean) as string[];
 
-  const { data: todaysEvent } = useTodaysEvents(user?.id);
+  const { data: todaysEvent } = useTodaysEvents(user?.id, playerId);
   const { data: lastGame } = useLastGame(clubIds);
   const { data: monthlyStats } = useMonthlyStats(user?.id, playerId, clubIds);
 
@@ -258,11 +261,19 @@ const HomeDashboard: React.FC = () => {
           >
             {/* Card 1 — Today's Game */}
             <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] border border-border rounded-xl bg-card p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <CalendarDays className="h-5 w-5 text-primary" />
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Today's Game
-                </h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Volleyball className="h-5 w-5 text-primary" />
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Today's Game
+                  </h3>
+                </div>
+                {todaysEvent?.currentUserRsvp === "attending" && (
+                  <span className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4" />
+                    You're going
+                  </span>
+                )}
               </div>
               {todaysEvent ? (
                 <div className="space-y-3">
@@ -274,12 +285,13 @@ const HomeDashboard: React.FC = () => {
                       {todaysEvent.clubName}
                     </p>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Users className="h-4 w-4" />
                     {todaysEvent.attendingCount} player
                     {todaysEvent.attendingCount !== 1 ? "s" : ""} attending
-                  </p>
+                  </div>
                   <Button
-                    size="sm"
+                    className="w-full"
                     onClick={() =>
                       todaysEvent.matchDayId
                         ? navigate(`/game/${todaysEvent.matchDayId}`)
@@ -307,47 +319,62 @@ const HomeDashboard: React.FC = () => {
                 lastGame && navigate(`/game/${lastGame.matchDayId}`)
               }
             >
-              <div className="flex items-center gap-2 mb-3">
-                <Trophy className="h-5 w-5 text-primary" />
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Last Game
-                </h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-primary" />
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Last Game
+                  </h3>
+                </div>
+                {lastGame && (
+                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Eye className="h-4 w-4" />
+                    View
+                  </span>
+                )}
               </div>
               {lastGame ? (
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-lg font-semibold text-foreground">
-                      {lastGame.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {lastGame.clubName} &middot;{" "}
-                      {format(parseISO(lastGame.date), "d MMM yyyy")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
+                <div className="space-y-2 text-center">
+                  <p className="text-lg font-semibold text-foreground">
+                    {lastGame.title}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {lastGame.clubName} &middot;{" "}
+                    {format(parseISO(lastGame.date), "d MMM yyyy")}
+                  </p>
+                  <div className="flex items-center justify-center gap-3 pt-2">
                     <span
-                      className={`text-2xl font-bold ${
+                      className={`text-4xl font-bold ${
                         lastGame.winner === "Team A"
-                          ? "text-primary"
-                          : "text-muted-foreground"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-500"
                       }`}
                     >
                       {lastGame.teamAWins}
                     </span>
-                    <span className="text-muted-foreground text-sm">–</span>
+                    <span className="text-2xl font-bold text-foreground">-</span>
                     <span
-                      className={`text-2xl font-bold ${
+                      className={`text-4xl font-bold ${
                         lastGame.winner === "Team B"
-                          ? "text-primary"
-                          : "text-muted-foreground"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-500"
                       }`}
                     >
                       {lastGame.teamBWins}
                     </span>
-                    <span className="text-xs text-muted-foreground ml-1">
-                      sets
-                    </span>
                   </div>
+                  <p className="text-sm">
+                    {lastGame.winner === "Draw" ? (
+                      <span className="text-muted-foreground">Draw</span>
+                    ) : (
+                      <>
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                          {lastGame.winner}
+                        </span>{" "}
+                        <span className="font-medium text-foreground">wins</span>
+                      </>
+                    )}
+                  </p>
                 </div>
               ) : (
                 <div className="py-6 text-center">
