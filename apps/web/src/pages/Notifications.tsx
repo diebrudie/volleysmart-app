@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import {
+  ArrowLeft,
   Users,
   UserCheck,
   UserX,
@@ -31,7 +32,7 @@ function getNotificationConfig(n: Notification): {
   icon: React.ReactNode;
   title: string;
   description: string;
-  href: string;
+  href: string | null;
 } {
   const p = n.payload;
 
@@ -41,70 +42,70 @@ function getNotificationConfig(n: Notification): {
         icon: <UserPlus className="h-5 w-5 text-blue-500" />,
         title: "Join Request",
         description: `${p.requester_name ?? "Someone"} wants to join ${p.club_name ?? "your club"}`,
-        href: `/clubs/${p.club_id}/manage`,
+        href: "/manage-requests",
       };
     case "club_join_accepted":
       return {
         icon: <UserCheck className="h-5 w-5 text-emerald-500" />,
         title: "Request Accepted",
         description: `You've been accepted into ${p.club_name ?? "a club"}`,
-        href: `/clubs/${p.club_id}`,
+        href: p.club_id ? `/clubs/${p.club_id}` : null,
       };
     case "club_join_rejected":
       return {
         icon: <UserX className="h-5 w-5 text-red-500" />,
         title: "Request Declined",
         description: `Your request to join ${p.club_name ?? "a club"} was declined`,
-        href: "/clubs",
+        href: null,
       };
     case "club_member_joined":
       return {
         icon: <Users className="h-5 w-5 text-blue-500" />,
         title: "New Member",
         description: `${p.member_name ?? "A member"} joined ${p.club_name ?? "your club"}`,
-        href: `/clubs/${p.club_id}`,
+        href: p.club_id ? `/clubs/${p.club_id}` : null,
       };
     case "event_created":
       return {
         icon: <Calendar className="h-5 w-5 text-primary" />,
         title: "New Event",
         description: `${p.event_title ?? "An event"} — RSVP now!`,
-        href: `/events/${p.event_id}`,
+        href: p.event_id ? `/events/${p.event_id}` : null,
       };
     case "event_cancelled":
       return {
         icon: <CalendarX className="h-5 w-5 text-red-500" />,
         title: "Event Cancelled",
         description: `${p.event_title ?? "An event"} has been cancelled`,
-        href: `/events/${p.event_id}`,
+        href: p.event_id ? `/events/${p.event_id}` : null,
       };
     case "event_rsvp":
       return {
         icon: <MessageSquare className="h-5 w-5 text-primary" />,
         title: "RSVP Update",
         description: `${p.player_name ?? "Someone"} is ${p.rsvp_status ?? "attending"} ${p.event_title ?? "an event"}`,
-        href: `/events/${p.event_id}`,
+        href: p.event_id ? `/events/${p.event_id}` : null,
       };
     case "rsvp_deadline_reminder":
       return {
         icon: <Bell className="h-5 w-5 text-amber-500" />,
         title: "RSVP Reminder",
         description: `Last day to RSVP for ${p.event_title ?? "an event"}`,
-        href: `/events/${p.event_id}`,
+        href: p.event_id ? `/events/${p.event_id}` : null,
       };
     case "game_started":
       return {
         icon: <Volleyball className="h-5 w-5 text-emerald-500" />,
         title: "Game Started",
         description: `${p.event_title ?? "A game"} has started`,
-        href: `/game/${p.match_day_id}`,
+        href: p.match_day_id ? `/game/${p.match_day_id}` : null,
       };
     default:
       return {
         icon: <Bell className="h-5 w-5 text-muted-foreground" />,
         title: "Notification",
         description: "",
-        href: "/home",
+        href: null,
       };
   }
 }
@@ -141,35 +142,43 @@ const Notifications: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
     }
-    navigate(config.href);
+    if (config.href) {
+      navigate(config.href);
+    }
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 pb-24">
-        <div className="max-w-2xl mx-auto px-4 pt-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-foreground">
-              Notifications
-            </h1>
-            {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => markAllMutation.mutate()}
-                disabled={markAllMutation.isPending}
-                className="text-sm text-muted-foreground"
-              >
-                <CheckCheck className="h-4 w-4 mr-1.5" />
-                Mark all as read
-              </Button>
-            )}
-          </div>
+      {/* ─── Header (Game Details style) ─────────────────────────────── */}
+      <div className="border-b border-border">
+        <div className="flex items-center justify-center relative h-14 px-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-base font-semibold">Notifications</h1>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => markAllMutation.mutate()}
+              disabled={markAllMutation.isPending}
+              className="absolute right-4 text-xs text-muted-foreground h-8"
+            >
+              <CheckCheck className="h-3.5 w-3.5 mr-1" />
+              Read all
+            </Button>
+          )}
+        </div>
+      </div>
 
-          {/* List */}
+      {/* ─── Content ─────────────────────────────────────────────────── */}
+      <main className="flex-1 pb-24">
+        <div className="max-w-2xl mx-auto px-4 pt-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Spinner />
