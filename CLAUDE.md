@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Phase 12 — Game Flow Unification
-- Last change: Phase 12 — unified Game page, Start Game from events, nav updates
+- Working on: Phase 13 — UI Consistency Pass (done)
+- Last change: Phase 13 — Profile redesign, Clubs/JoinClub/NewClub/Members semantic styling
 - Current branch: `feat/phase-12-game-flow-unification` (branched from `feat/phase-11-club-overview`)
-- Next step: Phase 12 UI polish (see remaining items below), then merge
+- Next step: Merge phase branches to main
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -20,13 +20,14 @@ Branches stack on each other (not merged to main yet):
 7. **Files updated**: Archive, Games, UpcomingEvents, NewGame, EditGame, InviteMembers, NotFound, Navbar, App.tsx, AppRoutes.tsx
 8. **Gradient hero + semantic styling**: Applied ClubOverview-style gradient header, back arrow, 3-dots dropdown, semantic color classes (bg-card, text-foreground, etc.)
 
-### Phase 12 remaining polish (Game page)
-1. **Remove top Navbar**: Game page should have NO top navbar — only the gradient hero with back arrow + 3-dots menu
-2. **Teams: single-row players**: Each player must be one row only — truncate position with `...` (no wrapping)
-3. **Calendar icon on date**: Add Calendar icon next to the date in the info row below the title
-4. **Location on second row**: Move Location + total players to a second info row (row 1: club name + date, row 2: location + players)
-5. **SetBox font consistency**: "SET X" label in SetBox uses a different font — update to match the app's standard font
-6. **Add Set button gating**: Add Set button should only work/appear once the 5th set has scores entered
+
+## Phase 13 completed work (UI Consistency Pass)
+1. ~~**Profile redesign**~~: Strava-style layout (avatar+name side by side, stats row, positions badges, edit mode toggle). Removed tabs/Card wrappers/font-serif.
+2. ~~**Clubs page**~~: font-serif → font-bold, all gray-* → semantic (bg-card, bg-muted, text-foreground, border-border, bg-popover)
+3. ~~**JoinClub page**~~: bg-gray-100 → bg-background, Card/popover gray → semantic
+4. ~~**NewClub page**~~: bg-gray-100 → bg-background, upload area → semantic, card bg-white → bg-card
+5. ~~**Members page**~~: font-serif → font-bold, Card border → border-border, view toggle → bg-muted, all gray text → text-muted-foreground
+6. ~~**Game page polish**~~: Position shortening (O. Hitter, M. Blocker), back nav fix, RSVP ordering by responded_at
 
 ## Phase 11 completed work (Club Overview)
 1. ~~**Club Overview page**~~: New `/clubs/:clubId` route with hero, club info, action buttons, upcoming event, members list
@@ -86,7 +87,7 @@ Branches stack on each other (not merged to main yet):
 - Phase 9: Completed — Create Event improvements + Event Detail page + Home redesign
 - Phase 10: Completed — Quick fixes (today highlight, location fix, menu cleanup, description/notes)
 - Phase 11: Completed — Club Overview page (hero, members, settings sheet, RSVP display, admin management)
-- Phase 12: In progress — Game Flow Unification (unified /game/:matchDayId, Start Game from events, nav link migration)
-- Phase 13: UI Consistency Pass (Members, Profile, GameDetail — unified typography/spacing)
+- Phase 12: Completed — Game Flow Unification (unified /game/:matchDayId, Start Game from events, nav link migration)
+- Phase 13: Completed — UI Consistency Pass (Profile redesign, Clubs/JoinClub/NewClub/Members semantic styling)
 - Phase 14: Advanced Filters (custom month range, filter by city)
 - Phase 15: Settings page & Notification preferences
