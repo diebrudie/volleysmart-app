@@ -46,7 +46,9 @@ import type { Database } from "@/integrations/supabase/types";
 import { buildImageUrl } from "@/utils/buildImageUrl";
 import {
   fetchActiveMemberClubsWithDetails,
+  fetchPendingMembershipRequests,
   MemberClubWithDetails,
+  PendingClubRequest,
 } from "@/integrations/supabase/clubMembers";
 import type { PostgrestError } from "@supabase/supabase-js";
 
@@ -221,6 +223,13 @@ const Clubs = () => {
     enabled: !!user?.id,
   });
 
+  // Query pending membership requests
+  const { data: pendingRequests = [] } = useQuery({
+    queryKey: ["pendingClubRequests", user?.id],
+    queryFn: () => fetchPendingMembershipRequests(user!.id),
+    enabled: !!user?.id,
+  });
+
   const handleCreateClub = () => navigate("/new-club");
   const handleJoinClub = () => {
     // Prefill from localStorage pending slug
@@ -276,6 +285,7 @@ const Clubs = () => {
 
       localStorage.removeItem(PENDING_CLUB_JOIN_KEY);
       toast({ title: "Request sent", description: "Your request was sent to the club admins.", duration: 3500 });
+      queryClient.invalidateQueries({ queryKey: ["pendingClubRequests"] });
       setJoinDrawerOpen(false);
       setClubIdInput("");
       setIsAssociationMember(false);
@@ -539,11 +549,47 @@ const Clubs = () => {
                   </div>
                 )}
               </>
-            ) : (
+            ) : pendingRequests.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground text-base">
                   You haven't joined any clubs yet.
                 </p>
+              </div>
+            ) : null}
+
+            {/* Pending requests */}
+            {pendingRequests.length > 0 && (
+              <div className={`space-y-3 ${userClubs && userClubs.length > 0 ? "mt-4" : ""}`}>
+                {pendingRequests.map((req) => (
+                  <div
+                    key={req.club_id}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
+                  >
+                    {/* Placeholder avatar */}
+                    <div className="h-12 w-12 shrink-0 rounded-full bg-muted flex items-center justify-center">
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        {req.clubs?.name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+
+                    {/* Club info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {req.clubs?.name ?? "Unknown Club"}
+                      </p>
+                      {req.clubs?.city && (
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {req.clubs.city}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Pending badge */}
+                    <span className="shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      Pending
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </section>

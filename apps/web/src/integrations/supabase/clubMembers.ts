@@ -179,6 +179,43 @@ export async function fetchActiveMemberClubsWithDetails(
 }
 
 /**
+ * Fetch clubs where the user has a pending membership request.
+ */
+export type PendingClubRequest = {
+  club_id: string;
+  requested_at: string | null;
+  clubs: {
+    id: string;
+    name: string;
+    city: string | null;
+  } | null;
+};
+
+export async function fetchPendingMembershipRequests(
+  userId: string
+): Promise<PendingClubRequest[]> {
+  const { data, error } = await supabase
+    .from("club_members")
+    .select(
+      `
+      club_id,
+      requested_at,
+      clubs!inner (
+        id,
+        name,
+        city
+      )
+    `
+    )
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .eq("clubs.status", "active");
+
+  if (error) throw error;
+  return (data ?? []) as PendingClubRequest[];
+}
+
+/**
  * Lightweight list of club IDs the user belongs to (no extra filters to preserve current behavior).
  */
 export async function fetchUserClubIds(userId: string): Promise<string[]> {
