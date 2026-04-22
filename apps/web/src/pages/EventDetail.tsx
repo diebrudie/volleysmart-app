@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO, isToday, isPast } from "date-fns";
+import { format, parseISO, isToday, isBefore, startOfDay } from "date-fns";
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -616,8 +616,10 @@ const EventDetail: React.FC = () => {
   };
 
   const eventUrl = window.location.href.split("?")[0];
+  const eventDateParsed = event?.date ? parseISO(event.date) : null;
+  const isEventPast = eventDateParsed ? isBefore(eventDateParsed, startOfDay(new Date())) : false;
   const shareMessage = linkedMatchDay
-    ? (event?.date && isPast(parseISO(event.date)))
+    ? isEventPast
       ? `Look how the last Volleyball Game finished. Super interesting!\n${eventUrl}`
       : `Our Volleyball game is ready! Check the teams, and track points\n${eventUrl}`
     : `Check this Volleyball Event, and let me know if you can make it\n${eventUrl}`;
