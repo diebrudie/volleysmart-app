@@ -129,7 +129,7 @@ Branches stack on each other (not merged to main yet):
 - Phase 14: In Progress — Notifications system + bug fixes
 - Phase 15: Advanced Filters (custom month range, filter by city)
 - Phase 16: Settings page & Notification preferences
-- Backlog: Set up email notifications for open tasks
+- Backlog: Set up email notifications
 - Backlog: Build native iOS and Android app using monorepo
 - Backlog: Tournament event type (complex, deferred)
 - Backlog: Skill Score progression system (adjust algorithm, progression based on games/sets played)
