@@ -475,7 +475,7 @@ const EventDetail: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
       toast.success("Event deleted");
-      navigate("/home");
+      navigate("/events");
     },
     onError: () => toast.error("Failed to delete event"),
   });
@@ -676,7 +676,7 @@ const EventDetail: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-muted-foreground">Event not found</p>
-        <Button variant="outline" onClick={() => navigate("/home")}>
+        <Button variant="outline" onClick={() => navigate("/events")}>
           Go home
         </Button>
         {createdDialog}
@@ -713,7 +713,7 @@ const EventDetail: React.FC = () => {
         {/* Top bar overlay */}
         <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)]">
           <button
-            onClick={() => navigate("/home")}
+            onClick={() => navigate("/events")}
             className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
           >
             <ArrowLeft className="h-5 w-5" />

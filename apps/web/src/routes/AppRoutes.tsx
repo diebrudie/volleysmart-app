@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 // Pages
 import Home from "@/pages/Home";
+import HomeDashboard from "@/pages/HomeDashboard";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import VerifyEmail from "@/pages/VerifyEmail";
@@ -148,18 +149,20 @@ const AppRoutes = () => (
       path="/home"
       element={
         <ProtectedRoute>
-          <UpcomingEvents />
+          <HomeDashboard />
         </ProtectedRoute>
       }
     />
     <Route
-      path="/archive"
+      path="/events"
       element={
         <ProtectedRoute>
-          <Archive />
+          <UpcomingEvents />
         </ProtectedRoute>
       }
     />
+    {/* Backward compat redirect */}
+    <Route path="/archive" element={<Navigate to="/events" replace />} />
     <Route
       path="/members"
       element={

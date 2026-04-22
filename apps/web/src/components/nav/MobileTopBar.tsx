@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 /** Route-to-title mapping for the top bar. */
 function getPageTitle(pathname: string): string {
   if (/^\/clubs(\/|$)/.test(pathname)) return "Clubs";
-  if (/^\/archive(\/|$)/.test(pathname)) return "Archive";
+  if (/^\/events(\/|$)/.test(pathname)) return "Events";
   if (/^\/members(\/|$)/.test(pathname)) return "Members";
   if (/^\/games(\/|$)/.test(pathname)) return "Games";
   return "Home";

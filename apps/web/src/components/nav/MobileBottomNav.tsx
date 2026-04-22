@@ -1,6 +1,6 @@
 import * as React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, Users, Building2, Plus, Archive } from "lucide-react";
+import { Home, Users, Building2, Plus, CalendarDays } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 /**
@@ -71,10 +71,10 @@ const MobileBottomNav: React.FC = () => {
           />
 
           <TabLink
-            to="/archive"
-            icon={<Archive className="h-5 w-5" />}
-            label="Archive"
-            active={isActive(/^\/archive(\/|$)/)}
+            to="/events"
+            icon={<CalendarDays className="h-5 w-5" />}
+            label="Events"
+            active={isActive(/^\/events(\/|$)/)}
             activeColor={activeColorClass}
           />
 
