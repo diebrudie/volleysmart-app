@@ -153,7 +153,7 @@ export const SortablePlayer = ({
         ) : (
           <div className="flex items-center gap-1.5">
             <span
-              className="text-xs rounded-md px-2 py-0.5 bg-foreground/85 text-background cursor-pointer hover:bg-foreground transition-colors whitespace-nowrap"
+              className="text-xs rounded-md px-2 py-0.5 bg-muted text-foreground cursor-pointer hover:bg-foreground transition-colors whitespace-nowrap"
               onClick={handlePositionClick}
               title="Click to edit position"
             >

@@ -1110,7 +1110,7 @@ const EditGame = () => {
                 <div className="bg-card border-2 border-primary rounded-md px-3 py-3 shadow-lg opacity-95 text-card-foreground flex items-center">
                   <span className="font-medium">{activePlayer.name}</span>
                   <span className="mx-1.5 text-muted-foreground">–</span>
-                  <span className="text-xs rounded-md px-2 py-0.5 bg-foreground/85 text-background">
+                  <span className="text-xs rounded-md px-2 py-0.5 bg-muted text-foreground">
                     {activePlayer.preferredPosition}
                   </span>
                 </div>
