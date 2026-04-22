@@ -200,13 +200,11 @@ const MembersGlobal: React.FC = () => {
 
   // Derived: all clubs the user belongs to
   const clubs = useMemo(() => {
-    const map = new Map<string, { name: string; slug: string; role: string }>();
+    const map = new Map<string, { name: string; slug: string }>();
     members.forEach((m) =>
       m.clubs.forEach((c) => {
-        const existing = map.get(c.id);
-        // Keep admin role if seen
-        if (!existing || c.role === "admin") {
-          map.set(c.id, { name: c.name, slug: c.slug, role: c.role });
+        if (!map.has(c.id)) {
+          map.set(c.id, { name: c.name, slug: c.slug });
         }
       })
     );
@@ -216,11 +214,13 @@ const MembersGlobal: React.FC = () => {
     }));
   }, [members]);
 
-  // Clubs where the user is admin
-  const adminClubs = useMemo(
-    () => clubs.filter((c) => c.role === "admin"),
-    [clubs]
-  );
+  // Clubs where the *current user* is admin (look up their own membership row)
+  const adminClubs = useMemo(() => {
+    if (!user?.id) return [];
+    const currentUserMember = members.find((m) => m.user_id === user.id);
+    if (!currentUserMember) return [];
+    return currentUserMember.clubs.filter((c) => c.role === "admin");
+  }, [members, user?.id]);
 
   // Count pending requests across all admin clubs
   const pendingQueries = useQueries({
