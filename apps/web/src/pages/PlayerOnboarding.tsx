@@ -1118,147 +1118,114 @@ const PlayerOnboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-6 md:py-8">
-        <div
-          className="min-h-[calc(100vh-3rem)] md:min-h-[calc(100vh-4rem)]
-             flex flex-col"
-        >
-          {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-muted-foreground">
-                Step {currentStep + 1} of {totalSteps}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {Math.round(((currentStep + 1) / totalSteps) * 100)}% Complete
-              </span>
-            </div>
-            <Progress
-              value={((currentStep + 1) / totalSteps) * 100}
-              className="h-2"
-            />
-          </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Sticky progress bar */}
+      <div className="sticky top-0 z-20 bg-background px-4 pt-4 pb-2">
+        <Progress
+          value={((currentStep + 1) / totalSteps) * 100}
+          className="h-1.5"
+        />
+      </div>
 
-          {/* Step Content */}
-          <div className="flex-grow flex items-center justify-center py-4 overflow-y-auto">
-            {renderStepContent()}
-          </div>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
-            {/* Previous Button */}
-            <Button
-              type="button"
-              variant="action"
-              onClick={prevStep}
-              disabled={currentStep === 0}
-              className={`flex items-center space-x-2 ${
-                currentStep === 0 ? "invisible" : ""
-              }`}
-              icon={<ChevronLeft className="h-4 w-4" />}
-            >
-              Previous
-            </Button>
-
-            {/* Next/Submit Button */}
-            {currentStep < totalSteps - 1 ? (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={nextStep}
-                disabled={!isStepValid(currentStep)}
-                className="flex items-center space-x-2"
-                icon={<ChevronRight className="h-4 w-4" />}
-              >
-                Next
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleSubmit}
-                disabled={isSubmitting || !isStepValid(currentStep)}
-                className="flex items-center space-x-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Creating Profile...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Complete Profile</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-
-          {/* Positions Help Drawer (used by steps 1 & 2) */}
-          <TooltipProvider>
-            <Drawer
-              open={isPositionsHelpOpen}
-              onOpenChange={setIsPositionsHelpOpen}
-              shouldScaleBackground
-            >
-              {/* We trigger it programmatically from the icon; no visible trigger here */}
-              <DrawerContent className="pb-6">
-                {/* Close X (top-right) */}
-                <DrawerClose
-                  className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
-                   border border-border bg-card/90 shadow hover:bg-card focus:outline-none focus:ring-2 focus:ring-ring"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </DrawerClose>
-
-                <DrawerHeader className="pt-8">
-                  <DrawerTitle>Volleyball court positions</DrawerTitle>
-                  <DrawerDescription>
-                    Reference diagram to pick your positions.
-                  </DrawerDescription>
-                </DrawerHeader>
-
-                {/* Content: responsive image container */}
-                <div className="px-4 pb-2">
-                  <div
-                    className="
-            mx-auto w-full
-            md:max-w-3xl
-          "
-                  >
-                    <img
-                      src="/positions-volleyball-players-en.png"
-                      alt="Volleyball player positions on court"
-                      className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
-                    />
-                    <p className="mt-3 text-center text-sm text-muted-foreground">
-                      Use this diagram to confirm your primary and secondary
-                      roles.
-                    </p>
-                  </div>
-                </div>
-              </DrawerContent>
-            </Drawer>
-          </TooltipProvider>
-
-          {/* Step Indicators (Optional) */}
-          <div className="flex justify-center mt-6 space-x-2">
-            {Array.from({ length: totalSteps }, (_, index) => (
-              <div
-                key={index}
-                className={`h-2 w-2 rounded-full ${
-                  index <= currentStep
-                    ? "bg-primary"
-                    : "bg-border"
-                }`}
-              />
-            ))}
-          </div>
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto pb-28">
+        <div className="max-w-lg mx-auto px-4 pt-6">
+          {renderStepContent()}
         </div>
       </div>
+
+      {/* Fixed bottom nav buttons */}
+      <div className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="max-w-lg mx-auto flex justify-between items-center">
+          {/* Previous Button */}
+          <Button
+            type="button"
+            variant="action"
+            onClick={prevStep}
+            disabled={currentStep === 0}
+            className={`flex items-center space-x-2 ${
+              currentStep === 0 ? "invisible" : ""
+            }`}
+            icon={<ChevronLeft className="h-4 w-4" />}
+          >
+            Previous
+          </Button>
+
+          {/* Next/Submit Button */}
+          {currentStep < totalSteps - 1 ? (
+            <Button
+              type="button"
+              variant="primary"
+              onClick={nextStep}
+              disabled={!isStepValid(currentStep)}
+              className="flex items-center space-x-2"
+              icon={<ChevronRight className="h-4 w-4" />}
+            >
+              Next
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleSubmit}
+              disabled={isSubmitting || !isStepValid(currentStep)}
+              className="flex items-center space-x-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                  <span>Creating Profile...</span>
+                </>
+              ) : (
+                <>
+                  <span>Complete Profile</span>
+                  <ChevronRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Positions Help Drawer (used by steps 1 & 2) */}
+      <TooltipProvider>
+        <Drawer
+          open={isPositionsHelpOpen}
+          onOpenChange={setIsPositionsHelpOpen}
+          shouldScaleBackground
+        >
+          <DrawerContent className="pb-6">
+            <DrawerClose
+              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
+               border border-border bg-card/90 shadow hover:bg-card focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </DrawerClose>
+
+            <DrawerHeader className="pt-8">
+              <DrawerTitle>Volleyball court positions</DrawerTitle>
+              <DrawerDescription>
+                Reference diagram to pick your positions.
+              </DrawerDescription>
+            </DrawerHeader>
+
+            <div className="px-4 pb-2">
+              <div className="mx-auto w-full md:max-w-3xl">
+                <img
+                  src="/positions-volleyball-players-en.png"
+                  alt="Volleyball player positions on court"
+                  className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
+                />
+                <p className="mt-3 text-center text-sm text-muted-foreground">
+                  Use this diagram to confirm your primary and secondary
+                  roles.
+                </p>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      </TooltipProvider>
     </div>
   );
 };
