@@ -134,24 +134,22 @@ const DroppableTeam = ({
   });
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <div className={cn("p-4 pb-2 text-white", headerColor)}>
-        <h3 className="font-semibold flex items-center">
-          <div
-            className={cn(
-              "h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-sm font-bold",
-              teamId === "team-a" ? "text-red-600" : "text-green-600"
-            )}
-          >
-            {teamId === "team-a" ? "A" : "B"}
-          </div>
-          {title}
-        </h3>
+    <div className="border border-border rounded-xl overflow-hidden bg-card">
+      <div className={cn("px-4 py-3 text-white flex items-center", headerColor)}>
+        <div
+          className={cn(
+            "h-7 w-7 rounded-full bg-white mr-3 flex items-center justify-center text-sm font-bold",
+            teamId === "team-a" ? "text-red-600" : "text-emerald-600"
+          )}
+        >
+          {teamId === "team-a" ? "A" : "B"}
+        </div>
+        <h3 className="font-semibold text-base">{title}</h3>
       </div>
       <div
         ref={setNodeRef}
         className={cn(
-          "p-0 min-h-[200px] transition-colors",
+          "min-h-[100px] transition-colors",
           isOver && "bg-primary/10"
         )}
       >
@@ -912,33 +910,30 @@ const EditGame = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background pb-24">
-      {/* Gradient hero */}
-      <div className="relative h-28 sm:h-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/60 to-primary/20" />
-        <div className="absolute inset-0 bg-black/20" />
-
-        {/* Back button — top left */}
-        <button
-          onClick={() => navigate(`/game/${gameId}`)}
-          className="absolute top-4 left-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
+      {/* Header */}
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="flex items-center justify-center relative h-14 px-4">
+          <button
+            onClick={() => navigate(`/game/${gameId}`)}
+            className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-base font-semibold">Edit Teams</h1>
+        </div>
       </div>
 
       <main className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Title + controls */}
-          <div className="pt-5 mb-6">
-            <h1 className="text-2xl font-bold mb-5">Edit Teams</h1>
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+          {/* Controls — stacked full-width */}
+          <div className="pt-4 mb-6 space-y-3">
               {/* Date Picker */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "justify-start text-left font-normal w-full sm:w-auto",
+                      "justify-start text-left font-normal w-full h-12",
                       !date && "text-muted-foreground"
                     )}
                   >
@@ -989,47 +984,42 @@ const EditGame = () => {
                     }
                   }}
                   placeholder="Select or create location"
-                  className="w-full sm:w-[250px]"
+                  className="w-full h-12"
                 />
               )}
 
               {/* Edit Players Button */}
               <Button
-                variant="action"
-                icon={
-                  <svg
-                    className="h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.75}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    {/* user circle + shoulders */}
-                    <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Z" />
-                    <path d="M5 21a7 7 0 0 1 14 0" />
-                    {/* small pen overlay */}
-                    <path d="M19.65 7.3l-3.17 3.18 1.05 1.05 3.17-3.17a.75.75 0 0 0 0-1.06l-.99-.99a.75.75 0 0 0-1.06 0Z" />
-                  </svg>
-                }
+                variant="outline"
                 onClick={() => setPlayersModalOpen(true)}
-                className="w-full sm:w-auto text-foreground"
+                className="w-full h-12 justify-center"
               >
+                <svg
+                  className="mr-2 h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.75}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Z" />
+                  <path d="M5 21a7 7 0 0 1 14 0" />
+                  <path d="M19.65 7.3l-3.17 3.18 1.05 1.05 3.17-3.17a.75.75 0 0 0 0-1.06l-.99-.99a.75.75 0 0 0-1.06 0Z" />
+                </svg>
                 Edit Players
               </Button>
 
               {/* Shuffle Teams Button */}
               <Button
-                variant="action"
-                icon={<Shuffle className="h-4 w-4" />}
+                variant="outline"
                 onClick={handleShuffleTeams}
-                className="w-full sm:w-auto"
+                className="w-full h-12 justify-center"
               >
+                <Shuffle className="mr-2 h-4 w-4" />
                 Shuffle Teams
               </Button>
-            </div>
           </div>
 
           <DndContext
@@ -1048,7 +1038,7 @@ const EditGame = () => {
               document.body.classList.remove("vm-scroll-lock");
             }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 overscroll-contain">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8 overscroll-contain">
               {/* Team A */}
               <DroppableTeam
                 teamId="team-a"
@@ -1117,10 +1107,10 @@ const EditGame = () => {
             {/* Drag Overlay */}
             <DragOverlay>
               {activePlayer ? (
-                <div className="bg-card border-2 border-primary rounded-md p-2 shadow-lg opacity-95 text-card-foreground">
+                <div className="bg-card border-2 border-primary rounded-md px-3 py-3 shadow-lg opacity-95 text-card-foreground flex items-center">
                   <span className="font-medium">{activePlayer.name}</span>
-                  {" - "}
-                  <span className="text-xs rounded px-1.5 py-0.5 bg-muted text-muted-foreground">
+                  <span className="mx-1.5 text-muted-foreground">–</span>
+                  <span className="text-xs rounded-md px-2 py-0.5 bg-foreground/85 text-background">
                     {activePlayer.preferredPosition}
                   </span>
                 </div>

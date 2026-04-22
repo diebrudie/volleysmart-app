@@ -275,8 +275,8 @@ export function PlayersEditModal({
     // 2) Guests: filter only, keep their current array order
     const extras: ExtraPlayerDraft[] = extraPlayers.filter(matchesExtra);
 
-    // 3) Combined: regulars first, then guests (in creation order)
-    return [...regular, ...extras];
+    // 3) Combined: guests first (so user sees them immediately), then regulars
+    return [...extras, ...regular];
   }, [members, extraPlayers, searchTerm]);
 
   const allFilteredSelected =
