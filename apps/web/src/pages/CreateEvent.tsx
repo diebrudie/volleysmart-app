@@ -190,7 +190,7 @@ const CreateEvent: React.FC = () => {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  // Fetch user's clubs (admin/editor)
+  // Fetch user's clubs (all active memberships)
   const { data: userClubs = [] } = useQuery({
     queryKey: ["user-clubs", user?.id],
     queryFn: async () => {
@@ -200,7 +200,7 @@ const CreateEvent: React.FC = () => {
         .select("clubs(id, name)")
         .eq("user_id", user.id)
         .eq("is_active", true)
-        .in("role", ["admin", "editor"]);
+        .eq("status", "active");
       return (data ?? [])
         .map((m) => m.clubs)
         .filter(Boolean) as { id: string; name: string }[];
