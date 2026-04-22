@@ -545,8 +545,8 @@ const PlayerOnboarding = () => {
       case 1:
         return (
           <div className="space-y-6">
-            <div className="text-center">
-              <div className="mb-2 flex items-center justify-center gap-2">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
                 <h2 className="text-2xl font-bold text-foreground">
                   What's your main position on the court?
                 </h2>
@@ -606,8 +606,8 @@ const PlayerOnboarding = () => {
       case 2:
         return (
           <div className="space-y-6">
-            <div className="text-center">
-              <div className="mb-2 flex items-center justify-center gap-2">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
                 <h2 className="text-2xl font-bold text-foreground">
                   What other positions can you play? *
                 </h2>
@@ -669,7 +669,7 @@ const PlayerOnboarding = () => {
       case 3:
         return (
           <div className="space-y-6">
-            <div className="text-center">
+            <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
                 How would you rate your current skill level?
               </h2>
@@ -717,7 +717,7 @@ const PlayerOnboarding = () => {
       case 4:
         return (
           <div className="space-y-6">
-            <div className="text-center">
+            <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
                 Are you receiving regular volleyball training?
               </h2>
@@ -764,7 +764,7 @@ const PlayerOnboarding = () => {
       case 5:
         return (
           <div className="space-y-6">
-            <div className="text-center">
+            <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
                 At what level do you usually compete?
               </h2>
@@ -813,7 +813,7 @@ const PlayerOnboarding = () => {
       case 6:
         return (
           <div className="space-y-6">
-            <div className="text-center">
+            <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
                 How would you describe your performance during games?
               </h2>
@@ -882,7 +882,7 @@ const PlayerOnboarding = () => {
       case 7:
         return (
           <div className="space-y-6">
-            <div className="text-center">
+            <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
                 How many volleyball matches have you played?
               </h2>
@@ -934,7 +934,7 @@ const PlayerOnboarding = () => {
       case 8:
         return (
           <div className="space-y-6">
-            <div className="text-center">
+            <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
                 What's your height?
               </h2>
@@ -974,7 +974,7 @@ const PlayerOnboarding = () => {
 
         return (
           <div className="space-y-6 w-full">
-            <div className="text-center">
+            <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
                 When's your birthday?
               </h2>
@@ -994,7 +994,7 @@ const PlayerOnboarding = () => {
                     setSelectedDate(new Date(e.target.value));
                   }
                 }}
-                className="w-full min-w-0 text-left dark:bg-card dark:border-border dark:text-foreground dark:[color-scheme:dark] pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                className="w-full min-w-0 text-left dark:bg-card dark:border-border dark:text-foreground dark:[color-scheme:dark] pl-10"
                 placeholder="YYYY-MM-DD"
               />
             </div>
@@ -1005,7 +1005,7 @@ const PlayerOnboarding = () => {
       case 10:
         return (
           <div className="space-y-6">
-            <div className="text-center">
+            <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
                 What's your gender?
               </h2>
@@ -1052,7 +1052,7 @@ const PlayerOnboarding = () => {
       case 11:
         return (
           <div className="space-y-6">
-            <div className="text-center">
+            <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
                 Upload a profile picture
               </h2>
@@ -1127,9 +1127,9 @@ const PlayerOnboarding = () => {
         />
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto pb-28">
-        <div className="max-w-lg mx-auto px-4 pt-6">
+      {/* Scrollable content — vertically centered */}
+      <div className="flex-1 overflow-y-auto pb-28 flex items-center">
+        <div className="max-w-lg mx-auto px-4 py-6 w-full">
           {renderStepContent()}
         </div>
       </div>
