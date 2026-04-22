@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO, isToday } from "date-fns";
+import { format, parseISO, isToday, isPast } from "date-fns";
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -642,19 +642,7 @@ const EventDetail: React.FC = () => {
           <div className="flex flex-col gap-2 w-full mt-2">
             <Button
               className="w-full gap-2"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: event?.title ?? "Event",
-                    url: window.location.href.split("?")[0],
-                  });
-                } else {
-                  navigator.clipboard.writeText(
-                    window.location.href.split("?")[0]
-                  );
-                  toast.success("Link copied to clipboard");
-                }
-              }}
+              onClick={handleShare}
             >
               <Share2 className="h-4 w-4" />
               Share event
@@ -719,6 +707,22 @@ const EventDetail: React.FC = () => {
     ? `${creatorProfile.first_name} ${creatorProfile.last_name}`
     : "Unknown";
 
+  const eventUrl = window.location.href.split("?")[0];
+  const shareMessage = linkedMatchDay
+    ? isPast(parsedDate)
+      ? `Look how the last Volleyball Game finished. Super interesting!\n${eventUrl}`
+      : `Our Volleyball game is ready! Check the teams, and track points\n${eventUrl}`
+    : `Check this Volleyball Event, and let me know if you can make it\n${eventUrl}`;
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({ title: event.title, text: shareMessage });
+    } else {
+      navigator.clipboard.writeText(shareMessage);
+      toast.success("Link copied to clipboard");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col pb-32">
       {/* Gradient hero */}
@@ -742,19 +746,7 @@ const EventDetail: React.FC = () => {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   className="gap-2"
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: event.title,
-                        url: window.location.href.split("?")[0],
-                      });
-                    } else {
-                      navigator.clipboard.writeText(
-                        window.location.href.split("?")[0]
-                      );
-                      toast.success("Link copied to clipboard");
-                    }
-                  }}
+                  onClick={handleShare}
                 >
                   <Share2 className="h-4 w-4" />
                   Share event
