@@ -614,6 +614,22 @@ const EventDetail: React.FC = () => {
     }
   };
 
+  const eventUrl = window.location.href.split("?")[0];
+  const shareMessage = linkedMatchDay
+    ? (event?.date && isPast(parseISO(event.date)))
+      ? `Look how the last Volleyball Game finished. Super interesting!\n${eventUrl}`
+      : `Our Volleyball game is ready! Check the teams, and track points\n${eventUrl}`
+    : `Check this Volleyball Event, and let me know if you can make it\n${eventUrl}`;
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({ title: event?.title ?? "Event", text: shareMessage });
+    } else {
+      navigator.clipboard.writeText(shareMessage);
+      toast.success("Link copied to clipboard");
+    }
+  };
+
   // Render the success dialog even during loading so it's visible immediately
   const createdDialog = (
     <Dialog
@@ -706,22 +722,6 @@ const EventDetail: React.FC = () => {
   const creatorName = creatorProfile
     ? `${creatorProfile.first_name} ${creatorProfile.last_name}`
     : "Unknown";
-
-  const eventUrl = window.location.href.split("?")[0];
-  const shareMessage = linkedMatchDay
-    ? isPast(parsedDate)
-      ? `Look how the last Volleyball Game finished. Super interesting!\n${eventUrl}`
-      : `Our Volleyball game is ready! Check the teams, and track points\n${eventUrl}`
-    : `Check this Volleyball Event, and let me know if you can make it\n${eventUrl}`;
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({ title: event.title, text: shareMessage });
-    } else {
-      navigator.clipboard.writeText(shareMessage);
-      toast.success("Link copied to clipboard");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-32">
