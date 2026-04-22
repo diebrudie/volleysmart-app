@@ -477,9 +477,16 @@ const Clubs = () => {
                       {/* Info */}
                       <div className="p-3">
                         <div className="flex items-start justify-between mb-1">
-                          <h3 className="text-base font-semibold text-foreground flex-1 pr-2 truncate">
-                            {club.name}
-                          </h3>
+                          <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                            <h3 className="text-base font-semibold text-foreground truncate">
+                              {club.name}
+                            </h3>
+                            {isClubAdmin(club) && (
+                              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase">
+                                Admin
+                              </span>
+                            )}
+                          </div>
                           {isClubAdmin(club) && (
                             <Popover>
                               <PopoverTrigger asChild>

@@ -418,6 +418,7 @@ const MembersGlobal: React.FC = () => {
                       player_positions: m.player_positions,
                     }}
                     isAdmin={false}
+                    isCurrentUser={m.user_id === user?.id}
                   />
                 ))}
               </div>
@@ -591,6 +592,7 @@ const MembersGlobal: React.FC = () => {
                     player_positions: m.player_positions,
                   }}
                   isAdmin={false}
+                  isCurrentUser={m.user_id === user?.id}
                 />
               ))}
             </div>

@@ -30,6 +30,7 @@ interface MemberCardProps {
    * We hide the "Admin" chip when isAdmin is true.
    */
   isAdmin?: boolean;
+  isCurrentUser?: boolean;
   isSelected?: boolean;
   onSelectionChange?: (checked: boolean) => void;
 }
@@ -37,6 +38,7 @@ interface MemberCardProps {
 export const MemberCard = ({
   member,
   isAdmin = false,
+  isCurrentUser = false,
   isSelected = false,
   onSelectionChange,
 }: MemberCardProps) => {
@@ -121,10 +123,15 @@ export const MemberCard = ({
         {/* Content Section - Left aligned with relative positioning for badge */}
         <CardContent className="p-4 relative">
           <div className="text-left space-y-1">
-            <h3 className="font-semibold text-lg">
-              {member.first_name} {lastNameInitial}.
-            </h3>
-            <p className="text-gray-600 text-sm font-medium">
+            <div className="flex items-baseline justify-between gap-1">
+              <h3 className="font-semibold text-lg truncate">
+                {member.first_name} {lastNameInitial}.
+              </h3>
+              {isCurrentUser && (
+                <span className="shrink-0 text-xs text-muted-foreground">You</span>
+              )}
+            </div>
+            <p className="text-muted-foreground text-sm font-medium">
               {primaryPosition}
             </p>
           </div>
