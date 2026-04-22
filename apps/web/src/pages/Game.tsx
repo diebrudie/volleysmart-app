@@ -575,63 +575,58 @@ const Game = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
-      {/* Gradient hero (short, ClubOverview style) */}
-      <div className="relative h-28 sm:h-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/60 to-primary/20" />
-        <div className="absolute inset-0 bg-black/20" />
-
-        {/* Back button — top left */}
-        <button
-          onClick={goBack}
-          className="absolute top-4 left-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-
-        {/* 3-dot menu — top right */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="absolute top-4 right-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center">
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            {isEditingAllowed && isAdminOrEditor && (
+      {/* Sticky header — ManageRequests style */}
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="flex items-center justify-center relative h-14 px-4">
+          <button
+            onClick={goBack}
+            className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-base font-semibold">
+            {isMatchToday ? "Today's Game" : "Game Details"}
+          </h1>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="absolute right-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted">
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {isEditingAllowed && isAdminOrEditor && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    navigate(`/edit-game/${matchData.club_id}/${matchData.id}`)
+                  }
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit Teams
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
-                onClick={() =>
-                  navigate(`/edit-game/${matchData.club_id}/${matchData.id}`)
-                }
+                onClick={() => setIsEditingLocation(true)}
               >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Teams
+                <MapPin className="mr-2 h-4 w-4" />
+                Edit Location
               </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={() => setIsEditingLocation(true)}
-            >
-              <MapPin className="mr-2 h-4 w-4" />
-              Edit Location
-            </DropdownMenuItem>
-            {matchData.planned_event_id && (
-              <DropdownMenuItem
-                onClick={() =>
-                  navigate(`/events/${matchData.planned_event_id}`)
-                }
-              >
-                <CalendarCheck className="mr-2 h-4 w-4" />
-                View Event
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {matchData.planned_event_id && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    navigate(`/events/${matchData.planned_event_id}`)
+                  }
+                >
+                  <CalendarCheck className="mr-2 h-4 w-4" />
+                  View Event
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      {/* Title + info row */}
+      {/* Info row */}
       <div className="px-4 pt-5 space-y-3">
-        <h1 className="text-2xl font-bold">
-          {isMatchToday ? "Today's Game" : "Game Details"}
-        </h1>
-
         <div className="space-y-1 text-sm text-muted-foreground">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {matchData.clubs?.name && (

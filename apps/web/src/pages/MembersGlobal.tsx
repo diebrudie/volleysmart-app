@@ -180,7 +180,13 @@ const MembersGlobal: React.FC = () => {
   const navigate = useNavigate();
   const isCompact = useIsCompact();
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewModeRaw] = useState<ViewMode>(
+    () => (localStorage.getItem("members-view-mode") as ViewMode) || "grid"
+  );
+  const setViewMode = (mode: ViewMode) => {
+    setViewModeRaw(mode);
+    localStorage.setItem("members-view-mode", mode);
+  };
   const [sortAsc, setSortAsc] = useState(true);
   const [filterClub, setFilterClub] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);

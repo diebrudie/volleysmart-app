@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isToday } from "date-fns";
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -709,7 +709,7 @@ const EventDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col pb-32">
       {/* Gradient hero */}
-      <div className="relative h-48 bg-gradient-to-br from-primary/30 via-primary/10 to-background">
+      <div className="relative h-32 bg-gradient-to-br from-primary/30 via-primary/10 to-background">
         {/* Top bar overlay */}
         <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)]">
           <button
@@ -770,11 +770,11 @@ const EventDetail: React.FC = () => {
       <div className="px-4 -mt-12 max-w-2xl mx-auto w-full space-y-8 z-50">
         {/* Date badge + RSVP status row */}
         <div className="flex items-end justify-between">
-          {/* Calendar badge — square, fully opaque white */}
+          {/* Calendar badge — blue if today, red otherwise (matches Events overview) */}
           <div className="w-16 rounded-lg overflow-hidden shadow-md border border-border">
-            <div className="bg-primary text-primary-foreground text-center py-1">
+            <div className={`${isToday(parsedDate) ? "bg-primary" : "bg-[#EB534C]"} text-white text-center py-1`}>
               <span className="text-xs font-semibold uppercase">
-                {format(parsedDate, "MMM")}
+                {isToday(parsedDate) ? "Today" : format(parsedDate, "MMM")}
               </span>
             </div>
             <div className="bg-white dark:bg-card text-foreground text-center py-1.5">
