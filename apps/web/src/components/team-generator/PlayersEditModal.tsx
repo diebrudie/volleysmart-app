@@ -13,12 +13,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRef } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -342,23 +342,18 @@ export function PlayersEditModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
-      <DialogContent
+    <Drawer open={open} onOpenChange={(v) => !v && onCancel()}>
+      <DrawerContent
         className={cn(
-          // Make the dialog itself a column flexbox so header, list, footer stay inside
-          "p-0 [&>button:has(span.sr-only)]:hidden flex flex-col",
-          // Mobile: true fullscreen
-          "w-[100vw] max-w-[100vw] h-[100dvh] max-h-[100dvh] rounded-none",
-          // Desktop: fixed viewport height so footer cannot overflow outside the card
-          "sm:rounded-2xl sm:w-full sm:max-w-2xl sm:h-[85vh]"
+          "p-0 flex flex-col h-[95dvh]"
         )}
       >
         {/* A11y-only title/description to satisfy Radix requirements without changing the visual header */}
-        <DialogTitle className="sr-only">Edit Players</DialogTitle>
-        <DialogDescription className="sr-only">
+        <DrawerTitle className="sr-only">Edit Players</DrawerTitle>
+        <DrawerDescription className="sr-only">
           Edit the list of players for this game. Search, select or deselect
           players, and add guests.
-        </DialogDescription>
+        </DrawerDescription>
 
         {/* Full-bleed yellow header with fixed height */}
         <div ref={headerRef} className="bg-amber-500 relative rounded-t-md">
@@ -427,8 +422,8 @@ export function PlayersEditModal({
 
         {/* Add guests row with the same look as NewGame (contrast in dark) */}
         <div className="mx-4 sm:mx-6 py-3 border-b bg-card">
-          <div className="bg-white dark:bg-gray-800 h-12 px-4 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          <div className="bg-card h-12 px-4 rounded-lg border border-border flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">
               Add guests
             </span>
             <div className="flex items-center gap-3">
@@ -442,7 +437,7 @@ export function PlayersEditModal({
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              <span className="font-medium text-gray-900 dark:text-gray-100 min-w-[2rem] text-center">
+              <span className="font-medium text-foreground min-w-[2rem] text-center">
                 {extraPlayers.length}
               </span>
               <Button
@@ -517,7 +512,7 @@ export function PlayersEditModal({
           )}
         </div>
 
-        <DialogFooter className="px-4 sm:px-6 pt-3 pb-[calc(theme(spacing.6)+env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t">
+        <DrawerFooter className="px-4 sm:px-6 pt-3 pb-[calc(theme(spacing.6)+env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
@@ -539,8 +534,8 @@ export function PlayersEditModal({
           >
             Save ({selectedIds.length})
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

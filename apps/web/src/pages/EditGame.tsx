@@ -11,9 +11,7 @@ import { LocationSelector } from "@/components/forms/LocationSelector";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { useClub } from "@/contexts/ClubContext";
 import {
@@ -136,9 +134,9 @@ const DroppableTeam = ({
   });
 
   return (
-    <Card>
-      <CardHeader className={cn("text-white", headerColor)}>
-        <CardTitle className="flex items-center">
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className={cn("p-4 pb-2 text-white", headerColor)}>
+        <h3 className="font-semibold flex items-center">
           <div
             className={cn(
               "h-6 w-6 rounded-full bg-white mr-3 flex items-center justify-center text-sm font-bold",
@@ -148,18 +146,18 @@ const DroppableTeam = ({
             {teamId === "team-a" ? "A" : "B"}
           </div>
           {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent
+        </h3>
+      </div>
+      <div
         ref={setNodeRef}
         className={cn(
           "p-0 min-h-[200px] transition-colors",
-          isOver && "bg-blue-50"
+          isOver && "bg-primary/10"
         )}
       >
         {children}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
@@ -464,11 +462,10 @@ const EditGame = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading game data...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-border mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading game data...</p>
           </div>
         </div>
       </div>
@@ -479,7 +476,6 @@ const EditGame = () => {
   if (!gameData) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-600">Game not found</p>
@@ -915,8 +911,7 @@ const EditGame = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-background">
       <main className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
@@ -929,7 +924,7 @@ const EditGame = () => {
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-3xl font-bold text-foreground">
                 Edit Teams
               </h1>
             </div>
@@ -1132,7 +1127,7 @@ const EditGame = () => {
           {/* Last modified banner */}
           {auditInfo?.label && (
             <div className="flex justify-end mb-2">
-              <div className="text-sm text-gray-600 dark:text-gray-300">
+              <div className="text-sm text-muted-foreground">
                 Last modified by:{" "}
                 <span className="font-medium">{auditInfo.label}</span>
               </div>
