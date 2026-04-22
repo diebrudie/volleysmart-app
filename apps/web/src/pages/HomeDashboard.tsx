@@ -1,8 +1,8 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { parseISO, isToday, format, startOfMonth, endOfMonth } from "date-fns";
-import { CalendarDays, Trophy, TrendingUp, ChevronRight } from "lucide-react";
+import { parseISO, format, startOfMonth, endOfMonth } from "date-fns";
+import { CalendarDays, Trophy, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,18 +33,19 @@ function useUserClubs(userId: string | undefined) {
 }
 
 function useTodaysEvents(clubIds: string[]) {
+  const todayStr = format(new Date(), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["home-todays-events", clubIds],
+    queryKey: ["home-todays-events", clubIds, todayStr],
     queryFn: async () => {
       if (!clubIds.length) return null;
       const { data, error } = await supabase
         .from("planned_events")
         .select("id, title, date, club_id, clubs(name), event_rsvp(status)")
         .in("club_id", clubIds)
-        .order("date", { ascending: true });
+        .eq("date", todayStr)
+        .limit(1);
       if (error) throw error;
-      // Find first event that is today
-      const todayEvent = (data ?? []).find((e) => isToday(parseISO(e.date)));
+      const todayEvent = data?.[0] ?? null;
       if (!todayEvent) return null;
 
       // Check if a game already exists for this event
@@ -223,8 +224,6 @@ const HomeDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [totalSlides]);
 
-  const city = clubs.find((c) => c.city)?.city ?? null;
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <main className="flex-1 pb-24">
@@ -396,23 +395,10 @@ const HomeDashboard: React.FC = () => {
 
           {/* ─── Discover Events ──────────────────────────────────── */}
           <section className="mt-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">
-                Discover Events{city ? ` in ${city}` : ""}
-              </h2>
-              <button
-                onClick={() => navigate("/events")}
-                className="flex items-center gap-0.5 text-sm font-medium text-primary"
-              >
-                See all
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-8 text-center">
-              <p className="text-muted-foreground text-sm">
-                No public events this month
-              </p>
-            </div>
+            <h2 className="text-xl font-bold text-foreground mb-4">
+              Discover Events
+            </h2>
+            <div className="h-44 rounded-xl bg-muted/50 border border-border" />
           </section>
         </div>
       </main>
