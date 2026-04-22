@@ -739,47 +739,49 @@ const EventDetail: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </button>
 
-          {isCreator && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80">
-                  <MoreHorizontal className="h-5 w-5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className="gap-2"
-                  onClick={handleShare}
-                >
-                  <Share2 className="h-4 w-4" />
-                  Share event
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="gap-2"
-                  onClick={() => setEditSheetOpen(true)}
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit event
-                </DropdownMenuItem>
-                {event.status !== "cancelled" && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80">
+                <MoreHorizontal className="h-5 w-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="gap-2"
+                onClick={handleShare}
+              >
+                <Share2 className="h-4 w-4" />
+                Share event
+              </DropdownMenuItem>
+              {isCreator && (
+                <>
                   <DropdownMenuItem
-                    className="gap-2 text-amber-600 focus:text-amber-600"
-                    onClick={() => cancelMutation.mutate()}
+                    className="gap-2"
+                    onClick={() => setEditSheetOpen(true)}
                   >
-                    <XCircle className="h-4 w-4" />
-                    Cancel event
+                    <Pencil className="h-4 w-4" />
+                    Edit event
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  className="gap-2 text-destructive focus:text-destructive"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete event
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                  {event.status !== "cancelled" && (
+                    <DropdownMenuItem
+                      className="gap-2 text-amber-600 focus:text-amber-600"
+                      onClick={() => cancelMutation.mutate()}
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Cancel event
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    className="gap-2 text-destructive focus:text-destructive"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete event
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

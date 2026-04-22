@@ -64,6 +64,7 @@ interface GamePlayerData {
   snapshot_name?: string | null;
   players: {
     id: string;
+    user_id: string | null;
     first_name: string;
     last_name: string;
   };
@@ -233,7 +234,7 @@ const Game = () => {
         const playerIds = gamePlayersRaw.map((gp) => gp.player_id);
         const { data: playersData } = await supabase
           .from("players")
-          .select("id, first_name, last_name")
+          .select("id, user_id, first_name, last_name")
           .in("id", playerIds);
 
         gamePlayers = gamePlayersRaw.map((gp) => {
@@ -248,6 +249,7 @@ const Game = () => {
             snapshot_name: gp.snapshot_name,
             players: player || {
               id: gp.player_id,
+              user_id: null,
               first_name: "Unknown",
               last_name: "Player",
             },
@@ -299,7 +301,15 @@ const Game = () => {
 
   const isAdminOrEditor = userRole === "admin" || userRole === "editor";
   const isEditingAllowed = matchData?.date ? canEditGame(matchData.date) : false;
-  const canEditScores = isAdminOrEditor;
+
+  // Any player on a team can edit scores, sets, teams, and location
+  const isTeamPlayer = Boolean(
+    user?.id &&
+    matchData?.game_players?.some(
+      (gp) => gp.players?.user_id === user.id
+    )
+  );
+  const canEdit = isAdminOrEditor || isTeamPlayer;
 
   // ── Score editing (table mode from GameDetail) ─────────────────────────────
 
@@ -594,7 +604,7 @@ const Game = () => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              {isEditingAllowed && isAdminOrEditor && (
+              {isEditingAllowed && canEdit && (
                 <DropdownMenuItem
                   onClick={() =>
                     navigate(`/edit-game/${matchData.club_id}/${matchData.id}`)
@@ -767,7 +777,7 @@ const Game = () => {
               teamBScore={scoresByNumber.get(1)?.teamB ?? null}
               onScoreUpdate={handleSetScoreUpdate}
               isLarge={true}
-              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+              isEditingAllowed={isEditingAllowed && canEdit}
             />
           </div>
           <div className="order-2">
@@ -776,7 +786,7 @@ const Game = () => {
               teamAScore={scoresByNumber.get(2)?.teamA ?? null}
               teamBScore={scoresByNumber.get(2)?.teamB ?? null}
               onScoreUpdate={handleSetScoreUpdate}
-              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+              isEditingAllowed={isEditingAllowed && canEdit}
             />
           </div>
           <div className="order-3 md:order-4">
@@ -785,7 +795,7 @@ const Game = () => {
               teamAScore={scoresByNumber.get(3)?.teamA ?? null}
               teamBScore={scoresByNumber.get(3)?.teamB ?? null}
               onScoreUpdate={handleSetScoreUpdate}
-              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+              isEditingAllowed={isEditingAllowed && canEdit}
             />
           </div>
           <div className="order-4 md:order-3">
@@ -794,7 +804,7 @@ const Game = () => {
               teamAScore={scoresByNumber.get(4)?.teamA ?? null}
               teamBScore={scoresByNumber.get(4)?.teamB ?? null}
               onScoreUpdate={handleSetScoreUpdate}
-              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+              isEditingAllowed={isEditingAllowed && canEdit}
             />
           </div>
           <div className="order-5 md:order-4">
@@ -803,7 +813,7 @@ const Game = () => {
               teamAScore={scoresByNumber.get(5)?.teamA ?? null}
               teamBScore={scoresByNumber.get(5)?.teamB ?? null}
               onScoreUpdate={handleSetScoreUpdate}
-              isEditingAllowed={isEditingAllowed && isAdminOrEditor}
+              isEditingAllowed={isEditingAllowed && canEdit}
             />
           </div>
           {extraSets.map((m) => (
@@ -813,13 +823,13 @@ const Game = () => {
                 teamAScore={m.team_a_score}
                 teamBScore={m.team_b_score}
                 onScoreUpdate={handleSetScoreUpdate}
-                onDelete={isEditingAllowed && isAdminOrEditor ? handleDeleteSet : undefined}
-                isEditingAllowed={isEditingAllowed && isAdminOrEditor}
-                isDeletable={m.game_number > 5 && isEditingAllowed && isAdminOrEditor}
+                onDelete={isEditingAllowed && canEdit ? handleDeleteSet : undefined}
+                isEditingAllowed={isEditingAllowed && canEdit}
+                isDeletable={m.game_number > 5 && isEditingAllowed && canEdit}
               />
             </div>
           ))}
-          {isEditingAllowed && isAdminOrEditor && (
+          {isEditingAllowed && canEdit && (
             <div className="order-7">
               <AddSetBox onClick={handleAddSet} disabled={!canAddAnotherSet} />
             </div>
