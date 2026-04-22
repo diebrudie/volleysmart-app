@@ -46,6 +46,7 @@ CREATE OR REPLACE FUNCTION public.request_join_by_slug(
 ) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO public AS $$
 DECLARE
   v_club_id uuid;
+  v_existing_status text;
   v_requester_name text;
 BEGIN
   -- Find active club by slug
@@ -59,13 +60,35 @@ BEGIN
     RAISE EXCEPTION 'club_not_found_or_deleted';
   END IF;
 
-  -- Insert membership request (pending)
-  INSERT INTO public.club_members (
-    club_id, user_id, role, status, is_active, requested_at, member_association
-  ) VALUES (
-    v_club_id, auth.uid(), 'member', 'pending', true, now(),
-    coalesce(p_member_association, false)
-  );
+  -- Check if the user already has a membership row for this club
+  SELECT status INTO v_existing_status
+  FROM public.club_members
+  WHERE club_id = v_club_id AND user_id = auth.uid();
+
+  IF v_existing_status IS NOT NULL THEN
+    -- Already active or pending → raise unique_violation for frontend to handle
+    IF v_existing_status IN ('active', 'pending') THEN
+      RAISE EXCEPTION 'club_members_club_id_user_id_key'
+        USING ERRCODE = '23505';
+    END IF;
+
+    -- Rejected or removed → reset to pending (allow re-request)
+    UPDATE public.club_members
+    SET status = 'pending',
+        requested_at = now(),
+        rejected_at = NULL,
+        removed_at = NULL,
+        member_association = coalesce(p_member_association, false)
+    WHERE club_id = v_club_id AND user_id = auth.uid();
+  ELSE
+    -- No existing row → insert new membership request
+    INSERT INTO public.club_members (
+      club_id, user_id, role, status, is_active, requested_at, member_association
+    ) VALUES (
+      v_club_id, auth.uid(), 'member', 'pending', true, now(),
+      coalesce(p_member_association, false)
+    );
+  END IF;
 
   -- Get requester name
   SELECT coalesce(p.first_name || ' ' || substr(p.last_name, 1, 1) || '.', 'A member')
@@ -86,10 +109,6 @@ BEGIN
       'requester_name', v_requester_name
     )
   );
-
-EXCEPTION
-  WHEN unique_violation THEN
-    RAISE;
 END;
 $$;
 
