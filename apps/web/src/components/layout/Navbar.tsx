@@ -245,7 +245,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/");
+    navigate("/login");
   };
 
   // Global nav items — shown to all authenticated users, no club dependency

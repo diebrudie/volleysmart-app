@@ -363,7 +363,11 @@ const HomeDashboard: React.FC = () => {
                         }`}>
                           {lastGame.winner}
                         </span>{" "}
-                        <span className="font-medium text-foreground">wins</span>
+                        <span className={`font-medium ${
+                          lastGame.winner === "Team A"
+                            ? "text-red-500"
+                            : "text-emerald-600 dark:text-emerald-400"
+                        }`}>wins</span>
                       </>
                     )}
                   </p>
