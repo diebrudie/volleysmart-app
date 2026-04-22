@@ -152,7 +152,9 @@ const Game = () => {
   const [isEditingLocation, setIsEditingLocation] = useState(false);
 
   const goBack = () => {
-    if ((loc.state as any)?.fromTab === "past") {
+    if (matchData?.planned_event_id) {
+      navigate(`/events/${matchData.planned_event_id}`);
+    } else if ((loc.state as any)?.fromTab === "past") {
       navigate("/home", { state: { tab: "past" } });
     } else if (clubId) {
       navigate(`/clubs/${clubId}`);

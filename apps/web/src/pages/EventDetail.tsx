@@ -713,7 +713,7 @@ const EventDetail: React.FC = () => {
         {/* Top bar overlay */}
         <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)]">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/home")}
             className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
           >
             <ArrowLeft className="h-5 w-5" />
