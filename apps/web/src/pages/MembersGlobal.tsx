@@ -250,12 +250,7 @@ const MembersGlobal: React.FC = () => {
   const activeFilterCount = filterClub.size;
 
   const handleManageRequests = () => {
-    if (adminClubs.length === 1) {
-      navigate(`/clubs/${adminClubs[0].id}/manage`);
-    } else if (adminClubs.length > 1) {
-      // Navigate to first admin club for now
-      navigate(`/clubs/${adminClubs[0].id}/manage`);
-    }
+    navigate("/manage-requests");
   };
 
   // ── Loading state ──

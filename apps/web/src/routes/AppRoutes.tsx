@@ -249,6 +249,14 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
+    <Route
+      path="/manage-requests"
+      element={
+        <ProtectedRoute>
+          <ManageMembers />
+        </ProtectedRoute>
+      }
+    />
 
     <Route
       path="/players/:id"
