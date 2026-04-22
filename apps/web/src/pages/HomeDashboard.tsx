@@ -32,17 +32,35 @@ function useUserClubs(userId: string | undefined) {
   });
 }
 
-function useTodaysEvents(clubIds: string[]) {
+function useTodaysEvents(userId: string | undefined) {
   const todayStr = format(new Date(), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["home-todays-events", clubIds, todayStr],
+    queryKey: ["home-todays-events", userId, todayStr],
     queryFn: async () => {
+      if (!userId) return null;
+
+      // Get club IDs the same proven way as plannedEvents.ts
+      const { data: memberships } = await supabase
+        .from("club_members")
+        .select("club_id")
+        .eq("user_id", userId)
+        .eq("is_active", true);
+
+      const clubIds = (memberships ?? [])
+        .map((m) => m.club_id)
+        .filter(Boolean) as string[];
       if (!clubIds.length) return null;
+
       const { data, error } = await supabase
         .from("planned_events")
-        .select("id, title, date, club_id, clubs(name), event_rsvp(status)")
+        .select(
+          `id, title, date, club_id,
+           clubs!planned_events_club_id_fkey(name),
+           event_rsvp(status)`
+        )
         .in("club_id", clubIds)
         .eq("date", todayStr)
+        .in("status", ["open", "confirmed"])
         .limit(1);
       if (error) throw error;
       const todayEvent = data?.[0] ?? null;
@@ -67,7 +85,7 @@ function useTodaysEvents(clubIds: string[]) {
         matchDayId: (matchDay as any)?.id ?? null,
       };
     },
-    enabled: clubIds.length > 0,
+    enabled: !!userId,
     staleTime: 2 * 60 * 1000,
   });
 }
@@ -183,7 +201,7 @@ const HomeDashboard: React.FC = () => {
   const { data: clubs = [] } = useUserClubs(user?.id);
   const clubIds = clubs.map((c) => c.id).filter(Boolean) as string[];
 
-  const { data: todaysEvent } = useTodaysEvents(clubIds);
+  const { data: todaysEvent } = useTodaysEvents(user?.id);
   const { data: lastGame } = useLastGame(clubIds);
   const { data: monthlyStats } = useMonthlyStats(user?.id, playerId, clubIds);
 
@@ -207,7 +225,7 @@ const HomeDashboard: React.FC = () => {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Auto-rotate every 7s
+  // Auto-rotate every 15s
   React.useEffect(() => {
     const el = sliderRef.current;
     if (!el) return;
@@ -220,7 +238,7 @@ const HomeDashboard: React.FC = () => {
         }
         return next;
       });
-    }, 7000);
+    }, 15000);
     return () => clearInterval(interval);
   }, [totalSlides]);
 
@@ -260,25 +278,16 @@ const HomeDashboard: React.FC = () => {
                     {todaysEvent.attendingCount} player
                     {todaysEvent.attendingCount !== 1 ? "s" : ""} attending
                   </p>
-                  {todaysEvent.matchDayId ? (
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        navigate(`/game/${todaysEvent.matchDayId}`)
-                      }
-                    >
-                      View Game
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        navigate(`/events/${todaysEvent.eventId}`)
-                      }
-                    >
-                      View Event
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      todaysEvent.matchDayId
+                        ? navigate(`/game/${todaysEvent.matchDayId}`)
+                        : navigate(`/events/${todaysEvent.eventId}`)
+                    }
+                  >
+                    {todaysEvent.matchDayId ? "View Game" : "Start Game"}
+                  </Button>
                 </div>
               ) : (
                 <div className="py-6 text-center">
