@@ -378,6 +378,7 @@ const Profile = () => {
         .select("club_id, clubs(name)")
         .eq("user_id", user.id)
         .eq("is_active", true)
+        .eq("status", "active")
         .eq("role", "admin");
 
       if (adminClubs?.length) {
@@ -387,7 +388,8 @@ const Profile = () => {
             .from("club_members")
             .select("id", { count: "exact", head: true })
             .eq("club_id", ac.club_id)
-            .eq("is_active", true);
+            .eq("is_active", true)
+            .eq("status", "active");
 
           if ((count ?? 0) >= 2) {
             const clubName = (ac.clubs as any)?.name ?? "a club";

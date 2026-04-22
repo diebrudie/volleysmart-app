@@ -74,7 +74,8 @@ export const EventLocationSelector = ({
         .from("club_members")
         .select("club_id")
         .eq("user_id", user!.id)
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .eq("status", "active");
 
       const memberClubIds = (memberships ?? [])
         .map((m) => m.club_id)

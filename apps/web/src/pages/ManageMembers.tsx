@@ -55,6 +55,7 @@ export default function ManageMembers() {
         .select("club_id, role")
         .eq("user_id", user.id)
         .eq("is_active", true)
+        .eq("status", "active")
         .eq("role", "admin");
 
       if (!memberships?.length) {

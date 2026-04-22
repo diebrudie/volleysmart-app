@@ -19,7 +19,8 @@ function useUserClubs(userId: string | undefined) {
         .from("club_members")
         .select("club_id, clubs(id, name, city)")
         .eq("user_id", userId)
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .eq("status", "active");
       if (error) throw error;
       return (data ?? []).map((m) => ({
         id: m.club_id,
@@ -44,7 +45,8 @@ function useTodaysEvents(userId: string | undefined, playerId: string | null | u
         .from("club_members")
         .select("club_id")
         .eq("user_id", userId)
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .eq("status", "active");
 
       const clubIds = (memberships ?? [])
         .map((m) => m.club_id)

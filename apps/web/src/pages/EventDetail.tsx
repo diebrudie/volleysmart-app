@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO, isToday, isPast } from "date-fns";
+import { format, parseISO, isToday, isBefore, startOfDay } from "date-fns";
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -389,7 +389,8 @@ const EventDetail: React.FC = () => {
         .from("club_members")
         .select("*", { count: "exact", head: true })
         .eq("club_id", event.club_id)
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .eq("status", "active");
       if (err) return 0;
       return count ?? 0;
     },
@@ -615,8 +616,10 @@ const EventDetail: React.FC = () => {
   };
 
   const eventUrl = window.location.href.split("?")[0];
+  const eventDateParsed = event?.date ? parseISO(event.date) : null;
+  const isEventPast = eventDateParsed ? isBefore(eventDateParsed, startOfDay(new Date())) : false;
   const shareMessage = linkedMatchDay
-    ? (event?.date && isPast(parseISO(event.date)))
+    ? isEventPast
       ? `Look how the last Volleyball Game finished. Super interesting!\n${eventUrl}`
       : `Our Volleyball game is ready! Check the teams, and track points\n${eventUrl}`
     : `Check this Volleyball Event, and let me know if you can make it\n${eventUrl}`;
@@ -736,47 +739,49 @@ const EventDetail: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </button>
 
-          {isCreator && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80">
-                  <MoreHorizontal className="h-5 w-5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className="gap-2"
-                  onClick={handleShare}
-                >
-                  <Share2 className="h-4 w-4" />
-                  Share event
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="gap-2"
-                  onClick={() => setEditSheetOpen(true)}
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit event
-                </DropdownMenuItem>
-                {event.status !== "cancelled" && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80">
+                <MoreHorizontal className="h-5 w-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="gap-2"
+                onClick={handleShare}
+              >
+                <Share2 className="h-4 w-4" />
+                Share event
+              </DropdownMenuItem>
+              {isCreator && (
+                <>
                   <DropdownMenuItem
-                    className="gap-2 text-amber-600 focus:text-amber-600"
-                    onClick={() => cancelMutation.mutate()}
+                    className="gap-2"
+                    onClick={() => setEditSheetOpen(true)}
                   >
-                    <XCircle className="h-4 w-4" />
-                    Cancel event
+                    <Pencil className="h-4 w-4" />
+                    Edit event
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  className="gap-2 text-destructive focus:text-destructive"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete event
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                  {event.status !== "cancelled" && (
+                    <DropdownMenuItem
+                      className="gap-2 text-amber-600 focus:text-amber-600"
+                      onClick={() => cancelMutation.mutate()}
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Cancel event
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    className="gap-2 text-destructive focus:text-destructive"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete event
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
