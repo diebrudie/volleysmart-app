@@ -129,26 +129,6 @@ export const MemberCard = ({
             </p>
           </div>
 
-          {/* Volleyball Badge - bottom right of content area (unchanged) */}
-          {member.member_association && (
-            <div className="absolute bottom-4 right-4 w-5 h-5">
-              <img
-                src="/volleyball.svg"
-                alt="Club member"
-                className="w-full h-full"
-                onError={(e) => {
-                  // Fallback if volleyball SVG doesn't load (kept as-is)
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                  target.parentElement!.innerHTML = `
-                    <div class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-                      <span class="text-white text-xs font-bold">V</span>
-                    </div>
-                  `;
-                }}
-              />
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

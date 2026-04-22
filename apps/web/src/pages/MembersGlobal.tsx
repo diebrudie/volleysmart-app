@@ -1,24 +1,23 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Users,
   Search,
   Grid3X3,
   List,
-  Plus,
   SlidersHorizontal,
   ArrowUpDown,
+  Settings,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MemberCard } from "@/components/members/MemberCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import { useIsCompact } from "@/hooks/use-compact";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Sheet,
   SheetContent,
@@ -26,28 +25,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-} from "@/components/ui/drawer";
-import { ClubInviteSharePanel } from "@/components/clubs/ClubInviteSharePanel";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface GlobalMember {
@@ -69,7 +47,6 @@ type ViewMode = "grid" | "list";
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
 async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
-  // 1. Get the current user's active club memberships
   const { data: myMemberships, error: myErr } = await supabase
     .from("club_members")
     .select("club_id")
@@ -81,7 +58,6 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
 
   const clubIds = myMemberships.map((m) => m.club_id).filter(Boolean) as string[];
 
-  // 2. Fetch club names + slugs
   const { data: clubRows } = await supabase
     .from("clubs")
     .select("id, name, slug")
@@ -92,7 +68,6 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
     clubById[c.id] = { name: c.name, slug: c.slug };
   });
 
-  // 3. For each club, fetch members + players
   const byPlayerId = new Map<string, GlobalMember>();
 
   await Promise.all(
@@ -170,95 +145,45 @@ const MemberListItem = ({ member }: { member: GlobalMember }) => {
     : "";
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
-            {member.image_url ? (
-              <img
-                src={member.image_url}
-                alt={`${member.first_name} ${member.last_name}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                  target.parentElement!.innerHTML = `
-                    <div class="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                      <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                      </svg>
-                    </div>
-                  `;
-                }}
-              />
-            ) : (
-              <img
-                src="/avatar-placeholder.svg"
-                alt={`${member.first_name} ${member.last_name}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                  target.parentElement!.innerHTML = `
-                    <div class="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                      <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                      </svg>
-                    </div>
-                  `;
-                }}
-              />
-            )}
+    <div className="flex items-center gap-3 py-3 border-b border-border last:border-0">
+      <div className="w-10 h-10 bg-muted rounded-full overflow-hidden flex-shrink-0">
+        {member.image_url ? (
+          <img
+            src={member.image_url}
+            alt={`${member.first_name} ${member.last_name}`}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-semibold">
+            {member.first_name?.[0]}
+            {member.last_name?.[0]}
           </div>
-          <div className="flex-grow min-w-0">
-            <div className="flex items-center justify-between">
-              <div className="flex-grow min-w-0">
-                <h3 className="font-semibold text-lg truncate">
-                  {member.first_name} {lastNameInitial}.
-                </h3>
-                <p className="text-muted-foreground text-sm font-medium truncate">
-                  {primaryPosition}
-                </p>
-              </div>
-              {member.member_association && (
-                <div className="w-5 h-5 flex-shrink-0">
-                  <img
-                    src="/volleyball.svg"
-                    alt="Association member"
-                    className="w-full h-full"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = "none";
-                      target.parentElement!.innerHTML = `
-                        <div class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-                          <span class="text-white text-xs font-bold">V</span>
-                        </div>
-                      `;
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+      <div className="flex-grow min-w-0">
+        <h3 className="font-medium text-sm truncate">
+          {member.first_name} {lastNameInitial}.
+        </h3>
+        <p className="text-muted-foreground text-xs truncate">
+          {primaryPosition}
+        </p>
+      </div>
+    </div>
   );
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const MembersGlobal: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isCompact = useIsCompact();
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortAsc, setSortAsc] = useState(true);
   const [filterClub, setFilterClub] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [selectedClubForInvite, setSelectedClubForInvite] = useState<string>("");
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["members-global", user?.id],
@@ -267,20 +192,31 @@ const MembersGlobal: React.FC = () => {
     retry: 1,
   });
 
-  // ── Derived filter options ──
+  // Derived: all clubs the user belongs to
   const clubs = useMemo(() => {
-    const map = new Map<string, { name: string; slug: string }>();
+    const map = new Map<string, { name: string; slug: string; role: string }>();
     members.forEach((m) =>
-      m.clubs.forEach((c) => map.set(c.id, { name: c.name, slug: c.slug }))
+      m.clubs.forEach((c) => {
+        const existing = map.get(c.id);
+        // Keep admin role if seen
+        if (!existing || c.role === "admin") {
+          map.set(c.id, { name: c.name, slug: c.slug, role: c.role });
+        }
+      })
     );
     return Array.from(map.entries()).map(([id, info]) => ({
       id,
-      name: info.name,
-      slug: info.slug,
+      ...info,
     }));
   }, [members]);
 
-  // ── Filter + sort ──
+  // Clubs where the user is admin
+  const adminClubs = useMemo(
+    () => clubs.filter((c) => c.role === "admin"),
+    [clubs]
+  );
+
+  // Filter + sort
   const filtered = useMemo(() => {
     let result = members;
 
@@ -305,58 +241,40 @@ const MembersGlobal: React.FC = () => {
   const toggleClubFilter = (clubId: string) => {
     setFilterClub((prev) => {
       const next = new Set(prev);
-      if (next.has(clubId)) {
-        next.delete(clubId);
-      } else {
-        next.add(clubId);
-      }
+      if (next.has(clubId)) next.delete(clubId);
+      else next.add(clubId);
       return next;
     });
   };
 
-  // Invite modal content
-  const inviteContent = () => {
-    if (clubs.length === 1) {
-      return <ClubInviteSharePanel joinCode={clubs[0].slug} />;
+  const activeFilterCount = filterClub.size;
+
+  const handleManageRequests = () => {
+    if (adminClubs.length === 1) {
+      navigate(`/clubs/${adminClubs[0].id}/manage`);
+    } else if (adminClubs.length > 1) {
+      // Navigate to first admin club for now
+      navigate(`/clubs/${adminClubs[0].id}/manage`);
     }
-
-    const selectedClub = clubs.find((c) => c.id === selectedClubForInvite);
-
-    return (
-      <div className="flex flex-col gap-4">
-        <Select
-          value={selectedClubForInvite}
-          onValueChange={setSelectedClubForInvite}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a club" />
-          </SelectTrigger>
-          <SelectContent>
-            {clubs.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedClub && (
-          <ClubInviteSharePanel joinCode={selectedClub.slug} />
-        )}
-      </div>
-    );
   };
 
-  const content = () => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center min-h-[50vh]">
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        {!isCompact && <Navbar />}
+        <div className="flex-grow flex items-center justify-center">
           <div className="animate-spin h-7 w-7 rounded-full border-2 border-muted border-t-foreground" />
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
-    if (members.length === 0) {
-      return (
+  // ── Empty state ──
+  if (members.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        {!isCompact && <Navbar />}
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center pb-24">
           <Users className="h-12 w-12 text-muted-foreground" />
           <div>
@@ -366,151 +284,312 @@ const MembersGlobal: React.FC = () => {
             </p>
           </div>
         </div>
-      );
-    }
-
-    return (
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 pb-24">
-        {/* Header */}
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h1 className="text-4xl font-serif">Members</h1>
-          <Button
-            onClick={() => {
-              if (clubs.length === 1) setSelectedClubForInvite(clubs[0].id);
-              setIsInviteOpen(true);
-            }}
-            variant="outline"
-            className="self-start sm:self-end"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Invite Member
-          </Button>
-        </div>
-
-        {/* Controls card */}
-        <Card className="border border-gray-200 dark:border-gray-700 mb-6">
-          <CardContent className="p-4">
-            {/* Member count */}
-            <div className="flex items-center mb-4">
-              <Users className="w-5 h-5 mr-2 text-muted-foreground" />
-              <span className="text-lg font-semibold">
-                {filtered.length} Member{filtered.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-
-            {/* Search + Sort + Filter + View toggle */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              {/* Search */}
-              <div className="relative flex-grow">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search members by name..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 h-9"
-                />
-              </div>
-
-              {/* Controls */}
-              <div className="flex items-center justify-end gap-2">
-                {/* Sort toggle */}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setSortAsc((prev) => !prev)}
-                  aria-label={sortAsc ? "Sort Z to A" : "Sort A to Z"}
-                  className="h-9 w-9 shrink-0"
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-
-                {/* Filter button */}
-                {clubs.length > 1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsFilterOpen(true)}
-                    className="relative shrink-0 h-9"
-                  >
-                    <SlidersHorizontal className="h-4 w-4 mr-2" />
-                    Filter
-                    {filterClub.size > 0 && (
-                      <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-medium rounded-full bg-primary text-primary-foreground">
-                        {filterClub.size}
-                      </span>
-                    )}
-                  </Button>
-                )}
-
-                {/* View toggle */}
-                <ToggleGroup
-                  type="single"
-                  value={viewMode}
-                  onValueChange={(v) => {
-                    if (v) setViewMode(v as ViewMode);
-                  }}
-                  className="shrink-0 grow-0 basis-auto w-auto h-auto items-center p-1"
-                >
-                  <ToggleGroupItem value="grid" aria-label="Grid view" size="sm" className="h-7 w-7 p-0">
-                    <Grid3X3 className="h-4 w-4" />
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="list" aria-label="List view" size="sm" className="h-7 w-7 p-0">
-                    <List className="h-4 w-4" />
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Members display */}
-        {filtered.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground text-sm">
-            No members match your filters.
-          </div>
-        ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {filtered.map((m) => (
-              <MemberCard
-                key={m.player_id}
-                member={{
-                  id: m.player_id,
-                  first_name: m.first_name,
-                  last_name: m.last_name,
-                  image_url: m.image_url,
-                  member_association: m.member_association ?? undefined,
-                  player_positions: m.player_positions,
-                }}
-                isAdmin={false}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((m) => (
-              <MemberListItem key={m.player_id} member={m} />
-            ))}
-          </div>
-        )}
-
-        {filtered.length > 0 && (
-          <p className="text-xs text-muted-foreground text-right mt-4">
-            {filtered.length} member{filtered.length !== 1 ? "s" : ""}
-            {filtered.length !== members.length
-              ? ` (filtered from ${members.length})`
-              : ""}
-          </p>
-        )}
       </div>
     );
-  };
+  }
 
+  // ── Desktop ──
+  if (!isCompact) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow">
+          <div className="max-w-6xl mx-auto px-6 py-6">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-xl font-bold">Members</h1>
+              {adminClubs.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleManageRequests}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Manage Requests
+                </Button>
+              )}
+            </div>
+
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search members..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Controls row */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSortAsc((prev) => !prev)}
+                  className="flex items-center justify-center h-8 w-8 border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                  aria-label={sortAsc ? "Sort Z to A" : "Sort A to Z"}
+                >
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                </button>
+
+                {clubs.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsFilterOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    Filter
+                    {activeFilterCount > 0 && (
+                      <span className="ml-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center border rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  className={cn(
+                    "flex items-center justify-center px-2.5 py-1.5 transition-colors",
+                    viewMode === "grid"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                  aria-label="Grid view"
+                >
+                  <Grid3X3 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className={cn(
+                    "flex items-center justify-center px-2.5 py-1.5 transition-colors",
+                    viewMode === "list"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                  aria-label="List view"
+                >
+                  <List className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Members display */}
+            {filtered.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground text-sm">
+                No members match your search.
+              </div>
+            ) : viewMode === "grid" ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {filtered.map((m) => (
+                  <MemberCard
+                    key={m.player_id}
+                    member={{
+                      id: m.player_id,
+                      first_name: m.first_name,
+                      last_name: m.last_name,
+                      image_url: m.image_url,
+                      player_positions: m.player_positions,
+                    }}
+                    isAdmin={false}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div>
+                {filtered.map((m) => (
+                  <MemberListItem key={m.player_id} member={m} />
+                ))}
+              </div>
+            )}
+
+            {filtered.length > 0 && (
+              <p className="text-xs text-muted-foreground text-right mt-4">
+                {filtered.length} member{filtered.length !== 1 ? "s" : ""}
+                {filtered.length !== members.length
+                  ? ` (filtered from ${members.length})`
+                  : ""}
+              </p>
+            )}
+          </div>
+        </main>
+
+        {/* Filter sheet */}
+        <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          <SheetContent side="right">
+            <SheetHeader>
+              <SheetTitle>Filter by Club</SheetTitle>
+              <SheetDescription>
+                Select which clubs to show members from.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6 space-y-4">
+              {clubs.map((club) => (
+                <label
+                  key={club.id}
+                  className="flex items-center gap-3 cursor-pointer"
+                >
+                  <Checkbox
+                    checked={filterClub.has(club.id)}
+                    onCheckedChange={() => toggleClubFilter(club.id)}
+                  />
+                  <span className="text-sm font-medium">{club.name}</span>
+                </label>
+              ))}
+              {filterClub.size > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFilterClub(new Set())}
+                  className="mt-2"
+                >
+                  Clear all
+                </Button>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+    );
+  }
+
+  // ── Mobile ──
   return (
     <div className="min-h-screen flex flex-col">
-      {!isCompact && <Navbar />}
-      <main className="flex-grow">{content()}</main>
+      <main className="flex-grow">
+        <div className="px-4 py-4 pb-24">
+          {/* Headline + Manage Requests */}
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-xl font-bold">Members</h1>
+            {adminClubs.length > 0 && (
+              <button
+                type="button"
+                onClick={handleManageRequests}
+                className="flex items-center gap-1.5 text-xs font-medium text-primary"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                Manage Requests
+              </button>
+            )}
+          </div>
 
-      {/* Filter sheet (right drawer) */}
+          {/* Search bar (in place of tab toggle) */}
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search members..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 h-9"
+            />
+          </div>
+
+          {/* Controls row — matches Home layout */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSortAsc((prev) => !prev)}
+                className="flex items-center justify-center h-8 w-8 border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                aria-label={sortAsc ? "Sort Z to A" : "Sort A to Z"}
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+              </button>
+
+              {clubs.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setIsFilterOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <span className="ml-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* View toggle — icons only */}
+            <div className="flex items-center border rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={cn(
+                  "flex items-center justify-center px-2.5 py-1.5 transition-colors",
+                  viewMode === "grid"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                )}
+                aria-label="Grid view"
+              >
+                <Grid3X3 className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "flex items-center justify-center px-2.5 py-1.5 transition-colors",
+                  viewMode === "list"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                )}
+                aria-label="List view"
+              >
+                <List className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Members display */}
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground text-sm">
+              No members match your search.
+            </div>
+          ) : viewMode === "grid" ? (
+            <div className="grid grid-cols-2 gap-3">
+              {filtered.map((m) => (
+                <MemberCard
+                  key={m.player_id}
+                  member={{
+                    id: m.player_id,
+                    first_name: m.first_name,
+                    last_name: m.last_name,
+                    image_url: m.image_url,
+                    player_positions: m.player_positions,
+                  }}
+                  isAdmin={false}
+                />
+              ))}
+            </div>
+          ) : (
+            <div>
+              {filtered.map((m) => (
+                <MemberListItem key={m.player_id} member={m} />
+              ))}
+            </div>
+          )}
+
+          {filtered.length > 0 && (
+            <p className="text-xs text-muted-foreground text-right mt-4">
+              {filtered.length} member{filtered.length !== 1 ? "s" : ""}
+              {filtered.length !== members.length
+                ? ` (filtered from ${members.length})`
+                : ""}
+            </p>
+          )}
+        </div>
+      </main>
+
+      {/* Filter sheet */}
       <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
         <SheetContent side="right">
           <SheetHeader>
@@ -545,33 +624,6 @@ const MembersGlobal: React.FC = () => {
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* Invite modal — Drawer on mobile, Dialog on desktop */}
-      {isCompact ? (
-        <Drawer open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-          <DrawerContent className="pb-6">
-            <DrawerHeader className="text-left">
-              <DrawerTitle>Invite your teammates</DrawerTitle>
-              <DrawerDescription>
-                Share your Club ID so they can join.
-              </DrawerDescription>
-            </DrawerHeader>
-            <div className="px-4 pt-2 pb-2">{inviteContent()}</div>
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader className="mb-4 mt-4 text-center">
-              <DialogTitle>Invite your teammates</DialogTitle>
-              <DialogDescription className="mt-1">
-                Share your Club ID so they can join.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-center">{inviteContent()}</div>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };

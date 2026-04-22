@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 function getPageTitle(pathname: string): string {
   if (/^\/clubs(\/|$)/.test(pathname)) return "Clubs";
   if (/^\/archive(\/|$)/.test(pathname)) return "Archive";
+  if (/^\/members(\/|$)/.test(pathname)) return "Members";
   if (/^\/games(\/|$)/.test(pathname)) return "Games";
   return "Home";
 }
