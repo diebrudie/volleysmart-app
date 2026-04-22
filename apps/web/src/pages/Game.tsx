@@ -11,6 +11,7 @@ import {
   Save,
   X,
   Trash,
+  Calendar,
   CalendarCheck,
   MoreHorizontal,
   Users,
@@ -373,7 +374,7 @@ const Game = () => {
   })();
 
   const set5 = scoresByNumber.get(5);
-  const isSet5Scored = set5 !== undefined && set5.teamA !== null && set5.teamB !== null;
+  const isSet5Scored = set5 !== undefined && set5.teamA !== null && set5.teamB !== null && (set5.teamA > 0 || set5.teamB > 0);
   const canAddAnotherSet = isEditingAllowed && isSet5Scored && nextSetNumber <= MAX_SETS;
 
   const handleAddSet = async () => {
@@ -620,26 +621,31 @@ const Game = () => {
           {isMatchToday ? "Today's Game" : "Game Details"}
         </h1>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          {matchData.clubs?.name && (
+        <div className="space-y-1 text-sm text-muted-foreground">
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {matchData.clubs?.name && (
+              <span className="flex items-center gap-1.5">
+                <Trophy className="h-3.5 w-3.5" />
+                {matchData.clubs.name}
+              </span>
+            )}
             <span className="flex items-center gap-1.5">
-              <Trophy className="h-3.5 w-3.5" />
-              {matchData.clubs.name}
+              <Calendar className="h-3.5 w-3.5" />
+              {formatDateShort(matchDate)}
             </span>
-          )}
-          <span className="flex items-center gap-1.5">
-            {formatDateShort(matchDate)}
-          </span>
-          {matchData.locations?.name && (
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {matchData.locations?.name && (
+              <span className="flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5" />
+                {matchData.locations.name}
+              </span>
+            )}
             <span className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" />
-              {matchData.locations.name}
+              <Users className="h-3.5 w-3.5" />
+              {teamAPlayers.length + teamBPlayers.length} players
             </span>
-          )}
-          <span className="flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5" />
-            {teamAPlayers.length + teamBPlayers.length} players
-          </span>
+          </div>
         </div>
       </div>
 
@@ -688,12 +694,15 @@ const Game = () => {
               </h3>
               <ul className="space-y-1 p-3">
                 {teamAPlayers.map((player, index) => (
-                  <li key={player.id} className="text-sm">
-                    <span className="font-medium">
-                      {index + 1}. {player.name}
+                  <li key={player.id} className="flex items-center text-sm min-w-0">
+                    <span className="font-medium shrink-0">
+                      {index + 1}.&nbsp;
+                    </span>
+                    <span className="font-medium truncate">
+                      {player.name}
                     </span>
                     {player.position && player.position !== "No Position" && (
-                      <span className="text-xs text-muted-foreground ml-1">
+                      <span className="text-xs text-muted-foreground ml-1 truncate shrink-0 max-w-[5rem]">
                         — {player.position}
                       </span>
                     )}
@@ -707,12 +716,15 @@ const Game = () => {
               </h3>
               <ul className="space-y-1 p-3">
                 {teamBPlayers.map((player, index) => (
-                  <li key={player.id} className="text-sm">
-                    <span className="font-medium">
-                      {index + 1}. {player.name}
+                  <li key={player.id} className="flex items-center text-sm min-w-0">
+                    <span className="font-medium shrink-0">
+                      {index + 1}.&nbsp;
+                    </span>
+                    <span className="font-medium truncate">
+                      {player.name}
                     </span>
                     {player.position && player.position !== "No Position" && (
-                      <span className="text-xs text-muted-foreground ml-1">
+                      <span className="text-xs text-muted-foreground ml-1 truncate shrink-0 max-w-[5rem]">
                         — {player.position}
                       </span>
                     )}
