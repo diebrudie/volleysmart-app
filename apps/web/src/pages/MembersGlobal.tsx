@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import {
   Users,
   Search,
@@ -216,6 +216,30 @@ const MembersGlobal: React.FC = () => {
     [clubs]
   );
 
+  // Count pending requests across all admin clubs
+  const pendingQueries = useQueries({
+    queries: adminClubs.map((c) => ({
+      queryKey: ["pendingRequestsCount", c.id],
+      queryFn: async () => {
+        const { count } = await supabase
+          .from("club_members")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", c.id)
+          .eq("is_active", false)
+          .is("activated_at", null)
+          .is("rejected_at", null);
+        return count ?? 0;
+      },
+      staleTime: 60_000,
+      enabled: adminClubs.length > 0,
+    })),
+  });
+
+  const totalPendingRequests = pendingQueries.reduce(
+    (sum, q) => sum + ((q.data as number) ?? 0),
+    0
+  );
+
   // Filter + sort
   const filtered = useMemo(() => {
     let result = members;
@@ -297,9 +321,13 @@ const MembersGlobal: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={handleManageRequests}
+                  className="relative"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Manage Requests
+                  {totalPendingRequests > 0 && (
+                    <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                  )}
                 </Button>
               )}
             </div>
@@ -465,10 +493,13 @@ const MembersGlobal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleManageRequests}
-                className="flex items-center gap-1.5 text-xs font-medium text-primary"
+                className="relative flex items-center gap-1.5 text-xs font-medium text-primary"
               >
                 <Settings className="h-3.5 w-3.5" />
                 Manage Requests
+                {totalPendingRequests > 0 && (
+                  <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+                )}
               </button>
             )}
           </div>

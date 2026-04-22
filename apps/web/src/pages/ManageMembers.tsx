@@ -230,10 +230,10 @@ export default function ManageMembers() {
               {allRequests.map((req) => (
                 <div
                   key={req.membership_id}
-                  className="flex gap-3 rounded-xl border border-border bg-card overflow-hidden"
+                  className="flex gap-3 rounded-xl border border-border bg-card p-3"
                 >
-                  {/* Profile image — square, left side */}
-                  <div className="w-20 shrink-0 bg-muted">
+                  {/* Profile image — rounded, 1:1 */}
+                  <div className="w-14 h-14 shrink-0 rounded-full bg-muted overflow-hidden">
                     {req.image_url ? (
                       <img
                         src={req.image_url}
@@ -243,7 +243,7 @@ export default function ManageMembers() {
                         decoding="async"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-lg font-semibold">
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-base font-semibold">
                         {req.first_name?.[0]}
                         {req.last_name?.[0]}
                       </div>
@@ -251,7 +251,7 @@ export default function ManageMembers() {
                   </div>
 
                   {/* Info + actions */}
-                  <div className="flex-1 py-3 pr-3 flex flex-col justify-between min-w-0">
+                  <div className="flex-1 flex flex-col justify-between min-w-0">
                     {/* Top row: name + time ago */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -260,7 +260,7 @@ export default function ManageMembers() {
                             .filter(Boolean)
                             .join(" ") || "Unknown"}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-xs text-muted-foreground truncate mt-1">
                           {req.club_name}
                         </p>
                       </div>
@@ -269,16 +269,8 @@ export default function ManageMembers() {
                       </span>
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        className="h-8 flex-1 text-xs"
-                        onClick={() => approveMut.mutate(req.membership_id)}
-                        disabled={approveMut.isPending || rejectMut.isPending}
-                      >
-                        Accept
-                      </Button>
+                    {/* Action buttons — Reject first, Accept second */}
+                    <div className="flex gap-2 mt-3">
                       <Button
                         size="sm"
                         variant="outline"
@@ -287,6 +279,14 @@ export default function ManageMembers() {
                         disabled={approveMut.isPending || rejectMut.isPending}
                       >
                         Reject
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-8 flex-1 text-xs"
+                        onClick={() => approveMut.mutate(req.membership_id)}
+                        disabled={approveMut.isPending || rejectMut.isPending}
+                      >
+                        Accept
                       </Button>
                     </div>
                   </div>
