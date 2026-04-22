@@ -1,14 +1,43 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Phase 13 — UI Consistency Pass (done)
-- Last change: Phase 13 — Profile redesign, Clubs/JoinClub/NewClub/Members semantic styling
-- Current branch: `feat/phase-12-game-flow-unification` (branched from `feat/phase-11-club-overview`)
-- Next step: Merge phase branches to main
+- Working on: Phase 14 — Notifications (in progress)
+- Last change: Notifications system, share messages, bug fixes
+- Current branch: `feat/notifications` (branched from `feat/phase-11-club-overview`)
+- Next step: Apply repair migration 000010, verify notifications end-to-end, then merge branches to main
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
 - `main` → `feat/phase-9-create-event-improvements` → `feat/phase-10-quick-fixes-polish` → `feat/phase-11-club-overview` → `feat/phase-12-game-flow-unification`
+- `feat/notifications` branched from `feat/phase-11-club-overview`
+
+## Phase 14 in-progress work (Notifications + Bug Fixes)
+1. ~~**Notification triggers (DB)**~~: 9 types — join request/accepted/rejected, member joined, event created/cancelled, RSVP, RSVP deadline reminder (pg_cron), game started
+2. ~~**Notification helpers**~~: `notify_club_members()` + `notify_club_admins()` SECURITY DEFINER functions
+3. ~~**RPC rewrites**~~: `request_join_by_slug` (with re-request after rejection), `approve_membership`, `reject_membership` — all with notification inserts
+4. ~~**Notifications page**~~: `/notifications` route, Game Details-style header, type-aware icons, relative timestamps, mark as read
+5. ~~**Realtime subscription**~~: Live notification updates via Supabase channel in `RealtimeAppEffect.tsx`
+6. ~~**Bell icon + badge**~~: Enabled in MobileTopBar + Navbar, red dot for unread count
+7. ~~**Event cancellation**~~: "Cancel Event" option in EventDetail dropdown, `cancelPlannedEvent()` function
+8. ~~**Share event messages**~~: Dynamic text based on game state (not started / in progress / past)
+9. ~~**View Game button styling**~~: Home tab uses outline variant matching EventDetail
+10. ~~**Guest dropdown direction**~~: Forced popover to open downward in GuestNameSelector
+11. ~~**Manage Requests visibility**~~: Hidden for non-admin users on Members page
+12. ~~**CreateEvent club dropdown**~~: All active members can see their clubs (was admin/editor only)
+13. **Repair migration 000010**: Idempotent re-apply of all triggers — needs to be applied to DB
+14. ~~**Logout redirect**~~: Now goes to `/login`
+15. ~~**Toast durations**~~: Capped at 2000ms across all files
+16. ~~**Block admin deletion**~~: Can't delete account if admin of club with 2+ members
+17. ~~**Remove Tournament**~~: Removed from event creation flow
+
+## Notifications key files
+- `supabase/migrations/20260422000007_notification_triggers.sql` — triggers + RPC rewrites
+- `supabase/migrations/20260422000008_rsvp_deadline_cron.sql` — pg_cron daily reminder
+- `supabase/migrations/20260422000009_notifications_insert_policy.sql` — INSERT RLS policy
+- `supabase/migrations/20260422000010_repair_notification_triggers.sql` — idempotent repair
+- `apps/web/src/integrations/supabase/notifications.ts` — fetch, mark read, unread count
+- `apps/web/src/pages/Notifications.tsx` — notifications list page
+- `apps/web/src/components/common/RealtimeAppEffect.tsx` — realtime subscription
 
 ## Phase 12 in-progress work (Game Flow Unification)
 1. **Unified `/game/:matchDayId` page**: New `Game.tsx` merges Dashboard + GameDetail — teams, SetBox scores, actions dropdown, edit scores table, location editing, delete, "New game w/ same teams"
@@ -71,16 +100,24 @@ Branches stack on each other (not merged to main yet):
 - `apps/web/src/pages/Game.tsx` — Unified game page (/game/:matchDayId) — teams, scores, actions
 - `apps/web/src/pages/Dashboard.tsx` — Redirect wrapper (latest game → /game/:id, or empty state)
 - `apps/web/src/components/nav/MobileChrome.tsx` — Route-based navbar visibility
+- `apps/web/src/pages/Notifications.tsx` — Notifications list page
+- `apps/web/src/pages/MembersGlobal.tsx` — Global members page (across all user's clubs)
+- `apps/web/src/integrations/supabase/notifications.ts` — Notification queries (fetch, mark read, unread count)
+- `apps/web/src/components/common/RealtimeAppEffect.tsx` — Realtime subscriptions (notifications, etc.)
 - `apps/web/src/routes/AppRoutes.tsx` — All routes
 
 ## DB migrations applied
 - `20260419000001_phase9_templates_location_noclub.sql` (event_templates, locations columns, RLS)
 - `20260419000002_add_end_time_to_planned_events.sql` (end_time column)
+- `20260422000007_notification_triggers.sql` (notification triggers + RPC rewrites — may have failed, see 000010)
+- `20260422000008_rsvp_deadline_cron.sql` (pg_cron RSVP deadline reminders)
+- `20260422000009_notifications_insert_policy.sql` (INSERT RLS policy on notifications)
+- `20260422000010_repair_notification_triggers.sql` (**NEEDS APPLYING** — idempotent repair of triggers)
 
 ## Known issues
-1. **Home CORS**: Supabase returns `Access-Control-Allow-Origin` for a specific preview deployment URL. Wildcard in Redirect URLs doesn't work for CORS.
-2. **club_members filters**: Some files use `.eq("status", "active")` instead of `.eq("is_active", true)`. Fixed in `plannedEvents.ts` and `CreateEvent.tsx`, but `Clubs.tsx`, `JoinClub.tsx`, `clubMembers.ts` still use `status`.
-3. **Created event not shown in Home**: May still need testing — possible PostgREST error in `fetchUpcomingEvents()` with locations join.
+1. ~~**Home CORS**~~: Resolved.
+2. ~~**club_members filters**~~: All queries now consistently use `.eq("is_active", true).eq("status", "active")` for active members.
+3. ~~**Created event not shown in Home**~~: Resolved.
 
 ## Phases overview
 - Phases 1-8: Completed (nav, events, RSVP, archive, clubs, members, bug fixes)
@@ -89,5 +126,10 @@ Branches stack on each other (not merged to main yet):
 - Phase 11: Completed — Club Overview page (hero, members, settings sheet, RSVP display, admin management)
 - Phase 12: Completed — Game Flow Unification (unified /game/:matchDayId, Start Game from events, nav link migration)
 - Phase 13: Completed — UI Consistency Pass (Profile redesign, Clubs/JoinClub/NewClub/Members semantic styling)
-- Phase 14: Advanced Filters (custom month range, filter by city)
-- Phase 15: Settings page & Notification preferences
+- Phase 14: In Progress — Notifications system + bug fixes
+- Phase 15: Advanced Filters (custom month range, filter by city)
+- Phase 16: Settings page & Notification preferences
+- Backlog: Set up email notifications for open tasks
+- Backlog: Build native iOS and Android app using monorepo
+- Backlog: Tournament event type (complex, deferred)
+- Backlog: Skill Score progression system (adjust algorithm, progression based on games/sets played)

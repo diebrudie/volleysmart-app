@@ -51,7 +51,8 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
     .from("club_members")
     .select("club_id")
     .eq("user_id", userId)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("status", "active");
 
   if (myErr) throw myErr;
   if (!myMemberships?.length) return [];
@@ -76,7 +77,8 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
         .from("club_members")
         .select("user_id, role, member_association")
         .eq("club_id", clubId)
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .eq("status", "active");
 
       if (!members?.length) return;
 

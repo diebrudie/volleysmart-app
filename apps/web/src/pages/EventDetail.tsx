@@ -389,7 +389,8 @@ const EventDetail: React.FC = () => {
         .from("club_members")
         .select("*", { count: "exact", head: true })
         .eq("club_id", event.club_id)
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .eq("status", "active");
       if (err) return 0;
       return count ?? 0;
     },
