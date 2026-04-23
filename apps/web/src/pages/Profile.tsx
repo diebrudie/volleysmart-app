@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { updateMemberAssociation } from "@/integrations/supabase/members";
 import {
   AlertDialog,
@@ -653,10 +654,10 @@ const Profile = () => {
           {/* ── Personal Details Tab ─────────────────────────── */}
           <TabsContent value="personal">
             {!isEditing ? (
-              <div className="py-4 space-y-4">
+              <div className="py-4 space-y-6">
                 {profile.birthday && (
-                  <div className="flex items-center gap-3">
-                    <Cake className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex items-start gap-3">
+                    <Cake className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs text-muted-foreground">Birthday</p>
                       <p className="text-base text-foreground">
@@ -670,8 +671,8 @@ const Profile = () => {
                   </div>
                 )}
                 {profile.height_cm && (
-                  <div className="flex items-center gap-3">
-                    <Ruler className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex items-start gap-3">
+                    <Ruler className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs text-muted-foreground">Height</p>
                       <p className="text-base text-foreground">{profile.height_cm} cm</p>
@@ -679,8 +680,8 @@ const Profile = () => {
                   </div>
                 )}
                 {profile.gender && (
-                  <div className="flex items-center gap-3">
-                    <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex items-start gap-3">
+                    <User className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs text-muted-foreground">Gender</p>
                       <p className="text-base text-foreground capitalize">{profile.gender}</p>
@@ -882,21 +883,9 @@ const Profile = () => {
                 })()}
               </div>
             ) : (
-              <div className="py-4 space-y-4">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xs text-primary/70 font-medium">Positions</h2>
-                  <button
-                    type="button"
-                    aria-label="Show court positions"
-                    className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground"
-                    onClick={() => setIsPositionsHelpOpen(true)}
-                  >
-                    <HelpCircle className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Main Position</Label>
+              <div className="py-4 space-y-5">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Main Position</p>
                   <Select
                     value={getPrimaryPositionId()}
                     onValueChange={updatePrimaryPosition}
@@ -914,8 +903,8 @@ const Profile = () => {
                   </Select>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Secondary Positions</Label>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
                   <div className="flex flex-wrap gap-2">
                     {positions.map((position) => {
                       const isPrimary = getPrimaryPositionId() === position.id;
@@ -943,6 +932,17 @@ const Profile = () => {
                     Tap to toggle secondary positions
                   </p>
                 </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPositionsHelpOpen(true)}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    View court positions diagram
+                  </button>
+                </div>
               </div>
             )}
           </TabsContent>
@@ -952,6 +952,33 @@ const Profile = () => {
             <div className="py-4">
               {userClubs.length > 0 ? (
                 <div className="space-y-3">
+                  {isOwnProfile && (
+                    <div className="flex items-center gap-1.5 pb-1">
+                      <p className="text-xs text-muted-foreground">
+                        Manage your club member associations
+                      </p>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-xs text-muted-foreground"
+                            aria-label="What does member association mean?"
+                          >
+                            ?
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          side="bottom"
+                          align="center"
+                          className="max-w-xs text-sm leading-snug text-popover-foreground"
+                        >
+                          Member Association means you are a paid member of the
+                          club. If you are not sure, leave this unchecked.
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+
                   {userClubs.map((club) => (
                     <div
                       key={club.club_id}
@@ -977,7 +1004,7 @@ const Profile = () => {
                       </div>
 
                       {isOwnProfile && (
-                        <div className="flex items-center justify-between pt-1 border-t border-border">
+                        <div className="flex items-center justify-between pt-3 border-t border-border">
                           <Label htmlFor={`assoc-${club.club_id}`} className="text-sm text-foreground">
                             Member Association
                           </Label>
