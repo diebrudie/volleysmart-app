@@ -65,6 +65,7 @@ interface MemberRow {
   last_name: string;
   image_url: string | null;
   primary_position: string | null;
+  member_association: boolean;
 }
 
 /**
@@ -172,7 +173,7 @@ const ClubOverview: React.FC = () => {
       // 1. Get active club members
       const { data: rows, error } = await supabase
         .from("club_members")
-        .select("user_id, role")
+        .select("user_id, role, member_association")
         .eq("club_id", clubId!)
         .eq("is_active", true)
         .eq("status", "active")
@@ -203,6 +204,7 @@ const ClubOverview: React.FC = () => {
           last_name: p?.last_name ?? "",
           image_url: p?.image_url ?? null,
           primary_position: primaryPos?.positions?.name ?? null,
+          member_association: m.member_association ?? false,
         };
       }) as MemberRow[];
       merged.sort((a, b) => a.first_name.localeCompare(b.first_name));
@@ -416,8 +418,11 @@ const ClubOverview: React.FC = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
+                  <p className="text-sm font-medium truncate flex items-center gap-1">
                     {formatDisplayName(m.first_name, m.last_name)}
+                    {m.member_association && (
+                      <span className="shrink-0" title="Association member">🏐</span>
+                    )}
                   </p>
                   {m.primary_position && (
                     <p className="text-xs text-muted-foreground">{m.primary_position}</p>
