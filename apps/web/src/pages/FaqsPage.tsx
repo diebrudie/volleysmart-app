@@ -79,8 +79,8 @@ const FaqsPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Sticky header — ManageRequests style */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
+      {/* Fixed header */}
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={() => navigate(-1)}
@@ -91,6 +91,7 @@ const FaqsPage = () => {
           <h1 className="text-base font-semibold">FAQs</h1>
         </div>
       </div>
+      <div className="h-14" />
 
       <main className="flex-1">
         <div className="px-4 py-4 pb-24 max-w-4xl mx-auto">

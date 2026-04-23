@@ -15,7 +15,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { updateMemberAssociation } from "@/integrations/supabase/members";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,6 +84,12 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
+  const [userClubs, setUserClubs] = useState<
+    { membership_id: string; club_id: string; name: string; role: string; joined_at: string | null; member_association: boolean }[]
+  >([]);
+  const [showLeaveDialog, setShowLeaveDialog] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const isOwnProfile = user?.id === userId;
 
@@ -118,6 +128,7 @@ const Profile = () => {
       fetchProfile();
       fetchPositions();
       fetchUserCreatedAt();
+      fetchUserClubs();
     }
   }, [userId]);
 
@@ -207,6 +218,76 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("Error fetching player positions:", error);
+    }
+  };
+
+  const fetchUserClubs = async () => {
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from("club_members")
+        .select("id, club_id, role, joined_at, member_association, clubs(name)")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .eq("status", "active");
+
+      if (!error && data) {
+        setUserClubs(
+          data.map((m) => ({
+            membership_id: m.id as string,
+            club_id: m.club_id as string,
+            name: (m.clubs as any)?.name ?? "Unknown",
+            role: m.role as string,
+            joined_at: m.joined_at as string | null,
+            member_association: (m.member_association as boolean) ?? false,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching user clubs:", error);
+    }
+  };
+
+  const handleLeaveClub = async (clubId: string) => {
+    if (!userId) return;
+    setIsLeaving(true);
+    try {
+      const { error } = await supabase
+        .from("club_members")
+        .update({ is_active: false, status: "removed" as any })
+        .eq("club_id", clubId)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      setUserClubs((prev) => prev.filter((c) => c.club_id !== clubId));
+      toast({ title: "Left club", duration: 1500 });
+    } catch (error) {
+      console.error("Error leaving club:", error);
+      toast({
+        title: "Error",
+        description: "Failed to leave club",
+        variant: "destructive",
+        duration: 2000,
+      });
+    } finally {
+      setIsLeaving(false);
+      setShowLeaveDialog(null);
+    }
+  };
+
+  const handleToggleAssociation = async (membershipId: string, newValue: boolean) => {
+    try {
+      await updateMemberAssociation(membershipId, newValue);
+      setUserClubs((prev) =>
+        prev.map((c) =>
+          c.membership_id === membershipId ? { ...c, member_association: newValue } : c
+        )
+      );
+      toast({ title: newValue ? "Marked as association member" : "Association membership removed", duration: 1500 });
+    } catch (error) {
+      console.error("Error updating member association:", error);
+      toast({ title: "Error", description: "Failed to update", variant: "destructive", duration: 2000 });
     }
   };
 
@@ -479,7 +560,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background" style={{ paddingBottom: isEditing ? '5rem' : undefined }}>
       {/* Header bar */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={isEditing ? handleCancelEdit : handleBack}
@@ -498,6 +579,7 @@ const Profile = () => {
           )}
         </div>
       </div>
+      <div className="h-14" />
 
       <div className="max-w-2xl mx-auto px-4">
         {/* Avatar + Name + Email */}
@@ -562,141 +644,127 @@ const Profile = () => {
           )}
         </div>
 
-        {/* ── View mode ─────────────────────────────────────── */}
-        {!isEditing ? (
-          <div className="space-y-0">
-            {/* Bio */}
-            {profile.bio && (
-              <div className="py-4 border-b border-border">
-                <p className="text-sm text-foreground">{profile.bio}</p>
-              </div>
-            )}
+        {/* ── Tabs ──────────────────────────────────────────── */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
+          <TabsList className="w-full">
+            <TabsTrigger value="personal" className="flex-1 text-xs">Personal</TabsTrigger>
+            <TabsTrigger value="volleyball" className="flex-1 text-xs">Volleyball</TabsTrigger>
+            <TabsTrigger value="clubs" className="flex-1 text-xs">Clubs</TabsTrigger>
+          </TabsList>
 
-            {/* Personal Details */}
-            {(profile.gender || profile.birthday || profile.height_cm) && (
-              <div className="py-4 border-b border-border">
-                <p className="text-xs text-primary/70 font-medium mb-2">Personal Details</p>
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-foreground">
-                  {profile.gender && (
-                    <span className="flex items-center gap-1.5 capitalize font-medium">
-                      <User className="h-3.5 w-3.5 text-muted-foreground" />
-                      {profile.gender}
-                    </span>
-                  )}
-                  {profile.birthday && (
-                    <span className="flex items-center gap-1.5">
-                      <Cake className="h-3.5 w-3.5 text-muted-foreground" />
-                      {new Date(profile.birthday).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  )}
-                  {profile.height_cm && (
-                    <span className="flex items-center gap-1.5">
-                      <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
-                      {profile.height_cm} cm
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+          {/* ── Personal Details Tab ─────────────────────────── */}
+          <TabsContent value="personal">
+            {!isEditing ? (
+              <div className="py-4 space-y-6">
+                {profile.birthday && (
+                  <div className="flex items-start gap-3">
+                    <Cake className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Birthday</p>
+                      <p className="text-base text-foreground">
+                        {new Date(profile.birthday).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {profile.height_cm && (
+                  <div className="flex items-start gap-3">
+                    <Ruler className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Height</p>
+                      <p className="text-base text-foreground">{profile.height_cm} cm</p>
+                    </div>
+                  </div>
+                )}
+                {profile.gender && (
+                  <div className="flex items-start gap-3">
+                    <User className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Gender</p>
+                      <p className="text-base text-foreground capitalize">{profile.gender}</p>
+                    </div>
+                  </div>
+                )}
+                {profile.bio && (
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Bio</p>
+                    <p className="text-base text-foreground">{profile.bio}</p>
+                  </div>
+                )}
 
-            {/* Positions */}
-            {playerPositions.length > 0 && (
-              <div className="py-4 border-b border-border">
-                <p className="text-xs text-primary/70 font-medium mb-3">Positions</p>
-                <div className="flex flex-wrap gap-2">
-                  {playerPositions
-                    .sort((a, b) => (a.is_primary === b.is_primary ? 0 : a.is_primary ? -1 : 1))
-                    .map((pp) => {
-                    const pos = positions.find((p) => p.id === pp.position_id);
-                    if (!pos) return null;
-                    return (
-                      <span
-                        key={pp.position_id}
-                        className={`text-sm px-3.5 py-1.5 rounded-full border ${
-                          pp.is_primary
-                            ? "border-primary/40 bg-primary/5 text-primary font-semibold"
-                            : "border-border bg-card text-muted-foreground"
-                        }`}
-                      >
-                        {pos.name}
-                      </span>
-                    );
-                  })}
-                </div>
+                {!profile.bio && !profile.gender && !profile.birthday && !profile.height_cm && (
+                  <div className="py-8 text-center">
+                    <p className="text-sm text-muted-foreground">No personal details yet.</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ) : (
-          /* ── Edit mode ─────────────────────────────────────── */
-          <div className="py-6 space-y-6">
-            {/* Personal info */}
-            <div className="space-y-4">
-              <h2 className="text-xs text-primary/70 font-medium">Personal Info</h2>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="firstName" className="text-xs text-muted-foreground">First Name</Label>
-                  <Input
-                    id="firstName"
-                    value={profile.first_name}
-                    onChange={(e) =>
-                      setProfile({ ...profile, first_name: e.target.value })
-                    }
-                    className="bg-muted/50 border-border"
-                  />
+            ) : (
+              <div className="py-4 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="firstName" className="text-xs text-muted-foreground">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={profile.first_name}
+                      onChange={(e) =>
+                        setProfile({ ...profile, first_name: e.target.value })
+                      }
+                      className="bg-muted/50 border-border"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="lastName" className="text-xs text-muted-foreground">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={profile.last_name}
+                      onChange={(e) =>
+                        setProfile({ ...profile, last_name: e.target.value })
+                      }
+                      className="bg-muted/50 border-border"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="lastName" className="text-xs text-muted-foreground">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    value={profile.last_name}
-                    onChange={(e) =>
-                      setProfile({ ...profile, last_name: e.target.value })
-                    }
-                    className="bg-muted/50 border-border"
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="birthday" className="text-xs text-muted-foreground">Birthday</Label>
-                <Input
-                  id="birthday"
-                  type="date"
-                  value={profile.birthday || ""}
-                  onChange={(e) =>
-                    setProfile({ ...profile, birthday: e.target.value })
-                  }
-                  className="bg-muted/50 border-border"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="height" className="text-xs text-muted-foreground">Height (cm)</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    min="100"
-                    max="250"
-                    value={profile.height_cm || ""}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        height_cm: e.target.value
-                          ? parseInt(e.target.value)
-                          : null,
-                      })
-                    }
-                    placeholder="175"
-                    className="bg-muted/50 border-border"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="birthday" className="text-xs text-muted-foreground">Birthday</Label>
+                    <Input
+                      id="birthday"
+                      type="date"
+                      value={profile.birthday || ""}
+                      onChange={(e) =>
+                        setProfile({ ...profile, birthday: e.target.value })
+                      }
+                      className="bg-muted/50 border-border"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="height" className="text-xs text-muted-foreground">Height (cm)</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      min="100"
+                      max="250"
+                      value={profile.height_cm || ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          height_cm: e.target.value
+                            ? parseInt(e.target.value)
+                            : null,
+                        })
+                      }
+                      placeholder="175"
+                      className="bg-muted/50 border-border"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
+
+                <div className="space-y-1.5 max-w-[calc(50%-0.375rem)]">
                   <Label className="text-xs text-muted-foreground">Gender</Label>
                   <Select
                     value={profile.gender}
@@ -715,102 +783,252 @@ const Profile = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="bio" className="text-xs text-muted-foreground">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={profile.bio || ""}
-                  onChange={(e) =>
-                    setProfile({ ...profile, bio: e.target.value })
-                  }
-                  placeholder="Tell us about yourself..."
-                  rows={3}
-                  className="bg-muted/50 border-border"
-                />
-              </div>
-            </div>
-
-            {/* Positions */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xs text-primary/70 font-medium">Positions</h2>
-                <button
-                  type="button"
-                  aria-label="Show court positions"
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground"
-                  onClick={() => setIsPositionsHelpOpen(true)}
-                >
-                  <HelpCircle className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              {/* Main Position */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Main Position</Label>
-                <Select
-                  value={getPrimaryPositionId()}
-                  onValueChange={updatePrimaryPosition}
-                >
-                  <SelectTrigger className="h-11 bg-muted/50 border-border">
-                    <SelectValue placeholder="Select your main position" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {positions.map((position) => (
-                      <SelectItem key={position.id} value={position.id}>
-                        {position.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Secondary Positions — tap to toggle */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Secondary Positions</Label>
-                <div className="flex flex-wrap gap-2">
-                  {positions.map((position) => {
-                    const isPrimary = getPrimaryPositionId() === position.id;
-                    const isSecondary = getSecondaryPositionIds().includes(position.id);
-
-                    if (isPrimary) return null; // Don't show primary in secondary list
-
-                    return (
-                      <button
-                        key={position.id}
-                        type="button"
-                        onClick={() => updateSecondaryPosition(position.id)}
-                        className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
-                          isSecondary
-                            ? "border-primary/40 bg-primary/10 text-primary font-medium"
-                            : "border-border bg-muted/30 text-muted-foreground hover:border-muted-foreground"
-                        }`}
-                      >
-                        {position.name}
-                      </button>
-                    );
-                  })}
+                <div className="space-y-1.5">
+                  <Label htmlFor="bio" className="text-xs text-muted-foreground">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={profile.bio || ""}
+                    onChange={(e) =>
+                      setProfile({ ...profile, bio: e.target.value })
+                    }
+                    placeholder="Tell us about yourself..."
+                    rows={3}
+                    className="bg-muted/50 border-border"
+                  />
                 </div>
-                <p className="text-xs text-muted-foreground pt-1">
-                  Tap to toggle secondary positions
-                </p>
+
+                {isOwnProfile && (
+                  <div className="pt-6">
+                    <button
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete my account
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
+          </TabsContent>
 
-            {/* Delete Account — only visible in edit mode */}
-            <div className="pt-8 pb-4">
-              <button
-                onClick={() => setShowDeleteDialog(true)}
-                className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete my account
-              </button>
-            </div>
+          {/* ── Volleyball Tab ───────────────────────────────── */}
+          <TabsContent value="volleyball">
+            {!isEditing ? (
+              <div className="py-4 space-y-5">
+                {(() => {
+                  const primaryPos = playerPositions.find((pp) => pp.is_primary);
+                  const secondaryPosItems = playerPositions.filter((pp) => !pp.is_primary);
+                  const primaryName = primaryPos
+                    ? positions.find((p) => p.id === primaryPos.position_id)?.name
+                    : null;
 
-          </div>
-        )}
+                  return playerPositions.length > 0 ? (
+                    <>
+                      {primaryName && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">Main Position</p>
+                          <div className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
+                            <div className="h-2 w-2 rounded-full bg-primary" />
+                            <span className="text-base font-semibold text-primary">{primaryName}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {secondaryPosItems.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
+                          <div className="space-y-2">
+                            {secondaryPosItems.map((pp) => {
+                              const pos = positions.find((p) => p.id === pp.position_id);
+                              if (!pos) return null;
+                              return (
+                                <div
+                                  key={pp.position_id}
+                                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 mr-2"
+                                >
+                                  <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                                  <span className="text-base text-foreground">{pos.name}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsPositionsHelpOpen(true)}
+                          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                          View court positions diagram
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-8 text-center space-y-3">
+                      <p className="text-sm text-muted-foreground">No positions set yet.</p>
+                      <button
+                        type="button"
+                        onClick={() => setIsPositionsHelpOpen(true)}
+                        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <HelpCircle className="h-3.5 w-3.5" />
+                        View court positions diagram
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="py-4 space-y-5">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Main Position</p>
+                  <Select
+                    value={getPrimaryPositionId()}
+                    onValueChange={updatePrimaryPosition}
+                  >
+                    <SelectTrigger className="h-11 bg-muted/50 border-border">
+                      <SelectValue placeholder="Select your main position" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {positions.map((position) => (
+                        <SelectItem key={position.id} value={position.id}>
+                          {position.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
+                  <div className="flex flex-wrap gap-2">
+                    {positions.map((position) => {
+                      const isPrimary = getPrimaryPositionId() === position.id;
+                      const isSecondary = getSecondaryPositionIds().includes(position.id);
+
+                      if (isPrimary) return null;
+
+                      return (
+                        <button
+                          key={position.id}
+                          type="button"
+                          onClick={() => updateSecondaryPosition(position.id)}
+                          className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
+                            isSecondary
+                              ? "border-primary/40 bg-primary/10 text-primary font-medium"
+                              : "border-border bg-muted/30 text-muted-foreground hover:border-muted-foreground"
+                          }`}
+                        >
+                          {position.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-1">
+                    Tap to toggle secondary positions
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPositionsHelpOpen(true)}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    View court positions diagram
+                  </button>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ── Clubs Tab ────────────────────────────────────── */}
+          <TabsContent value="clubs">
+            <div className="py-4">
+              {userClubs.length > 0 ? (
+                <div className="space-y-3">
+                  {isOwnProfile && (
+                    <div className="flex items-center gap-1.5 pb-1">
+                      <p className="text-xs text-muted-foreground">
+                        Manage your club member associations
+                      </p>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-xs text-muted-foreground"
+                            aria-label="What does member association mean?"
+                          >
+                            ?
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          side="bottom"
+                          align="center"
+                          className="max-w-xs text-sm leading-snug text-popover-foreground"
+                        >
+                          Member Association means you are a paid member of the
+                          club. If you are not sure, leave this unchecked.
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+
+                  {userClubs.map((club) => (
+                    <div
+                      key={club.club_id}
+                      className="rounded-xl border border-border bg-card p-4 space-y-3"
+                    >
+                      <div
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/clubs/${club.club_id}`)}
+                      >
+                        <p className="text-base font-semibold text-foreground">
+                          {club.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {club.joined_at
+                            ? `Member since ${new Date(club.joined_at).toLocaleDateString("en-US", {
+                                month: "long",
+                                year: "numeric",
+                              })}`
+                            : "Member"}
+                          {" · "}
+                          <span className="capitalize">{club.role}</span>
+                        </p>
+                      </div>
+
+                      {isOwnProfile && (
+                        <div className="flex items-center justify-between pt-3 border-t border-border">
+                          <Label htmlFor={`assoc-${club.club_id}`} className="text-sm text-foreground">
+                            Member Association
+                          </Label>
+                          <Switch
+                            id={`assoc-${club.club_id}`}
+                            checked={club.member_association}
+                            onCheckedChange={(checked) =>
+                              handleToggleAssociation(club.membership_id, checked)
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-muted-foreground">Not a member of any club yet.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Positions helper drawer */}
@@ -871,6 +1089,28 @@ const Profile = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? "Deleting..." : "Delete Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leave Club Confirmation */}
+      <AlertDialog open={!!showLeaveDialog} onOpenChange={(open) => !open && setShowLeaveDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave club?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will no longer be a member of this club. You can request to join again later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLeaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => showLeaveDialog && handleLeaveClub(showLeaveDialog)}
+              disabled={isLeaving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isLeaving ? "Leaving..." : "Leave Club"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

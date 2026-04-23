@@ -1127,13 +1127,14 @@ const PlayerOnboarding = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Sticky progress bar */}
-      <div className="sticky top-0 z-20 bg-background px-4 pt-4 pb-2">
+      {/* Fixed progress bar */}
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background px-4 pt-4 pb-2">
         <Progress
           value={((currentStep + 1) / totalSteps) * 100}
           className="h-1.5"
         />
       </div>
+      <div className="h-10" />
 
       {/* Scrollable content — vertically centered */}
       <div className="flex-1 overflow-y-auto pb-28 flex items-center">
