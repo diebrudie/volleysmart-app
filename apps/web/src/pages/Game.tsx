@@ -585,8 +585,8 @@ const Game = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
-      {/* Sticky header — ManageRequests style */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
+      {/* Fixed header */}
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={goBack}
@@ -634,6 +634,7 @@ const Game = () => {
           </DropdownMenu>
         </div>
       </div>
+      <div className="h-14" />
 
       {/* Info row */}
       <div className="px-4 pt-5 space-y-3">

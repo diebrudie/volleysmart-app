@@ -185,8 +185,8 @@ export default function ManageMembers() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
+      {/* Fixed header */}
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={() => navigate("/members")}
@@ -197,6 +197,7 @@ export default function ManageMembers() {
           <h1 className="text-base font-semibold">Manage Requests</h1>
         </div>
       </div>
+      <div className="h-14" />
 
       {/* Content */}
       <main className="flex-grow">

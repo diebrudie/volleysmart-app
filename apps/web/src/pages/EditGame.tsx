@@ -911,7 +911,7 @@ const EditGame = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={() => navigate(`/game/${gameId}`)}
@@ -922,6 +922,7 @@ const EditGame = () => {
           <h1 className="text-base font-semibold">Edit Teams</h1>
         </div>
       </div>
+      <div className="h-14" />
 
       <main className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

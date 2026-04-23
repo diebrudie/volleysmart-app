@@ -206,8 +206,8 @@ const NewClub = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
+      {/* Fixed header */}
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={() => navigate("/clubs")}
@@ -218,6 +218,7 @@ const NewClub = () => {
           <h1 className="text-base font-semibold">Create a Club</h1>
         </div>
       </div>
+      <div className="h-14" />
 
       {/* Form content */}
       <div className="flex-1 overflow-y-auto pb-28">

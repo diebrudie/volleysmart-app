@@ -560,7 +560,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background" style={{ paddingBottom: isEditing ? '5rem' : undefined }}>
       {/* Header bar */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={isEditing ? handleCancelEdit : handleBack}
@@ -579,6 +579,7 @@ const Profile = () => {
           )}
         </div>
       </div>
+      <div className="h-14" />
 
       <div className="max-w-2xl mx-auto px-4">
         {/* Avatar + Name + Email */}
