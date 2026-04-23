@@ -662,20 +662,19 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="birthday" className="text-xs text-muted-foreground">Birthday</Label>
-                <Input
-                  id="birthday"
-                  type="date"
-                  value={profile.birthday || ""}
-                  onChange={(e) =>
-                    setProfile({ ...profile, birthday: e.target.value })
-                  }
-                  className="bg-muted/50 border-border"
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="birthday" className="text-xs text-muted-foreground">Birthday</Label>
+                  <Input
+                    id="birthday"
+                    type="date"
+                    value={profile.birthday || ""}
+                    onChange={(e) =>
+                      setProfile({ ...profile, birthday: e.target.value })
+                    }
+                    className="bg-muted/50 border-border"
+                  />
+                </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="height" className="text-xs text-muted-foreground">Height (cm)</Label>
                   <Input
@@ -696,25 +695,26 @@ const Profile = () => {
                     className="bg-muted/50 border-border"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Gender</Label>
-                  <Select
-                    value={profile.gender}
-                    onValueChange={(value) =>
-                      setProfile({ ...profile, gender: value })
-                    }
-                  >
-                    <SelectTrigger className="bg-muted/50 border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="diverse">Diverse</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
+
+              <div className="space-y-1.5 max-w-[calc(50%-0.375rem)]">
+                <Label className="text-xs text-muted-foreground">Gender</Label>
+                <Select
+                  value={profile.gender}
+                  onValueChange={(value) =>
+                    setProfile({ ...profile, gender: value })
+                  }
+                >
+                  <SelectTrigger className="bg-muted/50 border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="diverse">Diverse</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
