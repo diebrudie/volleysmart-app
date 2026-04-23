@@ -1035,7 +1035,7 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                Where are you based?
+                Which city are you based in?
               </h2>
               <p className="text-muted-foreground">
                 This helps us connect you with local players and clubs.

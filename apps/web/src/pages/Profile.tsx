@@ -718,7 +718,7 @@ const Profile = () => {
                   <div className="flex items-start gap-3">
                     <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Location</p>
+                      <p className="text-xs text-muted-foreground">Based in</p>
                       <p className="text-base text-foreground">
                         {profile.city}{profile.country ? `, ${profile.country}` : ""}
                       </p>
