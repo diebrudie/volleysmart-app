@@ -17,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { updateMemberAssociation } from "@/integrations/supabase/members";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,7 +85,7 @@ const Profile = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [userClubs, setUserClubs] = useState<
-    { club_id: string; name: string; role: string; joined_at: string | null }[]
+    { membership_id: string; club_id: string; name: string; role: string; joined_at: string | null; member_association: boolean }[]
   >([]);
   const [showLeaveDialog, setShowLeaveDialog] = useState<string | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -223,7 +225,7 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from("club_members")
-        .select("club_id, role, created_at, clubs(name)")
+        .select("id, club_id, role, joined_at, member_association, clubs(name)")
         .eq("user_id", userId)
         .eq("is_active", true)
         .eq("status", "active");
@@ -231,10 +233,12 @@ const Profile = () => {
       if (!error && data) {
         setUserClubs(
           data.map((m) => ({
+            membership_id: m.id as string,
             club_id: m.club_id as string,
             name: (m.clubs as any)?.name ?? "Unknown",
             role: m.role as string,
-            joined_at: m.created_at as string | null,
+            joined_at: m.joined_at as string | null,
+            member_association: (m.member_association as boolean) ?? false,
           }))
         );
       }
@@ -268,6 +272,21 @@ const Profile = () => {
     } finally {
       setIsLeaving(false);
       setShowLeaveDialog(null);
+    }
+  };
+
+  const handleToggleAssociation = async (membershipId: string, newValue: boolean) => {
+    try {
+      await updateMemberAssociation(membershipId, newValue);
+      setUserClubs((prev) =>
+        prev.map((c) =>
+          c.membership_id === membershipId ? { ...c, member_association: newValue } : c
+        )
+      );
+      toast({ title: newValue ? "Marked as association member" : "Association membership removed", duration: 1500 });
+    } catch (error) {
+      console.error("Error updating member association:", error);
+      toast({ title: "Error", description: "Failed to update", variant: "destructive", duration: 2000 });
     }
   };
 
@@ -634,39 +653,44 @@ const Profile = () => {
           {/* ── Personal Details Tab ─────────────────────────── */}
           <TabsContent value="personal">
             {!isEditing ? (
-              <div className="space-y-0">
-                {profile.bio && (
-                  <div className="py-4 border-b border-border">
-                    <p className="text-sm text-foreground">{profile.bio}</p>
+              <div className="py-4 space-y-4">
+                {profile.birthday && (
+                  <div className="flex items-center gap-3">
+                    <Cake className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Birthday</p>
+                      <p className="text-base text-foreground">
+                        {new Date(profile.birthday).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
                   </div>
                 )}
-
-                {(profile.gender || profile.birthday || profile.height_cm) && (
-                  <div className="py-4 border-b border-border">
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-foreground">
-                      {profile.gender && (
-                        <span className="flex items-center gap-1.5 capitalize font-medium">
-                          <User className="h-3.5 w-3.5 text-muted-foreground" />
-                          {profile.gender}
-                        </span>
-                      )}
-                      {profile.birthday && (
-                        <span className="flex items-center gap-1.5">
-                          <Cake className="h-3.5 w-3.5 text-muted-foreground" />
-                          {new Date(profile.birthday).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </span>
-                      )}
-                      {profile.height_cm && (
-                        <span className="flex items-center gap-1.5">
-                          <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
-                          {profile.height_cm} cm
-                        </span>
-                      )}
+                {profile.height_cm && (
+                  <div className="flex items-center gap-3">
+                    <Ruler className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Height</p>
+                      <p className="text-base text-foreground">{profile.height_cm} cm</p>
                     </div>
+                  </div>
+                )}
+                {profile.gender && (
+                  <div className="flex items-center gap-3">
+                    <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Gender</p>
+                      <p className="text-base text-foreground capitalize">{profile.gender}</p>
+                    </div>
+                  </div>
+                )}
+                {profile.bio && (
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Bio</p>
+                    <p className="text-base text-foreground">{profile.bio}</p>
                   </div>
                 )}
 
@@ -790,36 +814,72 @@ const Profile = () => {
           {/* ── Volleyball Tab ───────────────────────────────── */}
           <TabsContent value="volleyball">
             {!isEditing ? (
-              <div className="space-y-0">
-                {playerPositions.length > 0 ? (
-                  <div className="py-4 border-b border-border">
-                    <p className="text-xs text-primary/70 font-medium mb-3">Positions</p>
-                    <div className="flex flex-wrap gap-2">
-                      {playerPositions
-                        .sort((a, b) => (a.is_primary === b.is_primary ? 0 : a.is_primary ? -1 : 1))
-                        .map((pp) => {
-                        const pos = positions.find((p) => p.id === pp.position_id);
-                        if (!pos) return null;
-                        return (
-                          <span
-                            key={pp.position_id}
-                            className={`text-sm px-3.5 py-1.5 rounded-full border ${
-                              pp.is_primary
-                                ? "border-primary/40 bg-primary/5 text-primary font-semibold"
-                                : "border-border bg-card text-muted-foreground"
-                            }`}
-                          >
-                            {pos.name}
-                          </span>
-                        );
-                      })}
+              <div className="py-4 space-y-5">
+                {(() => {
+                  const primaryPos = playerPositions.find((pp) => pp.is_primary);
+                  const secondaryPosItems = playerPositions.filter((pp) => !pp.is_primary);
+                  const primaryName = primaryPos
+                    ? positions.find((p) => p.id === primaryPos.position_id)?.name
+                    : null;
+
+                  return playerPositions.length > 0 ? (
+                    <>
+                      {primaryName && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">Main Position</p>
+                          <div className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
+                            <div className="h-2 w-2 rounded-full bg-primary" />
+                            <span className="text-base font-semibold text-primary">{primaryName}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {secondaryPosItems.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
+                          <div className="space-y-2">
+                            {secondaryPosItems.map((pp) => {
+                              const pos = positions.find((p) => p.id === pp.position_id);
+                              if (!pos) return null;
+                              return (
+                                <div
+                                  key={pp.position_id}
+                                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 mr-2"
+                                >
+                                  <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                                  <span className="text-base text-foreground">{pos.name}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsPositionsHelpOpen(true)}
+                          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                          View court positions diagram
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-8 text-center space-y-3">
+                      <p className="text-sm text-muted-foreground">No positions set yet.</p>
+                      <button
+                        type="button"
+                        onClick={() => setIsPositionsHelpOpen(true)}
+                        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <HelpCircle className="h-3.5 w-3.5" />
+                        View court positions diagram
+                      </button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="py-8 text-center">
-                    <p className="text-sm text-muted-foreground">No positions set yet.</p>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             ) : (
               <div className="py-4 space-y-4">
@@ -895,31 +955,40 @@ const Profile = () => {
                   {userClubs.map((club) => (
                     <div
                       key={club.club_id}
-                      className="flex items-center justify-between rounded-xl border border-border bg-card p-3"
+                      className="rounded-xl border border-border bg-card p-4 space-y-3"
                     >
                       <div
-                        className="min-w-0 flex-1 cursor-pointer"
+                        className="cursor-pointer"
                         onClick={() => navigate(`/clubs/${club.club_id}`)}
                       >
-                        <p className="text-sm font-semibold text-foreground truncate">
+                        <p className="text-base font-semibold text-foreground">
                           {club.name}
                         </p>
-                        <p className="text-xs text-muted-foreground capitalize">
-                          {club.role}
-                          {club.joined_at &&
-                            ` · Joined ${new Date(club.joined_at).toLocaleDateString("en-US", {
-                              month: "short",
-                              year: "numeric",
-                            })}`}
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {club.joined_at
+                            ? `Member since ${new Date(club.joined_at).toLocaleDateString("en-US", {
+                                month: "long",
+                                year: "numeric",
+                              })}`
+                            : "Member"}
+                          {" · "}
+                          <span className="capitalize">{club.role}</span>
                         </p>
                       </div>
-                      {isOwnProfile && club.role !== "admin" && (
-                        <button
-                          onClick={() => setShowLeaveDialog(club.club_id)}
-                          className="ml-3 shrink-0 text-xs text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <LogOut className="h-4 w-4" />
-                        </button>
+
+                      {isOwnProfile && (
+                        <div className="flex items-center justify-between pt-1 border-t border-border">
+                          <Label htmlFor={`assoc-${club.club_id}`} className="text-sm text-foreground">
+                            Member Association
+                          </Label>
+                          <Switch
+                            id={`assoc-${club.club_id}`}
+                            checked={club.member_association}
+                            onCheckedChange={(checked) =>
+                              handleToggleAssociation(club.membership_id, checked)
+                            }
+                          />
+                        </div>
                       )}
                     </div>
                   ))}
