@@ -11,10 +11,10 @@ import {
   ChevronDown,
   Settings,
   User,
-  UserPlus,
   HelpCircle,
   Bell,
   MessageSquare,
+  Mail,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
@@ -39,6 +39,7 @@ import {
   DrawerClose,
   DrawerFooter,
 } from "@/components/ui/drawer";
+import ContactSheet from "@/components/common/ContactSheet";
 
 /**
  * Local types to avoid `any` and satisfy ESLint.
@@ -68,6 +69,7 @@ interface AccountMenuItem {
   path?: string;
   icon: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
+  action?: string;
 }
 
 const PUBLIC_PREFIXES = [
@@ -131,6 +133,7 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const { clubId, membershipStatus, initialized } = useClub();
 
   const { data: unreadCount = 0 } = useQuery({
@@ -266,16 +269,16 @@ const Navbar = () => {
       ]
     : [];
 
-  const accountItems = [
+  const accountItems: AccountMenuItem[] = [
     { label: "Profile", path: `/user/${user?.id}`, icon: User },
-    { label: "Clubs", path: "/clubs", icon: UserPlus },
     { label: "FAQs", path: "/faqs", icon: HelpCircle },
+    { label: "Contact Us", icon: Mail, action: "contact" },
     {
       label: "Settings",
       icon: Settings,
-      disabled: true, // visually disabled
+      disabled: true,
     },
-  ].filter(Boolean);
+  ];
 
   const handleLandingNavClick = (
     sectionId: "features" | "how-it-works" | "faqs"
@@ -397,23 +400,13 @@ const Navbar = () => {
 
           <div className="flex items-center space-x-2">
             {isAuthenticated && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => navigate("/events/new")}
-              >
-                Create Event
-              </Button>
-            )}
-
-            {isAuthenticated && (
               <>
                 <Button
                   variant="ghost"
                   size="icon"
                   aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
                   onClick={() => navigate("/notifications")}
-                  className="relative text-foreground hover:bg-muted"
+                  className="relative text-foreground hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
@@ -491,6 +484,22 @@ const Navbar = () => {
                         key={index}
                         disabled
                         className={`${base} opacity-50 cursor-not-allowed hover:bg-transparent hover:text-gray-500`}
+                      >
+                        <div className="flex items-center w-full">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    );
+                  }
+
+                  // Action items (e.g., Contact Us)
+                  if (item.action === "contact") {
+                    return (
+                      <DropdownMenuItem
+                        key={index}
+                        className={`${base} cursor-pointer`}
+                        onClick={() => setContactOpen(true)}
                       >
                         <div className="flex items-center w-full">
                           <item.icon className="mr-2 h-4 w-4" />
@@ -819,7 +828,12 @@ const Navbar = () => {
   }
 
   // Desktop (>= md): always show the authenticated desktop nav
-  return <DesktopNav />;
+  return (
+    <>
+      <DesktopNav />
+      <ContactSheet open={contactOpen} onOpenChange={setContactOpen} source="profile_menu" />
+    </>
+  );
 };
 
 export default Navbar;

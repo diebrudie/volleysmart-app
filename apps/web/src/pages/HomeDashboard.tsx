@@ -2,11 +2,13 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { parseISO, format, startOfMonth, endOfMonth } from "date-fns";
-import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users } from "lucide-react";
+import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
+import { useIsCompact } from "@/hooks/use-compact";
+import Navbar from "@/components/layout/Navbar";
 
 // ─── Data hooks ──────────────────────────────────────────────────────────────
 
@@ -203,6 +205,7 @@ const HomeDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: playerId } = useCurrentPlayerId();
+  const isCompact = useIsCompact();
   const { data: clubs = [] } = useUserClubs(user?.id);
   const clubIds = clubs.map((c) => c.id).filter(Boolean) as string[];
 
@@ -249,6 +252,7 @@ const HomeDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {!isCompact && <Navbar />}
       <main className="flex-1 pb-24">
         <div className="max-w-7xl mx-auto px-4 pt-6">
           {/* ─── Top Slider ──────────────────────────────────────── */}
@@ -305,10 +309,17 @@ const HomeDashboard: React.FC = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="py-6 text-center">
+                <div className="py-6 text-center space-y-3">
                   <p className="text-muted-foreground text-sm">
                     No game scheduled today
                   </p>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate("/events/new")}
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Create Event
+                  </Button>
                 </div>
               )}
             </div>
