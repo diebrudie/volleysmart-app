@@ -6,6 +6,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
 
 type ContactReason =
   | "general_question"
@@ -27,8 +28,6 @@ interface ContactSheetProps {
    */
   forceLight?: boolean;
 }
-
-const CONTACT_WEBHOOK_URL = "https://webhook.placeholder.com";
 
 const ContactSheet = ({
   open,
@@ -52,25 +51,16 @@ const ContactSheet = ({
     setFeedback(null);
 
     try {
-      const payload = {
+      const { error } = await supabase.from("contact_submissions").insert({
         name,
         email,
         reason,
         message,
-        acceptTerms,
         source: source ?? "unknown",
-      };
-
-      const response = await fetch(CONTACT_WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error(`Webhook responded with status ${response.status}`);
+      if (error) {
+        throw error;
       }
 
       setFeedback("Thank you for your message! We will get back to you soon.");

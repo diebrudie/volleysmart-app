@@ -2,10 +2,11 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { MoonStar, LogOut, HelpCircle } from "lucide-react";
+import { MoonStar, LogOut, HelpCircle, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ThemePicker from "./ThemePicker";
+import ContactSheet from "@/components/common/ContactSheet";
 
 /**
  * Full-screen right-to-left drawer that covers everything (incl. bottom nav).
@@ -44,6 +45,7 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
   };
 
   const [themeOpen, setThemeOpen] = React.useState(false);
+  const [contactOpen, setContactOpen] = React.useState(false);
 
   return (
     <>
@@ -79,6 +81,14 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
               label="FAQs"
               onClick={() => go("/faqs")}
             />
+            <MenuItem
+              icon={<Mail className="h-5 w-5" />}
+              label="Contact Us"
+              onClick={() => {
+                onOpenChange(false);
+                setContactOpen(true);
+              }}
+            />
           </div>
 
           <div className="mt-10 px-4 pb-6">
@@ -95,6 +105,7 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
       </Sheet>
 
       <ThemePicker open={themeOpen} onOpenChange={setThemeOpen} />
+      <ContactSheet open={contactOpen} onOpenChange={setContactOpen} source="hamburger_menu" />
     </>
   );
 };
