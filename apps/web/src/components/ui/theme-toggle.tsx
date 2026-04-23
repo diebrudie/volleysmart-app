@@ -4,9 +4,11 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ThemeToggleProps = Omit<ButtonProps, "onClick">;
+type ThemeToggleProps = Omit<ButtonProps, "onClick"> & {
+  showLabel?: boolean;
+};
 
-const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, ...props }) => {
+const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, showLabel, ...props }) => {
   const { setTheme, isDark } = useTheme();
 
   const handleToggle = () => {
@@ -33,7 +35,8 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, ...props }) => {
       )}
       {...props}
     >
-      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {isDark ? <Sun className="h-5 w-5 shrink-0" /> : <Moon className="h-5 w-5 shrink-0" />}
+      {showLabel && <span>Theme</span>}
     </Button>
   );
 };

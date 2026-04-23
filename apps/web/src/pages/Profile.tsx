@@ -38,7 +38,15 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
+import { useIsCompact } from "@/hooks/use-compact";
 
 interface PlayerProfile {
   id: string;
@@ -67,6 +75,7 @@ const Profile = () => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const isCompact = useIsCompact();
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [originalProfile, setOriginalProfile] = useState<PlayerProfile | null>(
@@ -531,7 +540,7 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center lg:ml-60">
         <Spinner className="h-8 w-8" />
       </div>
     );
@@ -539,7 +548,7 @@ const Profile = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background lg:ml-60">
         <div className="max-w-2xl mx-auto py-6 px-4">
           <button
             onClick={handleBack}
@@ -558,9 +567,9 @@ const Profile = () => {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-background" style={{ paddingBottom: isEditing ? '5rem' : undefined }}>
+    <div className="min-h-screen bg-background lg:ml-60" style={{ paddingBottom: isEditing ? '5rem' : undefined }}>
       {/* Header bar */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
+      <div className="fixed top-0 left-0 right-0 lg:left-60 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={isEditing ? handleCancelEdit : handleBack}
@@ -1031,29 +1040,9 @@ const Profile = () => {
         </Tabs>
       </div>
 
-      {/* Positions helper drawer */}
-      <Drawer
-        open={isPositionsHelpOpen}
-        onOpenChange={setIsPositionsHelpOpen}
-        shouldScaleBackground
-      >
-        <DrawerContent className="pb-6">
-          <DrawerClose
-            aria-label="Close"
-            className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
-             border border-border bg-background/90 text-foreground shadow
-             hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <X className="h-4 w-4" />
-          </DrawerClose>
-
-          <DrawerHeader className="pt-8">
-            <DrawerTitle>Volleyball court positions</DrawerTitle>
-            <DrawerDescription>
-              Reference diagram to pick your positions.
-            </DrawerDescription>
-          </DrawerHeader>
-
+      {/* Positions helper drawer (mobile) / sheet (desktop) */}
+      {(() => {
+        const positionsContent = (
           <div className="px-4 pb-2">
             <div className="mx-auto w-full md:max-w-3xl">
               <img
@@ -1067,8 +1056,46 @@ const Profile = () => {
               </p>
             </div>
           </div>
-        </DrawerContent>
-      </Drawer>
+        );
+
+        return isCompact ? (
+          <Drawer
+            open={isPositionsHelpOpen}
+            onOpenChange={setIsPositionsHelpOpen}
+            shouldScaleBackground
+          >
+            <DrawerContent className="pb-6">
+              <DrawerClose
+                aria-label="Close"
+                className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
+                  border border-border bg-background/90 text-foreground shadow
+                  hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <X className="h-4 w-4" />
+              </DrawerClose>
+              <DrawerHeader className="pt-8">
+                <DrawerTitle>Volleyball court positions</DrawerTitle>
+                <DrawerDescription>
+                  Reference diagram to pick your positions.
+                </DrawerDescription>
+              </DrawerHeader>
+              {positionsContent}
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Sheet open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen}>
+            <SheetContent side="right" className="overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Volleyball court positions</SheetTitle>
+                <SheetDescription>
+                  Reference diagram to pick your positions.
+                </SheetDescription>
+              </SheetHeader>
+              {positionsContent}
+            </SheetContent>
+          </Sheet>
+        );
+      })()}
 
       {/* Delete Account Confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -52,6 +52,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useIsCompact } from "@/hooks/use-compact";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -116,6 +117,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
   onSave,
   saving,
 }) => {
+  const isCompact = useIsCompact();
   const [title, setTitle] = React.useState(event.title);
   const [eventType, setEventType] = React.useState<EventType>(
     event.event_type
@@ -171,7 +173,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[95dvh] flex flex-col p-0">
+      <SheetContent side={isCompact ? "bottom" : "right"} className="h-[95dvh] flex flex-col p-0">
         <SheetHeader className="px-4 pt-4 pb-2 border-b">
           <SheetTitle>Edit Event</SheetTitle>
         </SheetHeader>

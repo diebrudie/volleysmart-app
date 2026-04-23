@@ -11,10 +11,14 @@ import {
   ChevronDown,
   Settings,
   User,
-  UserPlus,
   HelpCircle,
   Bell,
   MessageSquare,
+  Mail,
+  Home,
+  CalendarDays,
+  Building2,
+  Users,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
@@ -39,6 +43,7 @@ import {
   DrawerClose,
   DrawerFooter,
 } from "@/components/ui/drawer";
+import ContactSheet from "@/components/common/ContactSheet";
 
 /**
  * Local types to avoid `any` and satisfy ESLint.
@@ -68,6 +73,7 @@ interface AccountMenuItem {
   path?: string;
   icon: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
+  action?: string;
 }
 
 const PUBLIC_PREFIXES = [
@@ -131,6 +137,7 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const { clubId, membershipStatus, initialized } = useClub();
 
   const { data: unreadCount = 0 } = useQuery({
@@ -266,16 +273,16 @@ const Navbar = () => {
       ]
     : [];
 
-  const accountItems = [
+  const accountItems: AccountMenuItem[] = [
     { label: "Profile", path: `/user/${user?.id}`, icon: User },
-    { label: "Clubs", path: "/clubs", icon: UserPlus },
     { label: "FAQs", path: "/faqs", icon: HelpCircle },
+    { label: "Contact Us", icon: Mail, action: "contact" },
     {
       label: "Settings",
       icon: Settings,
-      disabled: true, // visually disabled
+      disabled: true,
     },
-  ].filter(Boolean);
+  ];
 
   const handleLandingNavClick = (
     sectionId: "features" | "how-it-works" | "faqs"
@@ -371,151 +378,158 @@ const Navbar = () => {
     </nav>
   );
 
-  const DesktopNav = () => (
-    <header className="shadow-sm border-b border-gray-200 dark:border-gray-700">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
-        <div className="w-full py-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 lg:border-none">
-          <div className="flex items-center">
-            <Logo size="sm" linkTo={isAuthenticated ? "/home" : "/"} />
-          </div>
+  const sidebarNavItems = [
+    { label: "Home", path: "/home", icon: Home },
+    { label: "Events", path: "/events", icon: CalendarDays },
+    { label: "Clubs", path: "/clubs", icon: Building2 },
+    { label: "Members", path: "/members", icon: Users },
+  ];
 
-          <div className="flex-grow hidden md:flex justify-center">
-            <div className="space-x-8">
-              {navItems
-                .filter((item) => item.visible)
-                .map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`text-base font-medium ${navTextColor} ${navHoverColor} border-b border-transparent hover:border-[#243F8D] dark:hover:border-blue-400 pb-1 transition-colors`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-            </div>
-          </div>
+  const isNavActive = (path: string) => {
+    if (path === "/home") return pathname === "/home";
+    return pathname.startsWith(path);
+  };
 
-          <div className="flex items-center space-x-2">
-            {isAuthenticated && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => navigate("/events/new")}
+  const DesktopNav = () => {
+    const { avatarUrl, initials } = getAvatarAndInitials(
+      (user ?? null) as AuthLikeUser | null,
+      playerProfile
+    );
+
+    const profileName =
+      playerProfile?.first_name
+        ? `${playerProfile.first_name} ${playerProfile.last_name?.[0] ?? ""}`.trim()
+        : user?.email?.split("@")[0] ?? "User";
+
+    return (
+      <aside className="fixed left-0 top-0 bottom-0 w-60 border-r border-border bg-background z-40 flex flex-col">
+        {/* Logo */}
+        <div className="px-5 py-5">
+          <Logo size="sm" linkTo="/home" />
+        </div>
+
+        {/* Main nav links */}
+        <nav className="flex-1 px-3 space-y-1" aria-label="Main">
+          {sidebarNavItems.map((item) => {
+            const active = isNavActive(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                  active
+                    ? "bg-muted text-foreground font-semibold"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                }`}
               >
-                Create Event
-              </Button>
-            )}
+                <item.icon className="h-5 w-5 shrink-0" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-            {isAuthenticated && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
-                  onClick={() => navigate("/notifications")}
-                  className="relative text-foreground hover:bg-muted"
-                >
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Chats (coming soon)"
-                  disabled
-                  className="text-muted-foreground opacity-40 cursor-not-allowed"
-                >
-                  <MessageSquare className="h-5 w-5" />
-                </Button>
-              </>
-            )}
+        {/* Bottom section: notifications, chat, theme */}
+        <div className="px-3 space-y-1 pb-2">
+          <button
+            type="button"
+            onClick={() => navigate("/notifications")}
+            className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+              pathname === "/notifications"
+                ? "bg-muted text-foreground font-semibold"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            }`}
+          >
+            <span className="relative shrink-0">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+              )}
+            </span>
+            Notifications
+          </button>
 
-            <ThemeToggle
-              className="rounded-md p-2
-  hover:bg-gray-100 focus:bg-gray-100
-  dark:hover:bg-gray-800 dark:focus:bg-gray-800
-  transition-colors"
-            />
-            <DropdownMenu>
-              {/* Account trigger with photo or initials */}
-              <DropdownMenuTrigger className="flex items-center group">
-                {(() => {
-                  const { avatarUrl, initials } = getAvatarAndInitials(
-                    (user ?? null) as AuthLikeUser | null,
-                    playerProfile
-                  );
+          <button
+            type="button"
+            disabled
+            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground opacity-40 cursor-not-allowed"
+          >
+            <MessageSquare className="h-5 w-5 shrink-0" />
+            Chat
+          </button>
 
+          <ThemeToggle className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors justify-start h-auto p-0 bg-transparent border-0 shadow-none font-normal" showLabel />
+        </div>
+
+        {/* Profile section */}
+        <div className="border-t border-border px-3 py-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="w-full flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors group">
+              <div
+                className="h-9 w-9 rounded-full overflow-hidden shrink-0
+                  bg-gray-200 dark:bg-gray-700
+                  flex items-center justify-center"
+              >
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="User avatar"
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {initials}
+                  </span>
+                )}
+              </div>
+              <span className="text-sm font-medium text-foreground truncate">
+                {profileName}
+              </span>
+              <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground shrink-0" />
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              side="top"
+              align="start"
+              className="w-56 bg-white border border-gray-200 shadow-md
+                dark:bg-gray-800 dark:border-gray-700"
+            >
+              {accountItems.map((item: AccountMenuItem, index) => {
+                const base =
+                  "text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900 dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700";
+
+                if (item.disabled) {
                   return (
-                    <div
-                      className="h-10 w-10 rounded-full overflow-hidden
-                   ring-0 group-hover:ring-2 ring-gray-300 dark:ring-gray-600
-                   bg-gray-200 dark:bg-gray-700
-                   transition-all flex items-center justify-center"
-                      aria-label="Open account menu"
+                    <DropdownMenuItem
+                      key={index}
+                      disabled
+                      className={`${base} opacity-50 cursor-not-allowed hover:bg-transparent hover:text-gray-500`}
                     >
-                      {avatarUrl ? (
-                        <img
-                          src={avatarUrl}
-                          alt="User avatar"
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <span
-                          className={`text-sm font-semibold ${navTextColor}`}
-                        >
-                          {initials}
-                        </span>
-                      )}
-                    </div>
+                      <div className="flex items-center w-full">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                      </div>
+                    </DropdownMenuItem>
                   );
-                })()}
-                <ChevronDown className={`ml-1 h-4 w-4 ${iconColor}`} />
-              </DropdownMenuTrigger>
+                }
 
-              <DropdownMenuContent
-                align="end"
-                className="w-56 bg-white border border-gray-200 shadow-md
-             dark:bg-gray-800 dark:border-gray-700"
-              >
-                {accountItems.map((item: AccountMenuItem, index) => {
-                  const base =
-                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900 dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700";
+                if (item.action === "contact") {
+                  return (
+                    <DropdownMenuItem
+                      key={index}
+                      className={`${base} cursor-pointer`}
+                      onClick={() => setContactOpen(true)}
+                    >
+                      <div className="flex items-center w-full">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                }
 
-                  if (item.disabled) {
-                    // Disabled (e.g., Settings)
-                    return (
-                      <DropdownMenuItem
-                        key={index}
-                        disabled
-                        className={`${base} opacity-50 cursor-not-allowed hover:bg-transparent hover:text-gray-500`}
-                      >
-                        <div className="flex items-center w-full">
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.label}</span>
-                        </div>
-                      </DropdownMenuItem>
-                    );
-                  }
-
-                  // FAQs from inside the app → open in a new tab
-                  if (item.path === "/faqs") {
-                    return (
-                      <DropdownMenuItem key={index} asChild className={base}>
-                        <Link
-                          to={item.path}
-                          className="flex items-center cursor-pointer"
-                        >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.label}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    );
-                  }
-
-                  // Other enabled items keep normal Link behavior
+                if (item.path === "/faqs") {
                   return (
                     <DropdownMenuItem key={index} asChild className={base}>
                       <Link
@@ -527,24 +541,36 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                   );
-                })}
+                }
 
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="cursor-pointer text-gray-700 hover:bg-gray-100 hover:text-gray-900
-             focus:bg-gray-100 focus:text-gray-900
-             dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
-                >
-                  Log Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                return (
+                  <DropdownMenuItem key={index} asChild className={base}>
+                    <Link
+                      to={item.path ?? "#"}
+                      className="flex items-center cursor-pointer"
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                );
+              })}
+
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="cursor-pointer text-gray-700 hover:bg-gray-100 hover:text-gray-900
+                  focus:bg-gray-100 focus:text-gray-900
+                  dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+              >
+                Log Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </nav>
-    </header>
-  );
+      </aside>
+    );
+  };
 
   const MobileNav = () => (
     <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -819,7 +845,12 @@ const Navbar = () => {
   }
 
   // Desktop (>= md): always show the authenticated desktop nav
-  return <DesktopNav />;
+  return (
+    <>
+      <DesktopNav />
+      <ContactSheet open={contactOpen} onOpenChange={setContactOpen} source="profile_menu" />
+    </>
+  );
 };
 
 export default Navbar;

@@ -2,11 +2,13 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { parseISO, format, startOfMonth, endOfMonth } from "date-fns";
-import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users } from "lucide-react";
+import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
+import { useIsCompact } from "@/hooks/use-compact";
+import Navbar from "@/components/layout/Navbar";
 
 // ─── Data hooks ──────────────────────────────────────────────────────────────
 
@@ -203,6 +205,7 @@ const HomeDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: playerId } = useCurrentPlayerId();
+  const isCompact = useIsCompact();
   const { data: clubs = [] } = useUserClubs(user?.id);
   const clubIds = clubs.map((c) => c.id).filter(Boolean) as string[];
 
@@ -215,8 +218,9 @@ const HomeDashboard: React.FC = () => {
   const [activeSlide, setActiveSlide] = React.useState(0);
   const totalSlides = 3;
 
-  // Observe scroll position for dot indicators
+  // Observe scroll position for dot indicators (mobile only)
   React.useEffect(() => {
+    if (!isCompact) return;
     const el = sliderRef.current;
     if (!el) return;
     const handleScroll = () => {
@@ -228,10 +232,11 @@ const HomeDashboard: React.FC = () => {
     };
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isCompact]);
 
-  // Auto-rotate every 15s
+  // Auto-rotate every 15s (mobile only)
   React.useEffect(() => {
+    if (!isCompact) return;
     const el = sliderRef.current;
     if (!el) return;
     const interval = setInterval(() => {
@@ -245,16 +250,17 @@ const HomeDashboard: React.FC = () => {
       });
     }, 15000);
     return () => clearInterval(interval);
-  }, [totalSlides]);
+  }, [totalSlides, isCompact]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 pb-24">
+      {!isCompact && <Navbar />}
+      <main className="flex-1 pb-24 lg:ml-60">
         <div className="max-w-7xl mx-auto px-4 pt-6">
           {/* ─── Top Slider ──────────────────────────────────────── */}
           <div
             ref={sliderRef}
-            className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4"
+            className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4 lg:grid lg:grid-cols-3 lg:gap-4 lg:overflow-visible lg:snap-none lg:mx-0 lg:px-0 lg:pb-0"
             style={{
               scrollbarWidth: "none",
               msOverflowStyle: "none",
@@ -262,7 +268,7 @@ const HomeDashboard: React.FC = () => {
             }}
           >
             {/* Card 1 — Today's Game */}
-            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] border border-border rounded-xl bg-card p-5">
+            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Volleyball className="h-5 w-5 text-primary" />
@@ -305,17 +311,24 @@ const HomeDashboard: React.FC = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="py-6 text-center">
+                <div className="py-6 text-center space-y-3">
                   <p className="text-muted-foreground text-sm">
                     No game scheduled today
                   </p>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate("/events/new")}
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Create Event
+                  </Button>
                 </div>
               )}
             </div>
 
             {/* Card 2 — Last Game Played */}
             <div
-              className={`snap-start shrink-0 w-[85vw] sm:w-[340px] border border-border rounded-xl bg-card p-5 ${
+              className={`snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 ${
                 lastGame ? "cursor-pointer hover:shadow-md transition-shadow" : ""
               }`}
               onClick={() =>
@@ -385,7 +398,7 @@ const HomeDashboard: React.FC = () => {
             </div>
 
             {/* Card 3 — Monthly Stats */}
-            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] border border-border rounded-xl bg-card p-5">
+            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -412,21 +425,23 @@ const HomeDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Trailing spacer */}
-            <div className="shrink-0 w-1" aria-hidden="true" />
+            {/* Trailing spacer (mobile only) */}
+            <div className="shrink-0 w-1 lg:hidden" aria-hidden="true" />
           </div>
 
-          {/* Dot indicators */}
-          <div className="flex justify-center gap-1.5 pt-3">
-            {Array.from({ length: totalSlides }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                  i === activeSlide ? "bg-muted-foreground" : "bg-border"
-                }`}
-              />
-            ))}
-          </div>
+          {/* Dot indicators (mobile only) */}
+          {isCompact && (
+            <div className="flex justify-center gap-1.5 pt-3">
+              {Array.from({ length: totalSlides }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                    i === activeSlide ? "bg-muted-foreground" : "bg-border"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
 
           {/* ─── Discover Events ──────────────────────────────────── */}
           <section className="mt-8">

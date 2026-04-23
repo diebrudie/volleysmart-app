@@ -223,7 +223,7 @@ const EventList: React.FC<{
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-2">
+    <div className="grid gap-3">
       {events.map((event) => (
         <EventCard
           key={event.id}
@@ -434,7 +434,7 @@ const UpcomingEvents: React.FC = () => {
   const visibleEvents: PlannedEvent[] = React.useMemo(() => {
     let list = events;
 
-    if (view === "calendar" && selectedDay) {
+    if (selectedDay && (view === "calendar" || !isCompact)) {
       list = list.filter(
         (e) => e.date === format(selectedDay, "yyyy-MM-dd")
       );
@@ -769,7 +769,7 @@ const UpcomingEvents: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow">
+        <main className="flex-grow lg:ml-60">
           <div className="max-w-6xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-xl font-bold">Events</h1>
@@ -779,33 +779,64 @@ const UpcomingEvents: React.FC = () => {
               </Button>
             </div>
 
-            {TabToggle}
-
             <div className="flex gap-8">
-              {tab === "upcoming" && (
-                <aside className="w-64 shrink-0">
-                  <div className="rounded-2xl border bg-card p-4 sticky top-20">
-                    <MiniCalendar
-                      events={events}
-                      month={calendarMonth}
-                      onMonthChange={setCalendarMonth}
-                      selectedDay={selectedDay}
-                      onDaySelect={handleDaySelect}
-                    />
-                    {selectedDay && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedDay(null)}
-                        className="mt-3 w-full text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        Clear filter
-                      </button>
-                    )}
-                  </div>
-                </aside>
-              )}
+              {/* Left: Calendar sidebar — always visible, disabled on past tab */}
+              <aside className="w-64 shrink-0">
+                <div
+                  className={cn(
+                    "rounded-2xl border bg-card p-4 sticky top-20",
+                    tab === "past" && "opacity-50 pointer-events-none"
+                  )}
+                >
+                  <MiniCalendar
+                    events={events}
+                    month={calendarMonth}
+                    onMonthChange={setCalendarMonth}
+                    selectedDay={selectedDay}
+                    onDaySelect={handleDaySelect}
+                  />
+                  {selectedDay && tab === "upcoming" && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDay(null)}
+                      className="mt-3 w-full text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Clear filter
+                    </button>
+                  )}
+                </div>
+              </aside>
 
+              {/* Right: Tabs, controls, event list */}
               <div className="flex-1 min-w-0">
+                {TabToggle}
+
+                {/* Sort + Filter controls */}
+                <div className="flex items-center gap-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setSortAsc((prev) => !prev)}
+                    className="flex items-center justify-center h-8 w-8 border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                    aria-label={sortAsc ? "Sort descending" : "Sort ascending"}
+                  >
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFilterOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    Filter
+                    {activeFilterCount > 0 && (
+                      <span className="ml-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
                 {tab === "upcoming" ? (
                   <EventList
                     events={visibleEvents}

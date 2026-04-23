@@ -19,6 +19,14 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { useIsCompact } from "@/hooks/use-compact";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -115,6 +123,7 @@ export function PlayersEditModal({
   onCancel,
   onSave,
 }: PlayersEditModalProps) {
+  const isCompact = useIsCompact();
   const [isLoading, setIsLoading] = useState(false);
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -341,18 +350,17 @@ export function PlayersEditModal({
     );
   };
 
-  return (
-    <Drawer open={open} onOpenChange={(v) => !v && onCancel()}>
-      <DrawerContent
-        className={cn(
-          "p-0 flex flex-col h-[95dvh]"
-        )}
-      >
-        <DrawerTitle className="sr-only">Edit Players</DrawerTitle>
-        <DrawerDescription className="sr-only">
-          Edit the list of players for this game. Search, select or deselect
-          players, and add guests.
-        </DrawerDescription>
+  const innerContent = (
+    <>
+      {isCompact && (
+        <>
+          <DrawerTitle className="sr-only">Edit Players</DrawerTitle>
+          <DrawerDescription className="sr-only">
+            Edit the list of players for this game. Search, select or deselect
+            players, and add guests.
+          </DrawerDescription>
+        </>
+      )}
 
         {/* Header */}
         <div ref={headerRef} className="border-b border-border bg-card rounded-t-2xl">
@@ -504,7 +512,7 @@ export function PlayersEditModal({
           )}
         </div>
 
-        <DrawerFooter className="px-4 sm:px-6 pt-3 pb-[calc(theme(spacing.3)+env(safe-area-inset-bottom))] flex flex-row justify-end gap-3 border-t border-border bg-card">
+        <div className="px-4 sm:px-6 pt-3 pb-[calc(theme(spacing.3)+env(safe-area-inset-bottom))] flex flex-row justify-end gap-3 border-t border-border bg-card">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
@@ -526,8 +534,31 @@ export function PlayersEditModal({
           >
             Save ({selectedIds.length})
           </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+        </div>
+    </>
+  );
+
+  if (isCompact) {
+    return (
+      <Drawer open={open} onOpenChange={(v) => !v && onCancel()}>
+        <DrawerContent className="p-0 flex flex-col h-[95dvh]">
+          {innerContent}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={(v) => !v && onCancel()}>
+      <SheetContent side="right" className="p-0 flex flex-col w-[420px] sm:max-w-[420px]">
+        <SheetHeader className="sr-only">
+          <SheetTitle>Edit Players</SheetTitle>
+          <SheetDescription>
+            Edit the list of players for this game.
+          </SheetDescription>
+        </SheetHeader>
+        {innerContent}
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -288,7 +288,7 @@ const MembersGlobal: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         {!isCompact && <Navbar />}
-        <div className="flex-grow flex items-center justify-center">
+        <div className="flex-grow flex items-center justify-center lg:ml-60">
           <div className="animate-spin h-7 w-7 rounded-full border-2 border-muted border-t-foreground" />
         </div>
       </div>
@@ -300,7 +300,7 @@ const MembersGlobal: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         {!isCompact && <Navbar />}
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center pb-24">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center pb-24 lg:ml-60">
           <Users className="h-12 w-12 text-muted-foreground" />
           <div>
             <h1 className="text-xl font-semibold">No members yet</h1>
@@ -318,7 +318,7 @@ const MembersGlobal: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow">
+        <main className="flex-grow lg:ml-60">
           <div className="max-w-6xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-xl font-bold">Members</h1>

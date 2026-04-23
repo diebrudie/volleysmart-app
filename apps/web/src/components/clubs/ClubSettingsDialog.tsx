@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useIsCompact } from "@/hooks/use-compact";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -70,6 +71,7 @@ const ClubSettingsDialog = ({
   onClose,
   club,
 }: ClubSettingsDialogProps) => {
+  const isCompact = useIsCompact();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -378,7 +380,7 @@ const ClubSettingsDialog = ({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="max-h-[90vh] flex flex-col p-0 rounded-t-2xl">
+      <SheetContent side={isCompact ? "bottom" : "right"} className={`max-h-[90vh] flex flex-col p-0 ${isCompact ? "rounded-t-2xl" : ""}`}>
         {/* Header */}
         <SheetHeader className="px-4 pt-4 pb-2 border-b">
           <SheetTitle>Club Settings</SheetTitle>

@@ -41,6 +41,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useIsCompact } from "@/hooks/use-compact";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -177,6 +178,7 @@ function computeRsvpDeadline(form: FormState): string | undefined {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 const CreateEvent: React.FC = () => {
+  const isCompact = useIsCompact();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -429,7 +431,7 @@ const CreateEvent: React.FC = () => {
 
             {/* Templates bottom drawer */}
             <Sheet open={templateSheetOpen} onOpenChange={setTemplateSheetOpen}>
-              <SheetContent side="bottom" className="rounded-t-2xl">
+              <SheetContent side={isCompact ? "bottom" : "right"} className={isCompact ? "rounded-t-2xl" : ""}>
                 <SheetHeader>
                   <SheetTitle>Templates</SheetTitle>
                 </SheetHeader>

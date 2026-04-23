@@ -150,7 +150,7 @@ const Notifications: React.FC = () => {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col lg:ml-60">
       {/* ─── Header (Game Details style) ─────────────────────────────── */}
       <div className="border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">

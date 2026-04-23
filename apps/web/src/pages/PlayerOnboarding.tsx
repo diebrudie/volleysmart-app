@@ -30,6 +30,14 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { useIsCompact } from "@/hooks/use-compact";
 
 interface Position {
   id: string;
@@ -122,6 +130,7 @@ const PlayerOnboarding = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isCompact = useIsCompact();
 
   const [positions, setPositions] = useState<Position[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1196,29 +1205,10 @@ const PlayerOnboarding = () => {
         </div>
       </div>
 
-      {/* Positions Help Drawer (used by steps 1 & 2) */}
+      {/* Positions Help Drawer (mobile) / Sheet (desktop) */}
       <TooltipProvider>
-        <Drawer
-          open={isPositionsHelpOpen}
-          onOpenChange={setIsPositionsHelpOpen}
-          shouldScaleBackground
-        >
-          <DrawerContent className="pb-6">
-            <DrawerClose
-              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
-               border border-border bg-card/90 shadow hover:bg-card focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </DrawerClose>
-
-            <DrawerHeader className="pt-8">
-              <DrawerTitle>Volleyball court positions</DrawerTitle>
-              <DrawerDescription>
-                Reference diagram to pick your positions.
-              </DrawerDescription>
-            </DrawerHeader>
-
+        {(() => {
+          const positionsContent = (
             <div className="px-4 pb-2">
               <div className="mx-auto w-full md:max-w-3xl">
                 <img
@@ -1232,8 +1222,45 @@ const PlayerOnboarding = () => {
                 </p>
               </div>
             </div>
-          </DrawerContent>
-        </Drawer>
+          );
+
+          return isCompact ? (
+            <Drawer
+              open={isPositionsHelpOpen}
+              onOpenChange={setIsPositionsHelpOpen}
+              shouldScaleBackground
+            >
+              <DrawerContent className="pb-6">
+                <DrawerClose
+                  className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
+                    border border-border bg-card/90 shadow hover:bg-card focus:outline-none focus:ring-2 focus:ring-ring"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </DrawerClose>
+                <DrawerHeader className="pt-8">
+                  <DrawerTitle>Volleyball court positions</DrawerTitle>
+                  <DrawerDescription>
+                    Reference diagram to pick your positions.
+                  </DrawerDescription>
+                </DrawerHeader>
+                {positionsContent}
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            <Sheet open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen}>
+              <SheetContent side="right" className="overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Volleyball court positions</SheetTitle>
+                  <SheetDescription>
+                    Reference diagram to pick your positions.
+                  </SheetDescription>
+                </SheetHeader>
+                {positionsContent}
+              </SheetContent>
+            </Sheet>
+          );
+        })()}
       </TooltipProvider>
     </div>
   );
