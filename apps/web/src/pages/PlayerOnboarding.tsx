@@ -319,7 +319,7 @@ const PlayerOnboarding = () => {
       case 9:
         return true; // Height is optional
       case 10:
-        return true; // City is optional
+        return cityLocation !== null; // City is required
       case 11:
         return true; // Gender has default
       case 12:
@@ -358,7 +358,8 @@ const PlayerOnboarding = () => {
     if (
       requiredFields.some(
         (field) => !field || answers.secondaryPositions.length === 0
-      )
+      ) ||
+      !cityLocation
     ) {
       toast({
         title: "Error",
