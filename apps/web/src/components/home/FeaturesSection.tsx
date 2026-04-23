@@ -18,21 +18,21 @@ const FeaturesSection: React.FC = () => {
     {
       title: "Smart Team Generation",
       description:
-        "Create balanced teams automatically based on player positions and skill levels.",
+        "Balanced teams in one tap. The algorithm considers skill ratings, preferred positions, and team size to create fair matchups every time.",
       image: "/img-home-teamCelebrating-v2.png",
       alt: "Players celebrating after volleyball match",
     },
     {
-      title: "Game & Score Tracking",
+      title: "Live Score Tracking",
       description:
-        "Real-time scoring system with detailed match analytics, set-by-set breakdowns, and comprehensive game history.",
+        "Track set-by-set scores in real time — any team player can add or edit scores. Browse your full game archive with complete results.",
       image: "/img-home-scoreboard-v1.png",
       alt: "Scoreboard tracking live volleyball game",
     },
     {
-      title: "Players & Clubs Management",
+      title: "Clubs, Events & RSVP",
       description:
-        "Create as many Volleyball Clubs as you want, invite friends, and seamless member management in one intuitive platform.",
+        "Create clubs, plan events with RSVP deadlines, manage members, and handle join requests. Real-time notifications keep everyone in the loop.",
       image: "/img-home-manageClubs-v1.png",
       alt: "Dashboard for managing volleyball clubs and members",
     },
@@ -47,8 +47,8 @@ const FeaturesSection: React.FC = () => {
             Everything You Need to <span className="text-gradient">Play</span>
           </h2>
           <p className="text-xl text-gray-500">
-            Organize your volleyball games efficiently and fairly. Designed for
-            volleyball enthusiasts.
+            From planning events to tracking scores — everything your volleyball
+            community needs, in one place.
           </p>
         </div>
 

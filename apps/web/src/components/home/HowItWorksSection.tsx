@@ -6,9 +6,7 @@ import {
   Volleyball,
   TrendingUp,
   LucideIcon,
-  Play,
 } from "lucide-react";
-import { useState, useCallback } from "react";
 
 /**
  * HowItWorksSection
@@ -29,25 +27,25 @@ const STEPS: Step[] = [
     icon: Users,
     title: "Start a Club",
     description:
-      "Set up your volleyball club in less than 20 seconds. A name and a picture is all you need.",
+      "Create your volleyball club in seconds. Share your Club ID so players can request to join — no app download required.",
   },
   {
     icon: UserPlus,
-    title: "Invite Players",
+    title: "Plan Events & RSVP",
     description:
-      "Invite players to your Club by sharing your generated Club-ID, then users can actively join your Club — no downloads required.",
+      "Schedule practices, friendly matches, or league games. Players RSVP with a tap, and you can set deadlines to lock attendance.",
   },
   {
     icon: Volleyball,
     title: "Generate Fair Teams",
     description:
-      "Create balanced teams automatically with one tap and jump right in.",
+      "One tap creates balanced teams based on skill ratings and preferred positions. Edit teams or add guest players on the fly.",
   },
   {
     icon: TrendingUp,
-    title: "Track Games & Stats",
+    title: "Track Scores & History",
     description:
-      "Record scores and attendance to keep things fair and transparent.",
+      "Record set-by-set scores in real time. Any team player can add scores. Browse your full game archive anytime.",
   },
 ];
 
@@ -64,9 +62,6 @@ function StepNumberCircle({ index }: { index: number }) {
 }
 
 export default function HowItWorksSection() {
-  // Local state to control Vimeo mount/unmount
-  const [isPlaying, setIsPlaying] = useState(false);
-  const handleToggle = useCallback(() => setIsPlaying((p) => !p), []);
   return (
     <section id="how-it-works" className="bg-white text-gray-900">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
@@ -123,64 +118,16 @@ export default function HowItWorksSection() {
           </div>
         </div>
 
-        {/* Divider line */}
-        {/* <div className="flex justify-center pt-16">
-            <div className="h-px bg-[#F1F5F9] w-[85%] lg:w-[75%]" />
-          </div> */}
-
-        {/* Video Section */}
+        {/* Demo Video Section — commented out until a real demo video is ready
         <div className="text-center pt-20 mt-7" id="demo-section">
           <h3 className="text-3xl font-bold mb-9">See It In Action</h3>
-
           <div className="sm:glass sm:rounded-2xl mx-1 sm:p-0 max-w-4xl sm:mx-auto -mx-4">
-            <div className="relative aspect-video bg-amber-300 rounded-xl overflow-hidden border border-transparent transition-colors hover:border-white/40">
-              {/* Poster with high-contrast CTA */}
-              {!isPlaying && (
-                <div className="absolute inset-0 bg-gradient-to-br from-secondary/25 to-secondary-glow/40 flex items-center justify-center">
-                  {/* Background placeholder image */}
-                  {/* <img
-                    src="/img-appScreen-dashboard-GameAndScoreTracking.png"
-                    alt="App dashboard preview"
-                    className="absolute inset-0 w-full h-full object-cover rounded-xl"
-                  /> */}
-                  <Button
-                    size="lg"
-                    className="backdrop-blur-sm text-white border border-white/40 hover:bg-black/20"
-                    onClick={() => setIsPlaying(true)}
-                  >
-                    <Play className="w-6 h-6 mr-2 text-white" />
-                    Watch Demo Video
-                  </Button>
-
-                  {/* Subtle animated speckles */}
-                  <div className="hidden sm:block absolute top-15 left-5 w-3 h-3 rounded-full bg-white/30 animate-pulse" />
-                  <div className="hidden sm:block absolute top-8 right-8 w-2 h-2 rounded-full bg-white/20 animate-pulse delay-1000" />
-                  <div className="hidden sm:block absolute top-20 right-25 w-4 h-4 rounded-full bg-white/40 animate-pulse delay-1000" />
-                  <div className="hidden sm:block absolute bottom-6 left-11 w-4 h-4 rounded-full bg-white/25 animate-pulse delay-500" />
-                  <div className="hidden sm:block absolute bottom-14 right-9 w-3 h-3 rounded-full bg-white/40 animate-pulse delay-1000" />
-                </div>
-              )}
-
-              {/* Vimeo iframe is mounted only while playing; click anywhere to stop */}
-              {isPlaying && (
-                <>
-                  <iframe
-                    className="absolute inset-0 w-full h-full"
-                    src="https://player.vimeo.com/video/734358851?autoplay=1&muted=0&playsinline=1&title=0&byline=0&portrait=0"
-                    title="VolleySmart Demo"
-                    allow="autoplay; fullscreen; picture-in-picture"
-                    allowFullScreen
-                  />
-                  <button
-                    aria-label="Stop video"
-                    className="absolute inset-0"
-                    onClick={handleToggle}
-                  />
-                </>
-              )}
+            <div className="relative aspect-video bg-amber-300 rounded-xl overflow-hidden">
+              TODO: Replace with real demo video embed
             </div>
           </div>
         </div>
+        */}
       </div>
     </section>
   );
