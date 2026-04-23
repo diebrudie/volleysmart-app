@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { buildImageUrl } from "@/utils/buildImageUrl";
-import { fetchMemberCount } from "@/integrations/supabase/clubMembers";
 
 const PENDING_CLUB_JOIN_KEY = "pendingClubJoinSlug";
 
@@ -27,6 +26,7 @@ interface ClubPreview {
   image_url: string | null;
   city: string | null;
   country: string | null;
+  member_count: number;
 }
 
 const JoinByLink = () => {
@@ -72,27 +72,23 @@ const JoinByLink = () => {
     void checkOnboarding();
   }, [isLoading, isAuthenticated, user, trimmedSlug, navigate]);
 
-  // Fetch club by slug
-  const { data: club, isLoading: clubLoading } = useQuery({
-    queryKey: ["club-by-slug", trimmedSlug],
+  // Fetch club preview via SECURITY DEFINER RPC (bypasses RLS)
+  const {
+    data: club,
+    isLoading: clubLoading,
+    error: clubError,
+  } = useQuery({
+    queryKey: ["club-preview-by-slug", trimmedSlug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clubs")
-        .select("id, name, description, image_url, city, country")
-        .eq("slug", trimmedSlug)
-        .eq("status", "active")
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_club_preview_by_slug", {
+        p_slug: trimmedSlug,
+      });
       if (error) throw error;
-      return data as ClubPreview | null;
+      // RPC returns an array; take the first row (or null if empty)
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row as ClubPreview) ?? null;
     },
     enabled: !!trimmedSlug && isAuthenticated && !isLoading,
-  });
-
-  // Fetch member count
-  const { data: memberCount = 0 } = useQuery({
-    queryKey: ["club-member-count", club?.id],
-    queryFn: () => fetchMemberCount(club!.id),
-    enabled: !!club?.id,
   });
 
   const handleJoin = async () => {
@@ -172,14 +168,17 @@ const JoinByLink = () => {
   }
 
   // Club not found
-  if (!club) {
+  if (!club || clubError) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 gap-4">
         <p className="text-lg font-semibold">Club not found</p>
         <p className="text-sm text-muted-foreground text-center">
           This invite link is invalid or the club has been removed.
         </p>
-        <Button variant="outline" onClick={() => navigate("/home", { replace: true })}>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/home", { replace: true })}
+        >
           Go Home
         </Button>
       </div>
@@ -217,7 +216,7 @@ const JoinByLink = () => {
           )}
           <span className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5" />
-            {memberCount} {memberCount === 1 ? "member" : "members"}
+            {club.member_count} {club.member_count === 1 ? "member" : "members"}
           </span>
         </div>
 
