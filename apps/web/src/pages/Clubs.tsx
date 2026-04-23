@@ -32,6 +32,12 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   MoreVertical,
   UserPlus,
   UsersRound,
@@ -406,7 +412,7 @@ const Clubs = () => {
     return (
       <div className="min-h-screen flex flex-col">
         {!isCompact && <Navbar />}
-        <div className="flex-grow flex items-center justify-center">
+        <div className="flex-grow flex items-center justify-center lg:ml-60">
           <Spinner className="h-8 w-8" />
         </div>
       </div>
@@ -416,7 +422,7 @@ const Clubs = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {!isCompact && <Navbar />}
-      <main className="flex-grow pb-24">
+      <main className="flex-grow pb-24 lg:ml-60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           {/* Action buttons */}
           <div className="flex gap-3 mb-6">
@@ -644,12 +650,9 @@ const Clubs = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Join Club Drawer */}
-      <Drawer open={joinDrawerOpen} onOpenChange={setJoinDrawerOpen}>
-        <DrawerContent className="max-h-[85dvh]">
-          <DrawerHeader className="border-b border-border pb-3">
-            <DrawerTitle className="text-center text-base font-semibold">Join a Club</DrawerTitle>
-          </DrawerHeader>
+      {/* Join Club Drawer (mobile) / Sheet (desktop) */}
+      {(() => {
+        const joinFormContent = (
           <div className="p-4">
             <form onSubmit={handleJoinSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -705,8 +708,28 @@ const Clubs = () => {
               </Button>
             </form>
           </div>
-        </DrawerContent>
-      </Drawer>
+        );
+
+        return isCompact ? (
+          <Drawer open={joinDrawerOpen} onOpenChange={setJoinDrawerOpen}>
+            <DrawerContent className="max-h-[85dvh]">
+              <DrawerHeader className="border-b border-border pb-3">
+                <DrawerTitle className="text-center text-base font-semibold">Join a Club</DrawerTitle>
+              </DrawerHeader>
+              {joinFormContent}
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Sheet open={joinDrawerOpen} onOpenChange={setJoinDrawerOpen}>
+            <SheetContent side="right">
+              <SheetHeader>
+                <SheetTitle>Join a Club</SheetTitle>
+              </SheetHeader>
+              {joinFormContent}
+            </SheetContent>
+          </Sheet>
+        );
+      })()}
     </div>
   );
 };

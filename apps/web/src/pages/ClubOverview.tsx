@@ -220,7 +220,7 @@ const ClubOverview: React.FC = () => {
   const createdLabel = format(parseISO(club.created_at), "MMM. yyyy");
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-24">
+    <div className="min-h-screen bg-background flex flex-col pb-24 lg:ml-60">
       {/* Hero */}
       <div className="relative h-48 sm:h-56">
         {club.image_url ? (

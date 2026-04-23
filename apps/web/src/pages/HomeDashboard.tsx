@@ -218,8 +218,9 @@ const HomeDashboard: React.FC = () => {
   const [activeSlide, setActiveSlide] = React.useState(0);
   const totalSlides = 3;
 
-  // Observe scroll position for dot indicators
+  // Observe scroll position for dot indicators (mobile only)
   React.useEffect(() => {
+    if (!isCompact) return;
     const el = sliderRef.current;
     if (!el) return;
     const handleScroll = () => {
@@ -231,10 +232,11 @@ const HomeDashboard: React.FC = () => {
     };
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isCompact]);
 
-  // Auto-rotate every 15s
+  // Auto-rotate every 15s (mobile only)
   React.useEffect(() => {
+    if (!isCompact) return;
     const el = sliderRef.current;
     if (!el) return;
     const interval = setInterval(() => {
@@ -248,17 +250,17 @@ const HomeDashboard: React.FC = () => {
       });
     }, 15000);
     return () => clearInterval(interval);
-  }, [totalSlides]);
+  }, [totalSlides, isCompact]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {!isCompact && <Navbar />}
-      <main className="flex-1 pb-24">
+      <main className="flex-1 pb-24 lg:ml-60">
         <div className="max-w-7xl mx-auto px-4 pt-6">
           {/* ─── Top Slider ──────────────────────────────────────── */}
           <div
             ref={sliderRef}
-            className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4"
+            className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4 lg:grid lg:grid-cols-3 lg:gap-4 lg:overflow-visible lg:snap-none lg:mx-0 lg:px-0 lg:pb-0"
             style={{
               scrollbarWidth: "none",
               msOverflowStyle: "none",
@@ -266,7 +268,7 @@ const HomeDashboard: React.FC = () => {
             }}
           >
             {/* Card 1 — Today's Game */}
-            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] border border-border rounded-xl bg-card p-5">
+            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Volleyball className="h-5 w-5 text-primary" />
@@ -326,7 +328,7 @@ const HomeDashboard: React.FC = () => {
 
             {/* Card 2 — Last Game Played */}
             <div
-              className={`snap-start shrink-0 w-[85vw] sm:w-[340px] border border-border rounded-xl bg-card p-5 ${
+              className={`snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 ${
                 lastGame ? "cursor-pointer hover:shadow-md transition-shadow" : ""
               }`}
               onClick={() =>
@@ -396,7 +398,7 @@ const HomeDashboard: React.FC = () => {
             </div>
 
             {/* Card 3 — Monthly Stats */}
-            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] border border-border rounded-xl bg-card p-5">
+            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -423,21 +425,23 @@ const HomeDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Trailing spacer */}
-            <div className="shrink-0 w-1" aria-hidden="true" />
+            {/* Trailing spacer (mobile only) */}
+            <div className="shrink-0 w-1 lg:hidden" aria-hidden="true" />
           </div>
 
-          {/* Dot indicators */}
-          <div className="flex justify-center gap-1.5 pt-3">
-            {Array.from({ length: totalSlides }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                  i === activeSlide ? "bg-muted-foreground" : "bg-border"
-                }`}
-              />
-            ))}
-          </div>
+          {/* Dot indicators (mobile only) */}
+          {isCompact && (
+            <div className="flex justify-center gap-1.5 pt-3">
+              {Array.from({ length: totalSlides }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                    i === activeSlide ? "bg-muted-foreground" : "bg-border"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
 
           {/* ─── Discover Events ──────────────────────────────────── */}
           <section className="mt-8">

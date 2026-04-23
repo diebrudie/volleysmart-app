@@ -769,7 +769,7 @@ const UpcomingEvents: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow">
+        <main className="flex-grow lg:ml-60">
           <div className="max-w-6xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-xl font-bold">Events</h1>

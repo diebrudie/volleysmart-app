@@ -584,13 +584,13 @@ const Game = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-24">
+    <div className="min-h-screen bg-background flex flex-col pb-24 lg:ml-60">
       {/* Fixed header */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
-        <div className="flex items-center justify-center relative h-14 px-4">
+      <div className="fixed top-0 left-0 right-0 lg:left-60 z-20 bg-background border-b border-border">
+        <div className="max-w-3xl mx-auto flex items-center justify-between h-14 px-4">
           <button
             onClick={goBack}
-            className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+            className="h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -599,7 +599,7 @@ const Game = () => {
           </h1>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="absolute right-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted">
+              <button className="h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted shrink-0">
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
@@ -637,7 +637,7 @@ const Game = () => {
       <div className="h-14" />
 
       {/* Info row */}
-      <div className="px-4 pt-5 space-y-3">
+      <div className="px-4 pt-5 space-y-3 max-w-3xl mx-auto w-full">
         <div className="space-y-1 text-sm text-muted-foreground">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {matchData.clubs?.name && (
@@ -667,7 +667,7 @@ const Game = () => {
       </div>
 
       {/* Content */}
-      <div className="px-4 mt-6 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="px-4 mt-6 space-y-6 max-w-3xl mx-auto w-full">
         {/* Location editing inline */}
         {isEditingLocation && (
           <div className="rounded-lg border border-border p-4 space-y-3 bg-card">

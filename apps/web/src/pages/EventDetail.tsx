@@ -685,7 +685,7 @@ const EventDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen lg:ml-60">
         <p className="text-muted-foreground">Loading event...</p>
         {createdDialog}
       </div>
@@ -694,7 +694,7 @@ const EventDetail: React.FC = () => {
 
   if (error || !event) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 lg:ml-60">
         <p className="text-muted-foreground">Event not found</p>
         <Button variant="outline" onClick={() => navigate("/events")}>
           Go home
@@ -727,7 +727,7 @@ const EventDetail: React.FC = () => {
     : "Unknown";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-32">
+    <div className="min-h-screen bg-background flex flex-col pb-32 lg:ml-60">
       {/* Gradient hero */}
       <div className="relative h-32 bg-gradient-to-br from-primary/30 via-primary/10 to-background">
         {/* Top bar overlay */}
