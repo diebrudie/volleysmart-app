@@ -458,10 +458,7 @@ const Navbar = () => {
             Chat
           </button>
 
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground">
-            <ThemeToggle className="p-0 h-5 w-5" />
-            <span>Theme</span>
-          </div>
+          <ThemeToggle className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors justify-start h-auto p-0 bg-transparent border-0 shadow-none font-normal" showLabel />
         </div>
 
         {/* Profile section */}

@@ -52,6 +52,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useIsCompact } from "@/hooks/use-compact";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -116,6 +117,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
   onSave,
   saving,
 }) => {
+  const isCompact = useIsCompact();
   const [title, setTitle] = React.useState(event.title);
   const [eventType, setEventType] = React.useState<EventType>(
     event.event_type
@@ -171,7 +173,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[95dvh] flex flex-col p-0">
+      <SheetContent side={isCompact ? "bottom" : "right"} className="h-[95dvh] flex flex-col p-0">
         <SheetHeader className="px-4 pt-4 pb-2 border-b">
           <SheetTitle>Edit Event</SheetTitle>
         </SheetHeader>
@@ -685,7 +687,7 @@ const EventDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen lg:ml-60">
+      <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading event...</p>
         {createdDialog}
       </div>
@@ -694,7 +696,7 @@ const EventDetail: React.FC = () => {
 
   if (error || !event) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4 lg:ml-60">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-muted-foreground">Event not found</p>
         <Button variant="outline" onClick={() => navigate("/events")}>
           Go home
@@ -727,7 +729,7 @@ const EventDetail: React.FC = () => {
     : "Unknown";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-32 lg:ml-60">
+    <div className="min-h-screen bg-background flex flex-col pb-32">
       {/* Gradient hero */}
       <div className="relative h-32 bg-gradient-to-br from-primary/30 via-primary/10 to-background">
         {/* Top bar overlay */}

@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { buildImageUrl } from "@/utils/buildImageUrl";
 import { fetchMemberCount, deactivateMembersByUserIds } from "@/integrations/supabase/clubMembers";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
+import { useIsCompact } from "@/hooks/use-compact";
 import { EventCard } from "@/components/events/EventCard";
 import { ClubInviteSharePanel } from "@/components/clubs/ClubInviteSharePanel";
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
@@ -87,6 +88,7 @@ const ClubOverview: React.FC = () => {
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const membersSectionRef = React.useRef<HTMLDivElement>(null);
   const { data: currentPlayerId } = useCurrentPlayerId();
+  const isCompact = useIsCompact();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [manageMode, setManageMode] = React.useState(false);
@@ -220,7 +222,7 @@ const ClubOverview: React.FC = () => {
   const createdLabel = format(parseISO(club.created_at), "MMM. yyyy");
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-24 lg:ml-60">
+    <div className="min-h-screen bg-background flex flex-col pb-24">
       {/* Hero */}
       <div className="relative h-48 sm:h-56">
         {club.image_url ? (
@@ -498,7 +500,7 @@ const ClubOverview: React.FC = () => {
 
       {/* Invite sheet */}
       <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl">
+        <SheetContent side={isCompact ? "bottom" : "right"} className={isCompact ? "rounded-t-2xl" : ""}>
           <SheetHeader className="pb-4">
             <SheetTitle>Invite Members</SheetTitle>
           </SheetHeader>

@@ -584,9 +584,9 @@ const Game = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-24 lg:ml-60">
+    <div className="min-h-screen bg-background flex flex-col pb-24">
       {/* Fixed header */}
-      <div className="fixed top-0 left-0 right-0 lg:left-60 z-20 bg-background border-b border-border">
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="max-w-3xl mx-auto flex items-center justify-between h-14 px-4">
           <button
             onClick={goBack}

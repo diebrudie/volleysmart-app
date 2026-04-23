@@ -424,41 +424,42 @@ const Clubs = () => {
       {!isCompact && <Navbar />}
       <main className="flex-grow pb-24 lg:ml-60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          {/* Action buttons */}
-          <div className="flex gap-3 mb-6">
-            <Button
-              variant="outline"
-              onClick={handleJoinClub}
-              className="flex-1 h-12 justify-center"
-            >
-              <UsersRound className="mr-2 h-4 w-4" />
-              Join a Club
-            </Button>
-            <Button
-              onClick={handleCreateClub}
-              className="flex-1 h-12 justify-center"
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Create a Club
-            </Button>
+          {/* Header with action buttons */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-foreground">Your Clubs</h2>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleJoinClub}
+              >
+                <UsersRound className="mr-1.5 h-3.5 w-3.5" />
+                Join Club
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleCreateClub}
+              >
+                <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                Create Club
+              </Button>
+            </div>
           </div>
 
           {/* Your Clubs */}
           <section className="mb-8">
-            <h2 className="text-xl font-bold text-foreground mb-4">Your Clubs</h2>
-
             {userClubs && userClubs.length > 0 ? (
               <>
-                {/* Horizontal slider */}
+                {/* Horizontal slider on mobile, grid on desktop */}
                 <div
                   ref={sliderRef}
-                  className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4"
+                  className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4 lg:grid lg:grid-cols-3 lg:overflow-visible lg:snap-none lg:mx-0 lg:px-0 lg:pb-0"
                   style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollPaddingInline: "1rem" }}
                 >
                   {userClubs.map((club) => (
                     <div
                       key={club.id}
-                      className="snap-start shrink-0 w-[85vw] sm:w-[340px] border border-border rounded-xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-shadow"
+                      className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => handleClubClick(club.id)}
                     >
                       {/* Image */}
@@ -545,11 +546,11 @@ const Clubs = () => {
                     </div>
                   ))}
                   {/* Spacer to preserve right padding in scroll container */}
-                  <div className="shrink-0 w-1" aria-hidden="true" />
+                  <div className="shrink-0 w-1 lg:hidden" aria-hidden="true" />
                 </div>
 
-                {/* Dot indicators */}
-                {userClubs.length > 1 && (
+                {/* Dot indicators (mobile only) */}
+                {!isCompact ? null : userClubs.length > 1 && (
                   <div className="flex justify-center gap-1.5 pt-3">
                     {userClubs.map((_, i) => (
                       <div
