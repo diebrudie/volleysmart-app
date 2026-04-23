@@ -15,7 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut } from "lucide-react";
+import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin } from "lucide-react";
+import CityLocationSelector, { type LocationValue } from "@/components/forms/CityLocationSelector";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -58,6 +59,9 @@ interface PlayerProfile {
   bio: string | null;
   image_url: string | null;
   skill_rating: number | null;
+  city: string | null;
+  country: string | null;
+  country_code: string | null;
 }
 
 interface PlayerPosition {
@@ -98,6 +102,7 @@ const Profile = () => {
     { membership_id: string; club_id: string; name: string; role: string; joined_at: string | null; member_association: boolean }[]
   >([]);
   const [showLeaveDialog, setShowLeaveDialog] = useState<string | null>(null);
+  const [cityLocation, setCityLocation] = useState<LocationValue | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
 
   const isOwnProfile = user?.id === userId;
@@ -118,6 +123,7 @@ const Profile = () => {
       profile.gender !== originalProfile.gender ||
       profile.height_cm !== originalProfile.height_cm ||
       profile.bio !== originalProfile.bio ||
+      profile.city !== originalProfile.city ||
       imageFile !== null;
 
     if (personalChanged) return true;
@@ -174,6 +180,13 @@ const Profile = () => {
 
       setProfile(data);
       setOriginalProfile(data);
+      if (data.city) {
+        setCityLocation({
+          city: data.city,
+          country: data.country ?? "",
+          countryCode: data.country_code ?? "",
+        });
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
@@ -342,6 +355,9 @@ const Profile = () => {
           gender: profile.gender,
           height_cm: profile.height_cm,
           bio: profile.bio,
+          city: cityLocation?.city || null,
+          country: cityLocation?.country || null,
+          country_code: cityLocation?.countryCode || null,
           image_url: imageUrl,
         })
         .eq("id", profile.id);
@@ -698,6 +714,17 @@ const Profile = () => {
                     </div>
                   </div>
                 )}
+                {profile.city && (
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Based in</p>
+                      <p className="text-base text-foreground">
+                        {profile.city}{profile.country ? `, ${profile.country}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {profile.bio && (
                   <div className="pt-2 border-t border-border">
                     <p className="text-xs text-muted-foreground mb-1">Bio</p>
@@ -791,6 +818,25 @@ const Profile = () => {
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <CityLocationSelector
+                    label="Location"
+                    placeholder="Start typing your city..."
+                    value={cityLocation}
+                    onChange={(val) => {
+                      setCityLocation(val);
+                      if (profile) {
+                        setProfile({
+                          ...profile,
+                          city: val?.city || null,
+                          country: val?.country || null,
+                          country_code: val?.countryCode || null,
+                        });
+                      }
+                    }}
+                  />
                 </div>
 
                 <div className="space-y-1.5">

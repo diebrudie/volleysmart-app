@@ -15,7 +15,11 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarIcon,
+  MapPin,
 } from "lucide-react";
+import CityLocationSelector, {
+  type LocationValue,
+} from "@/components/forms/CityLocationSelector";
 import {
   TooltipProvider,
   Tooltip,
@@ -140,6 +144,7 @@ const PlayerOnboarding = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isPositionsHelpOpen, setIsPositionsHelpOpen] =
     useState<boolean>(false);
+  const [cityLocation, setCityLocation] = useState<LocationValue | null>(null);
 
   // Name fields — pre-filled from OAuth/email metadata; editable in step 0 if missing.
   const [firstName, setFirstName] = useState("");
@@ -159,8 +164,8 @@ const PlayerOnboarding = () => {
     gender: "other",
   });
 
-  // Total number of steps (association membership removed)
-  const totalSteps = 12;
+  // Total number of steps (association membership removed, city added)
+  const totalSteps = 13;
 
   useEffect(() => {
     fetchPositions();
@@ -314,8 +319,10 @@ const PlayerOnboarding = () => {
       case 9:
         return true; // Height is optional
       case 10:
-        return true; // Gender has default
+        return cityLocation !== null; // City is required
       case 11:
+        return true; // Gender has default
+      case 12:
         return true; // Photo is optional
       default:
         return true;
@@ -351,7 +358,8 @@ const PlayerOnboarding = () => {
     if (
       requiredFields.some(
         (field) => !field || answers.secondaryPositions.length === 0
-      )
+      ) ||
+      !cityLocation
     ) {
       toast({
         title: "Error",
@@ -438,6 +446,9 @@ const PlayerOnboarding = () => {
           gender: answers.gender,
           birthday: answers.birthday || null,
           height_cm: answers.height || null,
+          city: cityLocation?.city || null,
+          country: cityLocation?.country || null,
+          country_code: cityLocation?.countryCode || null,
           image_url: imageUrl,
           profile_completed: true,
         })
@@ -1024,6 +1035,34 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
+                Which city are you based in?
+              </h2>
+              <p className="text-muted-foreground">
+                This helps us connect you with local players and clubs.
+              </p>
+            </div>
+            <div className="max-w-sm mx-auto">
+              <CityLocationSelector
+                label="City"
+                placeholder="Start typing your city..."
+                value={cityLocation}
+                onChange={setCityLocation}
+              />
+              {cityLocation && (
+                <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {cityLocation.city}, {cityLocation.country}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+
+      case 11:
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2 text-foreground">
                 What's your gender?
               </h2>
               <p className="text-muted-foreground">
@@ -1066,7 +1105,7 @@ const PlayerOnboarding = () => {
           </div>
         );
 
-      case 11:
+      case 12:
         return (
           <div className="space-y-6">
             <div>
