@@ -501,6 +501,27 @@ const PlayerOnboarding = () => {
         duration: 1500,
       });
 
+      // Auto-join club if a pending invite exists from /join/:slug link
+      const pendingSlug = localStorage.getItem("pendingClubJoinSlug");
+      if (pendingSlug) {
+        try {
+          const { error: joinErr } = await supabase.rpc("request_join_by_slug", {
+            p_slug: pendingSlug.trim().toLowerCase(),
+            p_member_association: false,
+          });
+          if (!joinErr) {
+            toast({
+              title: "Join request sent!",
+              description: "Your request was sent to the club admins.",
+              duration: 2000,
+            });
+          }
+        } catch {
+          // Silently ignore — user can join manually later
+        }
+        localStorage.removeItem("pendingClubJoinSlug");
+      }
+
       navigate("/home", { replace: true });
     } catch (error) {
       console.error("🚨 Error creating player:", error);

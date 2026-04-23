@@ -15,16 +15,14 @@ type ClubInviteSharePanelProps = {
 export const ClubInviteSharePanel = ({
   joinCode,
 }: ClubInviteSharePanelProps) => {
-  const clubLink = `https://volleysmart.app/?cid=${encodeURIComponent(
+  const clubLink = `https://volleysmart.app/join/${encodeURIComponent(
     joinCode
   )}`;
 
   const inviteMessage = [
     "Hey, let's play Volleyball Smartly together.",
     " ",
-    "Register for free, and join my Club using this Club ID",
-    `> *${joinCode}*`,
-    " ",
+    "Register for free and join my Club with this link:",
     clubLink,
   ].join("\n");
 

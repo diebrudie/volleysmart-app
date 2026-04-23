@@ -40,6 +40,7 @@ import Archive from "@/pages/Archive";
 import EventDetail from "@/pages/EventDetail";
 import ClubOverview from "@/pages/ClubOverview";
 import Notifications from "@/pages/Notifications";
+import JoinByLink from "@/pages/JoinByLink";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -62,6 +63,7 @@ const AppRoutes = () => (
     <Route path="/verify-email" element={<VerifyEmail />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
     <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/join/:slug" element={<JoinByLink />} />
 
     {/* All Protected Routes - require authentication */}
     <Route

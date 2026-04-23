@@ -29,23 +29,27 @@ export default function RoutePersistence() {
   const location = useLocation();
 
   /**
-   * Always capture `cid` from the query string (even when not authenticated).
-   * This supports flows like:
-   *  - share link: https://volleysmart.app/?cid=ABC12
-   *  - user signs up, completes onboarding
-   *  - later chooses "Join a Club" and sees the invite prefilled.
+   * Capture invite codes from:
+   *  - query string: https://volleysmart.app/?cid=ABC12
+   *  - join link path: https://volleysmart.app/join/ABC12
+   * Persists across signup/onboarding so the user can auto-join afterwards.
    */
   useEffect(() => {
-    const search = location.search;
-    if (!search) return;
-
-    const params = new URLSearchParams(search);
-    const cid = params.get("cid");
-
-    if (cid && cid.trim()) {
-      localStorage.setItem(PENDING_CLUB_JOIN_KEY, cid.trim());
+    // From ?cid= query param
+    if (location.search) {
+      const params = new URLSearchParams(location.search);
+      const cid = params.get("cid");
+      if (cid && cid.trim()) {
+        localStorage.setItem(PENDING_CLUB_JOIN_KEY, cid.trim());
+      }
     }
-  }, [location.search]);
+
+    // From /join/:slug path
+    const joinMatch = location.pathname.match(/^\/join\/([^/]+)$/);
+    if (joinMatch?.[1]) {
+      localStorage.setItem(PENDING_CLUB_JOIN_KEY, joinMatch[1].trim());
+    }
+  }, [location.pathname, location.search]);
 
   /**
    * Persist last private path (existing behavior), only when authenticated.
