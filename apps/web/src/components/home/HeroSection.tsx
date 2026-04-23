@@ -9,11 +9,6 @@ import { useAuth } from "@/contexts/AuthContext";
 const HeroSection = () => {
   const { isAuthenticated } = useAuth();
 
-  const handleWatchDemo = () => {
-    const demoSection = document.getElementById("demo-section");
-    if (demoSection) demoSection.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <section className="bg-[#F9FAFB] py-20 md:py-32">
       <div className="container mx-auto px-6 md:px-12 lg:px-16 flex flex-col md:flex-row items-center gap-12">
@@ -42,11 +37,11 @@ const HeroSection = () => {
             <Button
               size="lg"
               variant="outline"
-              onClick={handleWatchDemo}
+              disabled
               className="w-full sm:w-auto flex items-center justify-center gap-2"
             >
               <Play className="w-5 h-5" />
-              Watch Demo
+              Watch Demo — Coming soon
             </Button>
           </div>
         </div>

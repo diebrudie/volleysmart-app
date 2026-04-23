@@ -33,14 +33,14 @@ const CTA = () => {
 
             {/* Headline */}
             <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
-              Join Thousands of Players Using{" "}
-              <span className="text-white">VolleyMatch</span>
+              Join Players Using{" "}
+              <span className="text-white">VolleySmart</span>
             </h2>
 
             {/* Paragraph */}
             <p className="mb-10 text-xl leading-relaxed text-white/90">
-              Start organizing better games today. Create balanced teams, track
-              scores, and build your volleyball community - all for free.
+              Plan events, generate fair teams, track scores, and manage your
+              volleyball community — all for free.
             </p>
 
             {/* CTA */}
