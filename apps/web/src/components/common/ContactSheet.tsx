@@ -88,7 +88,7 @@ const ContactSheet = ({
         }`}
         aria-label="Contact form"
       >
-        <SheetHeader className="px-6 pt-6 pb-4">
+        <SheetHeader className="px-6 pt-6 pb-4 text-left">
           <SheetTitle className={forceLight ? "text-gray-900" : undefined}>
             Contact us
           </SheetTitle>
@@ -102,7 +102,7 @@ const ContactSheet = ({
 
         <form
           onSubmit={handleSubmit}
-          className="flex-1 flex flex-col gap-4 overflow-y-auto pb-4"
+          className="flex-1 flex flex-col gap-4 overflow-y-auto px-6 pb-4"
         >
           <div className="flex flex-col gap-1">
             <label
@@ -179,12 +179,12 @@ const ContactSheet = ({
             />
           </div>
 
-          <label className="mt-2 flex items-center gap-2 text-xs text-gray-700">
+          <label className="mt-2 flex items-start gap-2 text-xs text-gray-700">
             <input
               type="checkbox"
               checked={acceptTerms}
               onChange={(event) => setAcceptTerms(event.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300"
             />
             <span>
               I accept that my data will be used to contact me regarding my
