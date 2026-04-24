@@ -13,6 +13,7 @@ import {
   CalendarDays,
   MapPin,
   Trash2,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { buildImageUrl } from "@/utils/buildImageUrl";
-import { fetchMemberCount, deactivateMembersByUserIds } from "@/integrations/supabase/clubMembers";
+import { fetchMemberCount, removeClubMembers, leaveClub } from "@/integrations/supabase/clubMembers";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { useIsCompact } from "@/hooks/use-compact";
 import { EventCard } from "@/components/events/EventCard";
@@ -96,6 +97,8 @@ const ClubOverview: React.FC = () => {
   const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
+  const [leaveOpen, setLeaveOpen] = React.useState(false);
+  const [leaving, setLeaving] = React.useState(false);
 
   // Club details
   const { data: club, isLoading: clubLoading } = useQuery({
@@ -470,7 +473,7 @@ const ClubOverview: React.FC = () => {
               onClick={async () => {
                 setDeleting(true);
                 try {
-                  await deactivateMembersByUserIds(clubId!, selectedUserIds);
+                  await removeClubMembers(clubId!, selectedUserIds);
                   queryClient.invalidateQueries({
                     queryKey: ["club-members-list", clubId],
                   });
@@ -498,6 +501,80 @@ const ClubOverview: React.FC = () => {
               }}
             >
               {deleting ? "Removing…" : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leave Club (non-admin only) */}
+      {userRole && !isAdmin && (
+        <div className="px-4 pt-8 pb-12">
+          <button
+            type="button"
+            onClick={() => setLeaveOpen(true)}
+            className="flex items-center gap-2 text-sm text-destructive hover:underline mx-auto"
+          >
+            <LogOut className="h-4 w-4" />
+            Leave Club
+          </button>
+        </div>
+      )}
+
+      {/* Confirm leave dialog */}
+      <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {club?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will no longer be a member of this club. You can request to
+              join again later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={leaving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                setLeaving(true);
+                try {
+                  const result = await leaveClub(clubId!);
+                  if (result.result_status === "sole_admin") {
+                    toast({
+                      title: "Cannot leave",
+                      description:
+                        "You're the only admin. Transfer the admin role first.",
+                      variant: "destructive",
+                      duration: 2000,
+                    });
+                  } else {
+                    queryClient.invalidateQueries({
+                      queryKey: ["club-members-list", clubId],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["club-member-count", clubId],
+                    });
+                    toast({
+                      title: "Left club",
+                      description: `You left ${club?.name}.`,
+                      duration: 2000,
+                    });
+                    navigate("/clubs");
+                  }
+                } catch {
+                  toast({
+                    title: "Error",
+                    description: "Failed to leave the club.",
+                    variant: "destructive",
+                    duration: 2000,
+                  });
+                } finally {
+                  setLeaving(false);
+                  setLeaveOpen(false);
+                }
+              }}
+            >
+              {leaving ? "Leaving…" : "Leave"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

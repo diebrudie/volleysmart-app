@@ -311,3 +311,33 @@ export async function deactivateMembersByUserIds(
 
   if (error) throw error;
 }
+
+/**
+ * Leave a club voluntarily. Calls the leave_club RPC which handles
+ * deactivation, status update, and notifications.
+ */
+export async function leaveClub(
+  clubId: string
+): Promise<{ result_status: string }> {
+  const { data, error } = await supabase.rpc("leave_club", {
+    p_club_id: clubId,
+  });
+  if (error) throw error;
+  return (data as unknown as { result_status: string }[])[0];
+}
+
+/**
+ * Admin: remove members from a club via RPC.
+ * Sets proper status/removed_at/removed_by and sends notifications.
+ */
+export async function removeClubMembers(
+  clubId: string,
+  userIds: string[]
+): Promise<void> {
+  if (!userIds.length) return;
+  const { error } = await supabase.rpc("remove_club_members", {
+    p_club_id: clubId,
+    p_user_ids: userIds,
+  });
+  if (error) throw error;
+}

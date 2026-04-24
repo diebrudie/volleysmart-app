@@ -9,7 +9,9 @@ export type NotificationType =
   | "event_cancelled"
   | "event_rsvp"
   | "rsvp_deadline_reminder"
-  | "game_started";
+  | "game_started"
+  | "club_member_left"
+  | "club_member_removed";
 
 export interface Notification {
   id: string;
