@@ -42,10 +42,10 @@ BEGIN
   RETURN QUERY
   SELECT
     p.id AS player_id,
-    p.first_name,
-    p.last_name,
+    p.first_name::text,
+    p.last_name::text,
     p.image_url,
-    pos.name AS primary_position,
+    pos.name::text AS primary_position,
     er.responded_at
   FROM event_rsvp er
   JOIN players p ON p.id = er.player_id
