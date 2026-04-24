@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { formatDistanceToNow, parseISO } from "date-fns";
+import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   ArrowLeft,
   Users,
@@ -77,7 +77,7 @@ function getNotificationConfig(n: Notification): {
       return {
         icon: <CalendarX className="h-5 w-5 text-red-500" />,
         title: "Event Cancelled",
-        description: `${p.event_title ?? "An event"} has been cancelled`,
+        description: `${p.event_title ?? "An event"}${p.event_date ? ` on ${format(parseISO(p.event_date), "MMM d")}` : ""} has been cancelled`,
         href: p.event_id ? `/events/${p.event_id}` : null,
       };
     case "event_rsvp":

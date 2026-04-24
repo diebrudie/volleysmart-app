@@ -76,11 +76,15 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
           <h3 className="font-semibold text-sm leading-tight truncate">
             {event.title}
           </h3>
-          {isTodayEvent && (
+          {event.status === "cancelled" ? (
+            <span className="shrink-0 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
+              Cancelled
+            </span>
+          ) : isTodayEvent ? (
             <span className="shrink-0 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground">
               Today
             </span>
-          )}
+          ) : null}
         </div>
         <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
