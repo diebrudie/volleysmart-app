@@ -314,6 +314,13 @@ const ClubOverview: React.FC = () => {
             label="Stats"
             disabled
           />
+          {userRole && !isAdmin && (
+            <ActionButton
+              icon={<LogOut className="h-5 w-5" />}
+              label="Leave"
+              onClick={() => setLeaveOpen(true)}
+            />
+          )}
         </div>
       </div>
 
@@ -505,20 +512,6 @@ const ClubOverview: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Leave Club (non-admin only) */}
-      {userRole && !isAdmin && (
-        <div className="px-4 pt-8 pb-12">
-          <button
-            type="button"
-            onClick={() => setLeaveOpen(true)}
-            className="flex items-center gap-2 text-sm text-destructive hover:underline mx-auto"
-          >
-            <LogOut className="h-4 w-4" />
-            Leave Club
-          </button>
-        </div>
-      )}
 
       {/* Confirm leave dialog */}
       <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
