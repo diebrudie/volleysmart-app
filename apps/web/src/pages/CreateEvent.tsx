@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Popover,
   PopoverContent,
@@ -569,6 +570,59 @@ const CreateEvent: React.FC = () => {
               </div>
             </div>
 
+            {/* Recurring toggle */}
+            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Recurring</p>
+                  <p className="text-xs text-muted-foreground">
+                    {form.recurrence_rule
+                      ? form.recurrence_rule === "weekly"
+                        ? `Every ${form.date ? format(form.date, "EEEE") : "week"}`
+                        : `Monthly on the ${form.date ? format(form.date, "do") : "same day"}`
+                      : "Does not repeat"}
+                  </p>
+                </div>
+                <Switch
+                  checked={!!form.recurrence_rule}
+                  onCheckedChange={(on) => set("recurrence_rule", on ? "weekly" : null)}
+                />
+              </div>
+
+              {form.recurrence_rule && (
+                <Tabs value={form.recurrence_rule} onValueChange={(v) => set("recurrence_rule", v as "weekly" | "monthly")}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="weekly" className="flex-1">Weekly</TabsTrigger>
+                    <TabsTrigger value="monthly" className="flex-1">Monthly</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="weekly" className="space-y-3 pt-1">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Repeats on</Label>
+                      <div className="text-sm font-medium">
+                        {form.date ? format(form.date, "EEEE") : "Select a date first"}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Every</Label>
+                      <div className="text-sm font-medium">1 week</div>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="monthly" className="space-y-3 pt-1">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Repeats on</Label>
+                      <div className="text-sm font-medium">
+                        {form.date ? format(form.date, "do") : "Select a date first"}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Every</Label>
+                      <div className="text-sm font-medium">1 month</div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            </div>
+
             {/* Location */}
             <EventLocationSelector
               clubId={resolvedClubId}
@@ -643,26 +697,6 @@ const CreateEvent: React.FC = () => {
         {/* ── Step 3: Options ── */}
         {step === 3 && (
           <div className="space-y-5 pt-2">
-            {/* Repeat */}
-            <div className="space-y-1.5">
-              <Label>Repeat</Label>
-              <Select
-                value={form.recurrence_rule ?? "none"}
-                onValueChange={(v) =>
-                  set("recurrence_rule", v === "none" ? null : (v as "weekly" | "monthly"))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Does not repeat</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Max players */}
             <div className="space-y-1.5">
               <Label htmlFor="max_players">Max players (optional)</Label>

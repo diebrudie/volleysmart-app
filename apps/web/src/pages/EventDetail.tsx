@@ -736,7 +736,9 @@ const EventDetail: React.FC = () => {
   const currentRsvp = event.event_rsvp?.find(
     (r) => r.player_id === currentPlayer?.id
   );
+  const isAttending = currentRsvp?.status === "attending";
   const parsedDate = parseISO(event.date);
+  const isEventToday = isToday(parsedDate);
   const formattedDate = format(parsedDate, "EEEE, d MMMM yyyy");
   const startTime = event.start_time?.slice(0, 5); // HH:MM
   const endTime = event.end_time?.slice(0, 5);
@@ -1083,8 +1085,8 @@ const EventDetail: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Start Game / View Game */}
-          {isCreator && linkedMatchDay ? (
+          {/* Start Game / View Game — visible to attending players only */}
+          {isAttending && linkedMatchDay ? (
             <Button
               className="flex-1"
               variant="outline"
@@ -1093,22 +1095,13 @@ const EventDetail: React.FC = () => {
             >
               View Game
             </Button>
-          ) : isCreator ? (
+          ) : isAttending ? (
             <Button
               className="flex-1"
               onClick={handleStartGame}
-              disabled={isStartingGame || event.status === "cancelled" || attendees.filter((a) => a.status === "attending").length < 4}
+              disabled={!isEventToday || isStartingGame || event.status === "cancelled" || attendees.filter((a) => a.status === "attending").length < 4}
             >
               {isStartingGame ? "Starting..." : "Start Game"}
-            </Button>
-          ) : linkedMatchDay ? (
-            <Button
-              className="flex-1"
-              variant="outline"
-              onClick={() => navigate(`/game/${linkedMatchDay.id}`)}
-              disabled={event.status === "cancelled"}
-            >
-              View Game
             </Button>
           ) : null}
         </div>
@@ -1153,7 +1146,7 @@ const EventDetail: React.FC = () => {
               </SelectContent>
             </Select>
             <Textarea
-              placeholder="Additional comment (optional)"
+              placeholder={cancelReason === "Other" ? "Please describe the reason (required)" : "Additional comment (optional)"}
               value={cancelComment}
               onChange={(e) => setCancelComment(e.target.value)}
               maxLength={200}
@@ -1169,7 +1162,7 @@ const EventDetail: React.FC = () => {
               </Button>
               <Button
                 className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
-                disabled={!cancelReason || cancelMutation.isPending}
+                disabled={!cancelReason || (cancelReason === "Other" && !cancelComment.trim()) || cancelMutation.isPending}
                 onClick={() => cancelMutation.mutate()}
               >
                 {cancelMutation.isPending ? "Cancelling..." : "Cancel Event"}
