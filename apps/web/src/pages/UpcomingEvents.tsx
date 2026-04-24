@@ -22,7 +22,6 @@ import {
   SlidersHorizontal,
   ArrowUpDown,
   Eye,
-  Compass,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -45,11 +44,9 @@ import {
 import {
   fetchUpcomingEvents,
   fetchPastEvents,
-  fetchPublicEvents,
   type PlannedEvent,
   type PastEventRow,
 } from "@/integrations/supabase/plannedEvents";
-import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
 import { EventCard } from "@/components/events/EventCard";
 import { useIsCompact } from "@/hooks/use-compact";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
@@ -379,26 +376,6 @@ const UpcomingEvents: React.FC = () => {
     enabled: !!user?.id && tab === "past",
     retry: 1,
   });
-
-  // Discover events: public events from clubs user is NOT a member of
-  const { data: userClubIds = [] } = useQuery({
-    queryKey: ["user-club-ids", user?.id],
-    queryFn: () => fetchUserClubIds(user!.id),
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: publicEvents = [] } = useQuery({
-    queryKey: ["public-events"],
-    queryFn: fetchPublicEvents,
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const discoverEvents = React.useMemo(() => {
-    const clubIdSet = new Set(userClubIds);
-    return publicEvents.filter((e) => !clubIdSet.has(e.club_id)).slice(0, 3);
-  }, [publicEvents, userClubIds]);
 
   // Extract unique club names for filter
   const clubNames = React.useMemo(() => {
@@ -861,44 +838,13 @@ const UpcomingEvents: React.FC = () => {
                 </div>
 
                 {tab === "upcoming" ? (
-                  <>
-                    <EventList
-                      events={visibleEvents}
-                      isLoading={isLoading}
-                      onEventClick={handleEventClick}
-                      onCreateEvent={() => navigate("/events/new")}
-                      currentPlayerId={playerId}
-                    />
-
-                    {/* Discover Events section */}
-                    {discoverEvents.length > 0 && (
-                      <div className="mt-8">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <Compass className="h-4 w-4 text-muted-foreground" />
-                            <h2 className="text-base font-bold">Discover Events</h2>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => navigate("/discover-events")}
-                            className="text-xs font-medium text-primary hover:underline"
-                          >
-                            See more
-                          </button>
-                        </div>
-                        <div className="grid gap-3">
-                          {discoverEvents.map((event) => (
-                            <EventCard
-                              key={event.id}
-                              event={event}
-                              currentPlayerId={playerId}
-                              onClick={() => handleEventClick(event.id)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <EventList
+                    events={visibleEvents}
+                    isLoading={isLoading}
+                    onEventClick={handleEventClick}
+                    onCreateEvent={() => navigate("/events/new")}
+                    currentPlayerId={playerId}
+                  />
                 ) : (
                   <PastEventsList
                     events={sortedPastEvents}
@@ -946,44 +892,13 @@ const UpcomingEvents: React.FC = () => {
       )}
 
       {tab === "upcoming" ? (
-        <>
-          <EventList
-            events={visibleEvents}
-            isLoading={isLoading}
-            onEventClick={handleEventClick}
-            onCreateEvent={() => navigate("/events/new")}
-            currentPlayerId={playerId}
-          />
-
-          {/* Discover Events section */}
-          {discoverEvents.length > 0 && (
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Compass className="h-4 w-4 text-muted-foreground" />
-                  <h2 className="text-base font-bold">Discover Events</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate("/discover-events")}
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  See more
-                </button>
-              </div>
-              <div className="grid gap-3">
-                {discoverEvents.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    currentPlayerId={playerId}
-                    onClick={() => handleEventClick(event.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+        <EventList
+          events={visibleEvents}
+          isLoading={isLoading}
+          onEventClick={handleEventClick}
+          onCreateEvent={() => navigate("/events/new")}
+          currentPlayerId={playerId}
+        />
       ) : (
         <PastEventsList
           events={sortedPastEvents}

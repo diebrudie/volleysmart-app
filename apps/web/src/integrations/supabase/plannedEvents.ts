@@ -27,7 +27,7 @@ export interface PlannedEvent {
   status: EventStatus;
   created_at: string;
   updated_at: string;
-  clubs?: { id: string; name: string; image_url?: string | null } | null;
+  clubs?: { id: string; name: string; image_url?: string | null; is_club_discoverable?: boolean | null } | null;
   locations?: { name: string; address?: string | null } | null;
   cancellation_reason?: string | null;
   cancellation_comment?: string | null;
@@ -324,7 +324,7 @@ export async function fetchSingleEvent(
   const { data, error } = await supabase
     .from("planned_events")
     .select(
-      `*, clubs!planned_events_club_id_fkey(id, name, image_url), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id, responded_at)`
+      `*, clubs!planned_events_club_id_fkey(id, name, image_url, is_club_discoverable), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id, responded_at)`
     )
     .eq("id", eventId)
     .single();

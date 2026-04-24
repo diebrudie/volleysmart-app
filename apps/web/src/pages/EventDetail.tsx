@@ -21,6 +21,7 @@ import {
   EyeOff,
   XCircle,
   Repeat,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +75,8 @@ import { toast } from "sonner";
 import { assignTeams } from "@/features/teams/assignLineup";
 import type { PlayerForTeams } from "@/features/teams/assignLineup";
 import { normalizeRole } from "@/features/teams/positions";
+import { formatShortName } from "@/lib/formatName";
+import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
 import { format } from "date-fns";
 
 // ─── Event type display config ──────────────────────────────────────────────
@@ -406,6 +409,14 @@ const EventDetail: React.FC = () => {
       return count ?? 0;
     },
     enabled: !!event?.club_id,
+  });
+
+  // Fetch user's club IDs (for membership check on public events)
+  const { data: userClubIds = [] } = useQuery({
+    queryKey: ["user-club-ids", user?.id],
+    queryFn: () => fetchUserClubIds(user!.id),
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch attendee profiles (players who RSVPed), ordered by RSVP time
@@ -754,8 +765,13 @@ const EventDetail: React.FC = () => {
   const typeConfig = EVENT_TYPE_CONFIG[event.event_type];
 
   const creatorName = creatorProfile
-    ? `${creatorProfile.first_name} ${creatorProfile.last_name}`
+    ? formatShortName(creatorProfile.first_name, creatorProfile.last_name)
     : "Unknown";
+  const isMember = event.club_id
+    ? userClubIds.includes(event.club_id)
+    : false;
+  const hasRsvped = !!currentRsvp;
+  const isPublicNonMember = event.is_public && !isCreator && !isMember;
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-32">
@@ -953,8 +969,8 @@ const EventDetail: React.FC = () => {
         <div className="space-y-3">
           <h2 className="text-lg font-bold">Hosted by</h2>
           <div className="rounded-xl border shadow-sm overflow-hidden">
-            {/* Club row */}
-            {event.clubs && (
+            {/* Club row — only show if club is discoverable */}
+            {event.clubs && event.clubs.is_club_discoverable && (
               <div
                 className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => navigate(`/clubs/${event.clubs!.id}`)}
@@ -982,7 +998,7 @@ const EventDetail: React.FC = () => {
             )}
 
             {/* Separator between club and creator */}
-            {event.clubs && <div className="border-t mx-4" />}
+            {event.clubs && event.clubs.is_club_discoverable && <div className="border-t mx-4" />}
 
             {/* Creator row */}
             <div className="flex items-center gap-3 px-4 py-3">
@@ -1001,12 +1017,20 @@ const EventDetail: React.FC = () => {
                   <User className="h-6 w-6 text-muted-foreground" />
                 </div>
               )}
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="font-semibold">{creatorName}</p>
-                <p className="text-sm text-muted-foreground">
-                  {isCreator ? "Organizer" : "Organizer"}
-                </p>
+                <p className="text-sm text-muted-foreground">Organizer</p>
               </div>
+              {!isCreator && (
+                <button
+                  type="button"
+                  disabled
+                  className="h-9 w-9 flex items-center justify-center rounded-full border opacity-40 cursor-not-allowed"
+                  aria-label="Chat with organizer (coming soon)"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1014,7 +1038,9 @@ const EventDetail: React.FC = () => {
         {/* RSVP section */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold">{attendingCount} Going</h2>
-          {attendees.length > 0 ? (
+          {isPublicNonMember && !hasRsvped ? (
+            <p className="text-sm text-muted-foreground">RSVP to see who's going</p>
+          ) : attendees.length > 0 ? (
             <div className="space-y-2">
               {attendees.map((a) => (
                 <div key={a.player_id} className="flex items-center gap-3">

@@ -134,6 +134,7 @@ Branches stack on each other (not merged to main yet):
 - Backlog: Build native iOS and Android app using monorepo
 - Backlog: Tournament event type (complex, deferred)
 - Backlog: Skill Score progression system (adjust algorithm, progression based on games/sets played)
+- Backlog: Chat — organizer↔player messaging on events, organizer broadcast to all attendees (chat icon placeholder added in EventDetail)
 
 ## Discover feature (planned architecture)
 
