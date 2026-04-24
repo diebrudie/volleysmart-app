@@ -739,6 +739,7 @@ const EventDetail: React.FC = () => {
   const isAttending = currentRsvp?.status === "attending";
   const parsedDate = parseISO(event.date);
   const isEventToday = isToday(parsedDate);
+  const isPastEvent = isBefore(parsedDate, startOfDay(new Date()));
   const formattedDate = format(parsedDate, "EEEE, d MMMM yyyy");
   const startTime = event.start_time?.slice(0, 5); // HH:MM
   const endTime = event.end_time?.slice(0, 5);
@@ -785,20 +786,22 @@ const EventDetail: React.FC = () => {
               </DropdownMenuItem>
               {isCreator && (
                 <>
-                  <DropdownMenuItem
-                    className="gap-2"
-                    onClick={() => {
-                      if (isRecurring) {
-                        setRecurrenceScopeAction("edit");
-                      } else {
-                        setEditSheetOpen(true);
-                      }
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Edit event
-                  </DropdownMenuItem>
-                  {event.status !== "cancelled" && (
+                  {!isPastEvent && (
+                    <DropdownMenuItem
+                      className="gap-2"
+                      onClick={() => {
+                        if (isRecurring) {
+                          setRecurrenceScopeAction("edit");
+                        } else {
+                          setEditSheetOpen(true);
+                        }
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit event
+                    </DropdownMenuItem>
+                  )}
+                  {!isPastEvent && event.status !== "cancelled" && (
                     <DropdownMenuItem
                       className="gap-2 text-amber-600 focus:text-amber-600"
                       onClick={() => {
