@@ -15,7 +15,10 @@ import {
   Bookmark,
   LayoutGrid,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,6 +166,16 @@ const INITIAL_STATE: FormState = {
   recurrence_rule: null,
 };
 
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const WEEKDAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKLY_EVERY = ["1 week", "2 weeks", "3 weeks", "4 weeks"];
+const MONTHLY_EVERY = ["1st", "2nd", "3rd", "4th", "Last"];
+
+/** Convert JS getDay() (0=Sun) to our index (0=Mon). */
+function jsDayToIndex(jsDay: number): number {
+  return (jsDay + 6) % 7;
+}
+
 // ─── Compute RSVP deadline timestamp ─────────────────────────────────────────
 function computeRsvpDeadline(form: FormState): string | undefined {
   if (!form.date) return undefined;
@@ -191,6 +204,24 @@ const CreateEvent: React.FC = () => {
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
   const [templateSheetOpen, setTemplateSheetOpen] = React.useState(false);
   const [rsvpCalendarOpen, setRsvpCalendarOpen] = React.useState(false);
+
+  // Recurrence config state
+  const [repeatsOnDays, setRepeatsOnDays] = React.useState<number[]>([]); // weekly: multiple days
+  const [repeatsOnDay, setRepeatsOnDay] = React.useState<number>(0); // monthly: single day
+  const [everyWeek, setEveryWeek] = React.useState("1 week");
+  const [everyMonth, setEveryMonth] = React.useState("1st");
+  const [repeatsOnOpen, setRepeatsOnOpen] = React.useState(false);
+  const [everyOpen, setEveryOpen] = React.useState(false);
+
+  // Sync recurrence defaults when date changes or recurrence turns on
+  React.useEffect(() => {
+    if (form.date && form.recurrence_rule) {
+      const dayIdx = jsDayToIndex(form.date.getDay());
+      if (repeatsOnDays.length === 0) setRepeatsOnDays([dayIdx]);
+      setRepeatsOnDay(dayIdx);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.date, form.recurrence_rule]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -356,9 +387,9 @@ const CreateEvent: React.FC = () => {
     form.club_id === NO_CLUB ? null : form.club_id || null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Top bar */}
-      <header className="flex items-center gap-3 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-4 border-b">
+    <div className="h-dvh bg-background flex flex-col">
+      {/* Top bar — fixed */}
+      <header className="shrink-0 flex items-center gap-3 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-4 border-b bg-background z-40">
         <button
           type="button"
           onClick={() => (step === 1 ? navigate(-1) : setStep(step - 1))}
@@ -379,13 +410,12 @@ const CreateEvent: React.FC = () => {
         </div>
       </header>
 
-      {/* Progress */}
-      <div className="px-4 py-3">
-        <StepIndicator step={step} total={3} />
-      </div>
-
-      {/* Step content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-32 max-w-2xl mx-auto w-full">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-4 pb-6 max-w-2xl mx-auto w-full" style={{ scrollbarWidth: "none" }}>
+        {/* Progress */}
+        <div className="py-3">
+          <StepIndicator step={step} total={3} />
+        </div>
         {/* ── Step 1: Event type + templates ── */}
         {step === 1 && (
           <div className="space-y-3 pt-2">
@@ -578,48 +608,168 @@ const CreateEvent: React.FC = () => {
                   <p className="text-xs text-muted-foreground">
                     {form.recurrence_rule
                       ? form.recurrence_rule === "weekly"
-                        ? `Every ${form.date ? format(form.date, "EEEE") : "week"}`
-                        : `Monthly on the ${form.date ? format(form.date, "do") : "same day"}`
+                        ? `Every ${repeatsOnDays.length > 0 ? repeatsOnDays.map((d) => WEEKDAYS[d]).join(", ") : form.date ? format(form.date, "EEEE") : "week"}`
+                        : `${MONTHLY_EVERY[MONTHLY_EVERY.indexOf(everyMonth)] || "1st"} ${WEEKDAYS[repeatsOnDay]} of every month`
                       : "Does not repeat"}
                   </p>
                 </div>
                 <Switch
                   checked={!!form.recurrence_rule}
-                  onCheckedChange={(on) => set("recurrence_rule", on ? "weekly" : null)}
+                  onCheckedChange={(on) => {
+                    if (on && form.date) {
+                      const dayIdx = jsDayToIndex(form.date.getDay());
+                      setRepeatsOnDays([dayIdx]);
+                      setRepeatsOnDay(dayIdx);
+                    }
+                    set("recurrence_rule", on ? "weekly" : null);
+                  }}
                 />
               </div>
 
               {form.recurrence_rule && (
-                <Tabs value={form.recurrence_rule} onValueChange={(v) => set("recurrence_rule", v as "weekly" | "monthly")}>
-                  <TabsList className="w-full">
-                    <TabsTrigger value="weekly" className="flex-1">Weekly</TabsTrigger>
-                    <TabsTrigger value="monthly" className="flex-1">Monthly</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="weekly" className="space-y-3 pt-1">
+                <>
+                  <Tabs value={form.recurrence_rule} onValueChange={(v) => set("recurrence_rule", v as "weekly" | "monthly")}>
+                    <TabsList className="w-full">
+                      <TabsTrigger value="weekly" className="flex-1">Weekly</TabsTrigger>
+                      <TabsTrigger value="monthly" className="flex-1">Monthly</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+
+                  {/* Repeats on + Every — side by side dropdown buttons */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Repeats on</Label>
-                      <div className="text-sm font-medium">
-                        {form.date ? format(form.date, "EEEE") : "Select a date first"}
+                      <Label className="text-xs font-semibold">Repeats on</Label>
+                      <button
+                        type="button"
+                        onClick={() => setRepeatsOnOpen(true)}
+                        className="flex items-center justify-between w-full rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm"
+                      >
+                        <span>
+                          {form.recurrence_rule === "weekly"
+                            ? repeatsOnDays.length > 0
+                              ? repeatsOnDays.map((d) => WEEKDAYS_SHORT[d]).join(", ")
+                              : "Select"
+                            : WEEKDAYS_SHORT[repeatsOnDay]}
+                        </span>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Every</Label>
+                      <button
+                        type="button"
+                        onClick={() => setEveryOpen(true)}
+                        className="flex items-center justify-between w-full rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm"
+                      >
+                        <span>{form.recurrence_rule === "weekly" ? everyWeek : everyMonth}</span>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Repeats on — bottom sheet */}
+                  <Sheet open={repeatsOnOpen} onOpenChange={setRepeatsOnOpen}>
+                    <SheetContent side="bottom" className="rounded-t-2xl">
+                      <SheetHeader>
+                        <SheetTitle className="text-xl font-bold text-left">Repeats on</SheetTitle>
+                      </SheetHeader>
+                      <div className="py-2">
+                        {form.recurrence_rule === "weekly" ? (
+                          /* Weekly: checkboxes for multiple days */
+                          <div className="space-y-0">
+                            {WEEKDAYS.map((day, i) => (
+                              <button
+                                key={day}
+                                type="button"
+                                onClick={() => {
+                                  setRepeatsOnDays((prev) =>
+                                    prev.includes(i)
+                                      ? prev.filter((d) => d !== i)
+                                      : [...prev, i].sort()
+                                  );
+                                }}
+                                className="flex items-center justify-between w-full py-3.5 border-b border-border last:border-0"
+                              >
+                                <span className="text-sm">{day}</span>
+                                <Checkbox
+                                  checked={repeatsOnDays.includes(i)}
+                                  className="h-5 w-5 rounded"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          /* Monthly: radio buttons for single day */
+                          <RadioGroup
+                            value={String(repeatsOnDay)}
+                            onValueChange={(v) => {
+                              setRepeatsOnDay(Number(v));
+                              setRepeatsOnOpen(false);
+                            }}
+                          >
+                            {WEEKDAYS.map((day, i) => (
+                              <label
+                                key={day}
+                                className="flex items-center justify-between w-full py-3.5 border-b border-border last:border-0 cursor-pointer"
+                              >
+                                <span className="text-sm">{day}</span>
+                                <RadioGroupItem value={String(i)} className="h-5 w-5" />
+                              </label>
+                            ))}
+                          </RadioGroup>
+                        )}
                       </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Every</Label>
-                      <div className="text-sm font-medium">1 week</div>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="monthly" className="space-y-3 pt-1">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Repeats on</Label>
-                      <div className="text-sm font-medium">
-                        {form.date ? format(form.date, "do") : "Select a date first"}
+                    </SheetContent>
+                  </Sheet>
+
+                  {/* Every — bottom sheet */}
+                  <Sheet open={everyOpen} onOpenChange={setEveryOpen}>
+                    <SheetContent side="bottom" className="rounded-t-2xl">
+                      <SheetHeader>
+                        <SheetTitle className="text-xl font-bold text-left">Repeats Every</SheetTitle>
+                      </SheetHeader>
+                      <div className="py-2">
+                        {form.recurrence_rule === "weekly" ? (
+                          <RadioGroup
+                            value={everyWeek}
+                            onValueChange={(v) => {
+                              setEveryWeek(v);
+                              setEveryOpen(false);
+                            }}
+                          >
+                            {WEEKLY_EVERY.map((opt) => (
+                              <label
+                                key={opt}
+                                className="flex items-center justify-between w-full py-3.5 border-b border-border last:border-0 cursor-pointer"
+                              >
+                                <span className="text-sm">{opt}</span>
+                                <RadioGroupItem value={opt} className="h-5 w-5" />
+                              </label>
+                            ))}
+                          </RadioGroup>
+                        ) : (
+                          <RadioGroup
+                            value={everyMonth}
+                            onValueChange={(v) => {
+                              setEveryMonth(v);
+                              setEveryOpen(false);
+                            }}
+                          >
+                            {MONTHLY_EVERY.map((opt) => (
+                              <label
+                                key={opt}
+                                className="flex items-center justify-between w-full py-3.5 border-b border-border last:border-0 cursor-pointer"
+                              >
+                                <span className="text-sm">{opt}</span>
+                                <RadioGroupItem value={opt} className="h-5 w-5" />
+                              </label>
+                            ))}
+                          </RadioGroup>
+                        )}
                       </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Every</Label>
-                      <div className="text-sm font-medium">1 month</div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                    </SheetContent>
+                  </Sheet>
+                </>
               )}
             </div>
 
@@ -747,7 +897,7 @@ const CreateEvent: React.FC = () => {
 
             {/* Description / Notes */}
             <div className="space-y-1.5">
-              <Label htmlFor="notes">Description / Notes (optional)</Label>
+              <Label htmlFor="notes">Description (optional)</Label>
               <Textarea
                 id="notes"
                 placeholder="Any extra info for participants…"
@@ -789,9 +939,9 @@ const CreateEvent: React.FC = () => {
         )}
       </div>
 
-      {/* Fixed bottom action bar */}
+      {/* Bottom action bar */}
       <div
-        className="fixed bottom-0 left-0 right-0 px-4 py-3 bg-background border-t
+        className="shrink-0 px-4 py-3 bg-background border-t
                    pb-[max(env(safe-area-inset-bottom),12px)]"
       >
         <div className="max-w-2xl mx-auto">
