@@ -434,6 +434,24 @@ const EventDetail: React.FC = () => {
     queryKey: ["event-attendees", eventId, attendingPlayerIds],
     queryFn: async (): Promise<Attendee[]> => {
       if (!attendingPlayerIds.length) return [];
+
+      // Try RPC first (works for organizer + club members, returns empty for others)
+      const { data: rpcRows } = await supabase.rpc("get_event_attendees", {
+        p_event_id: eventId,
+      });
+
+      if (rpcRows && rpcRows.length > 0) {
+        return (rpcRows as any[]).map((r) => ({
+          player_id: r.player_id,
+          status: "attending" as RsvpStatus,
+          first_name: r.first_name,
+          last_name: r.last_name,
+          image_url: r.image_url,
+          primary_position: r.primary_position ?? null,
+        }));
+      }
+
+      // Fallback: direct query (works for club members via existing RLS)
       const { data: players } = await supabase
         .from("players")
         .select(

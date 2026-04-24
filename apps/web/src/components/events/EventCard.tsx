@@ -36,13 +36,20 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 p-3 rounded-2xl border bg-card shadow-sm",
+        "relative w-full flex items-center gap-3 p-3 rounded-2xl border bg-card shadow-sm",
         "cursor-pointer hover:bg-muted/50 transition-colors text-left",
         event.status === "cancelled" && "opacity-60",
         isTodayEvent &&
           "border-primary/60 bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/30"
       )}
     >
+      {/* Public badge — top right corner */}
+      {event.is_public && (
+        <span className="absolute top-2 right-2 flex items-center gap-0.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+          <Globe className="h-2.5 w-2.5" />
+          Public
+        </span>
+      )}
       {/* Calendar badge */}
       <div
         className={cn(
@@ -85,12 +92,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
               Today
             </span>
           ) : null}
-          {event.is_public && (
-            <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-              <Globe className="h-2.5 w-2.5" />
-              Public
-            </span>
-          )}
         </div>
         <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
