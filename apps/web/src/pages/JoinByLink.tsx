@@ -4,12 +4,12 @@
  * Public invite link handler:
  * - Unauthenticated: saves slug to localStorage, redirects to /signup
  * - Authenticated but not onboarded: saves slug, redirects to /players/onboarding
- * - Authenticated + onboarded: shows club details page with Join / Cancel buttons
+ * - Authenticated + onboarded: shows club card with Join / Cancel buttons
  */
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Users } from "lucide-react";
+import { ArrowLeft, MapPin, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -84,7 +84,6 @@ const JoinByLink = () => {
         p_slug: trimmedSlug,
       });
       if (error) throw error;
-      // RPC returns an array; take the first row (or null if empty)
       const row = Array.isArray(data) ? data[0] : data;
       return (row as ClubPreview) ?? null;
     },
@@ -170,17 +169,20 @@ const JoinByLink = () => {
   // Club not found
   if (!club || clubError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 gap-4">
-        <p className="text-lg font-semibold">Club not found</p>
-        <p className="text-sm text-muted-foreground text-center">
-          This invite link is invalid or the club has been removed.
-        </p>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/home", { replace: true })}
-        >
-          Go Home
-        </Button>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex flex-col items-center justify-center px-4 pt-24 gap-4">
+          <p className="text-lg font-semibold">Club not found</p>
+          <p className="text-sm text-muted-foreground text-center">
+            This invite link is invalid or the club has been removed.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/home", { replace: true })}
+          >
+            Go Home
+          </Button>
+        </div>
       </div>
     );
   }
@@ -188,63 +190,100 @@ const JoinByLink = () => {
   const location = [club.city, club.country].filter(Boolean).join(", ");
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Hero */}
-      <div className="relative h-48 sm:h-56">
-        {club.image_url ? (
-          <img
-            src={buildImageUrl(club.image_url, { w: 1200 })}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/60 to-primary/20" />
-        )}
-        <div className="absolute inset-0 bg-black/20" />
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
 
-      {/* Club info */}
-      <div className="px-4 pt-5 space-y-3 max-w-lg mx-auto w-full">
-        <h1 className="text-2xl font-bold">{club.name}</h1>
-
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          {location && (
-            <span className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" />
-              {location}
-            </span>
-          )}
-          <span className="flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5" />
-            {club.member_count} {club.member_count === 1 ? "member" : "members"}
-          </span>
-        </div>
-
-        {club.description && (
-          <p className="text-sm text-muted-foreground">{club.description}</p>
-        )}
-
-        <p className="text-sm pt-2">
+      {/* Content */}
+      <div className="px-4 pt-6 max-w-lg mx-auto">
+        <p className="text-sm text-muted-foreground mb-4">
           You've been invited to join this club. Send a request to the admins?
         </p>
 
-        {/* Action buttons */}
-        <div className="flex gap-3 pt-4">
-          <Button className="flex-1" onClick={handleJoin} disabled={joining}>
-            {joining ? "Sending..." : "Join Club"}
-          </Button>
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={handleCancel}
-            disabled={joining}
-          >
-            Cancel
-          </Button>
+        {/* Club card — same style as Clubs page */}
+        <div className="border border-border rounded-xl overflow-hidden bg-card">
+          {/* Image */}
+          <div className="aspect-[16/10] w-full bg-muted overflow-hidden">
+            {club.image_url ? (
+              <img
+                src={buildImageUrl(club.image_url, { w: 720 })}
+                alt={club.name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <span className="text-white text-2xl font-bold">
+                  {club.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="p-3">
+            <h3 className="text-base font-semibold text-foreground truncate mb-1">
+              {club.name}
+            </h3>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {location && (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{location}</span>
+                </span>
+              )}
+              <span className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 shrink-0" />
+                {club.member_count}{" "}
+                {club.member_count === 1 ? "member" : "members"}
+              </span>
+            </div>
+
+            {/* Action buttons inside card */}
+            <div className="flex gap-3 mt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleCancel}
+                disabled={joining}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleJoin}
+                disabled={joining}
+              >
+                {joining ? "Sending..." : "Join Club"}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+/** Simple top bar matching ManageRequests style */
+function Header() {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
+        <div className="flex items-center justify-center relative h-14 px-4">
+          <button
+            onClick={() => navigate("/home", { replace: true })}
+            className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-base font-semibold">Join Club</h1>
+        </div>
+      </div>
+      <div className="h-14" />
+    </>
+  );
+}
 
 export default JoinByLink;

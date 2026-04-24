@@ -33,6 +33,7 @@ const HIDE_CHROME = [
   /^\/faqs\/?$/, // /faqs
   /^\/start\/?$/, // redirects to /home
   /^\/invite-members(\/[^/]+)?\/?$/,
+  /^\/join\/[^/]+\/?$/, // /join/:slug (invite link)
 ];
 
 // Routes where we want the top bar only (no bottom nav),
