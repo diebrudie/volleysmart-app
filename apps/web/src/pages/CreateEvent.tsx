@@ -387,9 +387,9 @@ const CreateEvent: React.FC = () => {
     form.club_id === NO_CLUB ? null : form.club_id || null;
 
   return (
-    <div className="h-dvh bg-background flex flex-col">
+    <div className="min-h-screen bg-background">
       {/* Top bar — fixed */}
-      <header className="shrink-0 flex items-center gap-3 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-4 border-b bg-background z-40">
+      <header className="fixed top-0 left-0 right-0 flex items-center gap-3 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-4 border-b bg-background z-40">
         <button
           type="button"
           onClick={() => (step === 1 ? navigate(-1) : setStep(step - 1))}
@@ -410,8 +410,8 @@ const CreateEvent: React.FC = () => {
         </div>
       </header>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto min-h-0 px-4 pb-6 max-w-2xl mx-auto w-full" style={{ scrollbarWidth: "none" }}>
+      {/* Scrollable content — padded for fixed header + bottom bar */}
+      <div className="px-4 pt-[calc(max(env(safe-area-inset-top),16px)+72px)] pb-[calc(max(env(safe-area-inset-bottom),12px)+72px)] max-w-2xl mx-auto w-full" style={{ scrollbarWidth: "none" }}>
         {/* Progress */}
         <div className="py-3">
           <StepIndicator step={step} total={3} />
@@ -939,9 +939,9 @@ const CreateEvent: React.FC = () => {
         )}
       </div>
 
-      {/* Bottom action bar */}
+      {/* Bottom action bar — fixed */}
       <div
-        className="shrink-0 px-4 py-3 bg-background border-t
+        className="fixed bottom-0 left-0 right-0 px-4 py-3 bg-background border-t z-40
                    pb-[max(env(safe-area-inset-bottom),12px)]"
       >
         <div className="max-w-2xl mx-auto">
