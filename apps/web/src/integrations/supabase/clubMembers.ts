@@ -341,3 +341,14 @@ export async function removeClubMembers(
   });
   if (error) throw error;
 }
+
+/** Request to join a discoverable club (no invite token needed). */
+export async function requestJoinClub(
+  clubId: string
+): Promise<"pending_approval" | "already_member" | "already_pending"> {
+  const { data, error } = await supabase.rpc("request_join_club", {
+    p_club_id: clubId,
+  });
+  if (error) throw error;
+  return (data as { status: string })?.status as any;
+}

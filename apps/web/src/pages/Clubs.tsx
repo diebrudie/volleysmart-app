@@ -214,6 +214,26 @@ const Clubs = () => {
     enabled: !!user?.id,
   });
 
+  // Query discoverable clubs (exclude user's own clubs)
+  const userClubIds = (userClubs ?? []).map((c) => c.id);
+  const { data: discoverableClubs = [] } = useQuery({
+    queryKey: ["discoverableClubs", user?.id, userClubIds.join(",")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clubs")
+        .select("id, name, image_url, city, created_at")
+        .eq("is_club_discoverable", true)
+        .eq("status", "active")
+        .limit(20);
+      if (error) throw error;
+      // Filter out clubs user is already in or has pending request for
+      const pendingIds = pendingRequests.map((r) => r.club_id);
+      const excludeIds = new Set([...userClubIds, ...pendingIds]);
+      return (data ?? []).filter((c) => !excludeIds.has(c.id));
+    },
+    enabled: !!user?.id,
+  });
+
   const handleCreateClub = () => navigate("/new-club");
 
   const handleClubClick = (clubId: string) => {
@@ -514,10 +534,41 @@ const Clubs = () => {
           </section>
 
           {/* Discover */}
-          <section>
-            <h2 className="text-xl font-bold text-foreground mb-4">Discover</h2>
-            <div className="h-44 rounded-xl bg-muted/50 border border-border" />
-          </section>
+          {discoverableClubs.length > 0 && (
+            <section>
+              <h2 className="text-xl font-bold text-foreground mb-4">Discover</h2>
+              <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
+                {discoverableClubs.slice(0, 6).map((club) => (
+                  <button
+                    key={club.id}
+                    onClick={() => navigate(`/clubs/${club.id}`)}
+                    className="shrink-0 w-40 rounded-xl border border-border bg-card p-3 text-left hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="h-20 w-full rounded-lg bg-muted mb-2 overflow-hidden">
+                      {club.image_url ? (
+                        <img
+                          src={buildImageUrl(club.image_url)}
+                          alt={club.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-2xl font-bold text-muted-foreground">
+                          {club.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold text-foreground truncate">{club.name}</p>
+                    {club.city && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {club.city}
+                      </p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </main>
 

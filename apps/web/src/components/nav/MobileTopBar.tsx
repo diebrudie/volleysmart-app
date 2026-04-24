@@ -15,6 +15,7 @@ function getPageTitle(pathname: string): string {
   if (/^\/events(\/|$)/.test(pathname)) return "Events";
   if (/^\/members(\/|$)/.test(pathname)) return "Members";
   if (/^\/games(\/|$)/.test(pathname)) return "Games";
+  if (pathname === "/discover-events") return "Public Events";
   return "Home";
 }
 

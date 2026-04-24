@@ -140,6 +140,28 @@ export async function fetchPublicEvents(): Promise<PlannedEvent[]> {
   return (data ?? []) as PlannedEvent[];
 }
 
+/** Fetch upcoming public events for a specific club. */
+export async function fetchClubPublicEvents(
+  clubId: string
+): Promise<PlannedEvent[]> {
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data, error } = await supabase
+    .from("planned_events")
+    .select(
+      `*, clubs!planned_events_club_id_fkey(id, name, image_url), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id)`
+    )
+    .eq("club_id", clubId)
+    .eq("is_public", true)
+    .in("status", ["open", "confirmed"])
+    .gte("date", today)
+    .order("date", { ascending: true })
+    .limit(10);
+
+  if (error) throw error;
+  return (data ?? []) as PlannedEvent[];
+}
+
 export interface PastEventRow {
   id: string;
   title: string;
