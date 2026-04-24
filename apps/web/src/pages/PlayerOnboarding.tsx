@@ -501,7 +501,13 @@ const PlayerOnboarding = () => {
         duration: 1500,
       });
 
-      navigate("/home", { replace: true });
+      // If a pending invite token exists, redirect to the invite page
+      const pendingToken = localStorage.getItem("pendingInviteToken");
+      if (pendingToken) {
+        navigate(`/invite/${encodeURIComponent(pendingToken)}`, { replace: true });
+      } else {
+        navigate("/home", { replace: true });
+      }
     } catch (error) {
       console.error("🚨 Error creating player:", error);
       const errorMessage =

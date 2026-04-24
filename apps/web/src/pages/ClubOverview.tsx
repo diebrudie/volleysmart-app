@@ -13,6 +13,7 @@ import {
   CalendarDays,
   MapPin,
   Trash2,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { buildImageUrl } from "@/utils/buildImageUrl";
-import { fetchMemberCount, deactivateMembersByUserIds } from "@/integrations/supabase/clubMembers";
+import { fetchMemberCount, removeClubMembers, leaveClub } from "@/integrations/supabase/clubMembers";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { useIsCompact } from "@/hooks/use-compact";
 import { EventCard } from "@/components/events/EventCard";
@@ -65,6 +66,7 @@ interface MemberRow {
   last_name: string;
   image_url: string | null;
   primary_position: string | null;
+  member_association: boolean;
 }
 
 /**
@@ -95,6 +97,8 @@ const ClubOverview: React.FC = () => {
   const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
+  const [leaveOpen, setLeaveOpen] = React.useState(false);
+  const [leaving, setLeaving] = React.useState(false);
 
   // Club details
   const { data: club, isLoading: clubLoading } = useQuery({
@@ -172,7 +176,7 @@ const ClubOverview: React.FC = () => {
       // 1. Get active club members
       const { data: rows, error } = await supabase
         .from("club_members")
-        .select("user_id, role")
+        .select("user_id, role, member_association")
         .eq("club_id", clubId!)
         .eq("is_active", true)
         .eq("status", "active")
@@ -203,6 +207,7 @@ const ClubOverview: React.FC = () => {
           last_name: p?.last_name ?? "",
           image_url: p?.image_url ?? null,
           primary_position: primaryPos?.positions?.name ?? null,
+          member_association: m.member_association ?? false,
         };
       }) as MemberRow[];
       merged.sort((a, b) => a.first_name.localeCompare(b.first_name));
@@ -260,6 +265,9 @@ const ClubOverview: React.FC = () => {
         )}
       </div>
 
+      {/* Content — centered on desktop */}
+      <div className="max-w-2xl mx-auto w-full">
+
       {/* Club info */}
       <div className="px-4 pt-5 space-y-3">
         <h1 className="text-2xl font-bold">{club.name}</h1>
@@ -288,7 +296,10 @@ const ClubOverview: React.FC = () => {
 
       {/* Action buttons */}
       <div className="px-4 pt-5">
-        <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
+        <div
+          className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           <ActionButton
             icon={<UserPlus className="h-5 w-5" />}
             label="Invite"
@@ -309,6 +320,13 @@ const ClubOverview: React.FC = () => {
             label="Stats"
             disabled
           />
+          {userRole && !isAdmin && (
+            <ActionButton
+              icon={<LogOut className="h-5 w-5" />}
+              label="Leave"
+              onClick={() => setLeaveOpen(true)}
+            />
+          )}
         </div>
       </div>
 
@@ -416,8 +434,11 @@ const ClubOverview: React.FC = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
+                  <p className="text-sm font-medium truncate flex items-center gap-1">
                     {formatDisplayName(m.first_name, m.last_name)}
+                    {m.member_association && (
+                      <span className="shrink-0" title="Association member">🏐</span>
+                    )}
                   </p>
                   {m.primary_position && (
                     <p className="text-xs text-muted-foreground">{m.primary_position}</p>
@@ -446,6 +467,8 @@ const ClubOverview: React.FC = () => {
         )}
       </div>
 
+      </div>{/* end max-w-2xl wrapper */}
+
       {/* Confirm remove dialog */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
@@ -465,7 +488,7 @@ const ClubOverview: React.FC = () => {
               onClick={async () => {
                 setDeleting(true);
                 try {
-                  await deactivateMembersByUserIds(clubId!, selectedUserIds);
+                  await removeClubMembers(clubId!, selectedUserIds);
                   queryClient.invalidateQueries({
                     queryKey: ["club-members-list", clubId],
                   });
@@ -498,13 +521,73 @@ const ClubOverview: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Confirm leave dialog */}
+      <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {club?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will no longer be a member of this club. You can request to
+              join again later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={leaving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                setLeaving(true);
+                try {
+                  const result = await leaveClub(clubId!);
+                  if (result.result_status === "sole_admin") {
+                    toast({
+                      title: "Cannot leave",
+                      description:
+                        "You're the only admin. Transfer the admin role first.",
+                      variant: "destructive",
+                      duration: 2000,
+                    });
+                  } else {
+                    queryClient.invalidateQueries({
+                      queryKey: ["club-members-list", clubId],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["club-member-count", clubId],
+                    });
+                    toast({
+                      title: "Left club",
+                      description: `You left ${club?.name}.`,
+                      duration: 2000,
+                    });
+                    navigate("/clubs");
+                  }
+                } catch {
+                  toast({
+                    title: "Error",
+                    description: "Failed to leave the club.",
+                    variant: "destructive",
+                    duration: 2000,
+                  });
+                } finally {
+                  setLeaving(false);
+                  setLeaveOpen(false);
+                }
+              }}
+            >
+              {leaving ? "Leaving…" : "Leave"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Invite sheet */}
       <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
         <SheetContent side={isCompact ? "bottom" : "right"} className={isCompact ? "rounded-t-2xl" : ""}>
           <SheetHeader className="pb-4">
             <SheetTitle>Invite Members</SheetTitle>
           </SheetHeader>
-          <ClubInviteSharePanel joinCode={club.slug} />
+          <ClubInviteSharePanel clubId={club.id} />
         </SheetContent>
       </Sheet>
 

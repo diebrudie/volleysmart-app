@@ -8,6 +8,7 @@ import {
   UserCheck,
   UserX,
   UserPlus,
+  UserMinus,
   Calendar,
   CalendarX,
   MessageSquare,
@@ -99,6 +100,20 @@ function getNotificationConfig(n: Notification): {
         title: "Game Started",
         description: `${p.event_title ?? "A game"} has started`,
         href: p.match_day_id ? `/game/${p.match_day_id}` : null,
+      };
+    case "club_member_left":
+      return {
+        icon: <UserMinus className="h-5 w-5 text-red-500" />,
+        title: "Member Left",
+        description: `${p.member_name ?? "A member"} left ${p.club_name ?? "your club"}`,
+        href: p.club_id ? `/clubs/${p.club_id}` : null,
+      };
+    case "club_member_removed":
+      return {
+        icon: <UserX className="h-5 w-5 text-red-500" />,
+        title: "Removed from Club",
+        description: `You've been removed from ${p.club_name ?? "a club"}`,
+        href: null,
       };
     default:
       return {

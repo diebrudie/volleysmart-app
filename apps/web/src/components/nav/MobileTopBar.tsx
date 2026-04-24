@@ -114,12 +114,14 @@ const MobileTopBar: React.FC = () => {
             size="icon"
             aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
             onClick={() => navigate("/notifications")}
-            className="relative text-foreground hover:bg-muted"
+            className="text-foreground hover:bg-muted"
           >
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
-            )}
+            <span className="relative shrink-0">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+              )}
+            </span>
           </Button>
 
           <Button

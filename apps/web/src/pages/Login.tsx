@@ -76,6 +76,14 @@ const Login = () => {
         return;
       }
 
+      // 1b) If a pending invite token exists, redirect to /invite/:token
+      const pendingToken = localStorage.getItem("pendingInviteToken");
+      if (pendingToken) {
+        navigate(`/invite/${encodeURIComponent(pendingToken)}`, { replace: true });
+        setIsCheckingProfile(false);
+        return;
+      }
+
       /**
        * Must have players.profile_completed === true to leave onboarding.
        * If row is missing OR profile_completed is not true -> go to onboarding.

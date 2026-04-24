@@ -25,7 +25,7 @@ const HIDE_CHROME = [
   /^\/events\/[^/]+\/?$/, // /events/:eventId (Event Detail)
   /^\/clubs\/[^/]+\/?$/, // /clubs/:clubId (Club Overview)
   /^\/game\/[^/]+\/?$/, // /game/:matchDayId (Game page)
-  /^\/join-club\/?$/, // /join-club
+
   /^\/new-club\/?$/, // /new-club
   /^\/user\/[^/]+\/?$/, // /user/:userId (Profile)
   /^\/manage-requests\/?$/, // /manage-requests
@@ -33,6 +33,7 @@ const HIDE_CHROME = [
   /^\/faqs\/?$/, // /faqs
   /^\/start\/?$/, // redirects to /home
   /^\/invite-members(\/[^/]+)?\/?$/,
+  /^\/invite\/[^/]+\/?$/, // /invite/:token (invite link)
 ];
 
 // Routes where we want the top bar only (no bottom nav),

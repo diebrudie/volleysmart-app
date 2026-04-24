@@ -8,7 +8,6 @@ import { ClubInviteSharePanel } from "@/components/clubs/ClubInviteSharePanel";
 
 interface ClubMeta {
   name: string;
-  slug: string;
 }
 
 const InviteMembers = () => {
@@ -39,7 +38,7 @@ const InviteMembers = () => {
 
       const { data, error } = await supabase
         .from("clubs")
-        .select("name, slug")
+        .select("name")
         .eq("id", clubId)
         .single();
 
@@ -70,10 +69,10 @@ const InviteMembers = () => {
   };
 
   const renderShareSection = () => {
-    if (clubMeta?.slug) {
+    if (clubId) {
       return (
         <div className="flex justify-center">
-          <ClubInviteSharePanel joinCode={clubMeta.slug} />
+          <ClubInviteSharePanel clubId={clubId} />
         </div>
       );
     }

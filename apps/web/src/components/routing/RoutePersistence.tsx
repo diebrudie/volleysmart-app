@@ -2,8 +2,8 @@
  * RoutePersistence
  * - Saves the last private route (pathname + search) into localStorage.
  * - Skips public pages and onboarding.
- * - Additionally captures invite codes from `?cid=...` into localStorage so
- *   users can complete signup/onboarding and still join the invited club later.
+ * - Captures invite tokens from `/invite/:token` into localStorage so
+ *   users can complete signup/onboarding and still accept the invite later.
  */
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
@@ -22,30 +22,22 @@ const EXCLUDED_PRIVATE_PATHS = new Set<string>([
   "/players/onboarding", // don't persist onboarding as last route
 ]);
 
-const PENDING_CLUB_JOIN_KEY = "pendingClubJoinSlug";
+const PENDING_INVITE_TOKEN_KEY = "pendingInviteToken";
 
 export default function RoutePersistence() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
   /**
-   * Always capture `cid` from the query string (even when not authenticated).
-   * This supports flows like:
-   *  - share link: https://volleysmart.app/?cid=ABC12
-   *  - user signs up, completes onboarding
-   *  - later chooses "Join a Club" and sees the invite prefilled.
+   * Capture invite tokens from /invite/:token path.
+   * Persists across signup/onboarding so the user can accept afterwards.
    */
   useEffect(() => {
-    const search = location.search;
-    if (!search) return;
-
-    const params = new URLSearchParams(search);
-    const cid = params.get("cid");
-
-    if (cid && cid.trim()) {
-      localStorage.setItem(PENDING_CLUB_JOIN_KEY, cid.trim());
+    const inviteMatch = location.pathname.match(/^\/invite\/([^/]+)$/);
+    if (inviteMatch?.[1]) {
+      localStorage.setItem(PENDING_INVITE_TOKEN_KEY, inviteMatch[1].trim());
     }
-  }, [location.search]);
+  }, [location.pathname]);
 
   /**
    * Persist last private path (existing behavior), only when authenticated.
