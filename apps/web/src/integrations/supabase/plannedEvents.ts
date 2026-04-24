@@ -29,6 +29,11 @@ export interface PlannedEvent {
   updated_at: string;
   clubs?: { id: string; name: string; image_url?: string | null } | null;
   locations?: { name: string; address?: string | null } | null;
+  cancellation_reason?: string | null;
+  cancellation_comment?: string | null;
+  recurrence_rule?: string | null;
+  recurrence_parent_id?: string | null;
+  recurrence_cancelled_at?: string | null;
   event_rsvp?: Array<{ status: RsvpStatus; player_id: string; responded_at?: string | null }>;
 }
 
@@ -290,10 +295,18 @@ export async function deletePlannedEvent(eventId: string): Promise<void> {
 }
 
 /** Cancel a planned event (sets status to 'cancelled', triggers notification). */
-export async function cancelPlannedEvent(eventId: string): Promise<void> {
+export async function cancelPlannedEvent(
+  eventId: string,
+  reason: string,
+  comment?: string
+): Promise<void> {
   const { error } = await supabase
     .from("planned_events")
-    .update({ status: "cancelled" })
+    .update({
+      status: "cancelled",
+      cancellation_reason: reason,
+      cancellation_comment: comment || null,
+    })
     .eq("id", eventId);
   if (error) throw error;
 }
@@ -312,6 +325,7 @@ export interface CreateEventInput {
   notes?: string;
   rsvp_deadline?: string; // ISO timestamp
   extra_club_ids?: string[]; // for tournament multi-club
+  recurrence_rule?: "weekly" | "monthly";
 }
 
 /** Create a planned event with an optional location_id and optional club. */
@@ -335,6 +349,7 @@ export async function createPlannedEvent(
       min_players: input.min_players ?? 4,
       notes: input.notes ?? null,
       rsvp_deadline: input.rsvp_deadline ?? null,
+      recurrence_rule: input.recurrence_rule ?? null,
     })
     .select("id")
     .single();
@@ -388,4 +403,65 @@ export async function updatePlannedEvent(
     .update(updates)
     .eq("id", eventId);
   if (error) throw error;
+}
+
+/** Cancel a recurring series — stop future generation and cancel future instances. */
+export async function cancelRecurringSeries(
+  parentId: string,
+  reason: string,
+  comment?: string
+): Promise<void> {
+  // Mark parent as recurrence-cancelled
+  const { error: e1 } = await supabase
+    .from("planned_events")
+    .update({
+      recurrence_cancelled_at: new Date().toISOString(),
+      status: "cancelled",
+      cancellation_reason: reason,
+      cancellation_comment: comment || null,
+    })
+    .eq("id", parentId);
+  if (e1) throw e1;
+
+  // Cancel all future open/confirmed children
+  const today = new Date().toISOString().split("T")[0];
+  const { error: e2 } = await supabase
+    .from("planned_events")
+    .update({ status: "cancelled" })
+    .eq("recurrence_parent_id", parentId)
+    .gte("date", today)
+    .in("status", ["open", "confirmed"]);
+  if (e2) throw e2;
+}
+
+/** Update a recurring series — update parent template + future children. */
+export async function updateRecurringSeries(
+  parentId: string,
+  input: UpdateEventInput
+): Promise<void> {
+  // Update the parent (template for future generation)
+  await updatePlannedEvent(parentId, input);
+
+  // Build updates for children
+  const updates: Record<string, unknown> = {};
+  if (input.title !== undefined) updates.title = input.title;
+  if (input.event_type !== undefined) updates.event_type = input.event_type;
+  if (input.start_time !== undefined)
+    updates.start_time = `${input.start_time}:00`;
+  if (input.end_time !== undefined) updates.end_time = `${input.end_time}:00`;
+  if (input.location_id !== undefined) updates.location_id = input.location_id;
+  if (input.is_public !== undefined) updates.is_public = input.is_public;
+  if (input.max_players !== undefined) updates.max_players = input.max_players;
+  if (input.notes !== undefined) updates.notes = input.notes;
+
+  if (Object.keys(updates).length > 0) {
+    const today = new Date().toISOString().split("T")[0];
+    const { error } = await supabase
+      .from("planned_events")
+      .update(updates)
+      .eq("recurrence_parent_id", parentId)
+      .gte("date", today)
+      .in("status", ["open", "confirmed"]);
+    if (error) throw error;
+  }
 }

@@ -138,6 +138,7 @@ interface FormState {
   notes: string;
   save_template: boolean;
   template_name: string;
+  recurrence_rule: "weekly" | "monthly" | null;
 }
 
 const NO_CLUB = "__none__";
@@ -158,6 +159,7 @@ const INITIAL_STATE: FormState = {
   notes: "",
   save_template: false,
   template_name: "",
+  recurrence_rule: null,
 };
 
 // ─── Compute RSVP deadline timestamp ─────────────────────────────────────────
@@ -295,6 +297,7 @@ const CreateEvent: React.FC = () => {
         form.event_type === "tournament" && clubId
           ? form.extra_club_ids
           : undefined,
+      recurrence_rule: form.recurrence_rule ?? undefined,
     };
 
     createMutation.mutate(input);
@@ -640,6 +643,26 @@ const CreateEvent: React.FC = () => {
         {/* ── Step 3: Options ── */}
         {step === 3 && (
           <div className="space-y-5 pt-2">
+            {/* Repeat */}
+            <div className="space-y-1.5">
+              <Label>Repeat</Label>
+              <Select
+                value={form.recurrence_rule ?? "none"}
+                onValueChange={(v) =>
+                  set("recurrence_rule", v === "none" ? null : (v as "weekly" | "monthly"))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Does not repeat</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Max players */}
             <div className="space-y-1.5">
               <Label htmlFor="max_players">Max players (optional)</Label>

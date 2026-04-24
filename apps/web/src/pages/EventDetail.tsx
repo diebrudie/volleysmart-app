@@ -20,6 +20,7 @@ import {
   Eye,
   EyeOff,
   XCircle,
+  Repeat,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,8 +60,10 @@ import {
   fetchSingleEvent,
   deletePlannedEvent,
   cancelPlannedEvent,
+  cancelRecurringSeries,
   upsertRsvp,
   updatePlannedEvent,
+  updateRecurringSeries,
   type PlannedEvent,
   type RsvpStatus,
   type EventType,
@@ -337,6 +340,12 @@ const EventDetail: React.FC = () => {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [editSheetOpen, setEditSheetOpen] = React.useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
+  const [cancelReason, setCancelReason] = React.useState("");
+  const [cancelComment, setCancelComment] = React.useState("");
+  const [recurrenceScopeAction, setRecurrenceScopeAction] = React.useState<"cancel" | "edit" | null>(null);
+  const [cancelSeries, setCancelSeries] = React.useState(false);
+  const [editSeries, setEditSeries] = React.useState(false);
   const [showCreatedDialog, setShowCreatedDialog] = React.useState(
     searchParams.get("created") === "true"
   );
@@ -463,24 +472,41 @@ const EventDetail: React.FC = () => {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (input: UpdateEventInput) =>
-      updatePlannedEvent(eventId!, input),
+    mutationFn: (input: UpdateEventInput) => {
+      if (editSeries && recurringParentId) {
+        return updateRecurringSeries(recurringParentId, input);
+      }
+      return updatePlannedEvent(eventId!, input);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
       setEditSheetOpen(false);
-      toast.success("Event updated");
+      setEditSeries(false);
+      toast.success(editSeries ? "All future events updated" : "Event updated");
     },
     onError: () => toast.error("Failed to update event"),
   });
 
+  const isRecurring = !!(event?.recurrence_rule || event?.recurrence_parent_id);
+  const recurringParentId = event?.recurrence_parent_id ?? event?.id;
+
   // Cancel mutation (sets status to 'cancelled', notifies members)
   const cancelMutation = useMutation({
-    mutationFn: () => cancelPlannedEvent(eventId!),
+    mutationFn: () => {
+      if (cancelSeries && recurringParentId) {
+        return cancelRecurringSeries(recurringParentId, cancelReason, cancelComment);
+      }
+      return cancelPlannedEvent(eventId!, cancelReason, cancelComment);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
-      queryClient.invalidateQueries({ queryKey: ["single-event", eventId] });
-      toast.success("Event cancelled");
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      setCancelDialogOpen(false);
+      setCancelReason("");
+      setCancelComment("");
+      setCancelSeries(false);
+      toast.success(cancelSeries ? "Recurring event cancelled" : "Event cancelled");
     },
     onError: () => toast.error("Failed to cancel event"),
   });
@@ -759,7 +785,13 @@ const EventDetail: React.FC = () => {
                 <>
                   <DropdownMenuItem
                     className="gap-2"
-                    onClick={() => setEditSheetOpen(true)}
+                    onClick={() => {
+                      if (isRecurring) {
+                        setRecurrenceScopeAction("edit");
+                      } else {
+                        setEditSheetOpen(true);
+                      }
+                    }}
                   >
                     <Pencil className="h-4 w-4" />
                     Edit event
@@ -767,7 +799,13 @@ const EventDetail: React.FC = () => {
                   {event.status !== "cancelled" && (
                     <DropdownMenuItem
                       className="gap-2 text-amber-600 focus:text-amber-600"
-                      onClick={() => cancelMutation.mutate()}
+                      onClick={() => {
+                        if (isRecurring) {
+                          setRecurrenceScopeAction("cancel");
+                        } else {
+                          setCancelDialogOpen(true);
+                        }
+                      }}
                     >
                       <XCircle className="h-4 w-4" />
                       Cancel event
@@ -823,11 +861,19 @@ const EventDetail: React.FC = () => {
           <p className="text-sm text-muted-foreground mt-1">
             {formattedDate} at {startTime}
           </p>
-          {!event.is_public && (
-            <span className="inline-block mt-1.5 text-xs font-medium bg-muted px-2 py-0.5 rounded">
-              Club Members Only
-            </span>
-          )}
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {!event.is_public && (
+              <span className="inline-block text-xs font-medium bg-muted px-2 py-0.5 rounded">
+                Club Members Only
+              </span>
+            )}
+            {isRecurring && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
+                <Repeat className="h-3 w-3" />
+                {(event.recurrence_rule ?? "weekly") === "weekly" ? "Weekly" : "Monthly"}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Details section */}
@@ -878,13 +924,25 @@ const EventDetail: React.FC = () => {
 
         </div>
 
-        {/* Description / Notes section */}
-        {event.notes && (
+        {/* Cancellation block OR Description / Notes */}
+        {event.status === "cancelled" ? (
+          <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4 space-y-1">
+            <h2 className="text-lg font-bold text-amber-800 dark:text-amber-300">Event Cancelled</h2>
+            {event.cancellation_reason && (
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                Reason: {event.cancellation_reason}
+              </p>
+            )}
+            {event.cancellation_comment && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">{event.cancellation_comment}</p>
+            )}
+          </div>
+        ) : event.notes ? (
           <div className="space-y-2">
             <h2 className="text-lg font-bold">Description / Notes</h2>
             <p className="text-sm">{event.notes}</p>
           </div>
-        )}
+        ) : null}
 
         {/* Hosted by section */}
         <div className="space-y-3">
@@ -892,7 +950,10 @@ const EventDetail: React.FC = () => {
           <div className="rounded-xl border shadow-sm overflow-hidden">
             {/* Club row */}
             {event.clubs && (
-              <div className="flex items-center gap-3 px-4 py-3">
+              <div
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => navigate(`/clubs/${event.clubs!.id}`)}
+              >
                 {event.clubs.image_url ? (
                   <img
                     src={event.clubs.image_url}
@@ -1000,7 +1061,7 @@ const EventDetail: React.FC = () => {
                   currentRsvp?.status === "declined" &&
                     "bg-red-600 hover:bg-red-700 text-white"
                 )}
-                disabled={rsvpMutation.isPending}
+                disabled={rsvpMutation.isPending || event.status === "cancelled"}
               >
                 {rsvpLabel}
                 <ChevronDown className="h-4 w-4" />
@@ -1028,6 +1089,7 @@ const EventDetail: React.FC = () => {
               className="flex-1"
               variant="outline"
               onClick={() => navigate(`/game/${linkedMatchDay.id}`)}
+              disabled={event.status === "cancelled"}
             >
               View Game
             </Button>
@@ -1035,7 +1097,7 @@ const EventDetail: React.FC = () => {
             <Button
               className="flex-1"
               onClick={handleStartGame}
-              disabled={isStartingGame || attendees.filter((a) => a.status === "attending").length < 4}
+              disabled={isStartingGame || event.status === "cancelled" || attendees.filter((a) => a.status === "attending").length < 4}
             >
               {isStartingGame ? "Starting..." : "Start Game"}
             </Button>
@@ -1044,6 +1106,7 @@ const EventDetail: React.FC = () => {
               className="flex-1"
               variant="outline"
               onClick={() => navigate(`/game/${linkedMatchDay.id}`)}
+              disabled={event.status === "cancelled"}
             >
               View Game
             </Button>
@@ -1063,6 +1126,101 @@ const EventDetail: React.FC = () => {
           saving={updateMutation.isPending}
         />
       )}
+
+      {/* Cancel event dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={(open) => {
+        setCancelDialogOpen(open);
+        if (!open) { setCancelReason(""); setCancelComment(""); }
+      }}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Cancel event</DialogTitle>
+            <DialogDescription>
+              Select a reason for cancelling this event.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <Select value={cancelReason} onValueChange={setCancelReason}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a reason" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Not enough players">Not enough players</SelectItem>
+                <SelectItem value="Bad weather">Bad weather</SelectItem>
+                <SelectItem value="Venue unavailable">Venue unavailable</SelectItem>
+                <SelectItem value="Scheduling conflict">Scheduling conflict</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <Textarea
+              placeholder="Additional comment (optional)"
+              value={cancelComment}
+              onChange={(e) => setCancelComment(e.target.value)}
+              maxLength={200}
+              rows={3}
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setCancelDialogOpen(false)}
+              >
+                Back
+              </Button>
+              <Button
+                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                disabled={!cancelReason || cancelMutation.isPending}
+                onClick={() => cancelMutation.mutate()}
+              >
+                {cancelMutation.isPending ? "Cancelling..." : "Cancel Event"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recurrence scope dialog (Apple Calendar style) */}
+      <Dialog open={!!recurrenceScopeAction} onOpenChange={() => setRecurrenceScopeAction(null)}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {recurrenceScopeAction === "cancel" ? "Cancel recurring event" : "Edit recurring event"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 mt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (recurrenceScopeAction === "cancel") {
+                  setCancelSeries(false);
+                  setCancelDialogOpen(true);
+                } else {
+                  setEditSeries(false);
+                  setEditSheetOpen(true);
+                }
+                setRecurrenceScopeAction(null);
+              }}
+            >
+              This event only
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (recurrenceScopeAction === "cancel") {
+                  setCancelSeries(true);
+                  setCancelDialogOpen(true);
+                } else {
+                  setEditSeries(true);
+                  setEditSheetOpen(true);
+                }
+                setRecurrenceScopeAction(null);
+              }}
+            >
+              This and all future events
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
