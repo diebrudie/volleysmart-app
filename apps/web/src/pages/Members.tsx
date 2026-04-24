@@ -490,8 +490,8 @@ const Members = () => {
                     </DrawerDescription>
                   </DrawerHeader>
                   <div className="px-4 pt-2 pb-2 flex justify-center">
-                    {clubMeta?.slug ? (
-                      <ClubInviteSharePanel joinCode={clubMeta.slug} />
+                    {clubId ? (
+                      <ClubInviteSharePanel clubId={clubId} />
                     ) : (
                       <p className="text-sm text-muted-foreground text-center">
                         We could not load your club join code. Please reload the
@@ -515,8 +515,8 @@ const Members = () => {
                   </DialogHeader>
 
                   <div className="flex justify-center">
-                    {clubMeta?.slug ? (
-                      <ClubInviteSharePanel joinCode={clubMeta.slug} />
+                    {clubId ? (
+                      <ClubInviteSharePanel clubId={clubId} />
                     ) : (
                       <p className="text-sm text-muted-foreground text-center">
                         We could not load your club join code. Please reload the
@@ -829,68 +829,6 @@ const Members = () => {
           </Card>
         </div>
       </main>
-    </div>
-  );
-};
-
-const SocialShareButtons = ({ joinCode }: { joinCode: string }) => {
-  const clubLink = `https://volleysmart.app/?ci=${encodeURIComponent(
-    joinCode
-  )}`;
-
-  const inviteMessage = [
-    "Hey, let's play Volleyball Smartly together. Register for free, and join my Club using this Club ID",
-    `*${joinCode}*`,
-    clubLink,
-  ].join("\n");
-
-  const encodedMessage = encodeURIComponent(inviteMessage);
-  const encodedClubLink = encodeURIComponent(clubLink);
-
-  const openShareUrl = (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
-
-  const handleShareWhatsApp = () => {
-    openShareUrl(`https://wa.me/?text=${encodedMessage}`);
-  };
-
-  const handleShareTelegram = () => {
-    openShareUrl(
-      `https://t.me/share/url?url=${encodedClubLink}&text=${encodedMessage}`
-    );
-  };
-
-  const handleShareMessenger = () => {
-    openShareUrl(`fb-messenger://share?link=${encodedClubLink}`);
-  };
-
-  return (
-    <div className="flex flex-col sm:flex-row gap-3">
-      <Button
-        type="button"
-        variant="outline"
-        className="flex-1"
-        onClick={handleShareWhatsApp}
-      >
-        Share via WhatsApp
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        className="flex-1"
-        onClick={handleShareTelegram}
-      >
-        Share via Telegram
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        className="flex-1"
-        onClick={handleShareMessenger}
-      >
-        Share via Messenger
-      </Button>
     </div>
   );
 };

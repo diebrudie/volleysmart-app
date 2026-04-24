@@ -1,3 +1,5 @@
+Using workdir /Users/isabelbruda/code/diebrudie/volleysmart-app
+Initialising login role...
 export type Json =
   | string
   | number
@@ -12,8 +14,71 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      club_invitations: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          token: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_invitations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_members: {
         Row: {
           activated_at: string | null
@@ -117,6 +182,143 @@ export type Database = {
           status?: Database["public"]["Enums"]["club_status"]
         }
         Relationships: []
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+          reason: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+          reason: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          reason?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
+      event_clubs: {
+        Row: {
+          club_id: string
+          event_id: string
+        }
+        Insert: {
+          club_id: string
+          event_id: string
+        }
+        Update: {
+          club_id?: string
+          event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_clubs_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_clubs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "planned_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_rsvp: {
+        Row: {
+          event_id: string
+          id: string
+          player_id: string
+          responded_at: string
+          status: Database["public"]["Enums"]["rsvp_status"]
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          player_id: string
+          responded_at?: string
+          status: Database["public"]["Enums"]["rsvp_status"]
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          player_id?: string
+          responded_at?: string
+          status?: Database["public"]["Enums"]["rsvp_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rsvp_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "planned_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_rsvp_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_templates: {
+        Row: {
+          club_id: string | null
+          config: Json
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          club_id?: string | null
+          config?: Json
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string | null
+          config?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_templates_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       faqs: {
         Row: {
@@ -264,23 +466,32 @@ export type Database = {
       }
       locations: {
         Row: {
+          address: string | null
           club_id: string | null
           created_at: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           name: string
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
           club_id?: string | null
           created_at?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name: string
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
           club_id?: string | null
           created_at?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           updated_at?: string | null
         }
@@ -305,6 +516,7 @@ export type Database = {
           last_modified_by: string | null
           location_id: string | null
           notes: string | null
+          planned_event_id: string | null
           team_generated: boolean | null
         }
         Insert: {
@@ -317,6 +529,7 @@ export type Database = {
           last_modified_by?: string | null
           location_id?: string | null
           notes?: string | null
+          planned_event_id?: string | null
           team_generated?: boolean | null
         }
         Update: {
@@ -329,6 +542,7 @@ export type Database = {
           last_modified_by?: string | null
           location_id?: string | null
           notes?: string | null
+          planned_event_id?: string | null
           team_generated?: boolean | null
         }
         Relationships: [
@@ -344,6 +558,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_days_planned_event_id_fkey"
+            columns: ["planned_event_id"]
+            isOneToOne: false
+            referencedRelation: "planned_events"
             referencedColumns: ["id"]
           },
         ]
@@ -379,6 +600,150 @@ export type Database = {
             columns: ["match_day_id"]
             isOneToOne: false
             referencedRelation: "match_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          club_id: string | null
+          content: string
+          created_at: string
+          event_id: string | null
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          club_id?: string | null
+          content: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          club_id?: string | null
+          content?: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "planned_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json
+          read: boolean
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          read?: boolean
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          read?: boolean
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      planned_events: {
+        Row: {
+          club_id: string | null
+          created_at: string
+          created_by: string
+          date: string
+          end_time: string
+          event_type: Database["public"]["Enums"]["event_type"]
+          id: string
+          is_public: boolean
+          location_id: string | null
+          max_players: number | null
+          min_players: number
+          notes: string | null
+          rsvp_deadline: string | null
+          start_time: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string
+          created_by: string
+          date: string
+          end_time: string
+          event_type: Database["public"]["Enums"]["event_type"]
+          id?: string
+          is_public?: boolean
+          location_id?: string | null
+          max_players?: number | null
+          min_players?: number
+          notes?: string | null
+          rsvp_deadline?: string | null
+          start_time: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string
+          created_by?: string
+          date?: string
+          end_time?: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          is_public?: boolean
+          location_id?: string | null
+          max_players?: number | null
+          min_players?: number
+          notes?: string | null
+          rsvp_deadline?: string | null
+          start_time?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planned_events_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planned_events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
             referencedColumns: ["id"]
           },
         ]
@@ -423,8 +788,11 @@ export type Database = {
         Row: {
           bio: string | null
           birthday: string | null
+          city: string | null
           club_id: string | null
           competition_level: string | null
+          country: string | null
+          country_code: string | null
           created_at: string
           first_name: string
           first_name_ci: string | null
@@ -451,8 +819,11 @@ export type Database = {
         Insert: {
           bio?: string | null
           birthday?: string | null
+          city?: string | null
           club_id?: string | null
           competition_level?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           first_name: string
           first_name_ci?: string | null
@@ -479,8 +850,11 @@ export type Database = {
         Update: {
           bio?: string | null
           birthday?: string | null
+          city?: string | null
           club_id?: string | null
           competition_level?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           first_name?: string
           first_name_ci?: string | null
@@ -663,6 +1037,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: { p_token: string }
+        Returns: {
+          club_name: string
+          result_status: string
+        }[]
+      }
       approve_membership: {
         Args: { p_membership_id: string }
         Returns: undefined
@@ -682,6 +1063,14 @@ export type Database = {
             Args: {
               p_club_id: string
               p_first_name: string
+              p_last_name: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_club_id: string
+              p_first_name: string
               p_gender?: string
               p_last_name: string
               p_skill_rating?: number
@@ -689,8 +1078,11 @@ export type Database = {
             Returns: {
               bio: string | null
               birthday: string | null
+              city: string | null
               club_id: string | null
               competition_level: string | null
+              country: string | null
+              country_code: string | null
               created_at: string
               first_name: string
               first_name_ci: string | null
@@ -721,18 +1113,19 @@ export type Database = {
               isSetofReturn: false
             }
           }
-        | {
-            Args: {
-              p_club_id: string
-              p_first_name: string
-              p_last_name: string
-            }
-            Returns: string
-          }
       delete_match_day_with_matches: {
         Args: { match_day_id: string }
         Returns: undefined
       }
+      delete_own_account: { Args: never; Returns: undefined }
+      generate_invitation: {
+        Args: { p_club_id: string }
+        Returns: {
+          invitation_id: string
+          token: string
+        }[]
+      }
+      generate_invite_token: { Args: never; Returns: string }
       is_active_member: {
         Args: { club_uuid: string; user_uuid?: string }
         Returns: boolean
@@ -767,6 +1160,7 @@ export type Database = {
           activated_at: string
           club_id: string
           first_name: string
+          image_url: string
           last_name: string
           member_association: boolean
           membership_id: string
@@ -782,23 +1176,29 @@ export type Database = {
         Args: { p_match_day_id: string }
         Returns: undefined
       }
+      notify_club_admins: {
+        Args: { p_club_id: string; p_payload: Json; p_type: string }
+        Returns: undefined
+      }
+      notify_club_members: {
+        Args: {
+          p_club_id: string
+          p_exclude_user_id?: string
+          p_payload: Json
+          p_type: string
+        }
+        Returns: undefined
+      }
       reject_membership: {
         Args: { p_membership_id: string }
         Returns: undefined
       }
       remove_member: { Args: { p_membership_id: string }; Returns: undefined }
-      request_club_membership: {
-        Args: { p_slug: string }
-        Returns: {
-          club_id: string
-          status: string
-        }[]
-      }
-      request_join_by_slug: {
-        Args: { p_member_association?: boolean; p_slug: string }
+      revoke_invitation: {
+        Args: { p_invitation_id: string }
         Returns: undefined
       }
-      request_membership: { Args: { p_club_id: string }; Returns: string }
+      send_rsvp_deadline_reminders: { Args: never; Returns: undefined }
       set_player_positions_replace: {
         Args: {
           p_player_id: string
@@ -815,11 +1215,23 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: boolean
       }
+      validate_invitation_token: {
+        Args: { p_token: string }
+        Returns: {
+          club_image: string
+          club_name: string
+          user_status: string
+          valid: boolean
+        }[]
+      }
     }
     Enums: {
       club_status: "active" | "deleted"
+      event_status: "open" | "confirmed" | "cancelled" | "completed"
+      event_type: "friendly_game" | "social_game" | "training" | "tournament"
       faq_page_display: "faqs" | "homepage_faqs"
       membership_status: "pending" | "active" | "removed" | "rejected"
+      rsvp_status: "attending" | "declined" | "maybe"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -945,11 +1357,19 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       club_status: ["active", "deleted"],
+      event_status: ["open", "confirmed", "cancelled", "completed"],
+      event_type: ["friendly_game", "social_game", "training", "tournament"],
       faq_page_display: ["faqs", "homepage_faqs"],
       membership_status: ["pending", "active", "removed", "rejected"],
+      rsvp_status: ["attending", "declined", "maybe"],
     },
   },
 } as const
+A new version of Supabase CLI is available: v2.90.0 (currently installed v2.87.2)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

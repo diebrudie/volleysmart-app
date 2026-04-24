@@ -3,11 +3,9 @@
  */
 
 import { EmptyTeamsState } from "@/components/team-generator/EmptyTeamsState";
-import CopyableClubId from "@/components/clubs/CopyableClubId";
 
 interface EmptyGameStateProps {
   clubName?: string | null;
-  clubSlug?: string | null;
   memberCount: number;
   canGenerateTeams: boolean;
   canInviteMembers: boolean;
@@ -18,7 +16,6 @@ interface EmptyGameStateProps {
 
 export const EmptyGameState = ({
   clubName,
-  clubSlug,
   memberCount,
   canGenerateTeams,
   canInviteMembers,
@@ -55,11 +52,6 @@ export const EmptyGameState = ({
         canInviteMembers={canInviteMembers}
         memberCount={memberCount}
       />
-      {clubSlug && (
-        <div className="mt-10 mb-10 flex justify-end w-full">
-          <CopyableClubId slug={clubSlug} />
-        </div>
-      )}
     </div>
   );
 };

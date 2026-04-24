@@ -29,7 +29,7 @@ import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
 // Start page removed — /start now redirects to /home
 import NewClub from "@/pages/NewClub";
-import JoinClub from "@/pages/JoinClub";
+import InvitePage from "@/pages/InvitePage";
 import InviteMembers from "@/pages/InviteMembers";
 import NewGame from "@/pages/NewGame";
 import Profile from "@/pages/Profile";
@@ -40,7 +40,6 @@ import Archive from "@/pages/Archive";
 import EventDetail from "@/pages/EventDetail";
 import ClubOverview from "@/pages/ClubOverview";
 import Notifications from "@/pages/Notifications";
-import JoinByLink from "@/pages/JoinByLink";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -63,7 +62,9 @@ const AppRoutes = () => (
     <Route path="/verify-email" element={<VerifyEmail />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
     <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/join/:slug" element={<JoinByLink />} />
+    <Route path="/invite/:token" element={<InvitePage />} />
+    {/* Backward compat: old join links redirect to home */}
+    <Route path="/join/:slug" element={<Navigate to="/home" replace />} />
 
     {/* All Protected Routes - require authentication */}
     <Route
@@ -93,14 +94,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
-    <Route
-      path="/join-club"
-      element={
-        <ProtectedRoute>
-          <JoinClub />
-        </ProtectedRoute>
-      }
-    />
+    {/* /join-club removed — replaced by /invite/:token */}
     <Route
       path="/invite-members/:clubId"
       element={

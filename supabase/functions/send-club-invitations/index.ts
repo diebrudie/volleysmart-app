@@ -67,7 +67,7 @@ interface Invite {
 interface ClubInfo {
   id: string;
   name: string;
-  joinCode: string;
+  inviteToken: string;
 }
 interface RequestBody {
   invites: Invite[];
@@ -89,7 +89,7 @@ function buildText(
   invite: Invite,
   club: ClubInfo
 ): { subject: string; text: string } {
-  const joinUrl = `https://volleysmart.app/join/${club.joinCode}`;
+  const joinUrl = `https://volleysmart.app/invite/${club.inviteToken}`;
   const subject = `You're invited to join ${club.name} on VolleySmart`;
   const text =
     `Hello ${invite.name || "there"},\n\n` +
@@ -157,7 +157,7 @@ serve(async (req: Request) => {
       !clubInfo ||
       typeof clubInfo.id !== "string" ||
       typeof clubInfo.name !== "string" ||
-      typeof clubInfo.joinCode !== "string" ||
+      typeof clubInfo.inviteToken !== "string" ||
       !Array.isArray(invites) ||
       invites.length === 0 ||
       invites.some(

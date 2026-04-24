@@ -213,7 +213,6 @@ const Games = () => {
         memberCount: memberCount ?? 0,
         userRole,
         clubName: clubData?.name,
-        clubSlug: clubData?.slug,
       };
     },
   });
@@ -419,7 +418,7 @@ const Games = () => {
         <div className="flex-grow overflow-y-auto p-4 pt-8">
           <EmptyGameState
             clubName={clubInfo?.clubName}
-            clubSlug={clubInfo?.clubSlug}
+
             memberCount={memberCount}
             canGenerateTeams={canGenerateTeams}
             canInviteMembers={canInviteMembers}

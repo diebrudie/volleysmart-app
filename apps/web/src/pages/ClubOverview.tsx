@@ -509,7 +509,7 @@ const ClubOverview: React.FC = () => {
           <SheetHeader className="pb-4">
             <SheetTitle>Invite Members</SheetTitle>
           </SheetHeader>
-          <ClubInviteSharePanel joinCode={club.slug} />
+          <ClubInviteSharePanel clubId={club.id} />
         </SheetContent>
       </Sheet>
 

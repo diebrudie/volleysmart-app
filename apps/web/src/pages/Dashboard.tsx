@@ -152,7 +152,7 @@ const Dashboard = () => {
       <div className="flex-grow overflow-y-auto p-4 pt-8">
         <EmptyGameState
           clubName={clubDetails?.name}
-          clubSlug={clubDetails?.slug}
+
           memberCount={clubMemberCount}
           canGenerateTeams={canGenerateTeams}
           canInviteMembers={canInviteMembers}
@@ -172,8 +172,8 @@ const Dashboard = () => {
               </DrawerDescription>
             </DrawerHeader>
             <div className="px-4 pt-2 pb-2 flex justify-center">
-              {clubDetails?.slug ? (
-                <ClubInviteSharePanel joinCode={clubDetails.slug} />
+              {clubDetails?.id ? (
+                <ClubInviteSharePanel clubId={clubDetails.id} />
               ) : (
                 <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
                   We could not load your club join code. Please reload the page.
@@ -192,8 +192,8 @@ const Dashboard = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="flex justify-center">
-              {clubDetails?.slug ? (
-                <ClubInviteSharePanel joinCode={clubDetails.slug} />
+              {clubDetails?.id ? (
+                <ClubInviteSharePanel clubId={clubDetails.id} />
               ) : (
                 <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
                   We could not load your club join code. Please reload the page.

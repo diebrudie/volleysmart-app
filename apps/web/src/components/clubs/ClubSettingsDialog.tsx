@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import CopyableClubId from "@/components/clubs/CopyableClubId";
+
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import CityLocationSelector, {
   LocationValue,
@@ -614,12 +614,7 @@ const ClubSettingsDialog = ({
             </div>
           </div>
 
-          {/* Club ID */}
-          {club.slug && (
-            <div className="flex justify-end">
-              <CopyableClubId slug={club.slug} compact />
-            </div>
-          )}
+
         </div>
 
         {/* Fixed bottom buttons — matches Edit Event */}

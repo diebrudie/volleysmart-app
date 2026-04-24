@@ -76,10 +76,10 @@ const Login = () => {
         return;
       }
 
-      // 1b) If a pending club invite slug exists, redirect to /join/:slug
-      const pendingSlug = localStorage.getItem("pendingClubJoinSlug");
-      if (pendingSlug) {
-        navigate(`/join/${encodeURIComponent(pendingSlug)}`, { replace: true });
+      // 1b) If a pending invite token exists, redirect to /invite/:token
+      const pendingToken = localStorage.getItem("pendingInviteToken");
+      if (pendingToken) {
+        navigate(`/invite/${encodeURIComponent(pendingToken)}`, { replace: true });
         setIsCheckingProfile(false);
         return;
       }
