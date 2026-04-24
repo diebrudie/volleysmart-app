@@ -1,4 +1,5 @@
 -- Allow any authenticated user to view discoverable clubs
+DROP POLICY IF EXISTS "Anyone can view discoverable clubs" ON public.clubs;
 CREATE POLICY "Anyone can view discoverable clubs"
   ON public.clubs FOR SELECT TO authenticated
   USING (is_club_discoverable = true AND status = 'active');

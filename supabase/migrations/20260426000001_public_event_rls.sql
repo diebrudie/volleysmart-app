@@ -6,6 +6,7 @@
 -- OLD: Only club members can view RSVPs
 -- NEW: Club members + anyone for public events
 DROP POLICY IF EXISTS "Club members can view RSVPs for their events" ON public.event_rsvp;
+DROP POLICY IF EXISTS "Users can view RSVPs for accessible events" ON public.event_rsvp;
 
 CREATE POLICY "Users can view RSVPs for accessible events"
   ON public.event_rsvp FOR SELECT
@@ -27,6 +28,7 @@ CREATE POLICY "Users can view RSVPs for accessible events"
 -- OLD: Only club members can view event_clubs
 -- NEW: Club members + anyone for public events
 DROP POLICY IF EXISTS "Club members can view event_clubs" ON public.event_clubs;
+DROP POLICY IF EXISTS "Users can view event_clubs for accessible events" ON public.event_clubs;
 
 CREATE POLICY "Users can view event_clubs for accessible events"
   ON public.event_clubs FOR SELECT

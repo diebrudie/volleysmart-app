@@ -59,6 +59,7 @@ $$;
 
 -- Also allow viewing the organizer's profile on public events
 -- (so non-members see the organizer name, not "Unknown")
+DROP POLICY IF EXISTS "View public event organizer profile" ON public.players;
 CREATE POLICY "View public event organizer profile"
   ON public.players FOR SELECT TO authenticated
   USING (
