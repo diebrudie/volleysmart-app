@@ -63,6 +63,7 @@ import {
   cancelPlannedEvent,
   cancelRecurringSeries,
   upsertRsvp,
+  deleteRsvp,
   updatePlannedEvent,
   updateRecurringSeries,
   type PlannedEvent,
@@ -479,6 +480,19 @@ const EventDetail: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
     },
     onError: () => toast.error("Failed to update RSVP"),
+  });
+
+  const cancelRsvpMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentPlayer?.id || !eventId) throw new Error("Missing data");
+      await deleteRsvp(eventId, currentPlayer.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["event-attendees", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
+    },
+    onError: () => toast.error("Failed to cancel RSVP"),
   });
 
   // Update mutation
@@ -1092,7 +1106,7 @@ const EventDetail: React.FC = () => {
                   currentRsvp?.status === "declined" &&
                     "bg-red-600 hover:bg-red-700 text-white"
                 )}
-                disabled={rsvpMutation.isPending || event.status === "cancelled"}
+                disabled={rsvpMutation.isPending || cancelRsvpMutation.isPending || event.status === "cancelled"}
               >
                 {rsvpLabel}
                 <ChevronDown className="h-4 w-4" />
@@ -1111,6 +1125,14 @@ const EventDetail: React.FC = () => {
               >
                 Not Going
               </DropdownMenuItem>
+              {currentRsvp && (
+                <DropdownMenuItem
+                  className="gap-2 text-muted-foreground"
+                  onClick={() => cancelRsvpMutation.mutate()}
+                >
+                  Cancel RSVP
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 

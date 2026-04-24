@@ -86,17 +86,49 @@ export async function fetchUpcomingEvents(
     .order("date", { ascending: true })
     .order("start_time", { ascending: true });
 
-  const [clubResult, personalResult] = await Promise.all([
+  // Public events the user RSVPed to (so they appear in "my events")
+  const { data: playerRow } = await supabase
+    .from("players")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  let rsvpedEventIds: string[] = [];
+  if (playerRow?.id) {
+    const { data: rsvps } = await supabase
+      .from("event_rsvp")
+      .select("event_id")
+      .eq("player_id", playerRow.id);
+    rsvpedEventIds = (rsvps ?? []).map((r) => r.event_id);
+  }
+
+  const rsvpedPublicPromise =
+    rsvpedEventIds.length > 0
+      ? supabase
+          .from("planned_events")
+          .select(selectFields)
+          .eq("is_public", true)
+          .in("status", ["open", "confirmed"])
+          .gte("date", today)
+          .in("id", rsvpedEventIds)
+          .order("date", { ascending: true })
+          .order("start_time", { ascending: true })
+      : Promise.resolve({ data: [] as any[], error: null });
+
+  const [clubResult, personalResult, rsvpedPublicResult] = await Promise.all([
     clubEventsPromise,
     personalEventsPromise,
+    rsvpedPublicPromise,
   ]);
 
   if (clubResult.error) throw clubResult.error;
   if (personalResult.error) throw personalResult.error;
+  if (rsvpedPublicResult.error) throw rsvpedPublicResult.error;
 
   const all = [
     ...((clubResult.data ?? []) as PlannedEvent[]),
     ...((personalResult.data ?? []) as PlannedEvent[]),
+    ...((rsvpedPublicResult.data ?? []) as PlannedEvent[]),
   ];
 
   // Deduplicate (in case a clubless event was also returned) and sort
@@ -314,6 +346,19 @@ export async function upsertRsvp(
     },
     { onConflict: "event_id,player_id" }
   );
+  if (error) throw error;
+}
+
+/** Cancel / withdraw an RSVP entirely. */
+export async function deleteRsvp(
+  eventId: string,
+  playerId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("event_rsvp")
+    .delete()
+    .eq("event_id", eventId)
+    .eq("player_id", playerId);
   if (error) throw error;
 }
 
