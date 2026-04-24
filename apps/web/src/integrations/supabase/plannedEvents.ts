@@ -115,6 +115,31 @@ export async function fetchUpcomingEvents(
   return unique;
 }
 
+/** Fetch all upcoming public events (for Discover or direct link access). */
+export async function fetchPublicEvents(): Promise<PlannedEvent[]> {
+  const today = new Date().toISOString().split("T")[0];
+
+  const selectFields = `
+    *,
+    clubs!planned_events_club_id_fkey(id, name, image_url),
+    locations!planned_events_location_id_fkey(name, address),
+    event_rsvp(status, player_id)
+  `;
+
+  const { data, error } = await supabase
+    .from("planned_events")
+    .select(selectFields)
+    .eq("is_public", true)
+    .in("status", ["open", "confirmed"])
+    .gte("date", today)
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true })
+    .limit(50);
+
+  if (error) throw error;
+  return (data ?? []) as PlannedEvent[];
+}
+
 export interface PastEventRow {
   id: string;
   title: string;

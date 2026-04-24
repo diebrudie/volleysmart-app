@@ -129,7 +129,47 @@ Branches stack on each other (not merged to main yet):
 - Phase 14: In Progress — Notifications system + bug fixes
 - Phase 15: Advanced Filters (custom month range, filter by city)
 - Phase 16: Settings page & Notification preferences
+- Backlog: Discover Clubs & Events (see architecture below)
 - Backlog: Set up email notifications
 - Backlog: Build native iOS and Android app using monorepo
 - Backlog: Tournament event type (complex, deferred)
 - Backlog: Skill Score progression system (adjust algorithm, progression based on games/sets played)
+
+## Discover feature (planned architecture)
+
+### Existing infrastructure ready to use
+- `is_club_discoverable` boolean + `clubs_discoverable_idx` index on `clubs` table
+- `city`, `country`, `country_code` columns on both `clubs` and `players` tables
+- `CityLocationSelector` component with Mapbox Places API (`components/forms/CityLocationSelector.tsx`)
+- Discover placeholder div in `Clubs.tsx` (line 516-520)
+- `get_club_preview_by_slug` RPC (migration 20260423000003)
+- `fetchPublicEvents()` in `plannedEvents.ts` — fetches all upcoming public events
+- Public event RLS: `planned_events` SELECT allows `is_public = true` for any authenticated user
+- Public event RSVP: any authenticated user can RSVP to public events (migration 20260426000001)
+
+### Planned architecture
+- **Route:** `/discover` — tabbed page with "Clubs" and "Events" tabs
+- **Access:** From Discover section in Clubs.tsx ("See all" link), no new bottom nav tab
+- **City filter:** Shared filter bar at top of page, default city from `players.city`
+- **Discover Clubs:** Query `clubs` where `is_club_discoverable = true`, optional city filter. Card layout (image, name, city, member count). Join via `request_join_by_slug` RPC
+- **Discover Events:** Use `fetchPublicEvents()`, reuse `EventCard` component. Tap → EventDetail (works for public events)
+- **Shared UI patterns:** `DiscoverCard` component, `CityFilter` bar, empty states ("No clubs/events found in [city]")
+
+### Future extensions
+- Distance filter: add `lat`/`lng` to `locations` table, use PostGIS `ST_DWithin`
+- Country filter: `country_code` already exists on clubs
+- Category/sport filter: add `sport` column to clubs
+
+### RLS needed for implementation
+```sql
+CREATE POLICY "Anyone can view discoverable clubs"
+  ON public.clubs FOR SELECT
+  USING (is_club_discoverable = true AND status = 'active');
+```
+
+### Files to create when implementing
+- `apps/web/src/pages/Discover.tsx` — main discover page with tabs
+- `apps/web/src/components/discover/DiscoverClubCard.tsx` — club card for discover list
+- `apps/web/src/components/discover/CityFilter.tsx` — shared city filter bar
+- `apps/web/src/integrations/supabase/discover.ts` — fetch functions for discoverable clubs/events
+- `supabase/migrations/...discover_rls.sql` — RLS for discoverable clubs SELECT
