@@ -265,6 +265,9 @@ const ClubOverview: React.FC = () => {
         )}
       </div>
 
+      {/* Content — centered on desktop */}
+      <div className="max-w-2xl mx-auto w-full">
+
       {/* Club info */}
       <div className="px-4 pt-5 space-y-3">
         <h1 className="text-2xl font-bold">{club.name}</h1>
@@ -293,7 +296,10 @@ const ClubOverview: React.FC = () => {
 
       {/* Action buttons */}
       <div className="px-4 pt-5">
-        <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
+        <div
+          className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           <ActionButton
             icon={<UserPlus className="h-5 w-5" />}
             label="Invite"
@@ -460,6 +466,8 @@ const ClubOverview: React.FC = () => {
           </Button>
         )}
       </div>
+
+      </div>{/* end max-w-2xl wrapper */}
 
       {/* Confirm remove dialog */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
