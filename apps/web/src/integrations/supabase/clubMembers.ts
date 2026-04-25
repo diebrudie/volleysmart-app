@@ -45,7 +45,9 @@ export async function fetchMemberCount(clubId: string): Promise<number> {
   const { count, error } = await supabase
     .from("club_members")
     .select("*", { count: "exact", head: true })
-    .eq("club_id", clubId);
+    .eq("club_id", clubId)
+    .eq("is_active", true)
+    .eq("status", "active");
   if (error) throw error;
   return count ?? 0;
 }

@@ -542,7 +542,7 @@ const Clubs = () => {
                   <button
                     key={club.id}
                     onClick={() => navigate(`/clubs/${club.id}`)}
-                    className="shrink-0 w-40 rounded-xl border border-border bg-card p-3 text-left hover:bg-muted/50 transition-colors"
+                    className="shrink-0 w-44 rounded-xl border border-border bg-card p-3 text-left hover:bg-muted/50 transition-colors"
                   >
                     <div className="h-20 w-full rounded-lg bg-muted mb-2 overflow-hidden">
                       {club.image_url ? (
@@ -557,7 +557,7 @@ const Clubs = () => {
                         </div>
                       )}
                     </div>
-                    <p className="text-sm font-semibold text-foreground truncate">{club.name}</p>
+                    <p className="text-sm font-semibold text-foreground line-clamp-2">{club.name}</p>
                     {club.city && (
                       <p className="text-xs text-muted-foreground truncate mt-0.5 flex items-center gap-1">
                         <MapPin className="h-3 w-3" />

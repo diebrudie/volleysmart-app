@@ -22,6 +22,7 @@ import {
   XCircle,
   Repeat,
   MessageCircle,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -915,7 +916,12 @@ const EventDetail: React.FC = () => {
             {formattedDate} at {startTime}
           </p>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {!event.is_public && (
+            {event.is_public ? (
+              <span className="inline-flex items-center gap-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
+                <Globe className="h-3 w-3" />
+                Public
+              </span>
+            ) : (
               <span className="inline-block text-xs font-medium bg-muted px-2 py-0.5 rounded">
                 Club Members Only
               </span>
@@ -1034,7 +1040,7 @@ const EventDetail: React.FC = () => {
 
             {/* Creator row */}
             <div className="flex items-center gap-3 px-4 py-3">
-              {creatorProfile?.image_url ? (
+              {!isPublicNonMember && creatorProfile?.image_url ? (
                 <img
                   src={creatorProfile.image_url}
                   alt=""
@@ -1072,6 +1078,29 @@ const EventDetail: React.FC = () => {
           <h2 className="text-lg font-bold">{attendingCount} Going</h2>
           {isPublicNonMember && !hasRsvped ? (
             <p className="text-sm text-muted-foreground">RSVP to see who's going</p>
+          ) : isPublicNonMember ? (
+            /* Anonymized list for non-member attendees (GDPR) */
+            attendingCount > 0 ? (
+              <div className="space-y-2">
+                {Array.from({ length: attendingCount }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                      <User className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Player {i + 1}</p>
+                      {attendees[i]?.primary_position && (
+                        <p className="text-xs text-muted-foreground">
+                          {attendees[i].primary_position}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No responses yet</p>
+            )
           ) : attendees.length > 0 ? (
             <div className="space-y-2">
               {attendees.map((a) => (
