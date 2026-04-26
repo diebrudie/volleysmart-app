@@ -58,7 +58,7 @@ export async function recalculateAndPersist(
   const bonus = calculateGameplayBonus(stats);
   // New score = base onboarding score + gameplay bonus, capped at 90
   // Cap at 90 instead of 100 — score 90+ should be reserved for truly elite players
-  const computed = Math.min(90, Math.round(baseRating + bonus));
+  const computed = Math.min(100, Math.round(baseRating + bonus));
   // Never decrease from stored value
   const newRating = Math.max(currentRating, computed);
 
