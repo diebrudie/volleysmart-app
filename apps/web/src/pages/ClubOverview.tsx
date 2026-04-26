@@ -52,6 +52,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 interface ClubDetails {
@@ -96,8 +102,7 @@ const ClubOverview: React.FC = () => {
   const { user } = useAuth();
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
-  const membersSectionRef = React.useRef<HTMLDivElement>(null);
-  const statsSectionRef = React.useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = React.useState<"members" | "stats">("members");
   const { data: currentPlayerId } = useCurrentPlayerId();
   const isCompact = useIsCompact();
   const { toast } = useToast();
@@ -108,7 +113,6 @@ const ClubOverview: React.FC = () => {
   const [deleting, setDeleting] = React.useState(false);
   const [leaveOpen, setLeaveOpen] = React.useState(false);
   const [leaving, setLeaving] = React.useState(false);
-  const [activeSection, setActiveSection] = React.useState<"members" | "stats">("members");
   const [guestsOpen, setGuestsOpen] = React.useState(false);
 
   // Club details
@@ -267,29 +271,6 @@ const ClubOverview: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Scroll observer to sync active tab with visible section
-  React.useEffect(() => {
-    if (!isMember) return;
-    const membersEl = membersSectionRef.current;
-    const statsEl = statsSectionRef.current;
-    if (!membersEl && !statsEl) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            if (entry.target === membersEl) setActiveSection("members");
-            else if (entry.target === statsEl) setActiveSection("stats");
-          }
-        }
-      },
-      { rootMargin: "-40% 0px -40% 0px", threshold: 0 }
-    );
-
-    if (membersEl) observer.observe(membersEl);
-    if (statsEl) observer.observe(statsEl);
-    return () => observer.disconnect();
-  }, [isMember]);
 
   if (clubLoading || !club) {
     return (
@@ -382,6 +363,11 @@ const ClubOverview: React.FC = () => {
                 label="Invite"
                 onClick={() => setInviteOpen(true)}
               />
+              <ActionButton
+                icon={<Users className="h-5 w-5" />}
+                label="Members"
+                onClick={() => setActiveTab("members")}
+              />
               {isAdmin && (
                 <ActionButton
                   icon={<UserCheck className="h-5 w-5" />}
@@ -389,6 +375,11 @@ const ClubOverview: React.FC = () => {
                   onClick={() => setGuestsOpen(true)}
                 />
               )}
+              <ActionButton
+                icon={<BarChart3 className="h-5 w-5" />}
+                label="Stats"
+                onClick={() => setActiveTab("stats")}
+              />
               {userRole && !isAdmin && (
                 <ActionButton
                   icon={<LogOut className="h-5 w-5" />}
@@ -432,44 +423,6 @@ const ClubOverview: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Section tabs — Members / Stats */}
-      {isMember && (
-        <div className="px-4 pt-5">
-          <div className="flex border-b border-border">
-            <button
-              type="button"
-              className={cn(
-                "flex-1 pb-2 text-sm font-medium text-center border-b-2 transition-colors",
-                activeSection === "members"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              )}
-              onClick={() => {
-                setActiveSection("members");
-                membersSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              Members
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "flex-1 pb-2 text-sm font-medium text-center border-b-2 transition-colors",
-                activeSection === "stats"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              )}
-              onClick={() => {
-                setActiveSection("stats");
-                statsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              Stats
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Upcoming Event(s) */}
       <div className="px-4 pt-6">
@@ -534,175 +487,181 @@ const ClubOverview: React.FC = () => {
         )}
       </div>
 
-      {/* Members list — members only */}
+      {/* Members / Stats tabs — members only */}
       {isMember && (
-      <div className="px-4 pt-6" ref={membersSectionRef}>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold">Members</h2>
-          {isAdmin && (
-            <button
-              type="button"
-              className="text-sm font-medium text-primary"
-              onClick={() => {
-                setManageMode((v) => !v);
-                setSelectedUserIds([]);
-              }}
-            >
-              {manageMode ? "Done" : "Manage"}
-            </button>
-          )}
-        </div>
-        <div className="space-y-0">
-          {members.map((m, idx) => {
-            const canSelect =
-              manageMode && m.role !== "admin" && m.user_id !== user?.id;
-            const isSelected = selectedUserIds.includes(m.user_id);
-            const toggleSelect = () => {
-              if (!canSelect) return;
-              setSelectedUserIds((prev) =>
-                isSelected
-                  ? prev.filter((id) => id !== m.user_id)
-                  : [...prev, m.user_id]
-              );
-            };
-            return (
-              <div
-                key={m.user_id}
-                role={manageMode && canSelect ? "button" : undefined}
-                tabIndex={manageMode && canSelect ? 0 : undefined}
-                onClick={manageMode ? toggleSelect : undefined}
-                className={cn(
-                  "w-full flex items-center gap-3 py-3 text-left",
-                  manageMode && canSelect && "cursor-pointer hover:bg-muted/50 transition-colors",
-                  idx < members.length - 1 && "border-b"
-                )}
-              >
-                {manageMode && (
-                  <Checkbox
-                    checked={isSelected}
-                    disabled={!canSelect}
-                    className="shrink-0"
-                    onClick={(e) => e.stopPropagation()}
-                    onCheckedChange={toggleSelect}
-                  />
-                )}
-                <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0 flex items-center justify-center">
-                  {m.image_url ? (
-                    <img
-                      src={buildImageUrl(m.image_url, { w: 80 })}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-medium">
-                      {m.first_name?.[0]}
-                      {m.last_name?.[0]}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate flex items-center gap-1">
-                    {formatDisplayName(m.first_name, m.last_name)}
-                    {m.member_association && (
-                      <span className="shrink-0" title="Association member">🏐</span>
-                    )}
-                  </p>
-                  {m.primary_position && (
-                    <p className="text-xs text-muted-foreground">{m.primary_position}</p>
-                  )}
-                </div>
-                {m.role === "admin" && (
-                  <span className="text-xs text-muted-foreground shrink-0">Admin</span>
+        <div className="px-4 pt-6">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "members" | "stats")}>
+            <TabsList className="w-full">
+              <TabsTrigger value="members" className="flex-1">Members</TabsTrigger>
+              <TabsTrigger value="stats" className="flex-1">Stats</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="members" className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold">Members</h2>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-primary"
+                    onClick={() => {
+                      setManageMode((v) => !v);
+                      setSelectedUserIds([]);
+                    }}
+                  >
+                    {manageMode ? "Done" : "Manage"}
+                  </button>
                 )}
               </div>
-            );
-          })}
-        </div>
-
-        {/* Remove selected members */}
-        {manageMode && selectedUserIds.length > 0 && (
-          <Button
-            variant="destructive"
-            size="sm"
-            className="mt-4 w-full"
-            onClick={() => setConfirmOpen(true)}
-          >
-            <Trash2 className="h-4 w-4 mr-1.5" />
-            Remove {selectedUserIds.length}{" "}
-            {selectedUserIds.length === 1 ? "member" : "members"}
-          </Button>
-        )}
-      </div>
-      )}
-
-      {/* Club Stats — members only */}
-      {isMember && clubStats && (
-        <div className="px-4 pt-6" ref={statsSectionRef}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold">Stats</h2>
-            <select
-              className="text-sm bg-muted/50 border rounded-md px-2 py-1"
-              value={statsYear}
-              onChange={(e) => setStatsYear(Number(e.target.value))}
-            >
-              {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-
-          {clubStats.totalEncounters > 0 ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
-                  <p className="text-xl font-bold">{clubStats.totalEncounters}</p>
-                  <p className="text-[10px] text-muted-foreground">Games</p>
-                </div>
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-                  <p className="text-xl font-bold">{clubStats.totalHours}</p>
-                  <p className="text-[10px] text-muted-foreground">Hours</p>
-                </div>
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <Users className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
-                  <p className="text-xl font-bold">{clubStats.attendanceRate}%</p>
-                  <p className="text-[10px] text-muted-foreground">Attendance</p>
-                </div>
-              </div>
-
-              {clubStats.topCombinations.length > 0 && (
-                <div className="rounded-xl border bg-card p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Trophy className="h-4 w-4 text-amber-500" />
-                    <p className="text-sm font-semibold">Best Team Combinations</p>
-                  </div>
-                  <div className="space-y-3">
-                    {clubStats.topCombinations.map((combo, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {combo.playerNames.join(", ")}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {combo.wins}W / {combo.gamesPlayed} games · {combo.winRate}% win rate
-                          </p>
-                        </div>
-                        {i === 0 && (
-                          <span className="text-amber-500 text-lg shrink-0 ml-2">🏆</span>
+              <div className="space-y-0">
+                {members.map((m, idx) => {
+                  const canSelect =
+                    manageMode && m.role !== "admin" && m.user_id !== user?.id;
+                  const isSelected = selectedUserIds.includes(m.user_id);
+                  const toggleSelect = () => {
+                    if (!canSelect) return;
+                    setSelectedUserIds((prev) =>
+                      isSelected
+                        ? prev.filter((id) => id !== m.user_id)
+                        : [...prev, m.user_id]
+                    );
+                  };
+                  return (
+                    <div
+                      key={m.user_id}
+                      role={manageMode && canSelect ? "button" : undefined}
+                      tabIndex={manageMode && canSelect ? 0 : undefined}
+                      onClick={manageMode ? toggleSelect : undefined}
+                      className={cn(
+                        "w-full flex items-center gap-3 py-3 text-left",
+                        manageMode && canSelect && "cursor-pointer hover:bg-muted/50 transition-colors",
+                        idx < members.length - 1 && "border-b"
+                      )}
+                    >
+                      {manageMode && (
+                        <Checkbox
+                          checked={isSelected}
+                          disabled={!canSelect}
+                          className="shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                          onCheckedChange={toggleSelect}
+                        />
+                      )}
+                      <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                        {m.image_url ? (
+                          <img
+                            src={buildImageUrl(m.image_url, { w: 80 })}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm font-medium">
+                            {m.first_name?.[0]}
+                            {m.last_name?.[0]}
+                          </span>
                         )}
                       </div>
-                    ))}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate flex items-center gap-1">
+                          {formatDisplayName(m.first_name, m.last_name)}
+                          {m.member_association && (
+                            <span className="shrink-0" title="Association member">🏐</span>
+                          )}
+                        </p>
+                        {m.primary_position && (
+                          <p className="text-xs text-muted-foreground">{m.primary_position}</p>
+                        )}
+                      </div>
+                      {m.role === "admin" && (
+                        <span className="text-xs text-muted-foreground shrink-0">Admin</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Remove selected members */}
+              {manageMode && selectedUserIds.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-4 w-full"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                  Remove {selectedUserIds.length}{" "}
+                  {selectedUserIds.length === 1 ? "member" : "members"}
+                </Button>
+              )}
+            </TabsContent>
+
+            <TabsContent value="stats" className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold">Stats</h2>
+                <select
+                  className="text-sm bg-muted/50 border rounded-md px-2 py-1"
+                  value={statsYear}
+                  onChange={(e) => setStatsYear(Number(e.target.value))}
+                >
+                  {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+
+              {clubStats && clubStats.totalEncounters > 0 ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-xl border bg-card p-3 text-center">
+                      <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
+                      <p className="text-xl font-bold">{clubStats.totalEncounters}</p>
+                      <p className="text-[10px] text-muted-foreground">Games</p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 text-center">
+                      <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                      <p className="text-xl font-bold">{clubStats.totalHours}</p>
+                      <p className="text-[10px] text-muted-foreground">Hours</p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 text-center">
+                      <Users className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
+                      <p className="text-xl font-bold">{clubStats.attendanceRate}%</p>
+                      <p className="text-[10px] text-muted-foreground">Attendance</p>
+                    </div>
                   </div>
+
+                  {clubStats.topCombinations.length > 0 && (
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Trophy className="h-4 w-4 text-amber-500" />
+                        <p className="text-sm font-semibold">Best Team Combinations</p>
+                      </div>
+                      <div className="space-y-3">
+                        {clubStats.topCombinations.map((combo, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {combo.playerNames.join(", ")}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {combo.wins}W / {combo.gamesPlayed} games · {combo.winRate}% win rate
+                              </p>
+                            </div>
+                            {i === 0 && (
+                              <span className="text-amber-500 text-lg shrink-0 ml-2">🏆</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-xl border bg-card p-6 text-center">
+                  <BarChart3 className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No games played in {statsYear}</p>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="rounded-xl border bg-card p-6 text-center">
-              <BarChart3 className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No games played in {statsYear}</p>
-            </div>
-          )}
+            </TabsContent>
+          </Tabs>
         </div>
       )}
 

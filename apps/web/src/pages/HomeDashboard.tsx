@@ -2,7 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { parseISO, format, startOfMonth, endOfMonth } from "date-fns";
-import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users, Plus, Compass, CalendarDays } from "lucide-react";
+import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users, Plus, Compass, CalendarDays, Swords, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -519,6 +519,7 @@ const HomeDashboard: React.FC = () => {
               </div>
               <div className="grid grid-cols-3 gap-3 pt-2">
                 <div className="text-center">
+                  <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
                   <p className="text-3xl font-bold text-foreground">
                     {monthlyStats?.gamesPlayed ?? 0}
                   </p>
@@ -527,6 +528,7 @@ const HomeDashboard: React.FC = () => {
                   </p>
                 </div>
                 <div className="text-center">
+                  <TrendingUp className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
                   <p className="text-3xl font-bold text-foreground">
                     {monthlyStats?.winRate ?? 0}%
                   </p>
@@ -535,6 +537,7 @@ const HomeDashboard: React.FC = () => {
                   </p>
                 </div>
                 <div className="text-center">
+                  <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
                   <p className="text-3xl font-bold text-foreground">
                     {monthlyStats?.hoursPlayed ?? 0}
                   </p>
