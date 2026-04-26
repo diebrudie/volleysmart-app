@@ -26,6 +26,7 @@ import {
 import {
   MoreVertical,
   UserPlus,
+  Users,
   Edit,
   Trash,
   MapPin,
