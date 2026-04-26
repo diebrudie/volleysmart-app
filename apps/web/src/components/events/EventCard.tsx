@@ -71,8 +71,8 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
       </div>
 
       {/* Event info */}
-      <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <div className="flex items-center gap-2">
+      <div className="flex-1 min-w-0 overflow-hidden flex flex-col gap-1">
+        <div className="flex items-center gap-2 min-w-0">
           <h3 className="font-semibold text-sm leading-tight truncate">
             {event.title}
           </h3>
@@ -85,12 +85,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
               Today
             </span>
           ) : null}
-          {event.is_public && (
-            <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-              <Globe className="h-2.5 w-2.5" />
-              Public
-            </span>
-          )}
         </div>
         <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
@@ -102,6 +96,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 shrink-0" />
             <span>{attendingCount} attending</span>
+            {event.is_public && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                <Globe className="h-2.5 w-2.5" />
+                Public
+              </span>
+            )}
           </div>
           {myRsvp?.status === "attending" ? (
             <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">

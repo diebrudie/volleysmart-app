@@ -1101,7 +1101,7 @@ const EventDetail: React.FC = () => {
             ) : (
               <p className="text-sm text-muted-foreground">No responses yet</p>
             )
-          ) : attendees.length > 0 ? (
+          ) : attendees.length > 0 || attendingCount > 0 ? (
             <div className="space-y-2">
               {attendees.map((a) => (
                 <div key={a.player_id} className="flex items-center gap-3">
@@ -1129,6 +1129,17 @@ const EventDetail: React.FC = () => {
                         {a.primary_position}
                       </p>
                     )}
+                  </div>
+                </div>
+              ))}
+              {/* Placeholder rows for attendees not visible via RLS */}
+              {Array.from({ length: Math.max(0, attendingCount - attendees.length) }).map((_, i) => (
+                <div key={`placeholder-${i}`} className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Player {attendees.length + i + 1}</p>
                   </div>
                 </div>
               ))}

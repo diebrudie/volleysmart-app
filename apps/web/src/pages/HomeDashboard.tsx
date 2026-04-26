@@ -56,21 +56,46 @@ function useTodaysEvents(userId: string | undefined, playerId: string | null | u
       const clubIds = (memberships ?? [])
         .map((m) => m.club_id)
         .filter(Boolean) as string[];
-      if (!clubIds.length) return null;
 
-      const { data, error } = await supabase
-        .from("planned_events")
-        .select(
-          `id, title, date, club_id,
+      const selectFields = `id, title, date, club_id,
            clubs!planned_events_club_id_fkey(name),
-           event_rsvp(status, player_id)`
-        )
-        .in("club_id", clubIds)
-        .eq("date", todayStr)
-        .in("status", ["open", "confirmed"])
-        .limit(1);
-      if (error) throw error;
-      const todayEvent = data?.[0] ?? null;
+           event_rsvp(status, player_id)`;
+
+      // 1. Club events today
+      let todayEvent: any = null;
+      if (clubIds.length) {
+        const { data, error } = await supabase
+          .from("planned_events")
+          .select(selectFields)
+          .in("club_id", clubIds)
+          .eq("date", todayStr)
+          .in("status", ["open", "confirmed"])
+          .limit(1);
+        if (error) throw error;
+        todayEvent = data?.[0] ?? null;
+      }
+
+      // 2. If no club event, check RSVPed public events today
+      if (!todayEvent && playerId) {
+        const { data: rsvps } = await supabase
+          .from("event_rsvp")
+          .select("event_id")
+          .eq("player_id", playerId)
+          .eq("status", "attending");
+        const rsvpedIds = (rsvps ?? []).map((r) => r.event_id);
+        if (rsvpedIds.length) {
+          const { data } = await supabase
+            .from("planned_events")
+            .select(selectFields)
+            .eq("is_public", true)
+            .eq("date", todayStr)
+            .in("status", ["open", "confirmed"])
+            .in("id", rsvpedIds)
+            .limit(1);
+          todayEvent = data?.[0] ?? null;
+        }
+      }
+
       if (!todayEvent) return null;
 
       // Check if a game already exists for this event
