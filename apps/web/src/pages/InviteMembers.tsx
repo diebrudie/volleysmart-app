@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useClub } from "@/contexts/ClubContext";
@@ -26,7 +27,7 @@ const InviteMembers = () => {
     }
   }, [urlClubId, contextClubId, setClubId]);
 
-  // Fetch club info to get the joinCode / slug
+  // Fetch club info
   const {
     data: clubMeta,
     isLoading: isClubLoading,
@@ -42,86 +43,85 @@ const InviteMembers = () => {
         .eq("id", clubId)
         .single();
 
-      if (error) {
-        // Surface in React Query error boundary + fallback message below
-        throw error;
-      }
-
+      if (error) throw error;
       return data as ClubMeta;
     },
     enabled: !!clubId,
   });
 
-  const handleSkip = () => {
+  const handleGoToClub = () => {
     if (clubId) {
-      navigate(`/clubs/${clubId}`);
+      navigate(`/clubs/${clubId}`, { replace: true });
     } else {
-      navigate("/clubs");
+      navigate("/clubs", { replace: true });
     }
-  };
-
-  const handleGoToDashboard = () => {
-    if (clubId) {
-      navigate(`/clubs/${clubId}`);
-    } else {
-      navigate("/clubs");
-    }
-  };
-
-  const renderShareSection = () => {
-    if (clubId) {
-      return (
-        <div className="flex justify-center">
-          <ClubInviteSharePanel clubId={clubId} />
-        </div>
-      );
-    }
-
-    if (isClubLoading) {
-      return (
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-          Loading your Club ID...
-        </p>
-      );
-    }
-
-    if (clubError || !clubId) {
-      return (
-        <p className="text-center text-sm text-red-500">
-          We couldn&apos;t load your Club ID. Please go to your dashboard and
-          try again.
-        </p>
-      );
-    }
-
-    return null;
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-50 dark:bg-gray-900">
-      {/* Outer wrapper keeps card + buttons aligned and reduces top padding on mobile */}
-      <div className="w-full max-w-2xl flex-1 flex flex-col justify-center px-4 pt-8 pb-10 md:pt-12">
-        {/* Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 md:p-8">
-          <h1 className="text-2xl font-semibold text-center mb-2 text-gray-900 dark:text-gray-100">
-            Invite your teammates to your club
-          </h1>
-          <p className="text-center text-gray-600 dark:text-gray-400 mb-8">
-            Share your Club ID with them so they can join your club.
-          </p>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-background border-b px-4 py-3 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleGoToClub}
+          className="p-2 -ml-2 rounded-full hover:bg-muted"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h1 className="text-lg font-semibold truncate">Invite Members</h1>
+      </div>
 
-          {renderShareSection()}
-        </div>
+      {/* Content */}
+      <div className="flex-1 flex flex-col items-center px-4 pt-8 pb-10 md:pt-12">
+        <div className="w-full max-w-md">
+          {/* Icon + heading */}
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">
+              Invite your teammates
+            </h2>
+            <p className="text-muted-foreground">
+              {clubMeta?.name
+                ? `Share the invite link so others can join ${clubMeta.name}.`
+                : "Share the invite link so others can join your club."}
+            </p>
+          </div>
 
-        {/* Buttons outside the card, aligned with card edges */}
-        <div className="flex justify-between mt-6">
-          <Button type="button" variant="action" onClick={handleSkip}>
-            Skip for now
-          </Button>
+          {/* Share panel */}
+          <div className="rounded-xl border bg-card p-5">
+            {clubId ? (
+              <ClubInviteSharePanel clubId={clubId} />
+            ) : isClubLoading ? (
+              <p className="text-center text-sm text-muted-foreground">
+                Loading invite link...
+              </p>
+            ) : clubError || !clubId ? (
+              <p className="text-center text-sm text-destructive">
+                Couldn&apos;t load invite link. Please go back and try again.
+              </p>
+            ) : null}
+          </div>
 
-          <Button type="button" variant="primary" onClick={handleGoToDashboard}>
-            Go to Dashboard
-          </Button>
+          {/* Buttons */}
+          <div className="flex flex-col gap-3 mt-8">
+            <Button
+              type="button"
+              className="w-full"
+              onClick={handleGoToClub}
+            >
+              Go to Club
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-muted-foreground"
+              onClick={handleGoToClub}
+            >
+              Skip for now
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -98,6 +98,7 @@ export const EventLocationSelector = ({
         .from("locations")
         .select("id, name, address, club_id")
         .is("club_id", null)
+        .eq("created_by", user!.id)
         .order("name");
 
       const [clubResult, personalResult] = await Promise.all([
@@ -308,6 +309,7 @@ export const EventLocationSelector = ({
           club_id: clubId,
           name: trimmedName,
           address: address.trim(),
+          created_by: user?.id,
         };
         if (latLng) {
           insertPayload.latitude = latLng[1];
@@ -328,6 +330,7 @@ export const EventLocationSelector = ({
               club_id: clubId,
               name: trimmedName,
               address: address.trim() || null,
+              created_by: user?.id,
             })
             .select("id")
             .single();

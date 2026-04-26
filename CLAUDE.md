@@ -1,15 +1,16 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Phase 14 — Notifications (in progress)
-- Last change: Notifications system, share messages, bug fixes
-- Current branch: `feat/notifications` (branched from `feat/phase-11-club-overview`)
-- Next step: Apply repair migration 000010, verify notifications end-to-end, then merge branches to main
+- Working on: Discovery feature — refinements & privacy fixes
+- Last change: Attendee privacy, location sharing, InviteMembers redesign, join request fixes
+- Current branch: `feat/discovery` (branched from `feat/phase-11-club-overview`)
+- Next step: Apply migrations 000004 + 000005, verify discovery end-to-end
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
 - `main` → `feat/phase-9-create-event-improvements` → `feat/phase-10-quick-fixes-polish` → `feat/phase-11-club-overview` → `feat/phase-12-game-flow-unification`
 - `feat/notifications` branched from `feat/phase-11-club-overview`
+- `feat/discovery` branched from `feat/phase-11-club-overview`
 
 ## Phase 14 in-progress work (Notifications + Bug Fixes)
 1. ~~**Notification triggers (DB)**~~: 9 types — join request/accepted/rejected, member joined, event created/cancelled, RSVP, RSVP deadline reminder (pg_cron), game started
@@ -38,6 +39,33 @@ Branches stack on each other (not merged to main yet):
 - `apps/web/src/integrations/supabase/notifications.ts` — fetch, mark read, unread count
 - `apps/web/src/pages/Notifications.tsx` — notifications list page
 - `apps/web/src/components/common/RealtimeAppEffect.tsx` — realtime subscription
+
+## Discovery feature (in progress)
+1. ~~**Discover Events on Home**~~: Public events section on HomeDashboard, links to /discover-events
+2. ~~**DiscoverEvents page**~~: `/discover-events` route with public event list
+3. ~~**Non-member ClubOverview**~~: Join button via `request_join_club` RPC for discoverable clubs
+4. ~~**Discoverable clubs on Clubs page**~~: Horizontal scroll section
+5. ~~**Public EventDetail**~~: Organizer as "First L.", chat placeholder, club visibility gating
+6. ~~**RSVP for public events**~~: Attend/decline/cancel RSVP, RSVPed events in upcoming list
+7. ~~**Attendee privacy (GDPR)**~~: Organizer sees all via SECURITY DEFINER RPC; non-organizers see anonymized "Player N" + own row with real data
+8. ~~**Public badge**~~: On EventCard (meta section) and EventDetail (badges section)
+9. ~~**EventCard overflow fix**~~: Public badge moved to meta section, overflow-hidden on content
+10. ~~**Today's slider for RSVPed events**~~: Non-organizer participants see today's public events
+11. ~~**Declined events hidden from Today slider**~~: Club + public events with declined RSVP skipped
+12. ~~**Fix request_join_club**~~: Updated requested_at on re-request, fixed notification type + payload
+13. ~~**InviteMembers redesign**~~: Modern card layout, "Go to Club" button, replace: true navigation
+14. ~~**ClubOverview back nav**~~: Goes to /clubs instead of navigate(-1)
+15. ~~**Location sharing model**~~: Added `created_by` column, personal locations only visible to creator
+16. **Migrations to apply**: 20260426000004 (fix request_join_club), 20260426000005 (location created_by)
+
+### Discovery key files
+- `apps/web/src/pages/DiscoverEvents.tsx` — public events list page
+- `apps/web/src/pages/HomeDashboard.tsx` — today's slider + discover events section
+- `supabase/migrations/20260426000001_public_event_rls.sql` — public event RLS
+- `supabase/migrations/20260426000002_discoverable_clubs_rls.sql` — discoverable clubs RLS + request_join_club
+- `supabase/migrations/20260426000003_public_event_player_visibility.sql` — get_event_attendees RPC
+- `supabase/migrations/20260426000004_fix_request_join_club.sql` — fix notification type + requested_at
+- `supabase/migrations/20260426000005_location_created_by.sql` — location privacy (created_by + RLS)
 
 ## Phase 12 in-progress work (Game Flow Unification)
 1. **Unified `/game/:matchDayId` page**: New `Game.tsx` merges Dashboard + GameDetail — teams, SetBox scores, actions dropdown, edit scores table, location editing, delete, "New game w/ same teams"

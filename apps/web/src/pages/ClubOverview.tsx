@@ -259,7 +259,7 @@ const ClubOverview: React.FC = () => {
         {/* Back button */}
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/clubs")}
           className="absolute top-4 left-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center"
           aria-label="Go back"
         >
