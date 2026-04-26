@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Analytics — Profile redesign + Home monthly stats + Skill progression
-- Last change: Profile redesign (Analytics/Positions/Clubs tabs, edit drawer, skill card), Home Card 3 monthly stats, rescale migration
+- Working on: Analytics + polish — ready to merge
+- Last change: Skill score fix (0-100 scale, migration 000007), ClubOverview real tabs, Edit Event overflow fix, past-event RSVP, Clubs slider dots, Profile deleted clubs filter, README update
 - Current branch: `feat/analytics` (branched from `feat/discovery`)
-- Next step: Test with real data, apply migration 20260426000006, merge to main
+- Next step: Apply migrations 20260426000006 + 20260426000007, merge to main
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -143,6 +143,7 @@ Branches stack on each other (not merged to main yet):
 - `20260422000009_notifications_insert_policy.sql` (INSERT RLS policy on notifications)
 - `20260422000010_repair_notification_triggers.sql` (**NEEDS APPLYING** — idempotent repair of triggers)
 - `20260426000006_rescale_skill_ratings.sql` (**NEEDS APPLYING** — rescale existing players' skill_rating from old 0-100 to new 0-75 scale)
+- `20260426000007_fix_skill_ratings.sql` (**NEEDS APPLYING** — fix ALL players' skill_rating, overwrites any inflated scores)
 
 ## Known issues
 1. ~~**Home CORS**~~: Resolved.

@@ -804,7 +804,7 @@ const EventDetail: React.FC = () => {
 
   const rsvpLabel = currentRsvp
     ? currentRsvp.status === "attending"
-      ? "Going"
+      ? isPastEvent ? "Attended" : "Going"
       : "Not Going"
     : "RSVP";
 
@@ -916,7 +916,7 @@ const EventDetail: React.FC = () => {
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground pb-1">
               <User className="h-4 w-4" />
               {currentRsvp.status === "attending"
-                ? "You're Going"
+                ? isPastEvent ? "You Attended" : "You're Going"
                 : "Not Going"}
             </div>
           )}
@@ -1217,10 +1217,10 @@ const EventDetail: React.FC = () => {
                   currentRsvp?.status === "declined" &&
                     "bg-red-600 hover:bg-red-700 text-white"
                 )}
-                disabled={rsvpMutation.isPending || cancelRsvpMutation.isPending || event.status === "cancelled"}
+                disabled={rsvpMutation.isPending || cancelRsvpMutation.isPending || event.status === "cancelled" || isPastEvent}
               >
                 {rsvpLabel}
-                <ChevronDown className="h-4 w-4" />
+                {!isPastEvent && <ChevronDown className="h-4 w-4" />}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">

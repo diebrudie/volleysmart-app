@@ -284,14 +284,16 @@ const Profile = () => {
 
       if (!error && data) {
         setUserClubs(
-          data.map((m) => ({
-            membership_id: m.id as string,
-            club_id: m.club_id as string,
-            name: (m.clubs as any)?.name ?? "Unknown",
-            role: m.role as string,
-            joined_at: m.joined_at as string | null,
-            member_association: (m.member_association as boolean) ?? false,
-          }))
+          data
+            .filter((m) => (m.clubs as any)?.name) // exclude deleted clubs
+            .map((m) => ({
+              membership_id: m.id as string,
+              club_id: m.club_id as string,
+              name: (m.clubs as any)?.name as string,
+              role: m.role as string,
+              joined_at: m.joined_at as string | null,
+              member_association: (m.member_association as boolean) ?? false,
+            }))
         );
       }
     } catch (error) {

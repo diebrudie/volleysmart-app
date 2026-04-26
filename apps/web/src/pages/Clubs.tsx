@@ -118,7 +118,7 @@ const Clubs = () => {
     };
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [userClubs]);
 
   // Query to fetch all clubs user is a member of
   const { data: userClubs, isLoading } = useQuery({

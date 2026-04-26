@@ -38,20 +38,11 @@ The goal is simple: **make game organization stress-free**.
 
 ## Try VolleySmart (No Setup Needed)
 
-Because the app is designed around **clubs** and **membership**, the best way to explore it is through the onboarding and test flow:
-
 1. Sign up using your email
 2. Complete the onboarding to receive your skill score
-3. On the `/start` page, choose **Join a Club**
-4. Enter the demo Club ID: `AOJKT`
-5. Your request will be sent to the club admin.
-   You will see the club only **after the admin approves your membership**.
-
-If you prefer immediate access, you can also:
-
-- Create your **own club**
-- Invite friends or teammates to join
-- Explore all features without waiting for approval
+3. You'll have access to the app right after onboarding
+4. Join the **Test Discoverable Club** from the Clubs page to explore all features
+5. Or create your **own club** and invite friends to join
 
 Once inside a club, feel free to create events, generate teams, track matches, and navigate through the app.
 
