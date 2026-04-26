@@ -142,8 +142,9 @@ Branches stack on each other (not merged to main yet):
 - `20260422000008_rsvp_deadline_cron.sql` (pg_cron RSVP deadline reminders)
 - `20260422000009_notifications_insert_policy.sql` (INSERT RLS policy on notifications)
 - `20260422000010_repair_notification_triggers.sql` (**NEEDS APPLYING** — idempotent repair of triggers)
-- `20260426000006_rescale_skill_ratings.sql` (**NEEDS APPLYING** — rescale existing players' skill_rating from old 0-100 to new 0-75 scale)
-- `20260426000007_fix_skill_ratings.sql` (**NEEDS APPLYING** — fix ALL players' skill_rating, overwrites any inflated scores)
+- `20260426000006_rescale_skill_ratings.sql` (rescale existing players' skill_rating from old 0-100 to new 0-75 scale)
+- `20260426000007_fix_skill_ratings.sql` (fix ALL players' skill_rating, overwrites any inflated scores)
+- `20260426000008_discoverable_club_member_count.sql` (**NEEDS APPLYING** — RPC get_club_member_count for non-member visibility)
 
 ## Known issues
 1. ~~**Home CORS**~~: Resolved.
@@ -166,9 +167,10 @@ Branches stack on each other (not merged to main yet):
 - **FEAT-20: Chat Architecture** — Audit and propose architecture for a shared chat system covering both club chat (entry: Club Details) and event chat (entry: Event Details). Same component, different room scope. Cover data model, RLS, and Realtime approach. No implementation. (Chat icon placeholder already added in EventDetail)
 - **Backlog: Email notifications** — Set up email notifications for key events
 
-### Group B: Event Enhancements (branch: `feat/event-enhancements`)
+### Group B: Event & Game Enhancements (branch: `feat/event-enhancements`)
 - **FEAT-21: Event Image Suggestions** — Suggest volleyball-related images when creating an event, so the club always has an image. Field not required but suggestions help adoption. Use a public API or curated set.
 - **FEAT-22: Edit Guests from Club Details** — Add admin-only "Edit Guests" button on Club Details (audit where guests are currently managed). Update FAQ "Can I add guests?" to say the game must start first, then guests can be added by editing teams.
+- **FEAT-27: Live Score Tracker** — Button on Game Details page to open a live score-tracking screen (for a person keeping score while watching). Score screen has an "End Set" button; when pressed the score is saved and advances to the next available set. Button only available from game start and only on the day of the game.
 - **Phase 15: Advanced Filters** — Custom month range, filter by city
 
 ### Group C: Analytics & Stats (branch: `feat/analytics`) — IN PROGRESS

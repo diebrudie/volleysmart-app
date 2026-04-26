@@ -37,7 +37,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { buildImageUrl } from "@/utils/buildImageUrl";
-import { fetchMemberCount, removeClubMembers, leaveClub, requestJoinClub } from "@/integrations/supabase/clubMembers";
+import { removeClubMembers, leaveClub, requestJoinClub } from "@/integrations/supabase/clubMembers";
 import { fetchClubPublicEvents } from "@/integrations/supabase/plannedEvents";
 import { fetchClubStats } from "@/integrations/supabase/clubStats";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
@@ -132,10 +132,13 @@ const ClubOverview: React.FC = () => {
     enabled: !!clubId,
   });
 
-  // Member count
+  // Member count — use RPC to bypass club_members RLS for non-members
   const { data: memberCount = 0 } = useQuery({
     queryKey: ["club-member-count", clubId],
-    queryFn: () => fetchMemberCount(clubId!),
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_club_member_count", { p_club_id: clubId! });
+      return (data as number) ?? 0;
+    },
     enabled: !!clubId,
   });
 
