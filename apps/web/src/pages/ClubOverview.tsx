@@ -108,6 +108,8 @@ const ClubOverview: React.FC = () => {
   const [deleting, setDeleting] = React.useState(false);
   const [leaveOpen, setLeaveOpen] = React.useState(false);
   const [leaving, setLeaving] = React.useState(false);
+  const [activeSection, setActiveSection] = React.useState<"members" | "stats">("members");
+  const [guestsOpen, setGuestsOpen] = React.useState(false);
 
   // Club details
   const { data: club, isLoading: clubLoading } = useQuery({
@@ -244,6 +246,51 @@ const ClubOverview: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Guests for this club (admin only)
+  const { data: guests = [] } = useQuery({
+    queryKey: ["club-guests", clubId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("guests")
+        .select("player_id, created_at, reused_at, players!inner(first_name, last_name)")
+        .eq("club_id", clubId!)
+        .order("reused_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((row: any) => ({
+        player_id: row.player_id as string,
+        first_name: (row.players?.first_name as string) ?? "Guest",
+        last_name: (row.players?.last_name as string) ?? "Player",
+      }));
+    },
+    enabled: !!clubId && isAdmin,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Scroll observer to sync active tab with visible section
+  React.useEffect(() => {
+    if (!isMember) return;
+    const membersEl = membersSectionRef.current;
+    const statsEl = statsSectionRef.current;
+    if (!membersEl && !statsEl) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            if (entry.target === membersEl) setActiveSection("members");
+            else if (entry.target === statsEl) setActiveSection("stats");
+          }
+        }
+      },
+      { rootMargin: "-40% 0px -40% 0px", threshold: 0 }
+    );
+
+    if (membersEl) observer.observe(membersEl);
+    if (statsEl) observer.observe(statsEl);
+    return () => observer.disconnect();
+  }, [isMember]);
+
   if (clubLoading || !club) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -335,16 +382,13 @@ const ClubOverview: React.FC = () => {
                 label="Invite"
                 onClick={() => setInviteOpen(true)}
               />
-              <ActionButton
-                icon={<Users className="h-5 w-5" />}
-                label="Members"
-                onClick={() => membersSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              />
-              <ActionButton
-                icon={<BarChart3 className="h-5 w-5" />}
-                label="Stats"
-                onClick={() => statsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              />
+              {isAdmin && (
+                <ActionButton
+                  icon={<UserCheck className="h-5 w-5" />}
+                  label="Guests"
+                  onClick={() => setGuestsOpen(true)}
+                />
+              )}
               {userRole && !isAdmin && (
                 <ActionButton
                   icon={<LogOut className="h-5 w-5" />}
@@ -388,6 +432,44 @@ const ClubOverview: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Section tabs — Members / Stats */}
+      {isMember && (
+        <div className="px-4 pt-5">
+          <div className="flex border-b border-border">
+            <button
+              type="button"
+              className={cn(
+                "flex-1 pb-2 text-sm font-medium text-center border-b-2 transition-colors",
+                activeSection === "members"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => {
+                setActiveSection("members");
+                membersSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Members
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "flex-1 pb-2 text-sm font-medium text-center border-b-2 transition-colors",
+                activeSection === "stats"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => {
+                setActiveSection("stats");
+                statsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Stats
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Upcoming Event(s) */}
       <div className="px-4 pt-6">
@@ -451,79 +533,6 @@ const ClubOverview: React.FC = () => {
           </>
         )}
       </div>
-
-      {/* Club Stats — members only */}
-      {isMember && clubStats && (
-        <div className="px-4 pt-6" ref={statsSectionRef}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold">Stats</h2>
-            <select
-              className="text-sm bg-muted/50 border rounded-md px-2 py-1"
-              value={statsYear}
-              onChange={(e) => setStatsYear(Number(e.target.value))}
-            >
-              {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-
-          {clubStats.totalEncounters > 0 ? (
-            <div className="space-y-3">
-              {/* Stats grid */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
-                  <p className="text-xl font-bold">{clubStats.totalEncounters}</p>
-                  <p className="text-[10px] text-muted-foreground">Games</p>
-                </div>
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-                  <p className="text-xl font-bold">{clubStats.totalHours}</p>
-                  <p className="text-[10px] text-muted-foreground">Hours</p>
-                </div>
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <Users className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
-                  <p className="text-xl font-bold">{clubStats.attendanceRate}%</p>
-                  <p className="text-[10px] text-muted-foreground">Attendance</p>
-                </div>
-              </div>
-
-              {/* Best combinations */}
-              {clubStats.topCombinations.length > 0 && (
-                <div className="rounded-xl border bg-card p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Trophy className="h-4 w-4 text-amber-500" />
-                    <p className="text-sm font-semibold">Best Team Combinations</p>
-                  </div>
-                  <div className="space-y-3">
-                    {clubStats.topCombinations.map((combo, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {combo.playerNames.join(", ")}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {combo.wins}W / {combo.gamesPlayed} games · {combo.winRate}% win rate
-                          </p>
-                        </div>
-                        {i === 0 && (
-                          <span className="text-amber-500 text-lg shrink-0 ml-2">🏆</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-xl border bg-card p-6 text-center">
-              <BarChart3 className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No games played in {statsYear}</p>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Members list — members only */}
       {isMember && (
@@ -626,7 +635,122 @@ const ClubOverview: React.FC = () => {
       </div>
       )}
 
+      {/* Club Stats — members only */}
+      {isMember && clubStats && (
+        <div className="px-4 pt-6" ref={statsSectionRef}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold">Stats</h2>
+            <select
+              className="text-sm bg-muted/50 border rounded-md px-2 py-1"
+              value={statsYear}
+              onChange={(e) => setStatsYear(Number(e.target.value))}
+            >
+              {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          {clubStats.totalEncounters > 0 ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl border bg-card p-3 text-center">
+                  <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
+                  <p className="text-xl font-bold">{clubStats.totalEncounters}</p>
+                  <p className="text-[10px] text-muted-foreground">Games</p>
+                </div>
+                <div className="rounded-xl border bg-card p-3 text-center">
+                  <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                  <p className="text-xl font-bold">{clubStats.totalHours}</p>
+                  <p className="text-[10px] text-muted-foreground">Hours</p>
+                </div>
+                <div className="rounded-xl border bg-card p-3 text-center">
+                  <Users className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
+                  <p className="text-xl font-bold">{clubStats.attendanceRate}%</p>
+                  <p className="text-[10px] text-muted-foreground">Attendance</p>
+                </div>
+              </div>
+
+              {clubStats.topCombinations.length > 0 && (
+                <div className="rounded-xl border bg-card p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    <p className="text-sm font-semibold">Best Team Combinations</p>
+                  </div>
+                  <div className="space-y-3">
+                    {clubStats.topCombinations.map((combo, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {combo.playerNames.join(", ")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {combo.wins}W / {combo.gamesPlayed} games · {combo.winRate}% win rate
+                          </p>
+                        </div>
+                        {i === 0 && (
+                          <span className="text-amber-500 text-lg shrink-0 ml-2">🏆</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl border bg-card p-6 text-center">
+              <BarChart3 className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No games played in {statsYear}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       </div>{/* end max-w-2xl wrapper */}
+
+      {/* Guests sheet (admin only) */}
+      <Sheet open={guestsOpen} onOpenChange={setGuestsOpen}>
+        <SheetContent side={isCompact ? "bottom" : "right"} className={cn(isCompact && "max-h-[75vh] rounded-t-2xl", "overflow-y-auto")}>
+          <SheetHeader>
+            <SheetTitle>Guests ({guests.length})</SheetTitle>
+          </SheetHeader>
+          <div className="py-4 space-y-1">
+            {guests.length > 0 ? (
+              guests.map((g) => (
+                <div key={g.player_id} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
+                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <span className="text-xs font-medium">{g.first_name[0]}{g.last_name[0]}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{g.first_name} {g.last_name}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-xs text-destructive hover:text-destructive/80 shrink-0"
+                    onClick={async () => {
+                      const { error } = await supabase.from("guests").delete().eq("player_id", g.player_id).eq("club_id", clubId!);
+                      if (!error) {
+                        await supabase.from("players").delete().eq("id", g.player_id);
+                        queryClient.invalidateQueries({ queryKey: ["club-guests", clubId] });
+                        toast({ title: "Guest removed", duration: 1500 });
+                      } else {
+                        toast({ title: "Error", description: "Failed to remove guest", variant: "destructive", duration: 2000 });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">No guests added yet.</p>
+                <p className="text-xs text-muted-foreground mt-1">Guests are added when starting a game.</p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Confirm remove dialog */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

@@ -934,7 +934,7 @@ const Profile = () => {
                           <p className="text-xs text-muted-foreground">Skill Rating</p>
                           <div className="flex items-baseline gap-2">
                             <p className="text-2xl font-bold">{profile.skill_rating}</p>
-                            <span className="text-xs text-muted-foreground">/100</span>
+                            <span className="text-xs text-muted-foreground">/90</span>
                             {playerStats && (() => {
                               const bonus = Math.round(calculateGameplayBonus(playerStats));
                               return bonus > 0 ? (
