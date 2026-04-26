@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Analytics — Personal Stats + Club Stats
-- Last change: Personal analytics on Profile, Club stats on ClubOverview
+- Working on: Analytics — Personal Stats + Club Stats + Skill Progression
+- Last change: Skill score progression system (onboarding cap 75, gameplay bonus, auto-recalculate)
 - Current branch: `feat/analytics` (branched from `feat/discovery`)
-- Next step: Test analytics with real game data, verify stats accuracy
+- Next step: Test analytics + skill progression with real game data, merge to main
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -187,7 +187,7 @@ Branches stack on each other (not merged to main yet):
 ### Group E: Platform (branch: `feat/platform`)
 - **Backlog: Native iOS/Android app** — Build native app using monorepo
 - **Backlog: Tournament event type** — Complex, deferred
-- **Backlog: Skill Score progression** — Adjust algorithm, progression based on games/sets played
+- ~~**Backlog: Skill Score progression**~~ — Onboarding capped at 75, gameplay bonus (max 25) via logarithmic formula (participation + win rate + hours). Recalculates on Profile load, score never decreases. `skillProgression.ts`, `rating_history` stored in DB.
 - **Phase 16: Settings page & Notification preferences**
 
 ## Discover feature (implemented)
