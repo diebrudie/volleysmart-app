@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin, Trophy, Swords, Clock, TrendingUp } from "lucide-react";
+import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin, Trophy, Swords, Clock, TrendingUp, Tag } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPlayerStats } from "@/integrations/supabase/playerStats";
 import { recalculateAndPersist, calculateGameplayBonus } from "@/integrations/supabase/skillProgression";
@@ -100,7 +100,8 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [activeTab, setActiveTab] = useState("personal");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "analytics");
   const [userClubs, setUserClubs] = useState<
     { membership_id: string; club_id: string; name: string; role: string; joined_at: string | null; member_association: boolean }[]
   >([]);
@@ -610,41 +611,167 @@ const Profile = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  const formatBirthday = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
+
+  const editFormContent = (
+    <div className="space-y-4">
+      {/* Photo */}
+      <div className="flex justify-center">
+        <div className="relative">
+          <Avatar className="h-20 w-20">
+            <AvatarImage
+              src={imageFile ? URL.createObjectURL(imageFile) : profile.image_url ?? undefined}
+              alt="Profile"
+              className="object-cover"
+            />
+            <AvatarFallback className="text-xl bg-muted">
+              {profile.first_name?.[0]}{profile.last_name?.[0]}
+            </AvatarFallback>
+          </Avatar>
+          <label
+            htmlFor="edit-image-upload"
+            className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-sm"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            <input id="edit-image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+          </label>
+        </div>
+      </div>
+
+      {/* Name */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="firstName" className="text-xs text-muted-foreground">First Name</Label>
+          <Input id="firstName" value={profile.first_name} onChange={(e) => setProfile({ ...profile, first_name: e.target.value })} className="bg-muted/50 border-border" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="lastName" className="text-xs text-muted-foreground">Last Name</Label>
+          <Input id="lastName" value={profile.last_name} onChange={(e) => setProfile({ ...profile, last_name: e.target.value })} className="bg-muted/50 border-border" />
+        </div>
+      </div>
+
+      {/* Birthday + Height */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="birthday" className="text-xs text-muted-foreground">Birthday</Label>
+          <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="height" className="text-xs text-muted-foreground">Height (cm)</Label>
+          <Input id="height" type="number" min="100" max="250" value={profile.height_cm || ""} onChange={(e) => setProfile({ ...profile, height_cm: e.target.value ? parseInt(e.target.value) : null })} placeholder="175" className="bg-muted/50 border-border" />
+        </div>
+      </div>
+
+      {/* Gender */}
+      <div className="space-y-1.5 max-w-[calc(50%-0.375rem)]">
+        <Label className="text-xs text-muted-foreground">Gender</Label>
+        <Select value={profile.gender} onValueChange={(value) => setProfile({ ...profile, gender: value })}>
+          <SelectTrigger className="bg-muted/50 border-border"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="male">Male</SelectItem>
+            <SelectItem value="female">Female</SelectItem>
+            <SelectItem value="diverse">Diverse</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Location */}
+      <div className="space-y-1.5">
+        <CityLocationSelector
+          label="Location"
+          placeholder="Start typing your city..."
+          value={cityLocation}
+          onChange={(val) => {
+            setCityLocation(val);
+            if (profile) {
+              setProfile({ ...profile, city: val?.city || null, country: val?.country || null, country_code: val?.countryCode || null });
+            }
+          }}
+        />
+      </div>
+
+      {/* Bio */}
+      <div className="space-y-1.5">
+        <Label htmlFor="bio" className="text-xs text-muted-foreground">Bio</Label>
+        <Textarea id="bio" value={profile.bio || ""} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} placeholder="Tell us about yourself..." rows={3} className="bg-muted/50 border-border" />
+      </div>
+
+      {/* Main Position */}
+      <div>
+        <p className="text-xs text-muted-foreground mb-2">Main Position</p>
+        <Select value={getPrimaryPositionId()} onValueChange={updatePrimaryPosition}>
+          <SelectTrigger className="h-11 bg-muted/50 border-border"><SelectValue placeholder="Select your main position" /></SelectTrigger>
+          <SelectContent>
+            {positions.map((position) => (
+              <SelectItem key={position.id} value={position.id}>{position.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Secondary Positions */}
+      <div>
+        <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
+        <div className="flex flex-wrap gap-2">
+          {positions.map((position) => {
+            const isPrimary = getPrimaryPositionId() === position.id;
+            const isSecondary = getSecondaryPositionIds().includes(position.id);
+            if (isPrimary) return null;
+            return (
+              <button key={position.id} type="button" onClick={() => updateSecondaryPosition(position.id)}
+                className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${isSecondary ? "border-primary/40 bg-primary/10 text-primary font-medium" : "border-border bg-muted/30 text-muted-foreground hover:border-muted-foreground"}`}
+              >{position.name}</button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-muted-foreground pt-1">Tap to toggle secondary positions</p>
+      </div>
+
+      {/* Delete account */}
+      {isOwnProfile && (
+        <div className="pt-6">
+          <button onClick={() => setShowDeleteDialog(true)} className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors">
+            <Trash2 className="h-4 w-4" /> Delete my account
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const editFooter = (
+    <div className="flex gap-3 pt-4">
+      <Button variant="outline" onClick={handleCancelEdit} className="flex-1">Cancel</Button>
+      <Button onClick={handleSave} disabled={saving || !hasChanges()} className="flex-1">{saving ? "Saving..." : "Save Changes"}</Button>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-background lg:ml-60" style={{ paddingBottom: isEditing ? '5rem' : undefined }}>
+    <div className="min-h-screen bg-background lg:ml-60">
       {/* Header bar */}
       <div className="fixed top-0 left-0 right-0 lg:left-60 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
-            onClick={isEditing ? handleCancelEdit : handleBack}
+            onClick={handleBack}
             className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <h1 className="text-base font-semibold">Profile</h1>
-          {isOwnProfile && !isEditing && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="absolute right-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
-          )}
         </div>
       </div>
       <div className="h-14" />
 
       <div className="max-w-2xl mx-auto px-4">
-        {/* Avatar + Name + Email */}
+        {/* Avatar + Name + City */}
         <div className="flex items-center gap-5 pt-6 pb-4">
           <div className="relative shrink-0">
             <Avatar className="h-20 w-20">
               <AvatarImage
-                src={
-                  imageFile
-                    ? URL.createObjectURL(imageFile)
-                    : profile.image_url ?? undefined
-                }
+                src={profile.image_url ?? undefined}
                 alt="Profile"
                 className="object-cover"
               />
@@ -653,260 +780,70 @@ const Profile = () => {
                 {profile.last_name?.[0]}
               </AvatarFallback>
             </Avatar>
-            {isEditing && (
-              <label
-                htmlFor="image-upload"
-                className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-sm"
-              >
-                <Upload className="h-3.5 w-3.5" />
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-              </label>
-            )}
           </div>
           <div className="min-w-0">
-            <h2 className="text-2xl font-bold text-foreground">
-              {profile.first_name} {profile.last_name}
-            </h2>
-            {userEmail && (
-              <p className="text-sm text-muted-foreground mt-0.5">{userEmail}</p>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground">
+                {profile.first_name} {profile.last_name}
+              </h2>
+              {isOwnProfile && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:bg-muted shrink-0"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+            {profile.city && (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {profile.city}{profile.country ? `, ${profile.country}` : ""}
+              </p>
             )}
           </div>
         </div>
 
-        {/* Member since + Skill row */}
-        <div className="flex items-end justify-between py-3 border-b border-border">
-          {userCreatedAt && (
-            <div>
-              <p className="text-xs text-primary/70 font-medium">Member since</p>
-              <p className="text-lg font-bold text-foreground">
-                {formatMemberSince(userCreatedAt)}
-              </p>
+        {/* Birthday / Height / Gender row */}
+        <div className="grid grid-cols-3 py-3 border-b border-border">
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Cake className="h-3.5 w-3.5 text-primary" />
+              <p className="text-xs text-primary font-medium">Birthday</p>
             </div>
-          )}
-          {profile.skill_rating != null && (
-            <div className="text-right">
-              <p className="text-xs text-primary/70 font-medium">Skill</p>
-              <div className="flex items-baseline gap-1.5 justify-end">
-                <p className="text-lg font-bold text-foreground">{profile.skill_rating}</p>
-                {playerStats && (() => {
-                  const bonus = Math.round(calculateGameplayBonus(playerStats));
-                  return bonus > 0 ? (
-                    <span className="text-xs font-medium text-emerald-600">+{bonus}</span>
-                  ) : null;
-                })()}
-              </div>
+            <p className="text-base font-bold text-foreground">
+              {profile.birthday ? formatBirthday(profile.birthday) : "—"}
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="flex items-center gap-1.5 mb-1 justify-center">
+              <Tag className="h-3.5 w-3.5 text-primary" />
+              <p className="text-xs text-primary font-medium">Height</p>
             </div>
-          )}
+            <p className="text-base font-bold text-foreground">
+              {profile.height_cm ? `${profile.height_cm} cm` : "—"}
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="flex items-center gap-1.5 mb-1 justify-end">
+              <User className="h-3.5 w-3.5 text-primary" />
+              <p className="text-xs text-primary font-medium">Gender</p>
+            </div>
+            <p className="text-base font-bold text-foreground capitalize">
+              {profile.gender || "—"}
+            </p>
+          </div>
         </div>
 
         {/* ── Tabs ──────────────────────────────────────────── */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
           <TabsList className="w-full">
-            <TabsTrigger value="personal" className="flex-1 text-xs">Personal</TabsTrigger>
-            <TabsTrigger value="volleyball" className="flex-1 text-xs">Volleyball</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-1 text-xs">Analytics</TabsTrigger>
+            <TabsTrigger value="positions" className="flex-1 text-xs">Positions</TabsTrigger>
             <TabsTrigger value="clubs" className="flex-1 text-xs">Clubs</TabsTrigger>
           </TabsList>
 
-          {/* ── Personal Details Tab ─────────────────────────── */}
-          <TabsContent value="personal">
-            {!isEditing ? (
-              <div className="py-4 space-y-6">
-                {profile.birthday && (
-                  <div className="flex items-start gap-3">
-                    <Cake className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Birthday</p>
-                      <p className="text-base text-foreground">
-                        {new Date(profile.birthday).toLocaleDateString("en-US", {
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {profile.height_cm && (
-                  <div className="flex items-start gap-3">
-                    <Ruler className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Height</p>
-                      <p className="text-base text-foreground">{profile.height_cm} cm</p>
-                    </div>
-                  </div>
-                )}
-                {profile.gender && (
-                  <div className="flex items-start gap-3">
-                    <User className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Gender</p>
-                      <p className="text-base text-foreground capitalize">{profile.gender}</p>
-                    </div>
-                  </div>
-                )}
-                {profile.city && (
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Based in</p>
-                      <p className="text-base text-foreground">
-                        {profile.city}{profile.country ? `, ${profile.country}` : ""}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {profile.bio && (
-                  <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Bio</p>
-                    <p className="text-base text-foreground">{profile.bio}</p>
-                  </div>
-                )}
-
-                {!profile.bio && !profile.gender && !profile.birthday && !profile.height_cm && (
-                  <div className="py-8 text-center">
-                    <p className="text-sm text-muted-foreground">No personal details yet.</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="py-4 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="firstName" className="text-xs text-muted-foreground">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={profile.first_name}
-                      onChange={(e) =>
-                        setProfile({ ...profile, first_name: e.target.value })
-                      }
-                      className="bg-muted/50 border-border"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="lastName" className="text-xs text-muted-foreground">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={profile.last_name}
-                      onChange={(e) =>
-                        setProfile({ ...profile, last_name: e.target.value })
-                      }
-                      className="bg-muted/50 border-border"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="birthday" className="text-xs text-muted-foreground">Birthday</Label>
-                    <Input
-                      id="birthday"
-                      type="date"
-                      value={profile.birthday || ""}
-                      onChange={(e) =>
-                        setProfile({ ...profile, birthday: e.target.value })
-                      }
-                      className="bg-muted/50 border-border"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="height" className="text-xs text-muted-foreground">Height (cm)</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      min="100"
-                      max="250"
-                      value={profile.height_cm || ""}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          height_cm: e.target.value
-                            ? parseInt(e.target.value)
-                            : null,
-                        })
-                      }
-                      placeholder="175"
-                      className="bg-muted/50 border-border"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 max-w-[calc(50%-0.375rem)]">
-                  <Label className="text-xs text-muted-foreground">Gender</Label>
-                  <Select
-                    value={profile.gender}
-                    onValueChange={(value) =>
-                      setProfile({ ...profile, gender: value })
-                    }
-                  >
-                    <SelectTrigger className="bg-muted/50 border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="diverse">Diverse</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <CityLocationSelector
-                    label="Location"
-                    placeholder="Start typing your city..."
-                    value={cityLocation}
-                    onChange={(val) => {
-                      setCityLocation(val);
-                      if (profile) {
-                        setProfile({
-                          ...profile,
-                          city: val?.city || null,
-                          country: val?.country || null,
-                          country_code: val?.countryCode || null,
-                        });
-                      }
-                    }}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="bio" className="text-xs text-muted-foreground">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={profile.bio || ""}
-                    onChange={(e) =>
-                      setProfile({ ...profile, bio: e.target.value })
-                    }
-                    placeholder="Tell us about yourself..."
-                    rows={3}
-                    className="bg-muted/50 border-border"
-                  />
-                </div>
-
-                {isOwnProfile && (
-                  <div className="pt-6">
-                    <button
-                      onClick={() => setShowDeleteDialog(true)}
-                      className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete my account
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* ── Volleyball Tab ───────────────────────────────── */}
-          <TabsContent value="volleyball">
-            {/* Stats section — always visible */}
+          {/* ── Analytics Tab ─────────────────────────────────── */}
+          <TabsContent value="analytics">
             {playerStats && (playerStats.gamesPlayed > 0 || isOwnProfile) && (
               <div className="py-4 space-y-4">
                 {/* Club filter */}
@@ -959,7 +896,7 @@ const Profile = () => {
                       </div>
                     </div>
 
-                    {/* W/L/T breakdown */}
+                    {/* Set Record */}
                     <div className="rounded-xl border bg-card p-4">
                       <p className="text-xs text-muted-foreground mb-3">Set Record</p>
                       <div className="flex items-center gap-3">
@@ -986,6 +923,28 @@ const Profile = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* Skill Rating */}
+                    {profile.skill_rating != null && (
+                      <div className="rounded-xl border bg-card p-4 flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <TrendingUp className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground">Skill Rating</p>
+                          <div className="flex items-baseline gap-2">
+                            <p className="text-2xl font-bold">{profile.skill_rating}</p>
+                            <span className="text-xs text-muted-foreground">/100</span>
+                            {playerStats && (() => {
+                              const bonus = Math.round(calculateGameplayBonus(playerStats));
+                              return bonus > 0 ? (
+                                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">+{bonus} from gameplay</span>
+                              ) : null;
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="rounded-xl border bg-card p-6 text-center">
@@ -994,67 +953,54 @@ const Profile = () => {
                     <p className="text-xs text-muted-foreground mt-1">Stats will appear after your first game</p>
                   </div>
                 )}
-
-                <div className="border-t pt-4" />
               </div>
             )}
+          </TabsContent>
 
-            {!isEditing ? (
-              <div className={`${playerStats && (playerStats.gamesPlayed > 0 || isOwnProfile) ? "" : "py-4"} space-y-5`}>
-                {(() => {
-                  const primaryPos = playerPositions.find((pp) => pp.is_primary);
-                  const secondaryPosItems = playerPositions.filter((pp) => !pp.is_primary);
-                  const primaryName = primaryPos
-                    ? positions.find((p) => p.id === primaryPos.position_id)?.name
-                    : null;
+          {/* ── Positions Tab ──────────────────────────────────── */}
+          <TabsContent value="positions">
+            <div className="py-4 space-y-5">
+              {(() => {
+                const primaryPos = playerPositions.find((pp) => pp.is_primary);
+                const secondaryPosItems = playerPositions.filter((pp) => !pp.is_primary);
+                const primaryName = primaryPos
+                  ? positions.find((p) => p.id === primaryPos.position_id)?.name
+                  : null;
 
-                  return playerPositions.length > 0 ? (
-                    <>
-                      {primaryName && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-2">Main Position</p>
-                          <div className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
-                            <div className="h-2 w-2 rounded-full bg-primary" />
-                            <span className="text-base font-semibold text-primary">{primaryName}</span>
-                          </div>
+                return playerPositions.length > 0 ? (
+                  <>
+                    {primaryName && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">Main Position</p>
+                        <div className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
+                          <div className="h-2 w-2 rounded-full bg-primary" />
+                          <span className="text-base font-semibold text-primary">{primaryName}</span>
                         </div>
-                      )}
-
-                      {secondaryPosItems.length > 0 && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
-                          <div className="space-y-2">
-                            {secondaryPosItems.map((pp) => {
-                              const pos = positions.find((p) => p.id === pp.position_id);
-                              if (!pos) return null;
-                              return (
-                                <div
-                                  key={pp.position_id}
-                                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 mr-2"
-                                >
-                                  <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
-                                  <span className="text-base text-foreground">{pos.name}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="pt-2">
-                        <button
-                          type="button"
-                          onClick={() => setIsPositionsHelpOpen(true)}
-                          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <HelpCircle className="h-3.5 w-3.5" />
-                          View court positions diagram
-                        </button>
                       </div>
-                    </>
-                  ) : (
-                    <div className="py-8 text-center space-y-3">
-                      <p className="text-sm text-muted-foreground">No positions set yet.</p>
+                    )}
+
+                    {secondaryPosItems.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
+                        <div className="flex flex-wrap gap-2">
+                          {secondaryPosItems.map((pp) => {
+                            const pos = positions.find((p) => p.id === pp.position_id);
+                            if (!pos) return null;
+                            return (
+                              <div
+                                key={pp.position_id}
+                                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5"
+                              >
+                                <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                                <span className="text-base text-foreground">{pos.name}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-2">
                       <button
                         type="button"
                         onClick={() => setIsPositionsHelpOpen(true)}
@@ -1064,72 +1010,22 @@ const Profile = () => {
                         View court positions diagram
                       </button>
                     </div>
-                  );
-                })()}
-              </div>
-            ) : (
-              <div className="py-4 space-y-5">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">Main Position</p>
-                  <Select
-                    value={getPrimaryPositionId()}
-                    onValueChange={updatePrimaryPosition}
-                  >
-                    <SelectTrigger className="h-11 bg-muted/50 border-border">
-                      <SelectValue placeholder="Select your main position" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {positions.map((position) => (
-                        <SelectItem key={position.id} value={position.id}>
-                          {position.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
-                  <div className="flex flex-wrap gap-2">
-                    {positions.map((position) => {
-                      const isPrimary = getPrimaryPositionId() === position.id;
-                      const isSecondary = getSecondaryPositionIds().includes(position.id);
-
-                      if (isPrimary) return null;
-
-                      return (
-                        <button
-                          key={position.id}
-                          type="button"
-                          onClick={() => updateSecondaryPosition(position.id)}
-                          className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
-                            isSecondary
-                              ? "border-primary/40 bg-primary/10 text-primary font-medium"
-                              : "border-border bg-muted/30 text-muted-foreground hover:border-muted-foreground"
-                          }`}
-                        >
-                          {position.name}
-                        </button>
-                      );
-                    })}
+                  </>
+                ) : (
+                  <div className="py-8 text-center space-y-3">
+                    <p className="text-sm text-muted-foreground">No positions set yet.</p>
+                    <button
+                      type="button"
+                      onClick={() => setIsPositionsHelpOpen(true)}
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      View court positions diagram
+                    </button>
                   </div>
-                  <p className="text-xs text-muted-foreground pt-1">
-                    Tap to toggle secondary positions
-                  </p>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsPositionsHelpOpen(true)}
-                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <HelpCircle className="h-3.5 w-3.5" />
-                    View court positions diagram
-                  </button>
-                </div>
-              </div>
-            )}
+                );
+              })()}
+            </div>
           </TabsContent>
 
           {/* ── Clubs Tab ────────────────────────────────────── */}
@@ -1215,6 +1111,43 @@ const Profile = () => {
         </Tabs>
       </div>
 
+      {/* Edit Profile Drawer (mobile) / Sheet (desktop) */}
+      {(() => {
+        return isCompact ? (
+          <Drawer open={isEditing} onOpenChange={(open) => { if (!open) handleCancelEdit(); }} shouldScaleBackground>
+            <DrawerContent className="max-h-[85vh] pb-6">
+              <DrawerClose
+                aria-label="Close"
+                className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <X className="h-4 w-4" />
+              </DrawerClose>
+              <DrawerHeader className="pt-8">
+                <DrawerTitle>Edit Profile</DrawerTitle>
+                <DrawerDescription>Update your personal information and positions.</DrawerDescription>
+              </DrawerHeader>
+              <div className="px-4 overflow-y-auto flex-1">
+                {editFormContent}
+                {editFooter}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Sheet open={isEditing} onOpenChange={(open) => { if (!open) handleCancelEdit(); }}>
+            <SheetContent side="right" className="overflow-y-auto w-[400px] sm:w-[540px]">
+              <SheetHeader>
+                <SheetTitle>Edit Profile</SheetTitle>
+                <SheetDescription>Update your personal information and positions.</SheetDescription>
+              </SheetHeader>
+              <div className="py-4">
+                {editFormContent}
+                {editFooter}
+              </div>
+            </SheetContent>
+          </Sheet>
+        );
+      })()}
+
       {/* Positions helper drawer (mobile) / sheet (desktop) */}
       {(() => {
         const positionsContent = (
@@ -1226,33 +1159,24 @@ const Profile = () => {
                 className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
               />
               <p className="mt-3 text-center text-sm text-muted-foreground">
-                Use this diagram to confirm your primary and secondary
-                roles.
+                Use this diagram to confirm your primary and secondary roles.
               </p>
             </div>
           </div>
         );
 
         return isCompact ? (
-          <Drawer
-            open={isPositionsHelpOpen}
-            onOpenChange={setIsPositionsHelpOpen}
-            shouldScaleBackground
-          >
+          <Drawer open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen} shouldScaleBackground>
             <DrawerContent className="pb-6">
               <DrawerClose
                 aria-label="Close"
-                className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
-                  border border-border bg-background/90 text-foreground shadow
-                  hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <X className="h-4 w-4" />
               </DrawerClose>
               <DrawerHeader className="pt-8">
                 <DrawerTitle>Volleyball court positions</DrawerTitle>
-                <DrawerDescription>
-                  Reference diagram to pick your positions.
-                </DrawerDescription>
+                <DrawerDescription>Reference diagram to pick your positions.</DrawerDescription>
               </DrawerHeader>
               {positionsContent}
             </DrawerContent>
@@ -1262,9 +1186,7 @@ const Profile = () => {
             <SheetContent side="right" className="overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>Volleyball court positions</SheetTitle>
-                <SheetDescription>
-                  Reference diagram to pick your positions.
-                </SheetDescription>
+                <SheetDescription>Reference diagram to pick your positions.</SheetDescription>
               </SheetHeader>
               {positionsContent}
             </SheetContent>
@@ -1317,28 +1239,6 @@ const Profile = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Fixed Save / Cancel bar (edit mode only) */}
-      {isEditing && (
-        <div className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border px-4 py-3 pb-[calc(theme(spacing.3)+env(safe-area-inset-bottom))]">
-          <div className="max-w-2xl mx-auto flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleCancelEdit}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={saving || !hasChanges()}
-              className="flex-1"
-            >
-              {saving ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
