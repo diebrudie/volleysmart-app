@@ -16,6 +16,9 @@ import {
   LogOut,
   MessageCircle,
   UserCheck,
+  Trophy,
+  Clock,
+  Swords,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,6 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { buildImageUrl } from "@/utils/buildImageUrl";
 import { fetchMemberCount, removeClubMembers, leaveClub, requestJoinClub } from "@/integrations/supabase/clubMembers";
 import { fetchClubPublicEvents } from "@/integrations/supabase/plannedEvents";
+import { fetchClubStats } from "@/integrations/supabase/clubStats";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { useIsCompact } from "@/hooks/use-compact";
 import { EventCard } from "@/components/events/EventCard";
@@ -93,6 +97,7 @@ const ClubOverview: React.FC = () => {
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const membersSectionRef = React.useRef<HTMLDivElement>(null);
+  const statsSectionRef = React.useRef<HTMLDivElement>(null);
   const { data: currentPlayerId } = useCurrentPlayerId();
   const isCompact = useIsCompact();
   const { toast } = useToast();
@@ -230,6 +235,15 @@ const ClubOverview: React.FC = () => {
     enabled: !!clubId,
   });
 
+  // Club stats
+  const [statsYear, setStatsYear] = React.useState(new Date().getFullYear());
+  const { data: clubStats } = useQuery({
+    queryKey: ["club-stats", clubId, statsYear],
+    queryFn: () => fetchClubStats(clubId!, statsYear),
+    enabled: !!clubId && isMember,
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (clubLoading || !club) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -328,13 +342,8 @@ const ClubOverview: React.FC = () => {
               />
               <ActionButton
                 icon={<BarChart3 className="h-5 w-5" />}
-                label="Event Insights"
-                disabled
-              />
-              <ActionButton
-                icon={<TrendingUp className="h-5 w-5" />}
                 label="Stats"
-                disabled
+                onClick={() => statsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
               />
               {userRole && !isAdmin && (
                 <ActionButton
@@ -442,6 +451,79 @@ const ClubOverview: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Club Stats — members only */}
+      {isMember && clubStats && (
+        <div className="px-4 pt-6" ref={statsSectionRef}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold">Stats</h2>
+            <select
+              className="text-sm bg-muted/50 border rounded-md px-2 py-1"
+              value={statsYear}
+              onChange={(e) => setStatsYear(Number(e.target.value))}
+            >
+              {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          {clubStats.totalEncounters > 0 ? (
+            <div className="space-y-3">
+              {/* Stats grid */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl border bg-card p-3 text-center">
+                  <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
+                  <p className="text-xl font-bold">{clubStats.totalEncounters}</p>
+                  <p className="text-[10px] text-muted-foreground">Games</p>
+                </div>
+                <div className="rounded-xl border bg-card p-3 text-center">
+                  <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                  <p className="text-xl font-bold">{clubStats.totalHours}</p>
+                  <p className="text-[10px] text-muted-foreground">Hours</p>
+                </div>
+                <div className="rounded-xl border bg-card p-3 text-center">
+                  <Users className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
+                  <p className="text-xl font-bold">{clubStats.attendanceRate}%</p>
+                  <p className="text-[10px] text-muted-foreground">Attendance</p>
+                </div>
+              </div>
+
+              {/* Best combinations */}
+              {clubStats.topCombinations.length > 0 && (
+                <div className="rounded-xl border bg-card p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    <p className="text-sm font-semibold">Best Team Combinations</p>
+                  </div>
+                  <div className="space-y-3">
+                    {clubStats.topCombinations.map((combo, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {combo.playerNames.join(", ")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {combo.wins}W / {combo.gamesPlayed} games · {combo.winRate}% win rate
+                          </p>
+                        </div>
+                        {i === 0 && (
+                          <span className="text-amber-500 text-lg shrink-0 ml-2">🏆</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl border bg-card p-6 text-center">
+              <BarChart3 className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No games played in {statsYear}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Members list — members only */}
       {isMember && (

@@ -1,16 +1,17 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Discovery feature — refinements & privacy fixes
-- Last change: Attendee privacy, location sharing, InviteMembers redesign, join request fixes
-- Current branch: `feat/discovery` (branched from `feat/phase-11-club-overview`)
-- Next step: Apply migrations 000004 + 000005, verify discovery end-to-end
+- Working on: Analytics — Personal Stats + Club Stats
+- Last change: Personal analytics on Profile, Club stats on ClubOverview
+- Current branch: `feat/analytics` (branched from `feat/discovery`)
+- Next step: Test analytics with real game data, verify stats accuracy
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
 - `main` → `feat/phase-9-create-event-improvements` → `feat/phase-10-quick-fixes-polish` → `feat/phase-11-club-overview` → `feat/phase-12-game-flow-unification`
 - `feat/notifications` branched from `feat/phase-11-club-overview`
-- `feat/discovery` branched from `feat/phase-11-club-overview`
+- `feat/discovery` branched from `feat/phase-11-club-overview` (merged to main)
+- `feat/analytics` branched from `feat/discovery`
 
 ## Phase 14 in-progress work (Notifications + Bug Fixes)
 1. ~~**Notification triggers (DB)**~~: 9 types — join request/accepted/rejected, member joined, event created/cancelled, RSVP, RSVP deadline reminder (pg_cron), game started
@@ -168,10 +169,16 @@ Branches stack on each other (not merged to main yet):
 - **FEAT-22: Edit Guests from Club Details** — Add admin-only "Edit Guests" button on Club Details (audit where guests are currently managed). Update FAQ "Can I add guests?" to say the game must start first, then guests can be added by editing teams.
 - **Phase 15: Advanced Filters** — Custom month range, filter by city
 
-### Group C: Analytics & Stats (branch: `feat/analytics`)
-- **FEAT-23: Personal Analytics** — Profile page: games played, wins, losses, ties, total hours played. Include a club filter (all clubs or one).
-- **FEAT-24: Club Stats** — Club Details page: total encounters per year, attendance % of association members only, best team combinations by wins, total hours played. Document the "best combinations" formula.
+### Group C: Analytics & Stats (branch: `feat/analytics`) — IN PROGRESS
+- ~~**FEAT-23: Personal Analytics**~~ — Profile Volleyball tab: 4-stat grid (games played, win rate, games won, hours), set W/L/T bar, club filter dropdown. Data from `playerStats.ts`.
+- ~~**FEAT-24: Club Stats**~~ — ClubOverview: 3-stat grid (games, hours, attendance %), best team combinations (top 3 by wins, min 2 games). Year filter. Data from `clubStats.ts`. Stats button scrolls to section.
 - **OPEN-Q-01: Analytics Design Doc** — Propose additional analytics (personal and club) that would add value, given available tables. Output as a design doc, no implementation.
+
+### Analytics key files
+- `apps/web/src/integrations/supabase/playerStats.ts` — fetchPlayerStats (games, sets, hours, win rate)
+- `apps/web/src/integrations/supabase/clubStats.ts` — fetchClubStats (encounters, hours, attendance, combos)
+- `apps/web/src/pages/Profile.tsx` — Volleyball tab stats section with club filter
+- `apps/web/src/pages/ClubOverview.tsx` — Stats section with year filter, best team combos
 
 ### Group D: Business & Legal (branch: `feat/business`)
 - **FEAT-25: Paid Tiers Architecture** — Audit and propose paid-tier architecture. Free-tier limits: max 2 clubs/user, max 20 members + 5 guests/club, inter-club tournaments require ≥1 paying user/club. Suggest schema, enforcement, payment provider, additional paywalled features. No implementation.

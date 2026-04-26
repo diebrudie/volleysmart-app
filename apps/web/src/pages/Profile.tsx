@@ -15,7 +15,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin } from "lucide-react";
+import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin, Trophy, Swords, Clock, TrendingUp } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchPlayerStats } from "@/integrations/supabase/playerStats";
 import CityLocationSelector, { type LocationValue } from "@/components/forms/CityLocationSelector";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -104,6 +106,7 @@ const Profile = () => {
   const [showLeaveDialog, setShowLeaveDialog] = useState<string | null>(null);
   const [cityLocation, setCityLocation] = useState<LocationValue | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [statsClubFilter, setStatsClubFilter] = useState<string>("all");
 
   const isOwnProfile = user?.id === userId;
 
@@ -159,6 +162,18 @@ const Profile = () => {
       setUserEmail(user.email);
     }
   }, [isOwnProfile, user?.email]);
+
+  // Player stats query
+  const { data: playerStats } = useQuery({
+    queryKey: ["player-stats", profile?.id, statsClubFilter],
+    queryFn: () =>
+      fetchPlayerStats(
+        profile!.id,
+        statsClubFilter === "all" ? null : statsClubFilter
+      ),
+    enabled: !!profile?.id,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const fetchProfile = async () => {
     try {
@@ -870,8 +885,101 @@ const Profile = () => {
 
           {/* ── Volleyball Tab ───────────────────────────────── */}
           <TabsContent value="volleyball">
+            {/* Stats section — always visible */}
+            {playerStats && (playerStats.gamesPlayed > 0 || isOwnProfile) && (
+              <div className="py-4 space-y-4">
+                {/* Club filter */}
+                {userClubs.length > 1 && (
+                  <div>
+                    <Select value={statsClubFilter} onValueChange={setStatsClubFilter}>
+                      <SelectTrigger className="h-9 w-48 bg-muted/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Clubs</SelectItem>
+                        {userClubs.map((c) => (
+                          <SelectItem key={c.club_id} value={c.club_id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {playerStats.gamesPlayed > 0 ? (
+                  <>
+                    {/* Main stats grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl border bg-card p-4 flex flex-col items-center">
+                        <Swords className="h-5 w-5 text-primary mb-1.5" />
+                        <p className="text-2xl font-bold">{playerStats.gamesPlayed}</p>
+                        <p className="text-xs text-muted-foreground">Games Played</p>
+                      </div>
+                      <div className="rounded-xl border bg-card p-4 flex flex-col items-center">
+                        <TrendingUp className="h-5 w-5 text-emerald-500 mb-1.5" />
+                        <p className="text-2xl font-bold">{playerStats.winRate}%</p>
+                        <p className="text-xs text-muted-foreground">Set Win Rate</p>
+                      </div>
+                      <div className="rounded-xl border bg-card p-4 flex flex-col items-center">
+                        <Trophy className="h-5 w-5 text-amber-500 mb-1.5" />
+                        <p className="text-2xl font-bold">
+                          {playerStats.matchDaysWon}
+                          <span className="text-sm font-normal text-muted-foreground">
+                            /{playerStats.matchDaysWon + playerStats.matchDaysLost + playerStats.matchDaysTied}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">Games Won</p>
+                      </div>
+                      <div className="rounded-xl border bg-card p-4 flex flex-col items-center">
+                        <Clock className="h-5 w-5 text-blue-500 mb-1.5" />
+                        <p className="text-2xl font-bold">{playerStats.totalHours}</p>
+                        <p className="text-xs text-muted-foreground">Hours Played</p>
+                      </div>
+                    </div>
+
+                    {/* W/L/T breakdown */}
+                    <div className="rounded-xl border bg-card p-4">
+                      <p className="text-xs text-muted-foreground mb-3">Set Record</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-emerald-600 font-medium">{playerStats.setsWon}W</span>
+                            <span className="text-red-500 font-medium">{playerStats.setsLost}L</span>
+                            {playerStats.setsTied > 0 && (
+                              <span className="text-muted-foreground font-medium">{playerStats.setsTied}T</span>
+                            )}
+                          </div>
+                          <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+                            {(() => {
+                              const total = playerStats.setsWon + playerStats.setsLost + playerStats.setsTied;
+                              if (total === 0) return null;
+                              return (
+                                <>
+                                  <div className="bg-emerald-500 h-full" style={{ width: `${(playerStats.setsWon / total) * 100}%` }} />
+                                  <div className="bg-red-400 h-full" style={{ width: `${(playerStats.setsLost / total) * 100}%` }} />
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-xl border bg-card p-6 text-center">
+                    <Swords className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No games played yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">Stats will appear after your first game</p>
+                  </div>
+                )}
+
+                <div className="border-t pt-4" />
+              </div>
+            )}
+
             {!isEditing ? (
-              <div className="py-4 space-y-5">
+              <div className={`${playerStats && (playerStats.gamesPlayed > 0 || isOwnProfile) ? "" : "py-4"} space-y-5`}>
                 {(() => {
                   const primaryPos = playerPositions.find((pp) => pp.is_primary);
                   const secondaryPosItems = playerPositions.filter((pp) => !pp.is_primary);
