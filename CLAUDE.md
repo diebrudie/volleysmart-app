@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Analytics — Personal Stats + Club Stats + Skill Progression
-- Last change: Skill score progression system (onboarding cap 75, gameplay bonus, auto-recalculate)
+- Working on: Analytics — Profile redesign + Home monthly stats + Skill progression
+- Last change: Profile redesign (Analytics/Positions/Clubs tabs, edit drawer, skill card), Home Card 3 monthly stats, rescale migration
 - Current branch: `feat/analytics` (branched from `feat/discovery`)
-- Next step: Test analytics + skill progression with real game data, merge to main
+- Next step: Test with real data, apply migration 20260426000006, merge to main
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -142,6 +142,7 @@ Branches stack on each other (not merged to main yet):
 - `20260422000008_rsvp_deadline_cron.sql` (pg_cron RSVP deadline reminders)
 - `20260422000009_notifications_insert_policy.sql` (INSERT RLS policy on notifications)
 - `20260422000010_repair_notification_triggers.sql` (**NEEDS APPLYING** — idempotent repair of triggers)
+- `20260426000006_rescale_skill_ratings.sql` (**NEEDS APPLYING** — rescale existing players' skill_rating from old 0-100 to new 0-75 scale)
 
 ## Known issues
 1. ~~**Home CORS**~~: Resolved.
@@ -170,7 +171,7 @@ Branches stack on each other (not merged to main yet):
 - **Phase 15: Advanced Filters** — Custom month range, filter by city
 
 ### Group C: Analytics & Stats (branch: `feat/analytics`) — IN PROGRESS
-- ~~**FEAT-23: Personal Analytics**~~ — Profile Volleyball tab: 4-stat grid (games played, win rate, games won, hours), set W/L/T bar, club filter dropdown. Data from `playerStats.ts`.
+- ~~**FEAT-23: Personal Analytics**~~ — Profile Analytics tab (first tab): 4-stat grid, set record bar, skill rating card, club filter. Edit profile via bottom drawer. Birthday/Height/Gender in header row. Home Card 3 shows monthly Games/WinRate/Hours, links to profile analytics.
 - ~~**FEAT-24: Club Stats**~~ — ClubOverview: 3-stat grid (games, hours, attendance %), best team combinations (top 3 by wins, min 2 games). Year filter. Data from `clubStats.ts`. Stats button scrolls to section.
 - **OPEN-Q-01: Analytics Design Doc** — Propose additional analytics (personal and club) that would add value, given available tables. Output as a design doc, no implementation.
 
