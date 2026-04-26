@@ -154,51 +154,36 @@ Branches stack on each other (not merged to main yet):
 - Phase 11: Completed — Club Overview page (hero, members, settings sheet, RSVP display, admin management)
 - Phase 12: Completed — Game Flow Unification (unified /game/:matchDayId, Start Game from events, nav link migration)
 - Phase 13: Completed — UI Consistency Pass (Profile redesign, Clubs/JoinClub/NewClub/Members semantic styling)
-- Phase 14: In Progress — Notifications system + bug fixes
-- Phase 15: Advanced Filters (custom month range, filter by city)
-- Phase 16: Settings page & Notification preferences
-- Backlog: Discover Clubs & Events (see architecture below)
-- Backlog: Set up email notifications
-- Backlog: Build native iOS and Android app using monorepo
-- Backlog: Tournament event type (complex, deferred)
-- Backlog: Skill Score progression system (adjust algorithm, progression based on games/sets played)
-- Backlog: Chat — organizer↔player messaging on events, organizer broadcast to all attendees (chat icon placeholder added in EventDetail)
+- Phase 14: Completed — Notifications system + bug fixes
+- Discovery: In Progress — Public events, discoverable clubs, attendee privacy, location sharing
 
-## Discover feature (planned architecture)
+## Feature backlog
 
-### Existing infrastructure ready to use
-- `is_club_discoverable` boolean + `clubs_discoverable_idx` index on `clubs` table
-- `city`, `country`, `country_code` columns on both `clubs` and `players` tables
-- `CityLocationSelector` component with Mapbox Places API (`components/forms/CityLocationSelector.tsx`)
-- Discover placeholder div in `Clubs.tsx` (line 516-520)
-- `get_club_preview_by_slug` RPC (migration 20260423000003)
-- `fetchPublicEvents()` in `plannedEvents.ts` — fetches all upcoming public events
-- Public event RLS: `planned_events` SELECT allows `is_public = true` for any authenticated user
-- Public event RSVP: any authenticated user can RSVP to public events (migration 20260426000001)
+### Group A: Chat & Communication (branch: `feat/chat`)
+- **FEAT-20: Chat Architecture** — Audit and propose architecture for a shared chat system covering both club chat (entry: Club Details) and event chat (entry: Event Details). Same component, different room scope. Cover data model, RLS, and Realtime approach. No implementation. (Chat icon placeholder already added in EventDetail)
+- **Backlog: Email notifications** — Set up email notifications for key events
 
-### Planned architecture
-- **Route:** `/discover` — tabbed page with "Clubs" and "Events" tabs
-- **Access:** From Discover section in Clubs.tsx ("See all" link), no new bottom nav tab
-- **City filter:** Shared filter bar at top of page, default city from `players.city`
-- **Discover Clubs:** Query `clubs` where `is_club_discoverable = true`, optional city filter. Card layout (image, name, city, member count). Join via `request_join_by_slug` RPC
-- **Discover Events:** Use `fetchPublicEvents()`, reuse `EventCard` component. Tap → EventDetail (works for public events)
-- **Shared UI patterns:** `DiscoverCard` component, `CityFilter` bar, empty states ("No clubs/events found in [city]")
+### Group B: Event Enhancements (branch: `feat/event-enhancements`)
+- **FEAT-21: Event Image Suggestions** — Suggest volleyball-related images when creating an event, so the club always has an image. Field not required but suggestions help adoption. Use a public API or curated set.
+- **FEAT-22: Edit Guests from Club Details** — Add admin-only "Edit Guests" button on Club Details (audit where guests are currently managed). Update FAQ "Can I add guests?" to say the game must start first, then guests can be added by editing teams.
+- **Phase 15: Advanced Filters** — Custom month range, filter by city
 
-### Future extensions
-- Distance filter: add `lat`/`lng` to `locations` table, use PostGIS `ST_DWithin`
-- Country filter: `country_code` already exists on clubs
-- Category/sport filter: add `sport` column to clubs
+### Group C: Analytics & Stats (branch: `feat/analytics`)
+- **FEAT-23: Personal Analytics** — Profile page: games played, wins, losses, ties, total hours played. Include a club filter (all clubs or one).
+- **FEAT-24: Club Stats** — Club Details page: total encounters per year, attendance % of association members only, best team combinations by wins, total hours played. Document the "best combinations" formula.
+- **OPEN-Q-01: Analytics Design Doc** — Propose additional analytics (personal and club) that would add value, given available tables. Output as a design doc, no implementation.
 
-### RLS needed for implementation
-```sql
-CREATE POLICY "Anyone can view discoverable clubs"
-  ON public.clubs FOR SELECT
-  USING (is_club_discoverable = true AND status = 'active');
-```
+### Group D: Business & Legal (branch: `feat/business`)
+- **FEAT-25: Paid Tiers Architecture** — Audit and propose paid-tier architecture. Free-tier limits: max 2 clubs/user, max 20 members + 5 guests/club, inter-club tournaments require ≥1 paying user/club. Suggest schema, enforcement, payment provider, additional paywalled features. No implementation.
+- **FEAT-26: Terms & Conditions Page** — Add `/terms` page with placeholder content, link from homepage footer + signup consent.
 
-### Files to create when implementing
-- `apps/web/src/pages/Discover.tsx` — main discover page with tabs
-- `apps/web/src/components/discover/DiscoverClubCard.tsx` — club card for discover list
-- `apps/web/src/components/discover/CityFilter.tsx` — shared city filter bar
-- `apps/web/src/integrations/supabase/discover.ts` — fetch functions for discoverable clubs/events
-- `supabase/migrations/...discover_rls.sql` — RLS for discoverable clubs SELECT
+### Group E: Platform (branch: `feat/platform`)
+- **Backlog: Native iOS/Android app** — Build native app using monorepo
+- **Backlog: Tournament event type** — Complex, deferred
+- **Backlog: Skill Score progression** — Adjust algorithm, progression based on games/sets played
+- **Phase 16: Settings page & Notification preferences**
+
+## Discover feature (implemented)
+- Discoverable clubs + public events are live on `feat/discovery` branch
+- RLS, RPCs, and attendee privacy all in place
+- Future extensions: distance filter (PostGIS), country filter, category/sport filter

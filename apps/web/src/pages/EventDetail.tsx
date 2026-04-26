@@ -1017,8 +1017,8 @@ const EventDetail: React.FC = () => {
         <div className="space-y-3">
           <h2 className="text-lg font-bold">Hosted by</h2>
           <div className="rounded-xl border shadow-sm overflow-hidden">
-            {/* Club row — only show if club is discoverable */}
-            {event.clubs && event.clubs.is_club_discoverable && (
+            {/* Club row — always show when event has a club */}
+            {event.clubs && (
               <div
                 className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => navigate(`/clubs/${event.clubs!.id}`)}
@@ -1046,7 +1046,7 @@ const EventDetail: React.FC = () => {
             )}
 
             {/* Separator between club and creator */}
-            {event.clubs && event.clubs.is_club_discoverable && <div className="border-t mx-4" />}
+            {event.clubs && <div className="border-t mx-4" />}
 
             {/* Creator row */}
             <div className="flex items-center gap-3 px-4 py-3">
