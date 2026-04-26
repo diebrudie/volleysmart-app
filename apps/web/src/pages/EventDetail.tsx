@@ -181,12 +181,12 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side={isCompact ? "bottom" : "right"} className="h-[95dvh] flex flex-col p-0">
+      <SheetContent side={isCompact ? "bottom" : "right"} className="h-[95dvh] flex flex-col p-0 overflow-x-hidden">
         <SheetHeader className="px-4 pt-4 pb-2 border-b">
           <SheetTitle>Edit Event</SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-5">
           {/* Event Name */}
           <div className="space-y-1.5">
             <Label>Event Name</Label>
@@ -230,25 +230,28 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              className="w-full max-w-full"
             />
           </div>
 
           {/* Start + End time */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-3 min-w-0">
+            <div className="space-y-1.5 min-w-0">
               <Label>Start Time</Label>
               <Input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
+                className="w-full max-w-full"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <Label>End Time</Label>
               <Input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
+                className="w-full max-w-full"
               />
             </div>
           </div>
@@ -801,7 +804,7 @@ const EventDetail: React.FC = () => {
 
   const rsvpLabel = currentRsvp
     ? currentRsvp.status === "attending"
-      ? "Going"
+      ? isPastEvent ? "Attended" : "Going"
       : "Not Going"
     : "RSVP";
 
@@ -913,7 +916,7 @@ const EventDetail: React.FC = () => {
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground pb-1">
               <User className="h-4 w-4" />
               {currentRsvp.status === "attending"
-                ? "You're Going"
+                ? isPastEvent ? "You Attended" : "You're Going"
                 : "Not Going"}
             </div>
           )}
@@ -1214,10 +1217,10 @@ const EventDetail: React.FC = () => {
                   currentRsvp?.status === "declined" &&
                     "bg-red-600 hover:bg-red-700 text-white"
                 )}
-                disabled={rsvpMutation.isPending || cancelRsvpMutation.isPending || event.status === "cancelled"}
+                disabled={rsvpMutation.isPending || cancelRsvpMutation.isPending || event.status === "cancelled" || isPastEvent}
               >
                 {rsvpLabel}
-                <ChevronDown className="h-4 w-4" />
+                {!isPastEvent && <ChevronDown className="h-4 w-4" />}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">

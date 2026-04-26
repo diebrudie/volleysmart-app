@@ -78,55 +78,56 @@ interface OnboardingAnswers {
 }
 
 // Updated skill calculation function for 1-100 scale
+// Onboarding base score capped at 75 — remaining 25 points come from gameplay progression
 const calculateSkillLevel = (answers: OnboardingAnswers): number => {
   let totalScore = 0;
 
   const skillScores: Record<SkillLevelType, number> = {
-    "just-starting": 5,
-    intermediate: 15,
-    advanced: 25,
-    competitive: 30,
+    "just-starting": 4,
+    intermediate: 11,
+    advanced: 19,
+    competitive: 23,
   };
-  totalScore += skillScores[answers.generalSkillLevel as SkillLevelType] || 5;
+  totalScore += skillScores[answers.generalSkillLevel as SkillLevelType] || 4;
 
   const performanceScores: Record<GamePerformanceType, number> = {
-    "basic-contact": 5,
-    "consistent-play": 10,
-    "tactical-aware": 15,
-    "advanced-skills": 20,
-    "competitive-level": 25,
+    "basic-contact": 4,
+    "consistent-play": 8,
+    "tactical-aware": 11,
+    "advanced-skills": 15,
+    "competitive-level": 19,
   };
   totalScore +=
-    performanceScores[answers.gamePerformance as GamePerformanceType] || 5;
+    performanceScores[answers.gamePerformance as GamePerformanceType] || 4;
 
   const competitionScores: Record<CompetitionLevelType, number> = {
-    casual: 5,
-    friendly: 10,
-    amateur: 15,
-    federated: 20,
+    casual: 4,
+    friendly: 8,
+    amateur: 11,
+    federated: 15,
   };
   totalScore +=
-    competitionScores[answers.competitionLevel as CompetitionLevelType] || 5;
+    competitionScores[answers.competitionLevel as CompetitionLevelType] || 4;
 
   const trainingScores: Record<TrainingStatusType, number> = {
-    no: 3,
-    "used-to": 8,
-    currently: 15,
+    no: 2,
+    "used-to": 6,
+    currently: 11,
   };
   totalScore +=
-    trainingScores[answers.trainingStatus as TrainingStatusType] || 3;
+    trainingScores[answers.trainingStatus as TrainingStatusType] || 2;
 
   const experienceScores: Record<MatchExperienceType, number> = {
-    none: 2,
-    few: 4,
-    some: 6,
-    many: 8,
-    extensive: 10,
+    none: 1,
+    few: 3,
+    some: 5,
+    many: 6,
+    extensive: 7,
   };
   totalScore +=
-    experienceScores[answers.matchExperience as MatchExperienceType] || 2;
+    experienceScores[answers.matchExperience as MatchExperienceType] || 1;
 
-  const finalRating = Math.max(15, Math.min(100, totalScore));
+  const finalRating = Math.max(15, Math.min(75, totalScore));
   return finalRating;
 };
 
@@ -438,6 +439,7 @@ const PlayerOnboarding = () => {
           first_name: fn,
           last_name: ln,
           skill_rating: calculatedSkillLevel,
+          rating_history: [{ date: new Date().toISOString(), rating: calculatedSkillLevel, type: "onboarding" }],
           general_skill_level: answers.generalSkillLevel,
           training_status: answers.trainingStatus,
           competition_level: answers.competitionLevel,

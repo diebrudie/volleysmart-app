@@ -2,7 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { parseISO, format, startOfMonth, endOfMonth } from "date-fns";
-import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users, Plus, Compass, CalendarDays } from "lucide-react";
+import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users, Plus, Compass, CalendarDays, Swords, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -199,32 +199,73 @@ function useMonthlyStats(
   return useQuery({
     queryKey: ["home-monthly-stats", userId, playerId, clubIds],
     queryFn: async () => {
-      if (!userId || !playerId) return { eventsAttended: 0, gamesPlayed: 0 };
+      if (!userId || !playerId) return { gamesPlayed: 0, winRate: 0, hoursPlayed: 0 };
 
       const now = new Date();
       const monthStart = format(startOfMonth(now), "yyyy-MM-dd");
       const monthEnd = format(endOfMonth(now), "yyyy-MM-dd");
 
-      // Events attended this month
-      const { count: eventsAttended } = await supabase
-        .from("event_rsvp")
-        .select("id", { count: "exact", head: true })
-        .eq("player_id", playerId)
-        .eq("status", "attending")
-        .gte("responded_at", monthStart)
-        .lte("responded_at", monthEnd + "T23:59:59");
-
-      // Games played this month
-      const { count: gamesPlayed } = await supabase
+      // Games played this month + team info + event links
+      const { data: monthGPs } = await supabase
         .from("game_players")
-        .select("id, match_days!inner(date)", { count: "exact", head: true })
+        .select("match_day_id, team_name, match_days!inner(date, planned_event_id)")
         .eq("player_id", playerId)
         .gte("match_days.date" as any, monthStart)
         .lte("match_days.date" as any, monthEnd);
 
+      const gpsArr = monthGPs ?? [];
+      const monthMdIds = [...new Set(gpsArr.map((gp) => gp.match_day_id))];
+      const gamesPlayed = monthMdIds.length;
+
+      // Win rate from set scores
+      let winRate = 0;
+      if (monthMdIds.length > 0) {
+        const playerTeamMap = new Map<string, string>();
+        for (const gp of gpsArr) playerTeamMap.set(gp.match_day_id, gp.team_name);
+
+        const { data: sets } = await supabase
+          .from("matches")
+          .select("match_day_id, team_a_score, team_b_score")
+          .in("match_day_id", monthMdIds);
+
+        let setsWon = 0, setsTotal = 0;
+        for (const s of sets ?? []) {
+          if (s.team_a_score + s.team_b_score === 0) continue;
+          setsTotal++;
+          const team = playerTeamMap.get(s.match_day_id);
+          if ((team === "team_a" && s.team_a_score > s.team_b_score) ||
+              (team === "team_b" && s.team_b_score > s.team_a_score)) setsWon++;
+        }
+        winRate = setsTotal > 0 ? Math.round((setsWon / setsTotal) * 100) : 0;
+      }
+
+      // Hours from linked events
+      let hoursPlayed = 0;
+      const eventIds = gpsArr
+        .map((gp) => (gp.match_days as any)?.planned_event_id)
+        .filter(Boolean) as string[];
+      const uniqueEventIds = [...new Set(eventIds)];
+
+      if (uniqueEventIds.length > 0) {
+        const { data: events } = await supabase
+          .from("planned_events")
+          .select("start_time, end_time")
+          .in("id", uniqueEventIds);
+
+        for (const ev of events ?? []) {
+          if (ev.start_time && ev.end_time) {
+            const [sh, sm] = ev.start_time.split(":").map(Number);
+            const [eh, em] = ev.end_time.split(":").map(Number);
+            const hours = (eh * 60 + em - (sh * 60 + sm)) / 60;
+            if (hours > 0) hoursPlayed += hours;
+          }
+        }
+      }
+
       return {
-        eventsAttended: eventsAttended ?? 0,
-        gamesPlayed: gamesPlayed ?? 0,
+        gamesPlayed,
+        winRate,
+        hoursPlayed: Math.round(hoursPlayed * 10) / 10,
       };
     },
     enabled: !!userId && !!playerId && clubIds.length > 0,
@@ -466,28 +507,42 @@ const HomeDashboard: React.FC = () => {
             </div>
 
             {/* Card 3 — Monthly Stats */}
-            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
+            <div
+              className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 cursor-pointer hover:border-primary/40 transition-colors"
+              onClick={() => navigate(`/profile/${user?.id}?tab=analytics`)}
+            >
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                   This Month
                 </h3>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="grid grid-cols-3 gap-3 pt-2">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-foreground">
-                    {monthlyStats?.eventsAttended ?? 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Events Attended
-                  </p>
-                </div>
-                <div className="text-center">
+                  <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
                   <p className="text-3xl font-bold text-foreground">
                     {monthlyStats?.gamesPlayed ?? 0}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Games Played
+                    Games
+                  </p>
+                </div>
+                <div className="text-center">
+                  <TrendingUp className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
+                  <p className="text-3xl font-bold text-foreground">
+                    {monthlyStats?.winRate ?? 0}%
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Win Rate
+                  </p>
+                </div>
+                <div className="text-center">
+                  <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                  <p className="text-3xl font-bold text-foreground">
+                    {monthlyStats?.hoursPlayed ?? 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Hours
                   </p>
                 </div>
               </div>

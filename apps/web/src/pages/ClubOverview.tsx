@@ -16,6 +16,9 @@ import {
   LogOut,
   MessageCircle,
   UserCheck,
+  Trophy,
+  Clock,
+  Swords,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,8 +37,9 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { buildImageUrl } from "@/utils/buildImageUrl";
-import { fetchMemberCount, removeClubMembers, leaveClub, requestJoinClub } from "@/integrations/supabase/clubMembers";
+import { removeClubMembers, leaveClub, requestJoinClub } from "@/integrations/supabase/clubMembers";
 import { fetchClubPublicEvents } from "@/integrations/supabase/plannedEvents";
+import { fetchClubStats } from "@/integrations/supabase/clubStats";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { useIsCompact } from "@/hooks/use-compact";
 import { EventCard } from "@/components/events/EventCard";
@@ -48,6 +52,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 interface ClubDetails {
@@ -92,7 +102,7 @@ const ClubOverview: React.FC = () => {
   const { user } = useAuth();
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
-  const membersSectionRef = React.useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = React.useState<"members" | "stats">("members");
   const { data: currentPlayerId } = useCurrentPlayerId();
   const isCompact = useIsCompact();
   const { toast } = useToast();
@@ -103,6 +113,7 @@ const ClubOverview: React.FC = () => {
   const [deleting, setDeleting] = React.useState(false);
   const [leaveOpen, setLeaveOpen] = React.useState(false);
   const [leaving, setLeaving] = React.useState(false);
+  const [guestsOpen, setGuestsOpen] = React.useState(false);
 
   // Club details
   const { data: club, isLoading: clubLoading } = useQuery({
@@ -121,10 +132,13 @@ const ClubOverview: React.FC = () => {
     enabled: !!clubId,
   });
 
-  // Member count
+  // Member count — use RPC to bypass club_members RLS for non-members
   const { data: memberCount = 0 } = useQuery({
     queryKey: ["club-member-count", clubId],
-    queryFn: () => fetchMemberCount(clubId!),
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_club_member_count", { p_club_id: clubId! });
+      return (data as number) ?? 0;
+    },
     enabled: !!clubId,
   });
 
@@ -230,6 +244,37 @@ const ClubOverview: React.FC = () => {
     enabled: !!clubId,
   });
 
+  // Club stats
+  const [statsYear, setStatsYear] = React.useState(new Date().getFullYear());
+  const { data: clubStats } = useQuery({
+    queryKey: ["club-stats", clubId, statsYear],
+    queryFn: () => fetchClubStats(clubId!, statsYear),
+    enabled: !!clubId && isMember,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Guests for this club (admin only)
+  const { data: guests = [] } = useQuery({
+    queryKey: ["club-guests", clubId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("guests")
+        .select("player_id, created_at, reused_at, players!inner(first_name, last_name)")
+        .eq("club_id", clubId!)
+        .order("reused_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((row: any) => ({
+        player_id: row.player_id as string,
+        first_name: (row.players?.first_name as string) ?? "Guest",
+        last_name: (row.players?.last_name as string) ?? "Player",
+      }));
+    },
+    enabled: !!clubId && isAdmin,
+    staleTime: 5 * 60 * 1000,
+  });
+
+
   if (clubLoading || !club) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -324,17 +369,19 @@ const ClubOverview: React.FC = () => {
               <ActionButton
                 icon={<Users className="h-5 w-5" />}
                 label="Members"
-                onClick={() => membersSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                onClick={() => setActiveTab("members")}
               />
+              {isAdmin && (
+                <ActionButton
+                  icon={<UserCheck className="h-5 w-5" />}
+                  label="Guests"
+                  onClick={() => setGuestsOpen(true)}
+                />
+              )}
               <ActionButton
                 icon={<BarChart3 className="h-5 w-5" />}
-                label="Event Insights"
-                disabled
-              />
-              <ActionButton
-                icon={<TrendingUp className="h-5 w-5" />}
                 label="Stats"
-                disabled
+                onClick={() => setActiveTab("stats")}
               />
               {userRole && !isAdmin && (
                 <ActionButton
@@ -388,7 +435,7 @@ const ClubOverview: React.FC = () => {
               <h2 className="text-lg font-bold">Upcoming Event</h2>
               <button
                 type="button"
-                onClick={() => navigate("/events/new")}
+                onClick={() => navigate(`/events/new?clubId=${clubId}`)}
                 className="flex items-center gap-1 text-sm font-medium text-primary"
               >
                 <Plus className="h-4 w-4" />
@@ -411,7 +458,7 @@ const ClubOverview: React.FC = () => {
                 <Button
                   size="sm"
                   className="mt-3"
-                  onClick={() => navigate("/events/new")}
+                  onClick={() => navigate(`/events/new?clubId=${clubId}`)}
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
                   Create Event
@@ -443,108 +490,229 @@ const ClubOverview: React.FC = () => {
         )}
       </div>
 
-      {/* Members list — members only */}
+      {/* Members / Stats tabs — members only */}
       {isMember && (
-      <div className="px-4 pt-6" ref={membersSectionRef}>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold">Members</h2>
-          {isAdmin && (
-            <button
-              type="button"
-              className="text-sm font-medium text-primary"
-              onClick={() => {
-                setManageMode((v) => !v);
-                setSelectedUserIds([]);
-              }}
-            >
-              {manageMode ? "Done" : "Manage"}
-            </button>
-          )}
-        </div>
-        <div className="space-y-0">
-          {members.map((m, idx) => {
-            const canSelect =
-              manageMode && m.role !== "admin" && m.user_id !== user?.id;
-            const isSelected = selectedUserIds.includes(m.user_id);
-            const toggleSelect = () => {
-              if (!canSelect) return;
-              setSelectedUserIds((prev) =>
-                isSelected
-                  ? prev.filter((id) => id !== m.user_id)
-                  : [...prev, m.user_id]
-              );
-            };
-            return (
-              <div
-                key={m.user_id}
-                role={manageMode && canSelect ? "button" : undefined}
-                tabIndex={manageMode && canSelect ? 0 : undefined}
-                onClick={manageMode ? toggleSelect : undefined}
-                className={cn(
-                  "w-full flex items-center gap-3 py-3 text-left",
-                  manageMode && canSelect && "cursor-pointer hover:bg-muted/50 transition-colors",
-                  idx < members.length - 1 && "border-b"
-                )}
-              >
-                {manageMode && (
-                  <Checkbox
-                    checked={isSelected}
-                    disabled={!canSelect}
-                    className="shrink-0"
-                    onClick={(e) => e.stopPropagation()}
-                    onCheckedChange={toggleSelect}
-                  />
-                )}
-                <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0 flex items-center justify-center">
-                  {m.image_url ? (
-                    <img
-                      src={buildImageUrl(m.image_url, { w: 80 })}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-medium">
-                      {m.first_name?.[0]}
-                      {m.last_name?.[0]}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate flex items-center gap-1">
-                    {formatDisplayName(m.first_name, m.last_name)}
-                    {m.member_association && (
-                      <span className="shrink-0" title="Association member">🏐</span>
-                    )}
-                  </p>
-                  {m.primary_position && (
-                    <p className="text-xs text-muted-foreground">{m.primary_position}</p>
-                  )}
-                </div>
-                {m.role === "admin" && (
-                  <span className="text-xs text-muted-foreground shrink-0">Admin</span>
+        <div className="px-4 pt-6">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "members" | "stats")}>
+            <TabsList className="w-full">
+              <TabsTrigger value="members" className="flex-1">Members</TabsTrigger>
+              <TabsTrigger value="stats" className="flex-1">Stats</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="members" className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold">Members</h2>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-primary"
+                    onClick={() => {
+                      setManageMode((v) => !v);
+                      setSelectedUserIds([]);
+                    }}
+                  >
+                    {manageMode ? "Done" : "Manage"}
+                  </button>
                 )}
               </div>
-            );
-          })}
-        </div>
+              <div className="space-y-0">
+                {members.map((m, idx) => {
+                  const canSelect =
+                    manageMode && m.role !== "admin" && m.user_id !== user?.id;
+                  const isSelected = selectedUserIds.includes(m.user_id);
+                  const toggleSelect = () => {
+                    if (!canSelect) return;
+                    setSelectedUserIds((prev) =>
+                      isSelected
+                        ? prev.filter((id) => id !== m.user_id)
+                        : [...prev, m.user_id]
+                    );
+                  };
+                  return (
+                    <div
+                      key={m.user_id}
+                      role={manageMode && canSelect ? "button" : undefined}
+                      tabIndex={manageMode && canSelect ? 0 : undefined}
+                      onClick={manageMode ? toggleSelect : undefined}
+                      className={cn(
+                        "w-full flex items-center gap-3 py-3 text-left",
+                        manageMode && canSelect && "cursor-pointer hover:bg-muted/50 transition-colors",
+                        idx < members.length - 1 && "border-b"
+                      )}
+                    >
+                      {manageMode && (
+                        <Checkbox
+                          checked={isSelected}
+                          disabled={!canSelect}
+                          className="shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                          onCheckedChange={toggleSelect}
+                        />
+                      )}
+                      <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                        {m.image_url ? (
+                          <img
+                            src={buildImageUrl(m.image_url, { w: 80 })}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm font-medium">
+                            {m.first_name?.[0]}
+                            {m.last_name?.[0]}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate flex items-center gap-1">
+                          {formatDisplayName(m.first_name, m.last_name)}
+                          {m.member_association && (
+                            <span className="shrink-0" title="Association member">🏐</span>
+                          )}
+                        </p>
+                        {m.primary_position && (
+                          <p className="text-xs text-muted-foreground">{m.primary_position}</p>
+                        )}
+                      </div>
+                      {m.role === "admin" && (
+                        <span className="text-xs text-muted-foreground shrink-0">Admin</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
-        {/* Remove selected members */}
-        {manageMode && selectedUserIds.length > 0 && (
-          <Button
-            variant="destructive"
-            size="sm"
-            className="mt-4 w-full"
-            onClick={() => setConfirmOpen(true)}
-          >
-            <Trash2 className="h-4 w-4 mr-1.5" />
-            Remove {selectedUserIds.length}{" "}
-            {selectedUserIds.length === 1 ? "member" : "members"}
-          </Button>
-        )}
-      </div>
+              {/* Remove selected members */}
+              {manageMode && selectedUserIds.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-4 w-full"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                  Remove {selectedUserIds.length}{" "}
+                  {selectedUserIds.length === 1 ? "member" : "members"}
+                </Button>
+              )}
+            </TabsContent>
+
+            <TabsContent value="stats" className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold">Stats</h2>
+                <select
+                  className="text-sm bg-muted/50 border rounded-md px-2 py-1"
+                  value={statsYear}
+                  onChange={(e) => setStatsYear(Number(e.target.value))}
+                >
+                  {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+
+              {clubStats && clubStats.totalEncounters > 0 ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-xl border bg-card p-3 text-center">
+                      <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
+                      <p className="text-xl font-bold">{clubStats.totalEncounters}</p>
+                      <p className="text-[10px] text-muted-foreground">Games</p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 text-center">
+                      <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                      <p className="text-xl font-bold">{clubStats.totalHours}</p>
+                      <p className="text-[10px] text-muted-foreground">Hours</p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 text-center">
+                      <Users className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
+                      <p className="text-xl font-bold">{clubStats.attendanceRate}%</p>
+                      <p className="text-[10px] text-muted-foreground">Attendance</p>
+                    </div>
+                  </div>
+
+                  {clubStats.topCombinations.length > 0 && (
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Trophy className="h-4 w-4 text-amber-500" />
+                        <p className="text-sm font-semibold">Best Team Combinations</p>
+                      </div>
+                      <div className="space-y-3">
+                        {clubStats.topCombinations.map((combo, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {combo.playerNames.join(", ")}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {combo.wins}W / {combo.gamesPlayed} games · {combo.winRate}% win rate
+                              </p>
+                            </div>
+                            {i === 0 && (
+                              <span className="text-amber-500 text-lg shrink-0 ml-2">🏆</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-xl border bg-card p-6 text-center">
+                  <BarChart3 className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No games played in {statsYear}</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
       )}
 
       </div>{/* end max-w-2xl wrapper */}
+
+      {/* Guests sheet (admin only) */}
+      <Sheet open={guestsOpen} onOpenChange={setGuestsOpen}>
+        <SheetContent side={isCompact ? "bottom" : "right"} className={cn(isCompact && "max-h-[75vh] rounded-t-2xl", "overflow-y-auto")}>
+          <SheetHeader>
+            <SheetTitle>Guests ({guests.length})</SheetTitle>
+          </SheetHeader>
+          <div className="py-4 space-y-1">
+            {guests.length > 0 ? (
+              guests.map((g) => (
+                <div key={g.player_id} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
+                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <span className="text-xs font-medium">{g.first_name[0]}{g.last_name[0]}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{g.first_name} {g.last_name}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-xs text-destructive hover:text-destructive/80 shrink-0"
+                    onClick={async () => {
+                      const { error } = await supabase.from("guests").delete().eq("player_id", g.player_id).eq("club_id", clubId!);
+                      if (!error) {
+                        await supabase.from("players").delete().eq("id", g.player_id);
+                        queryClient.invalidateQueries({ queryKey: ["club-guests", clubId] });
+                        toast({ title: "Guest removed", duration: 1500 });
+                      } else {
+                        toast({ title: "Error", description: "Failed to remove guest", variant: "destructive", duration: 2000 });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">No guests added yet.</p>
+                <p className="text-xs text-muted-foreground mt-1">Guests are added when starting a game.</p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Confirm remove dialog */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

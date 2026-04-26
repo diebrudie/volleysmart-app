@@ -26,6 +26,7 @@ import {
 import {
   MoreVertical,
   UserPlus,
+  Users,
   Edit,
   Trash,
   MapPin,
@@ -104,21 +105,6 @@ const Clubs = () => {
       setClubId(lastClub);
     }
   }, [setClubId]);
-
-  // Observe scroll position for dot indicators
-  useEffect(() => {
-    const el = sliderRef.current;
-    if (!el) return;
-    const handleScroll = () => {
-      const scrollLeft = el.scrollLeft;
-      const cardWidth = el.firstElementChild
-        ? (el.firstElementChild as HTMLElement).offsetWidth + 12 // gap
-        : 1;
-      setActiveSlide(Math.round(scrollLeft / cardWidth));
-    };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // Query to fetch all clubs user is a member of
   const { data: userClubs, isLoading } = useQuery({
@@ -229,10 +215,33 @@ const Clubs = () => {
       // Filter out clubs user is already in or has pending request for
       const pendingIds = pendingRequests.map((r) => r.club_id);
       const excludeIds = new Set([...userClubIds, ...pendingIds]);
-      return (data ?? []).filter((c) => !excludeIds.has(c.id));
+      const filtered = (data ?? []).filter((c) => !excludeIds.has(c.id));
+      // Fetch member counts via RPC (bypasses club_members RLS)
+      const withCounts = await Promise.all(
+        filtered.map(async (c) => {
+          const { data: count } = await supabase.rpc("get_club_member_count", { p_club_id: c.id });
+          return { ...c, memberCount: (count as number) ?? 0 };
+        })
+      );
+      return withCounts;
     },
     enabled: !!user?.id,
   });
+
+  // Observe scroll position for dot indicators
+  useEffect(() => {
+    const el = sliderRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const scrollLeft = el.scrollLeft;
+      const cardWidth = el.firstElementChild
+        ? (el.firstElementChild as HTMLElement).offsetWidth + 12 // gap
+        : 1;
+      setActiveSlide(Math.round(scrollLeft / cardWidth));
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [userClubs]);
 
   const handleCreateClub = () => navigate("/new-club");
 
@@ -562,6 +571,12 @@ const Clubs = () => {
                       <p className="text-xs text-muted-foreground truncate mt-0.5 flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
                         {club.city}
+                      </p>
+                    )}
+                    {club.memberCount > 0 && (
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {club.memberCount} {club.memberCount === 1 ? "member" : "members"}
                       </p>
                     )}
                   </button>
