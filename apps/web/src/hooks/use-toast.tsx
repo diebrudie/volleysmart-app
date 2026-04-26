@@ -59,7 +59,7 @@ export const useToast = () => {
       if (props.duration !== Infinity) {
         setTimeout(() => {
           removeToast(id);
-        }, props.duration || 5000);
+        }, props.duration || 2000);
       }
       
       return {

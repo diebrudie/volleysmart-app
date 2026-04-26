@@ -181,7 +181,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side={isCompact ? "bottom" : "right"} className="h-[95dvh] flex flex-col p-0">
+      <SheetContent side={isCompact ? "bottom" : "right"} className="h-[95dvh] flex flex-col p-0 overflow-x-hidden">
         <SheetHeader className="px-4 pt-4 pb-2 border-b">
           <SheetTitle>Edit Event</SheetTitle>
         </SheetHeader>

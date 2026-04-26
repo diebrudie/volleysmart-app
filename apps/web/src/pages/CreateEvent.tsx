@@ -1,7 +1,7 @@
 import * as React from "react";
 import { format, addDays, isBefore, startOfDay } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -197,6 +197,8 @@ const CreateEvent: React.FC = () => {
   const isCompact = useIsCompact();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedClubId = searchParams.get("clubId");
   const queryClient = useQueryClient();
 
   const [step, setStep] = React.useState(1);
@@ -286,14 +288,17 @@ const CreateEvent: React.FC = () => {
     staleTime: 30 * 60 * 1000,
   });
 
-  // Pre-select first club if user has clubs; default to NO_CLUB otherwise
+  // Pre-select club: prefer ?clubId param, then first club, then NO_CLUB
   React.useEffect(() => {
-    if (userClubs.length > 0 && !form.club_id) {
+    if (form.club_id) return; // already chosen
+    if (preselectedClubId && userClubs.some((c) => c.id === preselectedClubId)) {
+      set("club_id", preselectedClubId);
+    } else if (userClubs.length > 0) {
       set("club_id", userClubs[0].id);
-    } else if (userClubs.length === 0 && !form.club_id) {
+    } else if (userClubs.length === 0) {
       set("club_id", NO_CLUB);
     }
-  }, [userClubs, form.club_id]);
+  }, [userClubs, form.club_id, preselectedClubId]);
 
   const createMutation = useMutation({
     mutationFn: async (input: CreateEventInput) => {

@@ -432,7 +432,7 @@ const ClubOverview: React.FC = () => {
               <h2 className="text-lg font-bold">Upcoming Event</h2>
               <button
                 type="button"
-                onClick={() => navigate("/events/new")}
+                onClick={() => navigate(`/events/new?clubId=${clubId}`)}
                 className="flex items-center gap-1 text-sm font-medium text-primary"
               >
                 <Plus className="h-4 w-4" />
@@ -455,7 +455,7 @@ const ClubOverview: React.FC = () => {
                 <Button
                   size="sm"
                   className="mt-3"
-                  onClick={() => navigate("/events/new")}
+                  onClick={() => navigate(`/events/new?clubId=${clubId}`)}
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
                   Create Event
