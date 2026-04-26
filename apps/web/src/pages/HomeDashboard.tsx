@@ -61,7 +61,7 @@ function useTodaysEvents(userId: string | undefined, playerId: string | null | u
            clubs!planned_events_club_id_fkey(name),
            event_rsvp(status, player_id)`;
 
-      // 1. Club events today
+      // 1. Club events today (skip events the user declined)
       let todayEvent: any = null;
       if (clubIds.length) {
         const { data, error } = await supabase
@@ -70,9 +70,14 @@ function useTodaysEvents(userId: string | undefined, playerId: string | null | u
           .in("club_id", clubIds)
           .eq("date", todayStr)
           .in("status", ["open", "confirmed"])
-          .limit(1);
+          .limit(5);
         if (error) throw error;
-        todayEvent = data?.[0] ?? null;
+        // Pick first event the user hasn't declined
+        todayEvent = (data ?? []).find((ev: any) => {
+          if (!playerId) return true;
+          const userRsvp = (ev.event_rsvp ?? []).find((r: any) => r.player_id === playerId);
+          return !userRsvp || userRsvp.status !== "declined";
+        }) ?? null;
       }
 
       // 2. If no club event, check RSVPed public events today

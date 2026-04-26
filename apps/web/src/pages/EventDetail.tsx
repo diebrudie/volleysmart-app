@@ -373,10 +373,20 @@ const EventDetail: React.FC = () => {
       if (!user?.id) return null;
       const { data } = await supabase
         .from("players")
-        .select("id")
+        .select("id, first_name, last_name, image_url, player_positions(is_primary, positions(name))")
         .eq("user_id", user.id)
         .single();
-      return data;
+      if (!data) return null;
+      const primaryPos = ((data as any).player_positions ?? []).find(
+        (pp: any) => pp.is_primary
+      );
+      return {
+        id: data.id,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        image_url: data.image_url,
+        primary_position: primaryPos?.positions?.name ?? null,
+      };
     },
     enabled: !!user?.id,
   });
@@ -1076,77 +1086,117 @@ const EventDetail: React.FC = () => {
         {/* RSVP section */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold">{attendingCount} Going</h2>
-          {isPublicNonMember && !hasRsvped ? (
-            <p className="text-sm text-muted-foreground">RSVP to see who's going</p>
-          ) : isPublicNonMember ? (
-            /* Anonymized list for non-member attendees (GDPR) */
-            attendingCount > 0 ? (
-              <div className="space-y-2">
-                {Array.from({ length: attendingCount }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                      <User className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Player {i + 1}</p>
-                      {attendees[i]?.primary_position && (
-                        <p className="text-xs text-muted-foreground">
-                          {attendees[i].primary_position}
-                        </p>
+          {(() => {
+            // Not RSVPed or declined → prompt to RSVP (public non-members)
+            if (isPublicNonMember && !isAttending) {
+              return (
+                <p className="text-sm text-muted-foreground">RSVP to see who's going</p>
+              );
+            }
+
+            // Public event, non-organizer (including club members) → anonymized + own row
+            if (event.is_public && !isCreator) {
+              if (attendingCount === 0) {
+                return <p className="text-sm text-muted-foreground">No responses yet</p>;
+              }
+              // Show own row (real data) + anonymized rows for others
+              const isCurrentPlayerAttending = isAttending && currentPlayer;
+              const othersCount = attendingCount - (isCurrentPlayerAttending ? 1 : 0);
+              return (
+                <div className="space-y-2">
+                  {/* Current user's own row with real data */}
+                  {isCurrentPlayerAttending && (
+                    <div className="flex items-center gap-3">
+                      {currentPlayer.image_url ? (
+                        <img
+                          src={currentPlayer.image_url}
+                          alt=""
+                          className="h-10 w-10 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/avatar-placeholder.svg";
+                          }}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                        </div>
                       )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No responses yet</p>
-            )
-          ) : attendees.length > 0 || attendingCount > 0 ? (
-            <div className="space-y-2">
-              {attendees.map((a) => (
-                <div key={a.player_id} className="flex items-center gap-3">
-                  {a.image_url ? (
-                    <img
-                      src={a.image_url}
-                      alt=""
-                      className="h-10 w-10 rounded-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "/avatar-placeholder.svg";
-                      }}
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                      <User className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">
+                          {currentPlayer.first_name} {currentPlayer.last_name?.charAt(0)}.
+                        </p>
+                        {currentPlayer.primary_position && (
+                          <p className="text-xs text-muted-foreground">
+                            {currentPlayer.primary_position}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
-                  <div>
-                    <p className="text-sm font-medium">
-                      {a.first_name} {a.last_name?.charAt(0)}.
-                    </p>
-                    {a.primary_position && (
-                      <p className="text-xs text-muted-foreground">
-                        {a.primary_position}
-                      </p>
-                    )}
-                  </div>
+                  {/* Anonymized rows for other attendees */}
+                  {Array.from({ length: othersCount }).map((_, i) => (
+                    <div key={`anon-${i}`} className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Player {i + 1}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              {/* Placeholder rows for attendees not visible via RLS */}
-              {Array.from({ length: Math.max(0, attendingCount - attendees.length) }).map((_, i) => (
-                <div key={`placeholder-${i}`} className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                    <User className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Player {attendees.length + i + 1}</p>
-                  </div>
+              );
+            }
+
+            // Private/club event — full attendee list (organizer or member)
+            if (attendees.length > 0 || attendingCount > 0) {
+              return (
+                <div className="space-y-2">
+                  {attendees.map((a) => (
+                    <div key={a.player_id} className="flex items-center gap-3">
+                      {a.image_url ? (
+                        <img
+                          src={a.image_url}
+                          alt=""
+                          className="h-10 w-10 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/avatar-placeholder.svg";
+                          }}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">
+                          {a.first_name} {a.last_name?.charAt(0)}.
+                        </p>
+                        {a.primary_position && (
+                          <p className="text-xs text-muted-foreground">
+                            {a.primary_position}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {/* Placeholder rows for attendees not visible via RLS */}
+                  {Array.from({ length: Math.max(0, attendingCount - attendees.length) }).map((_, i) => (
+                    <div key={`placeholder-${i}`} className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Player {attendees.length + i + 1}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No responses yet</p>
-          )}
+              );
+            }
+
+            return <p className="text-sm text-muted-foreground">No responses yet</p>;
+          })()}
         </div>
       </div>
 
