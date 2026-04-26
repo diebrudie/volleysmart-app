@@ -186,7 +186,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
           <SheetTitle>Edit Event</SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-5">
           {/* Event Name */}
           <div className="space-y-1.5">
             <Label>Event Name</Label>
@@ -230,25 +230,28 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              className="w-full max-w-full"
             />
           </div>
 
           {/* Start + End time */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-3 min-w-0">
+            <div className="space-y-1.5 min-w-0">
               <Label>Start Time</Label>
               <Input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
+                className="w-full max-w-full"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <Label>End Time</Label>
               <Input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
+                className="w-full max-w-full"
               />
             </div>
           </div>

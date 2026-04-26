@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useClub } from "@/contexts/ClubContext";
@@ -59,18 +59,6 @@ const InviteMembers = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-background border-b px-4 py-3 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleGoToClub}
-          className="p-2 -ml-2 rounded-full hover:bg-muted"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="text-lg font-semibold truncate">Invite Members</h1>
-      </div>
-
       {/* Content */}
       <div className="flex-1 flex flex-col items-center px-4 pt-8 pb-10 md:pt-12">
         <div className="w-full max-w-md">
