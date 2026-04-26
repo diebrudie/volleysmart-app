@@ -40,6 +40,7 @@ import Archive from "@/pages/Archive";
 import EventDetail from "@/pages/EventDetail";
 import ClubOverview from "@/pages/ClubOverview";
 import Notifications from "@/pages/Notifications";
+import DiscoverEvents from "@/pages/DiscoverEvents";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -163,6 +164,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <UpcomingEvents />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/discover-events"
+      element={
+        <ProtectedRoute>
+          <DiscoverEvents />
         </ProtectedRoute>
       }
     />

@@ -45,7 +45,9 @@ export async function fetchMemberCount(clubId: string): Promise<number> {
   const { count, error } = await supabase
     .from("club_members")
     .select("*", { count: "exact", head: true })
-    .eq("club_id", clubId);
+    .eq("club_id", clubId)
+    .eq("is_active", true)
+    .eq("status", "active");
   if (error) throw error;
   return count ?? 0;
 }
@@ -340,4 +342,15 @@ export async function removeClubMembers(
     p_user_ids: userIds,
   });
   if (error) throw error;
+}
+
+/** Request to join a discoverable club (no invite token needed). */
+export async function requestJoinClub(
+  clubId: string
+): Promise<"pending_approval" | "already_member" | "already_pending"> {
+  const { data, error } = await supabase.rpc("request_join_club", {
+    p_club_id: clubId,
+  });
+  if (error) throw error;
+  return (data as { status: string })?.status as any;
 }

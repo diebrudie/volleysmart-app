@@ -27,12 +27,15 @@ interface EventLocationSelectorProps {
   value: string | null;
   onValueChange: (locationId: string | null) => void;
   placeholder?: string;
+  /** [lng, lat] to bias Mapbox address suggestions toward a location */
+  proximity?: [number, number] | null;
 }
 
 export const EventLocationSelector = ({
   clubId,
   value,
   onValueChange,
+  proximity,
 }: EventLocationSelectorProps) => {
   const { user } = useAuth();
   const [locationName, setLocationName] = useState("");
@@ -95,6 +98,7 @@ export const EventLocationSelector = ({
         .from("locations")
         .select("id, name, address, club_id")
         .is("club_id", null)
+        .eq("created_by", user!.id)
         .order("name");
 
       const [clubResult, personalResult] = await Promise.all([
@@ -187,6 +191,9 @@ export const EventLocationSelector = ({
       url.searchParams.set("types", "address,poi,place");
       url.searchParams.set("language", "en");
       url.searchParams.set("limit", "5");
+      if (proximity) {
+        url.searchParams.set("proximity", proximity.join(","));
+      }
       url.searchParams.set("access_token", token);
 
       try {
@@ -204,7 +211,7 @@ export const EventLocationSelector = ({
       active = false;
       clearTimeout(t);
     };
-  }, [address, token, originalAddress]);
+  }, [address, token, originalAddress, proximity]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -302,6 +309,7 @@ export const EventLocationSelector = ({
           club_id: clubId,
           name: trimmedName,
           address: address.trim(),
+          created_by: user?.id,
         };
         if (latLng) {
           insertPayload.latitude = latLng[1];
@@ -322,6 +330,7 @@ export const EventLocationSelector = ({
               club_id: clubId,
               name: trimmedName,
               address: address.trim() || null,
+              created_by: user?.id,
             })
             .select("id")
             .single();

@@ -27,7 +27,7 @@ export interface PlannedEvent {
   status: EventStatus;
   created_at: string;
   updated_at: string;
-  clubs?: { id: string; name: string; image_url?: string | null } | null;
+  clubs?: { id: string; name: string; image_url?: string | null; is_club_discoverable?: boolean | null } | null;
   locations?: { name: string; address?: string | null } | null;
   cancellation_reason?: string | null;
   cancellation_comment?: string | null;
@@ -86,17 +86,49 @@ export async function fetchUpcomingEvents(
     .order("date", { ascending: true })
     .order("start_time", { ascending: true });
 
-  const [clubResult, personalResult] = await Promise.all([
+  // Public events the user RSVPed to (so they appear in "my events")
+  const { data: playerRow } = await supabase
+    .from("players")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  let rsvpedEventIds: string[] = [];
+  if (playerRow?.id) {
+    const { data: rsvps } = await supabase
+      .from("event_rsvp")
+      .select("event_id")
+      .eq("player_id", playerRow.id);
+    rsvpedEventIds = (rsvps ?? []).map((r) => r.event_id);
+  }
+
+  const rsvpedPublicPromise =
+    rsvpedEventIds.length > 0
+      ? supabase
+          .from("planned_events")
+          .select(selectFields)
+          .eq("is_public", true)
+          .in("status", ["open", "confirmed"])
+          .gte("date", today)
+          .in("id", rsvpedEventIds)
+          .order("date", { ascending: true })
+          .order("start_time", { ascending: true })
+      : Promise.resolve({ data: [] as any[], error: null });
+
+  const [clubResult, personalResult, rsvpedPublicResult] = await Promise.all([
     clubEventsPromise,
     personalEventsPromise,
+    rsvpedPublicPromise,
   ]);
 
   if (clubResult.error) throw clubResult.error;
   if (personalResult.error) throw personalResult.error;
+  if (rsvpedPublicResult.error) throw rsvpedPublicResult.error;
 
   const all = [
     ...((clubResult.data ?? []) as PlannedEvent[]),
     ...((personalResult.data ?? []) as PlannedEvent[]),
+    ...((rsvpedPublicResult.data ?? []) as PlannedEvent[]),
   ];
 
   // Deduplicate (in case a clubless event was also returned) and sort
@@ -113,6 +145,53 @@ export async function fetchUpcomingEvents(
   );
 
   return unique;
+}
+
+/** Fetch all upcoming public events (for Discover or direct link access). */
+export async function fetchPublicEvents(): Promise<PlannedEvent[]> {
+  const today = new Date().toISOString().split("T")[0];
+
+  const selectFields = `
+    *,
+    clubs!planned_events_club_id_fkey(id, name, image_url),
+    locations!planned_events_location_id_fkey(name, address),
+    event_rsvp(status, player_id)
+  `;
+
+  const { data, error } = await supabase
+    .from("planned_events")
+    .select(selectFields)
+    .eq("is_public", true)
+    .in("status", ["open", "confirmed"])
+    .gte("date", today)
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true })
+    .limit(50);
+
+  if (error) throw error;
+  return (data ?? []) as PlannedEvent[];
+}
+
+/** Fetch upcoming public events for a specific club. */
+export async function fetchClubPublicEvents(
+  clubId: string
+): Promise<PlannedEvent[]> {
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data, error } = await supabase
+    .from("planned_events")
+    .select(
+      `*, clubs!planned_events_club_id_fkey(id, name, image_url), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id)`
+    )
+    .eq("club_id", clubId)
+    .eq("is_public", true)
+    .in("status", ["open", "confirmed"])
+    .gte("date", today)
+    .order("date", { ascending: true })
+    .limit(10);
+
+  if (error) throw error;
+  return (data ?? []) as PlannedEvent[];
 }
 
 export interface PastEventRow {
@@ -270,6 +349,19 @@ export async function upsertRsvp(
   if (error) throw error;
 }
 
+/** Cancel / withdraw an RSVP entirely. */
+export async function deleteRsvp(
+  eventId: string,
+  playerId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("event_rsvp")
+    .delete()
+    .eq("event_id", eventId)
+    .eq("player_id", playerId);
+  if (error) throw error;
+}
+
 /** Fetch a single planned event by ID with full details. */
 export async function fetchSingleEvent(
   eventId: string
@@ -277,7 +369,7 @@ export async function fetchSingleEvent(
   const { data, error } = await supabase
     .from("planned_events")
     .select(
-      `*, clubs!planned_events_club_id_fkey(id, name, image_url), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id, responded_at)`
+      `*, clubs!planned_events_club_id_fkey(id, name, image_url, is_club_discoverable), locations!planned_events_location_id_fkey(name, address), event_rsvp(status, player_id, responded_at)`
     )
     .eq("id", eventId)
     .single();

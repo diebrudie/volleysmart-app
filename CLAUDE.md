@@ -1,15 +1,16 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Phase 14 — Notifications (in progress)
-- Last change: Notifications system, share messages, bug fixes
-- Current branch: `feat/notifications` (branched from `feat/phase-11-club-overview`)
-- Next step: Apply repair migration 000010, verify notifications end-to-end, then merge branches to main
+- Working on: Discovery feature — refinements & privacy fixes
+- Last change: Attendee privacy, location sharing, InviteMembers redesign, join request fixes
+- Current branch: `feat/discovery` (branched from `feat/phase-11-club-overview`)
+- Next step: Apply migrations 000004 + 000005, verify discovery end-to-end
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
 - `main` → `feat/phase-9-create-event-improvements` → `feat/phase-10-quick-fixes-polish` → `feat/phase-11-club-overview` → `feat/phase-12-game-flow-unification`
 - `feat/notifications` branched from `feat/phase-11-club-overview`
+- `feat/discovery` branched from `feat/phase-11-club-overview`
 
 ## Phase 14 in-progress work (Notifications + Bug Fixes)
 1. ~~**Notification triggers (DB)**~~: 9 types — join request/accepted/rejected, member joined, event created/cancelled, RSVP, RSVP deadline reminder (pg_cron), game started
@@ -38,6 +39,33 @@ Branches stack on each other (not merged to main yet):
 - `apps/web/src/integrations/supabase/notifications.ts` — fetch, mark read, unread count
 - `apps/web/src/pages/Notifications.tsx` — notifications list page
 - `apps/web/src/components/common/RealtimeAppEffect.tsx` — realtime subscription
+
+## Discovery feature (in progress)
+1. ~~**Discover Events on Home**~~: Public events section on HomeDashboard, links to /discover-events
+2. ~~**DiscoverEvents page**~~: `/discover-events` route with public event list
+3. ~~**Non-member ClubOverview**~~: Join button via `request_join_club` RPC for discoverable clubs
+4. ~~**Discoverable clubs on Clubs page**~~: Horizontal scroll section
+5. ~~**Public EventDetail**~~: Organizer as "First L.", chat placeholder, club visibility gating
+6. ~~**RSVP for public events**~~: Attend/decline/cancel RSVP, RSVPed events in upcoming list
+7. ~~**Attendee privacy (GDPR)**~~: Organizer sees all via SECURITY DEFINER RPC; non-organizers see anonymized "Player N" + own row with real data
+8. ~~**Public badge**~~: On EventCard (meta section) and EventDetail (badges section)
+9. ~~**EventCard overflow fix**~~: Public badge moved to meta section, overflow-hidden on content
+10. ~~**Today's slider for RSVPed events**~~: Non-organizer participants see today's public events
+11. ~~**Declined events hidden from Today slider**~~: Club + public events with declined RSVP skipped
+12. ~~**Fix request_join_club**~~: Updated requested_at on re-request, fixed notification type + payload
+13. ~~**InviteMembers redesign**~~: Modern card layout, "Go to Club" button, replace: true navigation
+14. ~~**ClubOverview back nav**~~: Goes to /clubs instead of navigate(-1)
+15. ~~**Location sharing model**~~: Added `created_by` column, personal locations only visible to creator
+16. **Migrations to apply**: 20260426000004 (fix request_join_club), 20260426000005 (location created_by)
+
+### Discovery key files
+- `apps/web/src/pages/DiscoverEvents.tsx` — public events list page
+- `apps/web/src/pages/HomeDashboard.tsx` — today's slider + discover events section
+- `supabase/migrations/20260426000001_public_event_rls.sql` — public event RLS
+- `supabase/migrations/20260426000002_discoverable_clubs_rls.sql` — discoverable clubs RLS + request_join_club
+- `supabase/migrations/20260426000003_public_event_player_visibility.sql` — get_event_attendees RPC
+- `supabase/migrations/20260426000004_fix_request_join_club.sql` — fix notification type + requested_at
+- `supabase/migrations/20260426000005_location_created_by.sql` — location privacy (created_by + RLS)
 
 ## Phase 12 in-progress work (Game Flow Unification)
 1. **Unified `/game/:matchDayId` page**: New `Game.tsx` merges Dashboard + GameDetail — teams, SetBox scores, actions dropdown, edit scores table, location editing, delete, "New game w/ same teams"
@@ -126,10 +154,36 @@ Branches stack on each other (not merged to main yet):
 - Phase 11: Completed — Club Overview page (hero, members, settings sheet, RSVP display, admin management)
 - Phase 12: Completed — Game Flow Unification (unified /game/:matchDayId, Start Game from events, nav link migration)
 - Phase 13: Completed — UI Consistency Pass (Profile redesign, Clubs/JoinClub/NewClub/Members semantic styling)
-- Phase 14: In Progress — Notifications system + bug fixes
-- Phase 15: Advanced Filters (custom month range, filter by city)
-- Phase 16: Settings page & Notification preferences
-- Backlog: Set up email notifications
-- Backlog: Build native iOS and Android app using monorepo
-- Backlog: Tournament event type (complex, deferred)
-- Backlog: Skill Score progression system (adjust algorithm, progression based on games/sets played)
+- Phase 14: Completed — Notifications system + bug fixes
+- Discovery: In Progress — Public events, discoverable clubs, attendee privacy, location sharing
+
+## Feature backlog
+
+### Group A: Chat & Communication (branch: `feat/chat`)
+- **FEAT-20: Chat Architecture** — Audit and propose architecture for a shared chat system covering both club chat (entry: Club Details) and event chat (entry: Event Details). Same component, different room scope. Cover data model, RLS, and Realtime approach. No implementation. (Chat icon placeholder already added in EventDetail)
+- **Backlog: Email notifications** — Set up email notifications for key events
+
+### Group B: Event Enhancements (branch: `feat/event-enhancements`)
+- **FEAT-21: Event Image Suggestions** — Suggest volleyball-related images when creating an event, so the club always has an image. Field not required but suggestions help adoption. Use a public API or curated set.
+- **FEAT-22: Edit Guests from Club Details** — Add admin-only "Edit Guests" button on Club Details (audit where guests are currently managed). Update FAQ "Can I add guests?" to say the game must start first, then guests can be added by editing teams.
+- **Phase 15: Advanced Filters** — Custom month range, filter by city
+
+### Group C: Analytics & Stats (branch: `feat/analytics`)
+- **FEAT-23: Personal Analytics** — Profile page: games played, wins, losses, ties, total hours played. Include a club filter (all clubs or one).
+- **FEAT-24: Club Stats** — Club Details page: total encounters per year, attendance % of association members only, best team combinations by wins, total hours played. Document the "best combinations" formula.
+- **OPEN-Q-01: Analytics Design Doc** — Propose additional analytics (personal and club) that would add value, given available tables. Output as a design doc, no implementation.
+
+### Group D: Business & Legal (branch: `feat/business`)
+- **FEAT-25: Paid Tiers Architecture** — Audit and propose paid-tier architecture. Free-tier limits: max 2 clubs/user, max 20 members + 5 guests/club, inter-club tournaments require ≥1 paying user/club. Suggest schema, enforcement, payment provider, additional paywalled features. No implementation.
+- **FEAT-26: Terms & Conditions Page** — Add `/terms` page with placeholder content, link from homepage footer + signup consent.
+
+### Group E: Platform (branch: `feat/platform`)
+- **Backlog: Native iOS/Android app** — Build native app using monorepo
+- **Backlog: Tournament event type** — Complex, deferred
+- **Backlog: Skill Score progression** — Adjust algorithm, progression based on games/sets played
+- **Phase 16: Settings page & Notification preferences**
+
+## Discover feature (implemented)
+- Discoverable clubs + public events are live on `feat/discovery` branch
+- RLS, RPCs, and attendee privacy all in place
+- Future extensions: distance filter (PostGIS), country filter, category/sport filter

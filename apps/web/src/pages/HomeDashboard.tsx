@@ -2,13 +2,16 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { parseISO, format, startOfMonth, endOfMonth } from "date-fns";
-import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users, Plus } from "lucide-react";
+import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users, Plus, Compass, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { useIsCompact } from "@/hooks/use-compact";
 import Navbar from "@/components/layout/Navbar";
+import { fetchPublicEvents } from "@/integrations/supabase/plannedEvents";
+import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
+import { EventCard } from "@/components/events/EventCard";
 
 // ─── Data hooks ──────────────────────────────────────────────────────────────
 
@@ -53,21 +56,51 @@ function useTodaysEvents(userId: string | undefined, playerId: string | null | u
       const clubIds = (memberships ?? [])
         .map((m) => m.club_id)
         .filter(Boolean) as string[];
-      if (!clubIds.length) return null;
 
-      const { data, error } = await supabase
-        .from("planned_events")
-        .select(
-          `id, title, date, club_id,
+      const selectFields = `id, title, date, club_id,
            clubs!planned_events_club_id_fkey(name),
-           event_rsvp(status, player_id)`
-        )
-        .in("club_id", clubIds)
-        .eq("date", todayStr)
-        .in("status", ["open", "confirmed"])
-        .limit(1);
-      if (error) throw error;
-      const todayEvent = data?.[0] ?? null;
+           event_rsvp(status, player_id)`;
+
+      // 1. Club events today (skip events the user declined)
+      let todayEvent: any = null;
+      if (clubIds.length) {
+        const { data, error } = await supabase
+          .from("planned_events")
+          .select(selectFields)
+          .in("club_id", clubIds)
+          .eq("date", todayStr)
+          .in("status", ["open", "confirmed"])
+          .limit(5);
+        if (error) throw error;
+        // Pick first event the user hasn't declined
+        todayEvent = (data ?? []).find((ev: any) => {
+          if (!playerId) return true;
+          const userRsvp = (ev.event_rsvp ?? []).find((r: any) => r.player_id === playerId);
+          return !userRsvp || userRsvp.status !== "declined";
+        }) ?? null;
+      }
+
+      // 2. If no club event, check RSVPed public events today
+      if (!todayEvent && playerId) {
+        const { data: rsvps } = await supabase
+          .from("event_rsvp")
+          .select("event_id")
+          .eq("player_id", playerId)
+          .eq("status", "attending");
+        const rsvpedIds = (rsvps ?? []).map((r) => r.event_id);
+        if (rsvpedIds.length) {
+          const { data } = await supabase
+            .from("planned_events")
+            .select(selectFields)
+            .eq("is_public", true)
+            .eq("date", todayStr)
+            .in("status", ["open", "confirmed"])
+            .in("id", rsvpedIds)
+            .limit(1);
+          todayEvent = data?.[0] ?? null;
+        }
+      }
+
       if (!todayEvent) return null;
 
       // Check if a game already exists for this event
@@ -212,6 +245,41 @@ const HomeDashboard: React.FC = () => {
   const { data: todaysEvent } = useTodaysEvents(user?.id, playerId);
   const { data: lastGame } = useLastGame(clubIds);
   const { data: monthlyStats } = useMonthlyStats(user?.id, playerId, clubIds);
+
+  // Discover events: public events from clubs user is NOT a member of
+  const { data: userClubIds = [] } = useQuery({
+    queryKey: ["user-club-ids", user?.id],
+    queryFn: () => fetchUserClubIds(user!.id),
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: publicEvents = [] } = useQuery({
+    queryKey: ["public-events"],
+    queryFn: fetchPublicEvents,
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Player's city for empty state message
+  const { data: playerCity } = useQuery({
+    queryKey: ["player-city", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("players")
+        .select("city")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data?.city ?? null;
+    },
+    enabled: !!user?.id,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const discoverEvents = React.useMemo(() => {
+    const clubIdSet = new Set(userClubIds);
+    return publicEvents.filter((e) => !clubIdSet.has(e.club_id)).slice(0, 3);
+  }, [publicEvents, userClubIds]);
 
   // Slider state
   const sliderRef = React.useRef<HTMLDivElement>(null);
@@ -445,10 +513,51 @@ const HomeDashboard: React.FC = () => {
 
           {/* ─── Discover Events ──────────────────────────────────── */}
           <section className="mt-8">
-            <h2 className="text-xl font-bold text-foreground mb-4">
-              Discover Events
-            </h2>
-            <div className="h-44 rounded-xl bg-muted/50 border border-border" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Compass className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-xl font-bold text-foreground">
+                  Discover Events
+                </h2>
+              </div>
+              {discoverEvents.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/discover-events")}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  See more
+                </button>
+              )}
+            </div>
+
+            {discoverEvents.length > 0 ? (
+              <div className="grid gap-3">
+                {discoverEvents.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    currentPlayerId={playerId}
+                    onClick={() => navigate(`/events/${event.id}`)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 gap-4 text-center rounded-xl border bg-card">
+                <CalendarDays className="h-10 w-10 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  No public events happening in{" "}
+                  {playerCity || "your area"}
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => navigate("/events/new")}
+                >
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Create Event
+                </Button>
+              </div>
+            )}
           </section>
         </div>
       </main>

@@ -21,6 +21,8 @@ import {
   EyeOff,
   XCircle,
   Repeat,
+  MessageCircle,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +64,7 @@ import {
   cancelPlannedEvent,
   cancelRecurringSeries,
   upsertRsvp,
+  deleteRsvp,
   updatePlannedEvent,
   updateRecurringSeries,
   type PlannedEvent,
@@ -74,6 +77,8 @@ import { toast } from "sonner";
 import { assignTeams } from "@/features/teams/assignLineup";
 import type { PlayerForTeams } from "@/features/teams/assignLineup";
 import { normalizeRole } from "@/features/teams/positions";
+import { formatShortName } from "@/lib/formatName";
+import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
 import { format } from "date-fns";
 
 // ─── Event type display config ──────────────────────────────────────────────
@@ -368,10 +373,20 @@ const EventDetail: React.FC = () => {
       if (!user?.id) return null;
       const { data } = await supabase
         .from("players")
-        .select("id")
+        .select("id, first_name, last_name, image_url, player_positions(is_primary, positions(name))")
         .eq("user_id", user.id)
         .single();
-      return data;
+      if (!data) return null;
+      const primaryPos = ((data as any).player_positions ?? []).find(
+        (pp: any) => pp.is_primary
+      );
+      return {
+        id: data.id,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        image_url: data.image_url,
+        primary_position: primaryPos?.positions?.name ?? null,
+      };
     },
     enabled: !!user?.id,
   });
@@ -408,6 +423,14 @@ const EventDetail: React.FC = () => {
     enabled: !!event?.club_id,
   });
 
+  // Fetch user's club IDs (for membership check on public events)
+  const { data: userClubIds = [] } = useQuery({
+    queryKey: ["user-club-ids", user?.id],
+    queryFn: () => fetchUserClubIds(user!.id),
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch attendee profiles (players who RSVPed), ordered by RSVP time
   const attendingRsvps =
     event?.event_rsvp?.filter((r) => r.status === "attending") ?? [];
@@ -422,6 +445,24 @@ const EventDetail: React.FC = () => {
     queryKey: ["event-attendees", eventId, attendingPlayerIds],
     queryFn: async (): Promise<Attendee[]> => {
       if (!attendingPlayerIds.length) return [];
+
+      // Try RPC first (works for organizer + club members, returns empty for others)
+      const { data: rpcRows } = await supabase.rpc("get_event_attendees", {
+        p_event_id: eventId,
+      });
+
+      if (rpcRows && rpcRows.length > 0) {
+        return (rpcRows as any[]).map((r) => ({
+          player_id: r.player_id,
+          status: "attending" as RsvpStatus,
+          first_name: r.first_name,
+          last_name: r.last_name,
+          image_url: r.image_url,
+          primary_position: r.primary_position ?? null,
+        }));
+      }
+
+      // Fallback: direct query (works for club members via existing RLS)
       const { data: players } = await supabase
         .from("players")
         .select(
@@ -468,6 +509,19 @@ const EventDetail: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
     },
     onError: () => toast.error("Failed to update RSVP"),
+  });
+
+  const cancelRsvpMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentPlayer?.id || !eventId) throw new Error("Missing data");
+      await deleteRsvp(eventId, currentPlayer.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["event-attendees", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
+    },
+    onError: () => toast.error("Failed to cancel RSVP"),
   });
 
   // Update mutation
@@ -754,8 +808,13 @@ const EventDetail: React.FC = () => {
   const typeConfig = EVENT_TYPE_CONFIG[event.event_type];
 
   const creatorName = creatorProfile
-    ? `${creatorProfile.first_name} ${creatorProfile.last_name}`
+    ? formatShortName(creatorProfile.first_name, creatorProfile.last_name)
     : "Unknown";
+  const isMember = event.club_id
+    ? userClubIds.includes(event.club_id)
+    : false;
+  const hasRsvped = !!currentRsvp;
+  const isPublicNonMember = event.is_public && !isCreator && !isMember;
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-32">
@@ -867,7 +926,12 @@ const EventDetail: React.FC = () => {
             {formattedDate} at {startTime}
           </p>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {!event.is_public && (
+            {event.is_public ? (
+              <span className="inline-flex items-center gap-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
+                <Globe className="h-3 w-3" />
+                Public
+              </span>
+            ) : (
               <span className="inline-block text-xs font-medium bg-muted px-2 py-0.5 rounded">
                 Club Members Only
               </span>
@@ -953,7 +1017,7 @@ const EventDetail: React.FC = () => {
         <div className="space-y-3">
           <h2 className="text-lg font-bold">Hosted by</h2>
           <div className="rounded-xl border shadow-sm overflow-hidden">
-            {/* Club row */}
+            {/* Club row — always show when event has a club */}
             {event.clubs && (
               <div
                 className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
@@ -986,7 +1050,7 @@ const EventDetail: React.FC = () => {
 
             {/* Creator row */}
             <div className="flex items-center gap-3 px-4 py-3">
-              {creatorProfile?.image_url ? (
+              {!isPublicNonMember && creatorProfile?.image_url ? (
                 <img
                   src={creatorProfile.image_url}
                   alt=""
@@ -1001,12 +1065,20 @@ const EventDetail: React.FC = () => {
                   <User className="h-6 w-6 text-muted-foreground" />
                 </div>
               )}
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="font-semibold">{creatorName}</p>
-                <p className="text-sm text-muted-foreground">
-                  {isCreator ? "Organizer" : "Organizer"}
-                </p>
+                <p className="text-sm text-muted-foreground">Organizer</p>
               </div>
+              {!isCreator && (
+                <button
+                  type="button"
+                  disabled
+                  className="h-9 w-9 flex items-center justify-center rounded-full border opacity-40 cursor-not-allowed"
+                  aria-label="Chat with organizer (coming soon)"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1014,41 +1086,117 @@ const EventDetail: React.FC = () => {
         {/* RSVP section */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold">{attendingCount} Going</h2>
-          {attendees.length > 0 ? (
-            <div className="space-y-2">
-              {attendees.map((a) => (
-                <div key={a.player_id} className="flex items-center gap-3">
-                  {a.image_url ? (
-                    <img
-                      src={a.image_url}
-                      alt=""
-                      className="h-10 w-10 rounded-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "/avatar-placeholder.svg";
-                      }}
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                      <User className="h-5 w-5 text-muted-foreground" />
+          {(() => {
+            // Not RSVPed or declined → prompt to RSVP (public non-members)
+            if (isPublicNonMember && !isAttending) {
+              return (
+                <p className="text-sm text-muted-foreground">RSVP to see who's going</p>
+              );
+            }
+
+            // Public event, non-organizer (including club members) → anonymized + own row
+            if (event.is_public && !isCreator) {
+              if (attendingCount === 0) {
+                return <p className="text-sm text-muted-foreground">No responses yet</p>;
+              }
+              // Show own row (real data) + anonymized rows for others
+              const isCurrentPlayerAttending = isAttending && currentPlayer;
+              const othersCount = attendingCount - (isCurrentPlayerAttending ? 1 : 0);
+              return (
+                <div className="space-y-2">
+                  {/* Current user's own row with real data */}
+                  {isCurrentPlayerAttending && (
+                    <div className="flex items-center gap-3">
+                      {currentPlayer.image_url ? (
+                        <img
+                          src={currentPlayer.image_url}
+                          alt=""
+                          className="h-10 w-10 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/avatar-placeholder.svg";
+                          }}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">
+                          {currentPlayer.first_name} {currentPlayer.last_name?.charAt(0)}.
+                        </p>
+                        {currentPlayer.primary_position && (
+                          <p className="text-xs text-muted-foreground">
+                            {currentPlayer.primary_position}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
-                  <div>
-                    <p className="text-sm font-medium">
-                      {a.first_name} {a.last_name?.charAt(0)}.
-                    </p>
-                    {a.primary_position && (
-                      <p className="text-xs text-muted-foreground">
-                        {a.primary_position}
-                      </p>
-                    )}
-                  </div>
+                  {/* Anonymized rows for other attendees */}
+                  {Array.from({ length: othersCount }).map((_, i) => (
+                    <div key={`anon-${i}`} className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Player {i + 1}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No responses yet</p>
-          )}
+              );
+            }
+
+            // Private/club event — full attendee list (organizer or member)
+            if (attendees.length > 0 || attendingCount > 0) {
+              return (
+                <div className="space-y-2">
+                  {attendees.map((a) => (
+                    <div key={a.player_id} className="flex items-center gap-3">
+                      {a.image_url ? (
+                        <img
+                          src={a.image_url}
+                          alt=""
+                          className="h-10 w-10 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/avatar-placeholder.svg";
+                          }}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">
+                          {a.first_name} {a.last_name?.charAt(0)}.
+                        </p>
+                        {a.primary_position && (
+                          <p className="text-xs text-muted-foreground">
+                            {a.primary_position}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {/* Placeholder rows for attendees not visible via RLS */}
+                  {Array.from({ length: Math.max(0, attendingCount - attendees.length) }).map((_, i) => (
+                    <div key={`placeholder-${i}`} className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Player {attendees.length + i + 1}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+
+            return <p className="text-sm text-muted-foreground">No responses yet</p>;
+          })()}
         </div>
       </div>
 
@@ -1066,7 +1214,7 @@ const EventDetail: React.FC = () => {
                   currentRsvp?.status === "declined" &&
                     "bg-red-600 hover:bg-red-700 text-white"
                 )}
-                disabled={rsvpMutation.isPending || event.status === "cancelled"}
+                disabled={rsvpMutation.isPending || cancelRsvpMutation.isPending || event.status === "cancelled"}
               >
                 {rsvpLabel}
                 <ChevronDown className="h-4 w-4" />
@@ -1085,6 +1233,14 @@ const EventDetail: React.FC = () => {
               >
                 Not Going
               </DropdownMenuItem>
+              {currentRsvp && (
+                <DropdownMenuItem
+                  className="gap-2 text-muted-foreground"
+                  onClick={() => cancelRsvpMutation.mutate()}
+                >
+                  Cancel RSVP
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 

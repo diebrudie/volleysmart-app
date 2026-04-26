@@ -14,6 +14,8 @@ import {
   MapPin,
   Trash2,
   LogOut,
+  MessageCircle,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,7 +34,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { buildImageUrl } from "@/utils/buildImageUrl";
-import { fetchMemberCount, removeClubMembers, leaveClub } from "@/integrations/supabase/clubMembers";
+import { fetchMemberCount, removeClubMembers, leaveClub, requestJoinClub } from "@/integrations/supabase/clubMembers";
+import { fetchClubPublicEvents } from "@/integrations/supabase/plannedEvents";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { useIsCompact } from "@/hooks/use-compact";
 import { EventCard } from "@/components/events/EventCard";
@@ -57,6 +60,7 @@ interface ClubDetails {
   slug: string;
   city: string | null;
   country: string | null;
+  is_club_discoverable: boolean;
 }
 
 interface MemberRow {
@@ -107,7 +111,7 @@ const ClubOverview: React.FC = () => {
       const { data, error } = await supabase
         .from("clubs")
         .select(
-          "id, name, image_url, created_at, created_by, description, slug, city, country"
+          "id, name, image_url, created_at, created_by, description, slug, city, country, is_club_discoverable"
         )
         .eq("id", clubId!)
         .single();
@@ -143,6 +147,16 @@ const ClubOverview: React.FC = () => {
 
   const isAdmin =
     userRole === "admin" || club?.created_by === user?.id;
+  const isMember = !!userRole;
+  const [joinRequesting, setJoinRequesting] = React.useState(false);
+  const [joinStatus, setJoinStatus] = React.useState<string | null>(null);
+
+  // Public events for non-member view
+  const { data: publicEvents = [] } = useQuery({
+    queryKey: ["club-public-events", clubId],
+    queryFn: () => fetchClubPublicEvents(clubId!),
+    enabled: !!clubId && !isMember,
+  });
 
   // Next upcoming event for this club
   const { data: nextEvent } = useQuery({
@@ -245,7 +259,7 @@ const ClubOverview: React.FC = () => {
         {/* Back button */}
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/clubs")}
           className="absolute top-4 left-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center"
           aria-label="Go back"
         >
@@ -300,75 +314,137 @@ const ClubOverview: React.FC = () => {
           className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          <ActionButton
-            icon={<UserPlus className="h-5 w-5" />}
-            label="Invite"
-            onClick={() => setInviteOpen(true)}
-          />
-          <ActionButton
-            icon={<Users className="h-5 w-5" />}
-            label="Members"
-            onClick={() => membersSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-          />
-          <ActionButton
-            icon={<BarChart3 className="h-5 w-5" />}
-            label="Event Insights"
-            disabled
-          />
-          <ActionButton
-            icon={<TrendingUp className="h-5 w-5" />}
-            label="Stats"
-            disabled
-          />
-          {userRole && !isAdmin && (
-            <ActionButton
-              icon={<LogOut className="h-5 w-5" />}
-              label="Leave"
-              onClick={() => setLeaveOpen(true)}
-            />
+          {isMember ? (
+            <>
+              <ActionButton
+                icon={<UserPlus className="h-5 w-5" />}
+                label="Invite"
+                onClick={() => setInviteOpen(true)}
+              />
+              <ActionButton
+                icon={<Users className="h-5 w-5" />}
+                label="Members"
+                onClick={() => membersSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              />
+              <ActionButton
+                icon={<BarChart3 className="h-5 w-5" />}
+                label="Event Insights"
+                disabled
+              />
+              <ActionButton
+                icon={<TrendingUp className="h-5 w-5" />}
+                label="Stats"
+                disabled
+              />
+              {userRole && !isAdmin && (
+                <ActionButton
+                  icon={<LogOut className="h-5 w-5" />}
+                  label="Leave"
+                  onClick={() => setLeaveOpen(true)}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              <ActionButton
+                icon={joinStatus === "pending_approval" ? <UserCheck className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+                label={joinStatus === "pending_approval" ? "Pending" : "Join"}
+                disabled={joinRequesting || joinStatus === "pending_approval"}
+                onClick={async () => {
+                  setJoinRequesting(true);
+                  try {
+                    const result = await requestJoinClub(clubId!);
+                    setJoinStatus(result);
+                    if (result === "pending_approval") {
+                      toast({ title: "Request sent", description: "The club admin will review your request.", duration: 2000 });
+                    } else if (result === "already_member") {
+                      toast({ title: "Already a member", duration: 2000 });
+                    } else if (result === "already_pending") {
+                      setJoinStatus("pending_approval");
+                      toast({ title: "Request already pending", duration: 2000 });
+                    }
+                  } catch {
+                    toast({ title: "Error", description: "Failed to send join request.", variant: "destructive", duration: 2000 });
+                  } finally {
+                    setJoinRequesting(false);
+                  }
+                }}
+              />
+              <ActionButton
+                icon={<MessageCircle className="h-5 w-5" />}
+                label="Message"
+                disabled
+              />
+            </>
           )}
         </div>
       </div>
 
-      {/* Upcoming Event */}
+      {/* Upcoming Event(s) */}
       <div className="px-4 pt-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold">Upcoming Event</h2>
-          <button
-            type="button"
-            onClick={() => navigate("/events/new")}
-            className="flex items-center gap-1 text-sm font-medium text-primary"
-          >
-            <Plus className="h-4 w-4" />
-            Create an event
-          </button>
-        </div>
+        {isMember ? (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold">Upcoming Event</h2>
+              <button
+                type="button"
+                onClick={() => navigate("/events/new")}
+                className="flex items-center gap-1 text-sm font-medium text-primary"
+              >
+                <Plus className="h-4 w-4" />
+                Create an event
+              </button>
+            </div>
 
-        {nextEvent ? (
-          <EventCard
-            event={nextEvent}
-            currentPlayerId={currentPlayerId}
-            onClick={() => navigate(`/events/${nextEvent.id}`)}
-          />
+            {nextEvent ? (
+              <EventCard
+                event={nextEvent}
+                currentPlayerId={currentPlayerId}
+                onClick={() => navigate(`/events/${nextEvent.id}`)}
+              />
+            ) : (
+              <div className="rounded-2xl border bg-card p-6 text-center">
+                <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  No upcoming events
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => navigate("/events/new")}
+                >
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Create Event
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
-          <div className="rounded-2xl border bg-card p-6 text-center">
-            <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">
-              No upcoming events
-            </p>
-            <Button
-              size="sm"
-              className="mt-3"
-              onClick={() => navigate("/events/new")}
-            >
-              <Plus className="h-4 w-4 mr-1.5" />
-              Create Event
-            </Button>
-          </div>
+          <>
+            <h2 className="text-lg font-bold mb-3">Upcoming Events</h2>
+            {publicEvents.length > 0 ? (
+              <div className="space-y-3">
+                {publicEvents.map((ev) => (
+                  <EventCard
+                    key={ev.id}
+                    event={ev}
+                    currentPlayerId={currentPlayerId}
+                    onClick={() => navigate(`/events/${ev.id}`)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border bg-card p-6 text-center">
+                <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No upcoming events</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Members list */}
+      {/* Members list — members only */}
+      {isMember && (
       <div className="px-4 pt-6" ref={membersSectionRef}>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold">Members</h2>
@@ -466,6 +542,7 @@ const ClubOverview: React.FC = () => {
           </Button>
         )}
       </div>
+      )}
 
       </div>{/* end max-w-2xl wrapper */}
 

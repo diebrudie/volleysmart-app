@@ -253,10 +253,45 @@ const CreateEvent: React.FC = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Pre-select first club if user has clubs and hasn't chosen yet
+  // Fetch player's city for location proximity bias
+  const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+  const { data: playerCity } = useQuery({
+    queryKey: ["player-city", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("players")
+        .select("city")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data?.city ?? null;
+    },
+    enabled: !!user?.id,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Geocode player's city once → [lng, lat] for Mapbox proximity
+  const { data: cityProximity = null } = useQuery({
+    queryKey: ["geocode-city", playerCity],
+    queryFn: async (): Promise<[number, number] | null> => {
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        playerCity!
+      )}.json?types=place&limit=1&access_token=${mapboxToken}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const json = await res.json();
+      const center = json.features?.[0]?.center;
+      return center ? [center[0], center[1]] : null;
+    },
+    enabled: !!playerCity && !!mapboxToken,
+    staleTime: 30 * 60 * 1000,
+  });
+
+  // Pre-select first club if user has clubs; default to NO_CLUB otherwise
   React.useEffect(() => {
     if (userClubs.length > 0 && !form.club_id) {
       set("club_id", userClubs[0].id);
+    } else if (userClubs.length === 0 && !form.club_id) {
+      set("club_id", NO_CLUB);
     }
   }, [userClubs, form.club_id]);
 
@@ -778,6 +813,7 @@ const CreateEvent: React.FC = () => {
               clubId={resolvedClubId}
               value={form.location_id}
               onValueChange={(id) => set("location_id", id)}
+              proximity={cityProximity}
             />
 
             {/* RSVP deadline */}
