@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin, Trophy, Swords, Clock, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPlayerStats } from "@/integrations/supabase/playerStats";
+import { recalculateAndPersist, calculateGameplayBonus } from "@/integrations/supabase/skillProgression";
 import CityLocationSelector, { type LocationValue } from "@/components/forms/CityLocationSelector";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -174,6 +175,18 @@ const Profile = () => {
     enabled: !!profile?.id,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Recalculate skill rating when stats load (own profile only)
+  useEffect(() => {
+    if (!isOwnProfile || !profile?.id || !playerStats || profile.skill_rating == null) return;
+    recalculateAndPersist(profile.id, profile.skill_rating, playerStats).then(
+      (newRating) => {
+        if (newRating != null) {
+          setProfile((prev) => prev ? { ...prev, skill_rating: newRating } : prev);
+        }
+      }
+    );
+  }, [isOwnProfile, profile?.id, profile?.skill_rating, playerStats]);
 
   const fetchProfile = async () => {
     try {
@@ -679,7 +692,15 @@ const Profile = () => {
           {profile.skill_rating != null && (
             <div className="text-right">
               <p className="text-xs text-primary/70 font-medium">Skill</p>
-              <p className="text-lg font-bold text-foreground">{profile.skill_rating}</p>
+              <div className="flex items-baseline gap-1.5 justify-end">
+                <p className="text-lg font-bold text-foreground">{profile.skill_rating}</p>
+                {playerStats && (() => {
+                  const bonus = Math.round(calculateGameplayBonus(playerStats));
+                  return bonus > 0 ? (
+                    <span className="text-xs font-medium text-emerald-600">+{bonus}</span>
+                  ) : null;
+                })()}
+              </div>
             </div>
           )}
         </div>
