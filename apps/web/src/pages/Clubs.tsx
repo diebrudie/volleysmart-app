@@ -106,21 +106,6 @@ const Clubs = () => {
     }
   }, [setClubId]);
 
-  // Observe scroll position for dot indicators
-  useEffect(() => {
-    const el = sliderRef.current;
-    if (!el) return;
-    const handleScroll = () => {
-      const scrollLeft = el.scrollLeft;
-      const cardWidth = el.firstElementChild
-        ? (el.firstElementChild as HTMLElement).offsetWidth + 12 // gap
-        : 1;
-      setActiveSlide(Math.round(scrollLeft / cardWidth));
-    };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [userClubs]);
-
   // Query to fetch all clubs user is a member of
   const { data: userClubs, isLoading } = useQuery({
     queryKey: ["userClubs", user?.id],
@@ -242,6 +227,21 @@ const Clubs = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Observe scroll position for dot indicators
+  useEffect(() => {
+    const el = sliderRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const scrollLeft = el.scrollLeft;
+      const cardWidth = el.firstElementChild
+        ? (el.firstElementChild as HTMLElement).offsetWidth + 12 // gap
+        : 1;
+      setActiveSlide(Math.round(scrollLeft / cardWidth));
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [userClubs]);
 
   const handleCreateClub = () => navigate("/new-club");
 
