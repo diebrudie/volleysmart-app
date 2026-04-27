@@ -1131,17 +1131,28 @@ const Profile = () => {
                       </div>
 
                       {isOwnProfile && (
-                        <div className="flex items-center justify-between pt-3 border-t border-border">
-                          <Label htmlFor={`assoc-${club.club_id}`} className="text-sm text-foreground">
-                            Member Association
-                          </Label>
-                          <Switch
-                            id={`assoc-${club.club_id}`}
-                            checked={club.member_association}
-                            onCheckedChange={(checked) =>
-                              handleToggleAssociation(club.membership_id, checked)
-                            }
-                          />
+                        <div className="pt-3 border-t border-border space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor={`assoc-${club.club_id}`} className="text-sm text-foreground">
+                              Member Association
+                            </Label>
+                            <Switch
+                              id={`assoc-${club.club_id}`}
+                              checked={club.member_association}
+                              onCheckedChange={(checked) =>
+                                handleToggleAssociation(club.membership_id, checked)
+                              }
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              className="text-xs text-destructive hover:underline"
+                              onClick={() => setShowLeaveDialog(club.club_id)}
+                            >
+                              Leave Club
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
