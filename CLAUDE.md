@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Analytics + polish — ready to merge
-- Last change: Skill score fix (0-100 scale, migration 000007), ClubOverview real tabs, Edit Event overflow fix, past-event RSVP, Clubs slider dots, Profile deleted clubs filter, README update
-- Current branch: `feat/analytics` (branched from `feat/discovery`)
-- Next step: Apply migrations 20260426000006 + 20260426000007, merge to main
+- Working on: FEAT-28 Analytics Filter Redesign
+- Last change: Profile analytics filter icon + popover with year and club filters, year param in fetchPlayerStats
+- Current branch: `feat/analytics-filter-redesign` (branched from `main`)
+- Next step: Merge to main
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):

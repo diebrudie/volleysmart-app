@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin, Trophy, Swords, Clock, TrendingUp, Tag } from "lucide-react";
+import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin, Trophy, Swords, Clock, TrendingUp, Tag, SlidersHorizontal } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPlayerStats } from "@/integrations/supabase/playerStats";
 import { recalculateAndPersist, calculateGameplayBonus } from "@/integrations/supabase/skillProgression";
@@ -109,6 +109,7 @@ const Profile = () => {
   const [cityLocation, setCityLocation] = useState<LocationValue | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
   const [statsClubFilter, setStatsClubFilter] = useState<string>("all");
+  const [statsYear, setStatsYear] = useState<string>("all");
 
   const isOwnProfile = user?.id === userId;
 
@@ -167,11 +168,12 @@ const Profile = () => {
 
   // Player stats query
   const { data: playerStats } = useQuery({
-    queryKey: ["player-stats", profile?.id, statsClubFilter],
+    queryKey: ["player-stats", profile?.id, statsClubFilter, statsYear],
     queryFn: () =>
       fetchPlayerStats(
         profile!.id,
-        statsClubFilter === "all" ? null : statsClubFilter
+        statsClubFilter === "all" ? null : statsClubFilter,
+        statsYear === "all" ? null : Number(statsYear)
       ),
     enabled: !!profile?.id,
     staleTime: 5 * 60 * 1000,
@@ -277,15 +279,15 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from("club_members")
-        .select("id, club_id, role, joined_at, member_association, clubs(name)")
+        .select("id, club_id, role, joined_at, member_association, clubs!inner(name, status)")
         .eq("user_id", userId)
         .eq("is_active", true)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("clubs.status", "active");
 
       if (!error && data) {
         setUserClubs(
           data
-            .filter((m) => (m.clubs as any)?.name) // exclude deleted clubs
             .map((m) => ({
               membership_id: m.id as string,
               club_id: m.club_id as string,
@@ -305,16 +307,56 @@ const Profile = () => {
     if (!userId) return;
     setIsLeaving(true);
     try {
-      const { error } = await supabase
-        .from("club_members")
-        .update({ is_active: false, status: "removed" as any })
-        .eq("club_id", clubId)
-        .eq("user_id", userId);
+      const club = userClubs.find((c) => c.club_id === clubId);
 
-      if (error) throw error;
+      if (club?.role === "admin") {
+        // Admin: check if there are other active members
+        const { count } = await supabase
+          .from("club_members")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", clubId)
+          .eq("is_active", true)
+          .eq("status", "active");
 
-      setUserClubs((prev) => prev.filter((c) => c.club_id !== clubId));
-      toast({ title: "Left club", duration: 1500 });
+        if ((count ?? 0) > 1) {
+          toast({
+            title: "Can't delete club",
+            description: "Remove all other members first, or transfer admin role.",
+            variant: "destructive",
+            duration: 2000,
+          });
+          return;
+        }
+
+        // Sole member — soft-delete the club
+        const { error } = await supabase
+          .from("clubs")
+          .update({ status: "deleted" as any })
+          .eq("id", clubId);
+
+        if (error) throw error;
+
+        setUserClubs((prev) => prev.filter((c) => c.club_id !== clubId));
+        toast({ title: "Club deleted", duration: 1500 });
+      } else {
+        // Non-admin: use leave_club RPC
+        const { data, error } = await supabase.rpc("leave_club", { p_club_id: clubId });
+        if (error) throw error;
+
+        const result = (data as any)?.[0]?.result_status;
+        if (result === "sole_admin") {
+          toast({
+            title: "Can't leave",
+            description: "You are the only admin. Transfer admin role first.",
+            variant: "destructive",
+            duration: 2000,
+          });
+          return;
+        }
+
+        setUserClubs((prev) => prev.filter((c) => c.club_id !== clubId));
+        toast({ title: "Left club", duration: 1500 });
+      }
     } catch (error) {
       console.error("Error leaving club:", error);
       toast({
@@ -620,6 +662,11 @@ const Profile = () => {
 
   const editFormContent = (
     <div className="space-y-4">
+      {/* Email */}
+      {userEmail && (
+        <p className="text-center text-sm text-muted-foreground">{userEmail}</p>
+      )}
+
       {/* Photo */}
       <div className="flex justify-center">
         <div className="relative">
@@ -848,24 +895,66 @@ const Profile = () => {
           <TabsContent value="analytics">
             {playerStats && (playerStats.gamesPlayed > 0 || isOwnProfile) && (
               <div className="py-4 space-y-4">
-                {/* Club filter */}
-                {userClubs.length > 1 && (
-                  <div>
-                    <Select value={statsClubFilter} onValueChange={setStatsClubFilter}>
-                      <SelectTrigger className="h-9 w-48 bg-muted/50">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Clubs</SelectItem>
-                        {userClubs.map((c) => (
-                          <SelectItem key={c.club_id} value={c.club_id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {/* Filter bar */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {statsYear !== "all" && (
+                      <span className="bg-muted px-2 py-0.5 rounded-md text-xs font-medium">{statsYear}</span>
+                    )}
+                    {statsClubFilter !== "all" && (
+                      <span className="bg-muted px-2 py-0.5 rounded-md text-xs font-medium truncate max-w-[140px]">
+                        {userClubs.find((c) => c.club_id === statsClubFilter)?.name}
+                      </span>
+                    )}
+                    {statsYear === "all" && statsClubFilter === "all" && (
+                      <span className="text-xs">All time</span>
+                    )}
                   </div>
-                )}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-56 space-y-3">
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground">Year</p>
+                        <Select value={statsYear} onValueChange={setStatsYear}>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All time</SelectItem>
+                            {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {userClubs.length > 1 && (
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-muted-foreground">Club</p>
+                          <Select value={statsClubFilter} onValueChange={setStatsClubFilter}>
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Clubs</SelectItem>
+                              {userClubs.map((c) => (
+                                <SelectItem key={c.club_id} value={c.club_id}>
+                                  {c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
                 {playerStats.gamesPlayed > 0 ? (
                   <>
@@ -1220,13 +1309,19 @@ const Profile = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Leave Club Confirmation */}
+      {/* Leave / Delete Club Confirmation */}
       <AlertDialog open={!!showLeaveDialog} onOpenChange={(open) => !open && setShowLeaveDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave club?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin"
+                ? "Delete club?"
+                : "Leave club?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              You will no longer be a member of this club. You can request to join again later.
+              {userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin"
+                ? "This club will be permanently deleted. This cannot be undone."
+                : "You will no longer be a member of this club. You can request to join again later."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1236,7 +1331,9 @@ const Profile = () => {
               disabled={isLeaving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isLeaving ? "Leaving..." : "Leave Club"}
+              {isLeaving
+                ? (userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin" ? "Deleting..." : "Leaving...")
+                : (userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin" ? "Delete Club" : "Leave Club")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
