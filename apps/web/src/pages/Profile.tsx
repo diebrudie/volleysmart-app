@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin, Trophy, Swords, Clock, TrendingUp, Tag } from "lucide-react";
+import { ArrowLeft, Upload, HelpCircle, X, Pencil, Cake, User, Ruler, Trash2, LogOut, MapPin, Trophy, Swords, Clock, TrendingUp, Tag, SlidersHorizontal } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPlayerStats } from "@/integrations/supabase/playerStats";
 import { recalculateAndPersist, calculateGameplayBonus } from "@/integrations/supabase/skillProgression";
@@ -109,6 +109,7 @@ const Profile = () => {
   const [cityLocation, setCityLocation] = useState<LocationValue | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
   const [statsClubFilter, setStatsClubFilter] = useState<string>("all");
+  const [statsYear, setStatsYear] = useState<string>("all");
 
   const isOwnProfile = user?.id === userId;
 
@@ -167,11 +168,12 @@ const Profile = () => {
 
   // Player stats query
   const { data: playerStats } = useQuery({
-    queryKey: ["player-stats", profile?.id, statsClubFilter],
+    queryKey: ["player-stats", profile?.id, statsClubFilter, statsYear],
     queryFn: () =>
       fetchPlayerStats(
         profile!.id,
-        statsClubFilter === "all" ? null : statsClubFilter
+        statsClubFilter === "all" ? null : statsClubFilter,
+        statsYear === "all" ? null : Number(statsYear)
       ),
     enabled: !!profile?.id,
     staleTime: 5 * 60 * 1000,
@@ -848,24 +850,66 @@ const Profile = () => {
           <TabsContent value="analytics">
             {playerStats && (playerStats.gamesPlayed > 0 || isOwnProfile) && (
               <div className="py-4 space-y-4">
-                {/* Club filter */}
-                {userClubs.length > 1 && (
-                  <div>
-                    <Select value={statsClubFilter} onValueChange={setStatsClubFilter}>
-                      <SelectTrigger className="h-9 w-48 bg-muted/50">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Clubs</SelectItem>
-                        {userClubs.map((c) => (
-                          <SelectItem key={c.club_id} value={c.club_id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {/* Filter bar */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {statsYear !== "all" && (
+                      <span className="bg-muted px-2 py-0.5 rounded-md text-xs font-medium">{statsYear}</span>
+                    )}
+                    {statsClubFilter !== "all" && (
+                      <span className="bg-muted px-2 py-0.5 rounded-md text-xs font-medium truncate max-w-[140px]">
+                        {userClubs.find((c) => c.club_id === statsClubFilter)?.name}
+                      </span>
+                    )}
+                    {statsYear === "all" && statsClubFilter === "all" && (
+                      <span className="text-xs">All time</span>
+                    )}
                   </div>
-                )}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-56 space-y-3">
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground">Year</p>
+                        <Select value={statsYear} onValueChange={setStatsYear}>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All time</SelectItem>
+                            {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {userClubs.length > 0 && (
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-muted-foreground">Club</p>
+                          <Select value={statsClubFilter} onValueChange={setStatsClubFilter}>
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Clubs</SelectItem>
+                              {userClubs.map((c) => (
+                                <SelectItem key={c.club_id} value={c.club_id}>
+                                  {c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
                 {playerStats.gamesPlayed > 0 ? (
                   <>

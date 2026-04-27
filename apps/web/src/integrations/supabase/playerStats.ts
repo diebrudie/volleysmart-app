@@ -13,11 +13,12 @@ export interface PlayerStats {
 }
 
 /**
- * Fetch personal analytics for a player, optionally filtered by club.
+ * Fetch personal analytics for a player, optionally filtered by club and/or year.
  */
 export async function fetchPlayerStats(
   playerId: string,
-  clubId?: string | null
+  clubId?: string | null,
+  year?: number | null
 ): Promise<PlayerStats> {
   // 1. Get all match_days the player participated in
   let gpQuery = supabase
@@ -30,14 +31,17 @@ export async function fetchPlayerStats(
 
   const matchDayIds = [...new Set(gamePlayerRows.map((r) => r.match_day_id))];
 
-  // 2. Get match_days with optional club filter
+  // 2. Get match_days with optional club + year filter
   let mdQuery = supabase
     .from("match_days")
-    .select("id, planned_event_id")
+    .select("id, planned_event_id, created_at")
     .in("id", matchDayIds);
 
   if (clubId) {
     mdQuery = mdQuery.eq("club_id", clubId);
+  }
+  if (year) {
+    mdQuery = mdQuery.gte("created_at", `${year}-01-01`).lt("created_at", `${year + 1}-01-01`);
   }
 
   const { data: matchDays } = await mdQuery;
