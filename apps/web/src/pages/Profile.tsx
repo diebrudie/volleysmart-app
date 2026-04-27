@@ -662,6 +662,11 @@ const Profile = () => {
 
   const editFormContent = (
     <div className="space-y-4">
+      {/* Email */}
+      {userEmail && (
+        <p className="text-center text-sm text-muted-foreground">{userEmail}</p>
+      )}
+
       {/* Photo */}
       <div className="flex justify-center">
         <div className="relative">
@@ -929,7 +934,7 @@ const Profile = () => {
                           </SelectContent>
                         </Select>
                       </div>
-                      {userClubs.length > 0 && (
+                      {userClubs.length > 1 && (
                         <div className="space-y-1.5">
                           <p className="text-xs font-medium text-muted-foreground">Club</p>
                           <Select value={statsClubFilter} onValueChange={setStatsClubFilter}>
@@ -1171,28 +1176,17 @@ const Profile = () => {
                       </div>
 
                       {isOwnProfile && (
-                        <div className="pt-3 border-t border-border space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor={`assoc-${club.club_id}`} className="text-sm text-foreground">
-                              Member Association
-                            </Label>
-                            <Switch
-                              id={`assoc-${club.club_id}`}
-                              checked={club.member_association}
-                              onCheckedChange={(checked) =>
-                                handleToggleAssociation(club.membership_id, checked)
-                              }
-                            />
-                          </div>
-                          <div className="flex justify-end">
-                            <button
-                              type="button"
-                              className="text-xs text-destructive hover:underline"
-                              onClick={() => setShowLeaveDialog(club.club_id)}
-                            >
-                              {club.role === "admin" ? "Delete Club" : "Leave Club"}
-                            </button>
-                          </div>
+                        <div className="flex items-center justify-between pt-3 border-t border-border">
+                          <Label htmlFor={`assoc-${club.club_id}`} className="text-sm text-foreground">
+                            Member Association
+                          </Label>
+                          <Switch
+                            id={`assoc-${club.club_id}`}
+                            checked={club.member_association}
+                            onCheckedChange={(checked) =>
+                              handleToggleAssociation(club.membership_id, checked)
+                            }
+                          />
                         </div>
                       )}
                     </div>
