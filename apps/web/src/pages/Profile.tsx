@@ -279,15 +279,15 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from("club_members")
-        .select("id, club_id, role, joined_at, member_association, clubs(name)")
+        .select("id, club_id, role, joined_at, member_association, clubs!inner(name, status)")
         .eq("user_id", userId)
         .eq("is_active", true)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("clubs.status", "active");
 
       if (!error && data) {
         setUserClubs(
           data
-            .filter((m) => (m.clubs as any)?.name) // exclude deleted clubs
             .map((m) => ({
               membership_id: m.id as string,
               club_id: m.club_id as string,
@@ -307,16 +307,56 @@ const Profile = () => {
     if (!userId) return;
     setIsLeaving(true);
     try {
-      const { error } = await supabase
-        .from("club_members")
-        .update({ is_active: false, status: "removed" as any })
-        .eq("club_id", clubId)
-        .eq("user_id", userId);
+      const club = userClubs.find((c) => c.club_id === clubId);
 
-      if (error) throw error;
+      if (club?.role === "admin") {
+        // Admin: check if there are other active members
+        const { count } = await supabase
+          .from("club_members")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", clubId)
+          .eq("is_active", true)
+          .eq("status", "active");
 
-      setUserClubs((prev) => prev.filter((c) => c.club_id !== clubId));
-      toast({ title: "Left club", duration: 1500 });
+        if ((count ?? 0) > 1) {
+          toast({
+            title: "Can't delete club",
+            description: "Remove all other members first, or transfer admin role.",
+            variant: "destructive",
+            duration: 2000,
+          });
+          return;
+        }
+
+        // Sole member — soft-delete the club
+        const { error } = await supabase
+          .from("clubs")
+          .update({ status: "deleted" as any })
+          .eq("id", clubId);
+
+        if (error) throw error;
+
+        setUserClubs((prev) => prev.filter((c) => c.club_id !== clubId));
+        toast({ title: "Club deleted", duration: 1500 });
+      } else {
+        // Non-admin: use leave_club RPC
+        const { data, error } = await supabase.rpc("leave_club", { p_club_id: clubId });
+        if (error) throw error;
+
+        const result = (data as any)?.[0]?.result_status;
+        if (result === "sole_admin") {
+          toast({
+            title: "Can't leave",
+            description: "You are the only admin. Transfer admin role first.",
+            variant: "destructive",
+            duration: 2000,
+          });
+          return;
+        }
+
+        setUserClubs((prev) => prev.filter((c) => c.club_id !== clubId));
+        toast({ title: "Left club", duration: 1500 });
+      }
     } catch (error) {
       console.error("Error leaving club:", error);
       toast({
@@ -1150,7 +1190,7 @@ const Profile = () => {
                               className="text-xs text-destructive hover:underline"
                               onClick={() => setShowLeaveDialog(club.club_id)}
                             >
-                              Leave Club
+                              {club.role === "admin" ? "Delete Club" : "Leave Club"}
                             </button>
                           </div>
                         </div>
@@ -1275,13 +1315,19 @@ const Profile = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Leave Club Confirmation */}
+      {/* Leave / Delete Club Confirmation */}
       <AlertDialog open={!!showLeaveDialog} onOpenChange={(open) => !open && setShowLeaveDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave club?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin"
+                ? "Delete club?"
+                : "Leave club?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              You will no longer be a member of this club. You can request to join again later.
+              {userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin"
+                ? "This club will be permanently deleted. This cannot be undone."
+                : "You will no longer be a member of this club. You can request to join again later."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1291,7 +1337,9 @@ const Profile = () => {
               disabled={isLeaving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isLeaving ? "Leaving..." : "Leave Club"}
+              {isLeaving
+                ? (userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin" ? "Deleting..." : "Leaving...")
+                : (userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin" ? "Delete Club" : "Leave Club")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
