@@ -1,17 +1,18 @@
 # VolleySmart App
 
 ## Current status
-- Working on: FEAT-28 Analytics Filter Redesign
-- Last change: Profile analytics filter icon + popover with year and club filters, year param in fetchPlayerStats
-- Current branch: `feat/analytics-filter-redesign` (branched from `main`)
-- Next step: Merge to main
+- Working on: Nothing active
+- Last change: FEAT-28 merged — analytics filter redesign, Profile clubs cleanup, email in edit drawer
+- Current branch: `main`
+- Next step: Pick next feature from backlog
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
 - `main` → `feat/phase-9-create-event-improvements` → `feat/phase-10-quick-fixes-polish` → `feat/phase-11-club-overview` → `feat/phase-12-game-flow-unification`
 - `feat/notifications` branched from `feat/phase-11-club-overview`
 - `feat/discovery` branched from `feat/phase-11-club-overview` (merged to main)
-- `feat/analytics` branched from `feat/discovery`
+- `feat/analytics` branched from `feat/discovery` (merged to main)
+- `feat/analytics-filter-redesign` branched from `main` (merged to main)
 
 ## Phase 14 in-progress work (Notifications + Bug Fixes)
 1. ~~**Notification triggers (DB)**~~: 9 types — join request/accepted/rejected, member joined, event created/cancelled, RSVP, RSVP deadline reminder (pg_cron), game started
@@ -176,6 +177,7 @@ Branches stack on each other (not merged to main yet):
 ### Group C: Analytics & Stats (branch: `feat/analytics`) — IN PROGRESS
 - ~~**FEAT-23: Personal Analytics**~~ — Profile Analytics tab (first tab): 4-stat grid, set record bar, skill rating card, club filter. Edit profile via bottom drawer. Birthday/Height/Gender in header row. Home Card 3 shows monthly Games/WinRate/Hours, links to profile analytics.
 - ~~**FEAT-24: Club Stats**~~ — ClubOverview: 3-stat grid (games, hours, attendance %), best team combinations (top 3 by wins, min 2 games). Year filter. Data from `clubStats.ts`. Stats button scrolls to section.
+- ~~**FEAT-28: Analytics Filter Redesign**~~ — Replaced club dropdown with filter icon + Popover (year + club selects). Club filter hidden when only 1 club. Year param added to `fetchPlayerStats`. Deleted clubs filtered via `clubs!inner` join. Email shown in edit profile drawer.
 - **OPEN-Q-01: Analytics Design Doc** — Propose additional analytics (personal and club) that would add value, given available tables. Output as a design doc, no implementation.
 
 ### Analytics key files
