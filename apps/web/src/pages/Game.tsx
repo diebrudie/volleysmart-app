@@ -15,6 +15,7 @@ import {
   CalendarCheck,
   MoreHorizontal,
   Users,
+  Radio,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -768,6 +769,18 @@ const Game = () => {
             </div>
           </div>
         </div>
+
+        {/* Live Score Tracker button */}
+        {isEditingAllowed && canEdit && isMatchToday && (
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => navigate(`/live-score/${matchDayId}`)}
+          >
+            <Radio className="h-4 w-4 mr-2" />
+            Live Score Tracker
+          </Button>
+        )}
 
         {/* Sets grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

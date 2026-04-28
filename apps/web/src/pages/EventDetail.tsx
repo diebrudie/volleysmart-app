@@ -79,7 +79,6 @@ import type { PlayerForTeams } from "@/features/teams/assignLineup";
 import { normalizeRole } from "@/features/teams/positions";
 import { formatShortName } from "@/lib/formatName";
 import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
-import { format } from "date-fns";
 
 // ─── Event type display config ──────────────────────────────────────────────
 const EVENT_TYPE_CONFIG: Record<

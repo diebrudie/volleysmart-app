@@ -25,6 +25,7 @@ const HIDE_CHROME = [
   /^\/events\/[^/]+\/?$/, // /events/:eventId (Event Detail)
   /^\/clubs\/[^/]+\/?$/, // /clubs/:clubId (Club Overview)
   /^\/game\/[^/]+\/?$/, // /game/:matchDayId (Game page)
+  /^\/live-score\/[^/]+\/?$/, // /live-score/:matchDayId (Live Score Tracker)
 
   /^\/new-club\/?$/, // /new-club
   /^\/user\/[^/]+\/?$/, // /user/:userId (Profile)
