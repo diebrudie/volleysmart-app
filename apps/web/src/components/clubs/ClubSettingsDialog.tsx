@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useIsCompact } from "@/hooks/use-compact";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +72,7 @@ const ClubSettingsDialog = ({
   onClose,
   club,
 }: ClubSettingsDialogProps) => {
+  const { t } = useTranslation("clubs");
   const isCompact = useIsCompact();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -315,8 +317,8 @@ const ClubSettingsDialog = ({
       if (updateError) throw updateError;
       if (!updated) {
         toast({
-          title: "Not saved",
-          description: "No changes were persisted. Please try again.",
+          title: t("settings.toastNotSaved"),
+          description: t("settings.toastNotSavedDescription"),
           variant: "destructive",
           duration: 2000,
         });
@@ -356,8 +358,8 @@ const ClubSettingsDialog = ({
       setManualCountryCode(String(updated.country_code ?? "").toUpperCase());
 
       toast({
-        title: "Success",
-        description: "Club updated successfully",
+        title: t("settings.toastSuccess"),
+        description: t("settings.toastSuccessDescription"),
         duration: 2000,
       });
 
@@ -368,8 +370,8 @@ const ClubSettingsDialog = ({
     } catch (error) {
       console.error("Error updating club:", error);
       toast({
-        title: "Error",
-        description: "Failed to update club",
+        title: t("settings.toastError"),
+        description: t("settings.toastErrorDescription"),
         variant: "destructive",
         duration: 2000,
       });
@@ -383,26 +385,26 @@ const ClubSettingsDialog = ({
       <SheetContent side={isCompact ? "bottom" : "right"} className={`max-h-[90vh] flex flex-col p-0 ${isCompact ? "rounded-t-2xl" : ""}`}>
         {/* Header */}
         <SheetHeader className="px-4 pt-4 pb-2 border-b">
-          <SheetTitle>Club Settings</SheetTitle>
+          <SheetTitle>{t("settings.title")}</SheetTitle>
         </SheetHeader>
 
         {/* Scrollable form */}
         <div className="flex-1 overflow-y-auto px-4 py-4 pb-8 space-y-5">
           {/* Club Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="club-name">Club Name</Label>
+            <Label htmlFor="club-name">{t("settings.clubName")}</Label>
             <Input
               id="club-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter club name"
+              placeholder={t("settings.clubNamePlaceholder")}
             />
           </div>
 
           {/* Description */}
           <div className="space-y-1.5">
             <Label htmlFor="club-description">
-              Description / Notes (optional)
+              {t("settings.description")}
             </Label>
             <div className="relative">
               <Textarea
@@ -411,7 +413,7 @@ const ClubSettingsDialog = ({
                 onChange={(e) => {
                   if (e.target.value.length <= 200) setDescription(e.target.value);
                 }}
-                placeholder="Tell people about your club…"
+                placeholder={t("settings.descriptionPlaceholder")}
                 rows={3}
               />
               <span className="absolute bottom-2 right-3 text-xs text-muted-foreground">
@@ -422,7 +424,7 @@ const ClubSettingsDialog = ({
 
           {/* Club Image */}
           <div className="space-y-1.5">
-            <Label htmlFor="club-image">Club Image</Label>
+            <Label htmlFor="club-image">{t("settings.clubImage")}</Label>
 
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -459,7 +461,7 @@ const ClubSettingsDialog = ({
                   <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-muted-foreground/30 rounded-lg hover:border-muted-foreground/50 transition-colors w-fit">
                     <Upload className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">
-                      {imagePreview ? "Change Photo" : "Upload Photo"}
+                      {imagePreview ? t("settings.changePhoto") : t("settings.uploadPhoto")}
                     </span>
                   </div>
                 </label>
@@ -512,7 +514,7 @@ const ClubSettingsDialog = ({
                 setManualCountry("");
                 setManualCountryCode("");
               }}
-              label="City"
+              label={t("settings.manualCity")}
               labelExtra={
                 <Popover>
                   <PopoverTrigger asChild>
@@ -525,11 +527,11 @@ const ClubSettingsDialog = ({
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="text-sm max-w-xs">
-                    Please make sure you select a City from the dropdown.
+                    {t("settings.cityHelp")}
                   </PopoverContent>
                 </Popover>
               }
-              placeholder="Type the city your Club is located…"
+              placeholder={t("settings.cityPlaceholder")}
             />
 
             {!location && (
@@ -540,12 +542,12 @@ const ClubSettingsDialog = ({
                   onClick={() => setShowManual((v) => !v)}
                 >
                   {showManual
-                    ? "Hide manual entry"
-                    : "Can't find your city? Enter manually"}
+                    ? t("settings.hideManual")
+                    : t("settings.cantFindCity")}
                 </button>
                 {!hasMapbox && (
                   <span className="text-xs text-muted-foreground">
-                    Mapbox disabled — use manual entry.
+                    {t("settings.mapboxDisabled")}
                   </span>
                 )}
               </div>
@@ -554,25 +556,25 @@ const ClubSettingsDialog = ({
             {showManual && !location && (
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <Label>City</Label>
+                  <Label>{t("settings.manualCity")}</Label>
                   <Input
-                    placeholder="e.g., Berlin"
+                    placeholder={t("settings.manualCityPlaceholder")}
                     value={manualCity}
                     onChange={(e) => setManualCity(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Country</Label>
+                  <Label>{t("settings.manualCountry")}</Label>
                   <Input
-                    placeholder="e.g., Germany"
+                    placeholder={t("settings.manualCountryPlaceholder")}
                     value={manualCountry}
                     onChange={(e) => setManualCountry(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Country code</Label>
+                  <Label>{t("settings.manualCountryCode")}</Label>
                   <Input
-                    placeholder="e.g., DE"
+                    placeholder={t("settings.manualCountryCodePlaceholder")}
                     value={manualCountryCode}
                     onChange={(e) =>
                       setManualCountryCode(e.target.value.toUpperCase())
@@ -587,7 +589,7 @@ const ClubSettingsDialog = ({
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <Label htmlFor="is_club_discoverable" className="m-0">
-                Make this club discoverable
+                {t("settings.discoverableLabel")}
               </Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -600,8 +602,7 @@ const ClubSettingsDialog = ({
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="text-sm max-w-xs">
-                  If enabled, others can find this club on the Discovery page.
-                  Coming soon!
+                  {t("settings.discoverableHelp")}
                 </PopoverContent>
               </Popover>
             </div>
@@ -621,14 +622,14 @@ const ClubSettingsDialog = ({
         <div className="px-4 py-3 border-t pb-[max(env(safe-area-inset-bottom),12px)]">
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose} className="flex-1">
-              Cancel
+              {t("settings.cancel")}
             </Button>
             <Button
               onClick={handleSave}
               disabled={isLoading || !name.trim() || !hasChanges}
               className="flex-1"
             >
-              {isLoading ? "Saving..." : "Save Changes"}
+              {isLoading ? t("settings.saving") : t("settings.saveChanges")}
             </Button>
           </div>
         </div>

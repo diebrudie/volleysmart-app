@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 interface Player {
   id: number;
@@ -43,6 +44,7 @@ export const SortablePlayer = ({
   onPositionChange,
   availablePositions = defaultPositions,
 }: SortablePlayerProps) => {
+  const { t } = useTranslation("games");
   const [isEditingPosition, setIsEditingPosition] = useState(false);
   const [tempPosition, setTempPosition] = useState(player.preferredPosition);
 
@@ -128,7 +130,7 @@ export const SortablePlayer = ({
               <SelectContent>
                 {availablePositions.map((position) => (
                   <SelectItem key={position.id} value={position.name}>
-                    {position.name}
+                    {t(`game.position.${position.name}`, position.name)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -157,7 +159,7 @@ export const SortablePlayer = ({
               onClick={handlePositionClick}
               title="Click to edit position"
             >
-              {player.preferredPosition}
+              {t(`game.position.${player.preferredPosition}`, player.preferredPosition)}
             </span>
             <button
               className="h-6 w-6 shrink-0 flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
+import { getDateLocale } from "@/lib/dateLocale";
 import {
   CalendarIcon,
   Search,
@@ -105,6 +107,7 @@ const NewGame = () => {
   );
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation("games");
 
   // Set the club context from URL
   useEffect(() => {
@@ -351,8 +354,8 @@ const NewGame = () => {
 
     if (!date) {
       toast({
-        title: "Date required",
-        description: "Please select a date for the game",
+        title: t("game.dateRequired"),
+        description: t("game.dateRequiredDesc"),
         variant: "destructive",
         duration: 2000,
       });
@@ -361,8 +364,8 @@ const NewGame = () => {
 
     if (!selectedLocationId) {
       toast({
-        title: "Location required",
-        description: "Please select or create a location for the game",
+        title: t("game.locationRequired"),
+        description: t("game.locationRequiredDesc"),
         variant: "destructive",
         duration: 2000,
       });
@@ -371,8 +374,8 @@ const NewGame = () => {
 
     if (selectedPlayers.length < 4) {
       toast({
-        title: "Not enough players",
-        description: "Please select at least 4 players to create teams",
+        title: t("game.notEnoughPlayers"),
+        description: t("game.notEnoughPlayersDesc"),
         variant: "destructive",
         duration: 2000,
       });
@@ -381,8 +384,8 @@ const NewGame = () => {
 
     if (!clubId || !user?.id) {
       toast({
-        title: "Missing information",
-        description: "Club or user information is missing",
+        title: t("game.missingInfo"),
+        description: t("game.missingInfoDesc"),
         variant: "destructive",
         duration: 2000,
       });
@@ -601,7 +604,7 @@ const NewGame = () => {
         (player as ExtraPlayer).skill_rating
       })`;
     }
-    return (player as ClubMember).primary_position_name || "No Position";
+    return (player as ClubMember).primary_position_name || t("game.noPosition");
   };
 
   // Check if all filtered players are selected
@@ -627,7 +630,7 @@ const NewGame = () => {
               <ChevronLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Create New Game
+              {t("game.createNewGame")}
             </h1>
           </div>
 
@@ -651,9 +654,9 @@ const NewGame = () => {
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {date ? (
-                        format(date, "EEEE, do MMMM yyyy")
+                        format(date, "EEEE, do MMMM yyyy", { locale: getDateLocale() })
                       ) : (
-                        <span>Select Game's Date</span>
+                        <span>{t("game.selectGameDate")}</span>
                       )}
                     </Button>
                   </PopoverTrigger>
@@ -680,7 +683,7 @@ const NewGame = () => {
                 {/* Add Extra Players */}
                 <div className="bg-white dark:bg-gray-800 h-14 px-4 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Add guests
+                    {t("game.addGuests")}
                   </span>
                   <div className="flex items-center gap-3">
                     <Button
@@ -711,14 +714,14 @@ const NewGame = () => {
               <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
                 <div className="bg-amber-400 dark:bg-amber-500 p-4 flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-black">
-                    Select Players
+                    {t("game.selectPlayers")}
                   </h2>
                   <div className="flex items-center gap-3">
                     {/* Search */}
                     {isSearchExpanded ? (
                       <Input
                         type="text"
-                        placeholder="Search players..."
+                        placeholder={t("game.searchPlayers")}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-48 bg-white dark:bg-gray-700 border-none"
@@ -823,8 +826,8 @@ const NewGame = () => {
                   ) : (
                     <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                       {searchTerm
-                        ? "No players found matching your search."
-                        : "No players found in your club."}
+                        ? t("game.noPlayersSearch")
+                        : t("game.noPlayersClub")}
                     </div>
                   )}
                 </div>
@@ -862,10 +865,10 @@ const NewGame = () => {
                   {isSubmitting ? (
                     <>
                       <Spinner className="mr-2 h-4 w-4" />
-                      Creating Game...
+                      {t("game.creatingGame")}
                     </>
                   ) : (
-                    "Create Teams"
+                    t("game.createTeams")
                   )}
                 </Button>
               </div>

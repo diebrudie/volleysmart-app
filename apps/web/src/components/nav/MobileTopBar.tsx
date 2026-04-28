@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,17 +11,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchUnreadCount } from "@/integrations/supabase/notifications";
 
 /** Route-to-title mapping for the top bar. */
-function getPageTitle(pathname: string): string {
-  if (/^\/clubs(\/|$)/.test(pathname)) return "Clubs";
-  if (/^\/events(\/|$)/.test(pathname)) return "Events";
-  if (/^\/members(\/|$)/.test(pathname)) return "Members";
-  if (/^\/games(\/|$)/.test(pathname)) return "Games";
-  if (pathname === "/discover-events") return "Public Events";
-  return "Home";
+function getPageTitleKey(pathname: string): string {
+  if (/^\/clubs(\/|$)/.test(pathname)) return "nav.clubs";
+  if (/^\/events(\/|$)/.test(pathname)) return "nav.events";
+  if (/^\/members(\/|$)/.test(pathname)) return "nav.members";
+  if (/^\/games(\/|$)/.test(pathname)) return "nav.games";
+  if (pathname === "/discover-events") return "nav.discoverEvents";
+  return "nav.home";
 }
 
 /** Thin top bar with profile picture, page title, and action icons. */
 const MobileTopBar: React.FC = () => {
+  const { t } = useTranslation("common");
   const [menuOpen, setMenuOpen] = React.useState(false);
   const { resolvedTheme } = useTheme();
   const { user } = useAuth();
@@ -95,7 +97,7 @@ const MobileTopBar: React.FC = () => {
 
         {/* Centered title */}
         <span className="absolute left-1/2 -translate-x-1/2 text-base font-semibold">
-          {getPageTitle(pathname)}
+          {t(getPageTitleKey(pathname))}
         </span>
 
         {/* Action icons */}

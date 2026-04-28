@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { TFunction } from "i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,17 +20,21 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { ArrowLeft, Mail } from "lucide-react";
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-});
+function createForgotPasswordSchema(t: TFunction) {
+  return z.object({
+    email: z.string().email({ message: t("validation:email.invalid") }),
+  });
+}
 
-type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+type ForgotPasswordFormValues = z.infer<ReturnType<typeof createForgotPasswordSchema>>;
 
 const ForgotPassword = () => {
+  const { t } = useTranslation("auth");
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  const forgotPasswordSchema = useMemo(() => createForgotPasswordSchema(t), [t]);
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
@@ -48,18 +54,18 @@ const ForgotPassword = () => {
       setIsSubmitted(true);
 
       toast({
-        title: "Password reset email sent",
-        description: "Check your email for a link to reset your password.",
+        title: t("forgotPassword.toastTitle"),
+        description: t("forgotPassword.toastDescription"),
         duration: 2000,
       });
     } catch (error: unknown) {
       console.error("Password reset error:", error);
       toast({
-        title: "Error",
+        title: t("forgotPassword.errorTitle"),
         description:
           error instanceof Error
             ? error.message
-            : "Failed to send password reset email.",
+            : t("forgotPassword.errorDefault"),
         variant: "destructive",
         duration: 2000,
       });
@@ -82,8 +88,7 @@ const ForgotPassword = () => {
           </Link>
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full space-y-2">
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Enter your email address and we'll send you a link to reset your
-              password.
+              {t("forgotPassword.description")}
             </p>
             {isSubmitted ? (
               <div className="text-center py-6">
@@ -91,17 +96,13 @@ const ForgotPassword = () => {
                   <Mail className="h-7 w-7 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-medium mb-3 text-gray-900 dark:text-gray-100">
-                  Check your email
+                  {t("forgotPassword.checkYourEmail")}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4 px-4">
-                  We've sent a password reset link to your email address.
-                  <span className="block mt-2">
-                    It may take a few minutes to arrive. Please check your spam
-                    or junk folder if you don't see it.
-                  </span>
+                  {t("forgotPassword.emailSentDescription")}
                 </p>
                 <Button variant="primary" asChild className="mt-3">
-                  <Link to="/login">Return to login</Link>
+                  <Link to="/login">{t("forgotPassword.returnToLogin")}</Link>
                 </Button>
               </div>
             ) : (
@@ -116,9 +117,9 @@ const ForgotPassword = () => {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t("forgotPassword.email")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Email address" {...field} />
+                            <Input placeholder={t("forgotPassword.emailPlaceholder")} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -130,7 +131,7 @@ const ForgotPassword = () => {
                       className="w-full"
                       disabled={isLoading}
                     >
-                      {isLoading ? "Sending..." : "Send reset link"}
+                      {isLoading ? t("forgotPassword.sending") : t("forgotPassword.sendResetLink")}
                     </Button>
                   </div>
                 </form>
@@ -143,7 +144,7 @@ const ForgotPassword = () => {
               to="/login"
               className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
             >
-              Return to login
+              {t("forgotPassword.returnToLogin")}
             </Link>
           </div>
         </div>

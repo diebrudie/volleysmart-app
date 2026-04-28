@@ -1,5 +1,6 @@
 import * as React from "react";
 import { format, addDays, isBefore, startOfDay } from "date-fns";
+import { getDateLocale } from "@/lib/dateLocale";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -62,35 +63,36 @@ import {
 } from "@/integrations/supabase/eventTemplates";
 import { EventLocationSelector } from "@/components/forms/EventLocationSelector";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 // ─── Event type definitions ───────────────────────────────────────────────────
 const EVENT_TYPES: {
   value: EventType;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   icon: React.ReactNode;
   color: string;
 }[] = [
   {
     value: "friendly_game",
-    label: "Friendly Game",
-    description: "Casual match within your club",
+    labelKey: "create.typeFriendlyGame",
+    descriptionKey: "create.typeFriendlyGameDesc",
     icon: <Swords className="h-6 w-6" />,
     color:
       "border-blue-400 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300",
   },
   {
     value: "social_game",
-    label: "Social Game",
-    description: "Fun, relaxed — open to all levels",
+    labelKey: "create.typeSocialGame",
+    descriptionKey: "create.typeSocialGameDesc",
     icon: <Users className="h-6 w-6" />,
     color:
       "border-green-400 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300",
   },
   {
     value: "training",
-    label: "Training",
-    description: "Practice and skill development session",
+    labelKey: "create.typeTraining",
+    descriptionKey: "create.typeTrainingDesc",
     icon: <Dumbbell className="h-6 w-6" />,
     color:
       "border-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-300",
@@ -99,11 +101,11 @@ const EVENT_TYPES: {
 
 // ─── RSVP deadline preset options ────────────────────────────────────────────
 const RSVP_PRESETS = [
-  { label: "Same day", getDays: () => 0 },
-  { label: "1 day before", getDays: () => 1 },
-  { label: "3 days before", getDays: () => 3 },
-  { label: "1 week before", getDays: () => 7 },
-  { label: "Custom", getDays: () => null },
+  { labelKey: "create.rsvpSameDay", getDays: () => 0 },
+  { labelKey: "create.rsvp1DayBefore", getDays: () => 1 },
+  { labelKey: "create.rsvp3DaysBefore", getDays: () => 3 },
+  { labelKey: "create.rsvp1WeekBefore", getDays: () => 7 },
+  { labelKey: "create.rsvpCustom", getDays: () => null },
 ] as const;
 
 // ─── Step progress indicator ──────────────────────────────────────────────────
@@ -194,6 +196,7 @@ function computeRsvpDeadline(form: FormState): string | undefined {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 const CreateEvent: React.FC = () => {
+  const { t } = useTranslation("events");
   const isCompact = useIsCompact();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -336,18 +339,18 @@ const CreateEvent: React.FC = () => {
       navigate(`/events/${result.id}?created=true`);
     },
     onError: () => {
-      toast.error("Failed to create event. Please try again.");
+      toast.error(t("create.errorCreateFailed"));
     },
   });
 
   const handleSubmit = () => {
     if (!form.event_type || !form.date || !form.title.trim()) {
-      toast.error("Please fill in all required fields.");
+      toast.error(t("create.errorRequired"));
       return;
     }
     // Club must be chosen (either a real club or explicitly "no club")
     if (!form.club_id) {
-      toast.error("Please select a club or choose 'No club'.");
+      toast.error(t("create.errorSelectClub"));
       return;
     }
 
@@ -395,16 +398,16 @@ const CreateEvent: React.FC = () => {
     if (c.event_type) {
       setStep(2);
     }
-    toast.success(`Template "${template.name}" applied`);
+    toast.success(t("create.templateApplied", { name: template.name }));
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
     try {
       await deleteEventTemplate(templateId);
       queryClient.invalidateQueries({ queryKey: ["event-templates"] });
-      toast.success("Template deleted");
+      toast.success(t("create.templateDeleted"));
     } catch {
-      toast.error("Failed to delete template");
+      toast.error(t("create.templateDeleteFailed"));
     }
   };
 
@@ -440,12 +443,12 @@ const CreateEvent: React.FC = () => {
         </button>
         <div className="flex-1">
           <p className="text-xs text-muted-foreground">
-            Step {step} of 3
+            {t("create.stepOf", { step, total: 3 })}
           </p>
           <h1 className="text-base font-semibold leading-tight">
-            {step === 1 && "Choose event type"}
-            {step === 2 && "Club & details"}
-            {step === 3 && "Options"}
+            {step === 1 && t("create.stepChooseType")}
+            {step === 2 && t("create.stepClubDetails")}
+            {step === 3 && t("create.stepOptions")}
           </h1>
         </div>
       </header>
@@ -480,8 +483,8 @@ const CreateEvent: React.FC = () => {
                     )}
                     <span className="shrink-0">{type.icon}</span>
                     <div className="flex flex-col">
-                      <span className="font-semibold">{type.label}</span>
-                      <span className="text-xs opacity-70">{type.description}</span>
+                      <span className="font-semibold">{t(type.labelKey)}</span>
+                      <span className="text-xs opacity-70">{t(type.descriptionKey)}</span>
                     </div>
                   </button>
                 );
@@ -498,8 +501,8 @@ const CreateEvent: React.FC = () => {
                 <LayoutGrid className="h-6 w-6 text-muted-foreground" />
               </span>
               <div className="flex flex-col">
-                <span className="font-semibold">Templates</span>
-                <span className="text-xs opacity-70">Start from a saved template</span>
+                <span className="font-semibold">{t("create.templates")}</span>
+                <span className="text-xs opacity-70">{t("create.templatesDesc")}</span>
               </div>
             </button>
 
@@ -507,33 +510,33 @@ const CreateEvent: React.FC = () => {
             <Sheet open={templateSheetOpen} onOpenChange={setTemplateSheetOpen}>
               <SheetContent side={isCompact ? "bottom" : "right"} className={isCompact ? "rounded-t-2xl" : ""}>
                 <SheetHeader>
-                  <SheetTitle>Templates</SheetTitle>
+                  <SheetTitle>{t("create.templates")}</SheetTitle>
                 </SheetHeader>
                 <div className="overflow-y-auto mt-4 max-h-[50vh]">
                   {templates.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-6">
-                      No templates yet. Create an event and save it as a template.
+                      {t("create.noTemplates")}
                     </p>
                   ) : (
                     <div className="space-y-1">
-                      {templates.map((t) => (
+                      {templates.map((tpl) => (
                         <div
-                          key={t.id}
+                          key={tpl.id}
                           className="flex items-center justify-between px-2 py-3 rounded-lg hover:bg-muted"
                         >
                           <button
                             type="button"
                             onClick={() => {
-                              applyTemplate(t);
+                              applyTemplate(tpl);
                               setTemplateSheetOpen(false);
                             }}
                             className="flex-1 text-left text-sm font-medium"
                           >
-                            {t.name}
+                            {tpl.name}
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDeleteTemplate(t.id)}
+                            onClick={() => handleDeleteTemplate(tpl.id)}
                             className="p-1.5 rounded-md hover:bg-destructive/10"
                           >
                             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
@@ -553,7 +556,7 @@ const CreateEvent: React.FC = () => {
           <div className="space-y-5 pt-2">
             {/* Club dropdown */}
             <div className="space-y-1.5">
-              <Label>Club</Label>
+              <Label>{t("create.clubLabel")}</Label>
               <Select
                 value={form.club_id || NO_CLUB}
                 onValueChange={(val) => {
@@ -565,7 +568,7 @@ const CreateEvent: React.FC = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_CLUB}>No club — personal event</SelectItem>
+                  <SelectItem value={NO_CLUB}>{t("create.noClubPersonal")}</SelectItem>
                   {userClubs.map((club) => (
                     <SelectItem key={club.id} value={club.id}>
                       {club.name}
@@ -578,10 +581,10 @@ const CreateEvent: React.FC = () => {
 
             {/* Title */}
             <div className="space-y-1.5">
-              <Label htmlFor="title">Event name *</Label>
+              <Label htmlFor="title">{t("create.eventName")}</Label>
               <Input
                 id="title"
-                placeholder="e.g. Saturday Friendly"
+                placeholder={t("create.eventNamePlaceholder")}
                 value={form.title}
                 onChange={(e) => set("title", e.target.value)}
               />
@@ -589,7 +592,7 @@ const CreateEvent: React.FC = () => {
 
             {/* Date */}
             <div className="space-y-1.5">
-              <Label>Date *</Label>
+              <Label>{t("create.dateLabel")}</Label>
               <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                 <PopoverTrigger asChild>
                   <button
@@ -600,7 +603,7 @@ const CreateEvent: React.FC = () => {
                     )}
                   >
                     <CalendarIcon className="h-4 w-4 shrink-0" />
-                    {form.date ? format(form.date, "PPP") : "Pick a date"}
+                    {form.date ? format(form.date, "PPP", { locale: getDateLocale() }) : t("create.pickDate")}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -621,7 +624,7 @@ const CreateEvent: React.FC = () => {
             {/* Start time + End time */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="start_time">Start time *</Label>
+                <Label htmlFor="start_time">{t("create.startTime")}</Label>
                 <Input
                   id="start_time"
                   type="time"
@@ -630,7 +633,7 @@ const CreateEvent: React.FC = () => {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="end_time">End time *</Label>
+                <Label htmlFor="end_time">{t("create.endTime")}</Label>
                 <Input
                   id="end_time"
                   type="time"
@@ -644,13 +647,13 @@ const CreateEvent: React.FC = () => {
             <div className="rounded-xl border border-border bg-card p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">Recurring</p>
+                  <p className="text-sm font-medium">{t("create.recurring")}</p>
                   <p className="text-xs text-muted-foreground">
                     {form.recurrence_rule
                       ? form.recurrence_rule === "weekly"
-                        ? `Every ${repeatsOnDays.length > 0 ? repeatsOnDays.map((d) => WEEKDAYS[d]).join(", ") : form.date ? format(form.date, "EEEE") : "week"}`
-                        : `${MONTHLY_EVERY[MONTHLY_EVERY.indexOf(everyMonth)] || "1st"} ${WEEKDAYS[repeatsOnDay]} of every month`
-                      : "Does not repeat"}
+                        ? t("create.everyWeekday", { days: repeatsOnDays.length > 0 ? repeatsOnDays.map((d) => WEEKDAYS[d]).join(", ") : form.date ? format(form.date, "EEEE", { locale: getDateLocale() }) : "week" })
+                        : t("create.monthlyPattern", { ordinal: MONTHLY_EVERY[MONTHLY_EVERY.indexOf(everyMonth)] || "1st", day: WEEKDAYS[repeatsOnDay] })
+                      : t("create.doesNotRepeat")}
                   </p>
                 </div>
                 <Switch
@@ -670,15 +673,15 @@ const CreateEvent: React.FC = () => {
                 <>
                   <Tabs value={form.recurrence_rule} onValueChange={(v) => set("recurrence_rule", v as "weekly" | "monthly")}>
                     <TabsList className="w-full">
-                      <TabsTrigger value="weekly" className="flex-1">Weekly</TabsTrigger>
-                      <TabsTrigger value="monthly" className="flex-1">Monthly</TabsTrigger>
+                      <TabsTrigger value="weekly" className="flex-1">{t("create.weekly")}</TabsTrigger>
+                      <TabsTrigger value="monthly" className="flex-1">{t("create.monthly")}</TabsTrigger>
                     </TabsList>
                   </Tabs>
 
                   {/* Repeats on + Every — side by side dropdown buttons */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Repeats on</Label>
+                      <Label className="text-xs font-semibold">{t("create.repeatsOn")}</Label>
                       <button
                         type="button"
                         onClick={() => setRepeatsOnOpen(true)}
@@ -688,14 +691,14 @@ const CreateEvent: React.FC = () => {
                           {form.recurrence_rule === "weekly"
                             ? repeatsOnDays.length > 0
                               ? repeatsOnDays.map((d) => WEEKDAYS_SHORT[d]).join(", ")
-                              : "Select"
+                              : t("create.select")
                             : WEEKDAYS_SHORT[repeatsOnDay]}
                         </span>
                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       </button>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Every</Label>
+                      <Label className="text-xs font-semibold">{t("create.every")}</Label>
                       <button
                         type="button"
                         onClick={() => setEveryOpen(true)}
@@ -711,7 +714,7 @@ const CreateEvent: React.FC = () => {
                   <Sheet open={repeatsOnOpen} onOpenChange={setRepeatsOnOpen}>
                     <SheetContent side="bottom" className="rounded-t-2xl">
                       <SheetHeader>
-                        <SheetTitle className="text-xl font-bold text-left">Repeats on</SheetTitle>
+                        <SheetTitle className="text-xl font-bold text-left">{t("create.repeatsOn")}</SheetTitle>
                       </SheetHeader>
                       <div className="py-2">
                         {form.recurrence_rule === "weekly" ? (
@@ -766,7 +769,7 @@ const CreateEvent: React.FC = () => {
                   <Sheet open={everyOpen} onOpenChange={setEveryOpen}>
                     <SheetContent side="bottom" className="rounded-t-2xl">
                       <SheetHeader>
-                        <SheetTitle className="text-xl font-bold text-left">Repeats Every</SheetTitle>
+                        <SheetTitle className="text-xl font-bold text-left">{t("create.repeatsEvery")}</SheetTitle>
                       </SheetHeader>
                       <div className="py-2">
                         {form.recurrence_rule === "weekly" ? (
@@ -823,7 +826,7 @@ const CreateEvent: React.FC = () => {
 
             {/* RSVP deadline */}
             <div className="space-y-2">
-              <Label>RSVP deadline</Label>
+              <Label>{t("create.rsvpDeadline")}</Label>
               <Select
                 value={form.rsvp_preset === null ? "custom" : String(form.rsvp_preset)}
                 onValueChange={(val) => {
@@ -840,10 +843,10 @@ const CreateEvent: React.FC = () => {
                 <SelectContent>
                   {RSVP_PRESETS.map((preset, i) => (
                     <SelectItem
-                      key={preset.label}
-                      value={preset.label === "Custom" ? "custom" : String(i)}
+                      key={preset.labelKey}
+                      value={preset.labelKey === "create.rsvpCustom" ? "custom" : String(i)}
                     >
-                      {preset.label}
+                      {t(preset.labelKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -863,8 +866,8 @@ const CreateEvent: React.FC = () => {
                   >
                     <CalendarIcon className="h-4 w-4" />
                     {form.rsvp_custom_date
-                      ? format(form.rsvp_custom_date, "PPP")
-                      : "Pick deadline date"}
+                      ? format(form.rsvp_custom_date, "PPP", { locale: getDateLocale() })
+                      : t("create.pickDeadlineDate")}
                   </button>
                   {rsvpCalendarOpen && (
                     <div className="rounded-md border p-2">
@@ -890,22 +893,22 @@ const CreateEvent: React.FC = () => {
           <div className="space-y-5 pt-2">
             {/* Max players */}
             <div className="space-y-1.5">
-              <Label htmlFor="max_players">Max players (optional)</Label>
+              <Label htmlFor="max_players">{t("create.maxPlayers")}</Label>
               <Input
                 id="max_players"
                 type="number"
                 min={4}
                 max={100}
-                placeholder="e.g. 12"
+                placeholder={t("create.maxPlayersPlaceholder")}
                 value={form.max_players}
                 onChange={(e) => set("max_players", e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">Minimum is 4</p>
+              <p className="text-xs text-muted-foreground">{t("create.minIs4")}</p>
             </div>
 
             {/* Visibility */}
             <div className="space-y-1.5">
-              <Label>Visibility</Label>
+              <Label>{t("create.visibility")}</Label>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -918,7 +921,7 @@ const CreateEvent: React.FC = () => {
                   )}
                 >
                   <Globe className="h-4 w-4" />
-                  Public
+                  {t("create.public")}
                 </button>
                 <button
                   type="button"
@@ -931,17 +934,17 @@ const CreateEvent: React.FC = () => {
                   )}
                 >
                   <Lock className="h-4 w-4" />
-                  Private
+                  {t("create.private")}
                 </button>
               </div>
             </div>
 
             {/* Description / Notes */}
             <div className="space-y-1.5">
-              <Label htmlFor="notes">Description (optional)</Label>
+              <Label htmlFor="notes">{t("create.description")}</Label>
               <Textarea
                 id="notes"
-                placeholder="Any extra info for participants…"
+                placeholder={t("create.descriptionPlaceholder")}
                 value={form.notes}
                 onChange={(e) => {
                   if (e.target.value.length <= 100) set("notes", e.target.value);
@@ -959,7 +962,7 @@ const CreateEvent: React.FC = () => {
               <div className="flex items-center justify-between">
                 <Label htmlFor="save-template" className="flex items-center gap-2 cursor-pointer">
                   <Bookmark className="h-4 w-4 text-muted-foreground" />
-                  Save as template
+                  {t("create.saveAsTemplate")}
                 </Label>
                 <Switch
                   id="save-template"
@@ -969,7 +972,7 @@ const CreateEvent: React.FC = () => {
               </div>
               {form.save_template && (
                 <Input
-                  placeholder="Template name, e.g. Thursday Training"
+                  placeholder={t("create.templateNamePlaceholder")}
                   value={form.template_name}
                   onChange={(e) => set("template_name", e.target.value)}
                   className="mt-2"
@@ -992,7 +995,7 @@ const CreateEvent: React.FC = () => {
               disabled={!canGoNext()}
               onClick={() => setStep(step + 1)}
             >
-              Continue
+              {t("create.continue")}
               <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
           ) : (
@@ -1001,7 +1004,7 @@ const CreateEvent: React.FC = () => {
               disabled={createMutation.isPending}
               onClick={handleSubmit}
             >
-              {createMutation.isPending ? "Creating…" : "Create Event"}
+              {createMutation.isPending ? t("create.creating") : t("create.createEvent")}
             </Button>
           )}
         </div>

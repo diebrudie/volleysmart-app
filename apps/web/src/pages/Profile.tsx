@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +82,7 @@ const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation("profile");
   const [loading, setLoading] = useState(true);
   const isCompact = useIsCompact();
   const [saving, setSaving] = useState(false);
@@ -201,8 +203,8 @@ const Profile = () => {
 
       if (error) {
         toast({
-          title: "Error",
-          description: "Failed to load profile",
+          title: t("toast.errorTitle"),
+          description: t("toast.loadFailed"),
           variant: "destructive",
           duration: 2000,
         });
@@ -320,8 +322,8 @@ const Profile = () => {
 
         if ((count ?? 0) > 1) {
           toast({
-            title: "Can't delete club",
-            description: "Remove all other members first, or transfer admin role.",
+            title: t("leaveClub.cantDeleteClub"),
+            description: t("leaveClub.cantDeleteClubDescription"),
             variant: "destructive",
             duration: 2000,
           });
@@ -337,7 +339,7 @@ const Profile = () => {
         if (error) throw error;
 
         setUserClubs((prev) => prev.filter((c) => c.club_id !== clubId));
-        toast({ title: "Club deleted", duration: 1500 });
+        toast({ title: t("leaveClub.clubDeleted"), duration: 1500 });
       } else {
         // Non-admin: use leave_club RPC
         const { data, error } = await supabase.rpc("leave_club", { p_club_id: clubId });
@@ -346,8 +348,8 @@ const Profile = () => {
         const result = (data as any)?.[0]?.result_status;
         if (result === "sole_admin") {
           toast({
-            title: "Can't leave",
-            description: "You are the only admin. Transfer admin role first.",
+            title: t("leaveClub.cantLeave"),
+            description: t("leaveClub.cantLeaveDescription"),
             variant: "destructive",
             duration: 2000,
           });
@@ -355,13 +357,13 @@ const Profile = () => {
         }
 
         setUserClubs((prev) => prev.filter((c) => c.club_id !== clubId));
-        toast({ title: "Left club", duration: 1500 });
+        toast({ title: t("leaveClub.leftClub"), duration: 1500 });
       }
     } catch (error) {
       console.error("Error leaving club:", error);
       toast({
-        title: "Error",
-        description: "Failed to leave club",
+        title: t("toast.errorTitle"),
+        description: t("toast.leaveClubFailed"),
         variant: "destructive",
         duration: 2000,
       });
@@ -379,10 +381,10 @@ const Profile = () => {
           c.membership_id === membershipId ? { ...c, member_association: newValue } : c
         )
       );
-      toast({ title: newValue ? "Marked as association member" : "Association membership removed", duration: 1500 });
+      toast({ title: newValue ? t("clubs.markedAssociation") : t("clubs.removedAssociation"), duration: 1500 });
     } catch (error) {
       console.error("Error updating member association:", error);
-      toast({ title: "Error", description: "Failed to update", variant: "destructive", duration: 2000 });
+      toast({ title: t("toast.errorTitle"), description: t("toast.updateAssociationFailed"), variant: "destructive", duration: 2000 });
     }
   };
 
@@ -464,15 +466,15 @@ const Profile = () => {
       setIsEditing(false);
 
       toast({
-        title: "Profile updated",
-        description: "Your changes have been saved.",
+        title: t("toast.profileUpdated"),
+        description: t("toast.profileUpdatedDescription"),
         duration: 1500,
       });
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({
-        title: "Error",
-        description: "Failed to update profile",
+        title: t("toast.errorTitle"),
+        description: t("toast.updateFailed"),
         variant: "destructive",
         duration: 2000,
       });
@@ -573,8 +575,8 @@ const Profile = () => {
           if ((count ?? 0) >= 2) {
             const clubName = (ac.clubs as any)?.name ?? "a club";
             toast({
-              title: "Can't delete account",
-              description: `You are the admin of "${clubName}" which has other members. Transfer admin role or remove members first.`,
+              title: t("account.cantDeleteTitle"),
+              description: t("account.cantDeleteDescription", { clubName }),
               variant: "destructive",
               duration: 2000,
             });
@@ -605,8 +607,8 @@ const Profile = () => {
       if (error) throw error;
 
       toast({
-        title: "Account deleted",
-        description: "Your account has been permanently deleted.",
+        title: t("account.deletedTitle"),
+        description: t("account.deletedDescription"),
         duration: 2000,
       });
 
@@ -614,8 +616,8 @@ const Profile = () => {
     } catch (error) {
       console.error("Error deleting account:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete account. Please try again.",
+        title: t("toast.errorTitle"),
+        description: t("toast.deleteAccountFailed"),
         variant: "destructive",
         duration: 2000,
       });
@@ -646,7 +648,7 @@ const Profile = () => {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <p className="text-lg text-muted-foreground text-center mt-12">
-            Profile not found
+            {t("notFound")}
           </p>
         </div>
       </div>
@@ -673,7 +675,7 @@ const Profile = () => {
           <Avatar className="h-20 w-20">
             <AvatarImage
               src={imageFile ? URL.createObjectURL(imageFile) : profile.image_url ?? undefined}
-              alt="Profile"
+              alt={t("avatarAlt")}
               className="object-cover"
             />
             <AvatarFallback className="text-xl bg-muted">
@@ -693,11 +695,11 @@ const Profile = () => {
       {/* Name */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="firstName" className="text-xs text-muted-foreground">First Name</Label>
+          <Label htmlFor="firstName" className="text-xs text-muted-foreground">{t("edit.firstName")}</Label>
           <Input id="firstName" value={profile.first_name} onChange={(e) => setProfile({ ...profile, first_name: e.target.value })} className="bg-muted/50 border-border" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="lastName" className="text-xs text-muted-foreground">Last Name</Label>
+          <Label htmlFor="lastName" className="text-xs text-muted-foreground">{t("edit.lastName")}</Label>
           <Input id="lastName" value={profile.last_name} onChange={(e) => setProfile({ ...profile, last_name: e.target.value })} className="bg-muted/50 border-border" />
         </div>
       </div>
@@ -705,25 +707,25 @@ const Profile = () => {
       {/* Birthday + Height */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="birthday" className="text-xs text-muted-foreground">Birthday</Label>
+          <Label htmlFor="birthday" className="text-xs text-muted-foreground">{t("edit.birthday")}</Label>
           <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="height" className="text-xs text-muted-foreground">Height (cm)</Label>
-          <Input id="height" type="number" min="100" max="250" value={profile.height_cm || ""} onChange={(e) => setProfile({ ...profile, height_cm: e.target.value ? parseInt(e.target.value) : null })} placeholder="175" className="bg-muted/50 border-border" />
+          <Label htmlFor="height" className="text-xs text-muted-foreground">{t("edit.height")}</Label>
+          <Input id="height" type="number" min="100" max="250" value={profile.height_cm || ""} onChange={(e) => setProfile({ ...profile, height_cm: e.target.value ? parseInt(e.target.value) : null })} placeholder={t("edit.heightPlaceholder")} className="bg-muted/50 border-border" />
         </div>
       </div>
 
       {/* Gender */}
       <div className="space-y-1.5 max-w-[calc(50%-0.375rem)]">
-        <Label className="text-xs text-muted-foreground">Gender</Label>
+        <Label className="text-xs text-muted-foreground">{t("edit.gender")}</Label>
         <Select value={profile.gender} onValueChange={(value) => setProfile({ ...profile, gender: value })}>
           <SelectTrigger className="bg-muted/50 border-border"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="male">Male</SelectItem>
-            <SelectItem value="female">Female</SelectItem>
-            <SelectItem value="diverse">Diverse</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
+            <SelectItem value="male">{t("edit.genderMale")}</SelectItem>
+            <SelectItem value="female">{t("edit.genderFemale")}</SelectItem>
+            <SelectItem value="diverse">{t("edit.genderDiverse")}</SelectItem>
+            <SelectItem value="other">{t("edit.genderOther")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -731,8 +733,8 @@ const Profile = () => {
       {/* Location */}
       <div className="space-y-1.5">
         <CityLocationSelector
-          label="Location"
-          placeholder="Start typing your city..."
+          label={t("edit.location")}
+          placeholder={t("edit.locationPlaceholder")}
           value={cityLocation}
           onChange={(val) => {
             setCityLocation(val);
@@ -745,15 +747,15 @@ const Profile = () => {
 
       {/* Bio */}
       <div className="space-y-1.5">
-        <Label htmlFor="bio" className="text-xs text-muted-foreground">Bio</Label>
-        <Textarea id="bio" value={profile.bio || ""} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} placeholder="Tell us about yourself..." rows={3} className="bg-muted/50 border-border" />
+        <Label htmlFor="bio" className="text-xs text-muted-foreground">{t("edit.bio")}</Label>
+        <Textarea id="bio" value={profile.bio || ""} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} placeholder={t("edit.bioPlaceholder")} rows={3} className="bg-muted/50 border-border" />
       </div>
 
       {/* Main Position */}
       <div>
-        <p className="text-xs text-muted-foreground mb-2">Main Position</p>
+        <p className="text-xs text-muted-foreground mb-2">{t("edit.mainPosition")}</p>
         <Select value={getPrimaryPositionId()} onValueChange={updatePrimaryPosition}>
-          <SelectTrigger className="h-11 bg-muted/50 border-border"><SelectValue placeholder="Select your main position" /></SelectTrigger>
+          <SelectTrigger className="h-11 bg-muted/50 border-border"><SelectValue placeholder={t("edit.mainPositionPlaceholder")} /></SelectTrigger>
           <SelectContent>
             {positions.map((position) => (
               <SelectItem key={position.id} value={position.id}>{position.name}</SelectItem>
@@ -764,7 +766,7 @@ const Profile = () => {
 
       {/* Secondary Positions */}
       <div>
-        <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
+        <p className="text-xs text-muted-foreground mb-2">{t("edit.secondaryPositions")}</p>
         <div className="flex flex-wrap gap-2">
           {positions.map((position) => {
             const isPrimary = getPrimaryPositionId() === position.id;
@@ -777,14 +779,14 @@ const Profile = () => {
             );
           })}
         </div>
-        <p className="text-xs text-muted-foreground pt-1">Tap to toggle secondary positions</p>
+        <p className="text-xs text-muted-foreground pt-1">{t("edit.secondaryHint")}</p>
       </div>
 
       {/* Delete account */}
       {isOwnProfile && (
         <div className="pt-6">
           <button onClick={() => setShowDeleteDialog(true)} className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors">
-            <Trash2 className="h-4 w-4" /> Delete my account
+            <Trash2 className="h-4 w-4" /> {t("account.deleteAccount")}
           </button>
         </div>
       )}
@@ -793,8 +795,8 @@ const Profile = () => {
 
   const editFooter = (
     <div className="flex gap-3 pt-4">
-      <Button variant="outline" onClick={handleCancelEdit} className="flex-1">Cancel</Button>
-      <Button onClick={handleSave} disabled={saving || !hasChanges()} className="flex-1">{saving ? "Saving..." : "Save Changes"}</Button>
+      <Button variant="outline" onClick={handleCancelEdit} className="flex-1">{t("edit.cancel")}</Button>
+      <Button onClick={handleSave} disabled={saving || !hasChanges()} className="flex-1">{saving ? t("edit.saving") : t("edit.save")}</Button>
     </div>
   );
 
@@ -809,7 +811,7 @@ const Profile = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h1 className="text-base font-semibold">Profile</h1>
+          <h1 className="text-base font-semibold">{t("pageTitle")}</h1>
         </div>
       </div>
       <div className="h-14" />
@@ -821,7 +823,7 @@ const Profile = () => {
             <Avatar className="h-20 w-20">
               <AvatarImage
                 src={profile.image_url ?? undefined}
-                alt="Profile"
+                alt={t("avatarAlt")}
                 className="object-cover"
               />
               <AvatarFallback className="text-xl bg-muted">
@@ -857,7 +859,7 @@ const Profile = () => {
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               <Cake className="h-3.5 w-3.5 text-primary" />
-              <p className="text-xs text-primary font-medium">Birthday</p>
+              <p className="text-xs text-primary font-medium">{t("header.birthday")}</p>
             </div>
             <p className="text-base font-bold text-foreground">
               {profile.birthday ? formatBirthday(profile.birthday) : "—"}
@@ -866,16 +868,16 @@ const Profile = () => {
           <div className="text-center">
             <div className="flex items-center gap-1.5 mb-1 justify-center">
               <Tag className="h-3.5 w-3.5 text-primary" />
-              <p className="text-xs text-primary font-medium">Height</p>
+              <p className="text-xs text-primary font-medium">{t("header.height")}</p>
             </div>
             <p className="text-base font-bold text-foreground">
-              {profile.height_cm ? `${profile.height_cm} cm` : "—"}
+              {profile.height_cm ? t("header.heightValue", { value: profile.height_cm }) : "—"}
             </p>
           </div>
           <div className="text-right">
             <div className="flex items-center gap-1.5 mb-1 justify-end">
               <User className="h-3.5 w-3.5 text-primary" />
-              <p className="text-xs text-primary font-medium">Gender</p>
+              <p className="text-xs text-primary font-medium">{t("header.gender")}</p>
             </div>
             <p className="text-base font-bold text-foreground capitalize">
               {profile.gender || "—"}
@@ -886,9 +888,9 @@ const Profile = () => {
         {/* ── Tabs ──────────────────────────────────────────── */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
           <TabsList className="w-full">
-            <TabsTrigger value="analytics" className="flex-1 text-xs">Analytics</TabsTrigger>
-            <TabsTrigger value="positions" className="flex-1 text-xs">Positions</TabsTrigger>
-            <TabsTrigger value="clubs" className="flex-1 text-xs">Clubs</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-1 text-xs">{t("tabs.analytics")}</TabsTrigger>
+            <TabsTrigger value="positions" className="flex-1 text-xs">{t("tabs.positions")}</TabsTrigger>
+            <TabsTrigger value="clubs" className="flex-1 text-xs">{t("tabs.clubs")}</TabsTrigger>
           </TabsList>
 
           {/* ── Analytics Tab ─────────────────────────────────── */}
@@ -907,7 +909,7 @@ const Profile = () => {
                       </span>
                     )}
                     {statsYear === "all" && statsClubFilter === "all" && (
-                      <span className="text-xs">All time</span>
+                      <span className="text-xs">{t("analytics.allTime")}</span>
                     )}
                   </div>
                   <Popover>
@@ -921,13 +923,13 @@ const Profile = () => {
                     </PopoverTrigger>
                     <PopoverContent align="end" className="w-56 space-y-3">
                       <div className="space-y-1.5">
-                        <p className="text-xs font-medium text-muted-foreground">Year</p>
+                        <p className="text-xs font-medium text-muted-foreground">{t("analytics.filterYear")}</p>
                         <Select value={statsYear} onValueChange={setStatsYear}>
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All time</SelectItem>
+                            <SelectItem value="all">{t("analytics.allTime")}</SelectItem>
                             {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i).map((y) => (
                               <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                             ))}
@@ -936,13 +938,13 @@ const Profile = () => {
                       </div>
                       {userClubs.length > 1 && (
                         <div className="space-y-1.5">
-                          <p className="text-xs font-medium text-muted-foreground">Club</p>
+                          <p className="text-xs font-medium text-muted-foreground">{t("analytics.filterClub")}</p>
                           <Select value={statsClubFilter} onValueChange={setStatsClubFilter}>
                             <SelectTrigger className="h-8 text-sm">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Clubs</SelectItem>
+                              <SelectItem value="all">{t("analytics.allClubs")}</SelectItem>
                               {userClubs.map((c) => (
                                 <SelectItem key={c.club_id} value={c.club_id}>
                                   {c.name}
@@ -963,12 +965,12 @@ const Profile = () => {
                       <div className="rounded-xl border bg-card p-4 flex flex-col items-center">
                         <Swords className="h-5 w-5 text-primary mb-1.5" />
                         <p className="text-2xl font-bold">{playerStats.gamesPlayed}</p>
-                        <p className="text-xs text-muted-foreground">Games Played</p>
+                        <p className="text-xs text-muted-foreground">{t("analytics.gamesPlayed")}</p>
                       </div>
                       <div className="rounded-xl border bg-card p-4 flex flex-col items-center">
                         <TrendingUp className="h-5 w-5 text-emerald-500 mb-1.5" />
                         <p className="text-2xl font-bold">{playerStats.winRate}%</p>
-                        <p className="text-xs text-muted-foreground">Set Win Rate</p>
+                        <p className="text-xs text-muted-foreground">{t("analytics.setWinRate")}</p>
                       </div>
                       <div className="rounded-xl border bg-card p-4 flex flex-col items-center">
                         <Trophy className="h-5 w-5 text-amber-500 mb-1.5" />
@@ -978,18 +980,18 @@ const Profile = () => {
                             /{playerStats.matchDaysWon + playerStats.matchDaysLost + playerStats.matchDaysTied}
                           </span>
                         </p>
-                        <p className="text-xs text-muted-foreground">Games Won</p>
+                        <p className="text-xs text-muted-foreground">{t("analytics.gamesWon")}</p>
                       </div>
                       <div className="rounded-xl border bg-card p-4 flex flex-col items-center">
                         <Clock className="h-5 w-5 text-blue-500 mb-1.5" />
                         <p className="text-2xl font-bold">{playerStats.totalHours}</p>
-                        <p className="text-xs text-muted-foreground">Hours Played</p>
+                        <p className="text-xs text-muted-foreground">{t("analytics.hoursPlayed")}</p>
                       </div>
                     </div>
 
                     {/* Set Record */}
                     <div className="rounded-xl border bg-card p-4">
-                      <p className="text-xs text-muted-foreground mb-3">Set Record</p>
+                      <p className="text-xs text-muted-foreground mb-3">{t("analytics.setRecord")}</p>
                       <div className="flex items-center gap-3">
                         <div className="flex-1">
                           <div className="flex justify-between text-sm mb-1">
@@ -1022,14 +1024,14 @@ const Profile = () => {
                           <TrendingUp className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">Skill Rating</p>
+                          <p className="text-xs text-muted-foreground">{t("analytics.skillRating")}</p>
                           <div className="flex items-baseline gap-2">
                             <p className="text-2xl font-bold">{profile.skill_rating}</p>
-                            <span className="text-xs text-muted-foreground">/100</span>
+                            <span className="text-xs text-muted-foreground">{t("analytics.skillMax")}</span>
                             {playerStats && (() => {
                               const bonus = Math.round(calculateGameplayBonus(playerStats));
                               return bonus > 0 ? (
-                                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">+{bonus} from gameplay</span>
+                                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{t("analytics.fromGameplay", { bonus })}</span>
                               ) : null;
                             })()}
                           </div>
@@ -1040,8 +1042,8 @@ const Profile = () => {
                 ) : (
                   <div className="rounded-xl border bg-card p-6 text-center">
                     <Swords className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No games played yet</p>
-                    <p className="text-xs text-muted-foreground mt-1">Stats will appear after your first game</p>
+                    <p className="text-sm text-muted-foreground">{t("analytics.noGames")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("analytics.noGamesHint")}</p>
                   </div>
                 )}
               </div>
@@ -1062,7 +1064,7 @@ const Profile = () => {
                   <>
                     {primaryName && (
                       <div>
-                        <p className="text-xs text-muted-foreground mb-2">Main Position</p>
+                        <p className="text-xs text-muted-foreground mb-2">{t("positions.mainPosition")}</p>
                         <div className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
                           <div className="h-2 w-2 rounded-full bg-primary" />
                           <span className="text-base font-semibold text-primary">{primaryName}</span>
@@ -1072,7 +1074,7 @@ const Profile = () => {
 
                     {secondaryPosItems.length > 0 && (
                       <div>
-                        <p className="text-xs text-muted-foreground mb-2">Secondary Positions</p>
+                        <p className="text-xs text-muted-foreground mb-2">{t("positions.secondaryPositions")}</p>
                         <div className="flex flex-wrap gap-2">
                           {secondaryPosItems.map((pp) => {
                             const pos = positions.find((p) => p.id === pp.position_id);
@@ -1098,13 +1100,13 @@ const Profile = () => {
                         className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <HelpCircle className="h-3.5 w-3.5" />
-                        View court positions diagram
+                        {t("positions.viewDiagram")}
                       </button>
                     </div>
                   </>
                 ) : (
                   <div className="py-8 text-center space-y-3">
-                    <p className="text-sm text-muted-foreground">No positions set yet.</p>
+                    <p className="text-sm text-muted-foreground">{t("positions.noPositions")}</p>
                     <button
                       type="button"
                       onClick={() => setIsPositionsHelpOpen(true)}
@@ -1127,14 +1129,14 @@ const Profile = () => {
                   {isOwnProfile && (
                     <div className="flex items-center gap-1.5 pb-1">
                       <p className="text-xs text-muted-foreground">
-                        Manage your club member associations
+                        {t("clubs.manageAssociations")}
                       </p>
                       <Popover>
                         <PopoverTrigger asChild>
                           <button
                             type="button"
                             className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-xs text-muted-foreground"
-                            aria-label="What does member association mean?"
+                            aria-label={t("associationHelpAria")}
                           >
                             ?
                           </button>
@@ -1144,8 +1146,7 @@ const Profile = () => {
                           align="center"
                           className="max-w-xs text-sm leading-snug text-popover-foreground"
                         >
-                          Member Association means you are a paid member of the
-                          club. If you are not sure, leave this unchecked.
+                          {t("clubs.associationHelp")}
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -1165,11 +1166,11 @@ const Profile = () => {
                         </p>
                         <p className="text-sm text-muted-foreground mt-0.5">
                           {club.joined_at
-                            ? `Member since ${new Date(club.joined_at).toLocaleDateString("en-US", {
+                            ? t("clubs.memberSince", { date: new Date(club.joined_at).toLocaleDateString("en-US", {
                                 month: "long",
                                 year: "numeric",
-                              })}`
-                            : "Member"}
+                              }) })
+                            : t("clubs.member")}
                           {" · "}
                           <span className="capitalize">{club.role}</span>
                         </p>
@@ -1178,7 +1179,7 @@ const Profile = () => {
                       {isOwnProfile && (
                         <div className="flex items-center justify-between pt-3 border-t border-border">
                           <Label htmlFor={`assoc-${club.club_id}`} className="text-sm text-foreground">
-                            Member Association
+                            {t("clubs.memberAssociation")}
                           </Label>
                           <Switch
                             id={`assoc-${club.club_id}`}
@@ -1194,7 +1195,7 @@ const Profile = () => {
                 </div>
               ) : (
                 <div className="py-8 text-center">
-                  <p className="text-sm text-muted-foreground">Not a member of any club yet.</p>
+                  <p className="text-sm text-muted-foreground">{t("clubs.noClubs")}</p>
                 </div>
               )}
             </div>
@@ -1214,8 +1215,8 @@ const Profile = () => {
                 <X className="h-4 w-4" />
               </DrawerClose>
               <DrawerHeader className="pt-8">
-                <DrawerTitle>Edit Profile</DrawerTitle>
-                <DrawerDescription>Update your personal information and positions.</DrawerDescription>
+                <DrawerTitle>{t("edit.title")}</DrawerTitle>
+                <DrawerDescription>{t("edit.description")}</DrawerDescription>
               </DrawerHeader>
               <div className="px-4 overflow-y-auto flex-1">
                 {editFormContent}
@@ -1227,8 +1228,8 @@ const Profile = () => {
           <Sheet open={isEditing} onOpenChange={(open) => { if (!open) handleCancelEdit(); }}>
             <SheetContent side="right" className="overflow-y-auto w-[400px] sm:w-[540px]">
               <SheetHeader>
-                <SheetTitle>Edit Profile</SheetTitle>
-                <SheetDescription>Update your personal information and positions.</SheetDescription>
+                <SheetTitle>{t("edit.title")}</SheetTitle>
+                <SheetDescription>{t("edit.description")}</SheetDescription>
               </SheetHeader>
               <div className="py-4">
                 {editFormContent}
@@ -1246,11 +1247,11 @@ const Profile = () => {
             <div className="mx-auto w-full md:max-w-3xl">
               <img
                 src="/positions-volleyball-players-en.png"
-                alt="Volleyball player positions on court"
+                alt={t("positions.drawerTitle")}
                 className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
               />
               <p className="mt-3 text-center text-sm text-muted-foreground">
-                Use this diagram to confirm your primary and secondary roles.
+                {t("positions.diagramCaption")}
               </p>
             </div>
           </div>
@@ -1266,8 +1267,8 @@ const Profile = () => {
                 <X className="h-4 w-4" />
               </DrawerClose>
               <DrawerHeader className="pt-8">
-                <DrawerTitle>Volleyball court positions</DrawerTitle>
-                <DrawerDescription>Reference diagram to pick your positions.</DrawerDescription>
+                <DrawerTitle>{t("positions.drawerTitle")}</DrawerTitle>
+                <DrawerDescription>{t("positions.drawerDescription")}</DrawerDescription>
               </DrawerHeader>
               {positionsContent}
             </DrawerContent>
@@ -1276,8 +1277,8 @@ const Profile = () => {
           <Sheet open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen}>
             <SheetContent side="right" className="overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Volleyball court positions</SheetTitle>
-                <SheetDescription>Reference diagram to pick your positions.</SheetDescription>
+                <SheetTitle>{t("positions.drawerTitle")}</SheetTitle>
+                <SheetDescription>{t("positions.drawerDescription")}</SheetDescription>
               </SheetHeader>
               {positionsContent}
             </SheetContent>
@@ -1289,21 +1290,19 @@ const Profile = () => {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogTitle>{t("account.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete your account and profile picture. You
-              will lose access to the app. Your name and past activity will
-              remain visible in event and game history.
+              {t("account.deleteDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("toast.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting..." : "Delete Account"}
+              {isDeleting ? t("account.deleting") : t("account.deleteConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1315,25 +1314,25 @@ const Profile = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>
               {userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin"
-                ? "Delete club?"
-                : "Leave club?"}
+                ? t("leaveClub.deleteClubTitle")
+                : t("leaveClub.leaveClubTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin"
-                ? "This club will be permanently deleted. This cannot be undone."
-                : "You will no longer be a member of this club. You can request to join again later."}
+                ? t("leaveClub.deleteClubDescription")
+                : t("leaveClub.leaveClubDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLeaving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isLeaving}>{t("toast.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => showLeaveDialog && handleLeaveClub(showLeaveDialog)}
               disabled={isLeaving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isLeaving
-                ? (userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin" ? "Deleting..." : "Leaving...")
-                : (userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin" ? "Delete Club" : "Leave Club")}
+                ? (userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin" ? t("leaveClub.deletingClub") : t("leaveClub.leavingClub"))
+                : (userClubs.find((c) => c.club_id === showLeaveDialog)?.role === "admin" ? t("leaveClub.deleteClubConfirm") : t("leaveClub.leaveClubConfirm"))}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

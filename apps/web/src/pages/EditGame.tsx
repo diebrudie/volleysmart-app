@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
+import { getDateLocale } from "@/lib/dateLocale";
 import {
   ArrowLeft,
   Calendar as CalendarIcon,
@@ -174,6 +176,7 @@ function shuffleArray<T>(array: T[]): T[] {
 const EditGame = () => {
   const { clubId, gameId } = useParams(); // gameId is actually match_day_id
   const navigate = useNavigate();
+  const { t } = useTranslation("games");
   const { toast } = useToast();
   const { setClubId } = useClub();
   const { user } = useAuth();
@@ -777,9 +780,8 @@ const EditGame = () => {
     })();
 
     toast({
-      title: "Teams balanced",
-      description:
-        "Teams have been reorganized for optimal balance. Click Save to apply changes.",
+      title: t("game.teamsBalanced"),
+      description: t("game.teamsBalancedDescription"),
       duration: 1000,
     });
   };
@@ -891,8 +893,8 @@ const EditGame = () => {
       }
 
       toast({
-        title: "Teams saved",
-        description: "All changes have been saved successfully.",
+        title: t("game.teamsSaved"),
+        description: t("game.teamsSavedDescription"),
         duration: 1500,
       });
 
@@ -939,7 +941,7 @@ const EditGame = () => {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "EEEE, do MMMM yyyy") : "Pick a date"}
+                    {date ? format(date, "EEEE, do MMMM yyyy", { locale: getDateLocale() }) : t("game.pickDate")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -1009,7 +1011,7 @@ const EditGame = () => {
                   <path d="M5 21a7 7 0 0 1 14 0" />
                   <path d="M19.65 7.3l-3.17 3.18 1.05 1.05 3.17-3.17a.75.75 0 0 0 0-1.06l-.99-.99a.75.75 0 0 0-1.06 0Z" />
                 </svg>
-                Edit Players
+                {t("game.editPlayers")}
               </Button>
 
               {/* Shuffle Teams Button */}
@@ -1019,7 +1021,7 @@ const EditGame = () => {
                 className="w-full h-12 justify-center"
               >
                 <Shuffle className="mr-2 h-4 w-4" />
-                Shuffle Teams
+                {t("game.shuffleTeams")}
               </Button>
           </div>
 
@@ -1112,7 +1114,7 @@ const EditGame = () => {
                   <span className="font-medium">{activePlayer.name}</span>
                   <span className="mx-1.5 text-muted-foreground">–</span>
                   <span className="text-xs rounded-md px-2 py-0.5 bg-muted text-foreground">
-                    {activePlayer.preferredPosition}
+                    {activePlayer.preferredPosition === "No Position" ? t("game.noPosition") : activePlayer.preferredPosition}
                   </span>
                 </div>
               ) : null}
@@ -1366,7 +1368,7 @@ const EditGame = () => {
       <div className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border px-4 py-3 pb-[calc(theme(spacing.3)+env(safe-area-inset-bottom))]">
         <div className="max-w-6xl mx-auto flex justify-end">
           <Button onClick={handleSave} size="lg">
-            Save
+            {t("game.save")}
             <Save className="ml-2 h-4 w-4" />
           </Button>
         </div>

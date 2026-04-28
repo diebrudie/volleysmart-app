@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ interface Faq {
 }
 
 const FaqsPage = () => {
+  const { t } = useTranslation("common");
   const navigate = useNavigate();
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -43,9 +45,7 @@ const FaqsPage = () => {
 
       if (queryError) {
         console.error("Error loading FAQs:", queryError);
-        setError(
-          "We could not load the FAQs right now. Please try again later."
-        );
+        setError(t("faqs.loadError"));
         setIsLoading(false);
         return;
       }
@@ -88,7 +88,7 @@ const FaqsPage = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h1 className="text-base font-semibold">FAQs</h1>
+          <h1 className="text-base font-semibold">{t("faqs.title")}</h1>
         </div>
       </div>
       <div className="h-14" />
@@ -97,14 +97,14 @@ const FaqsPage = () => {
         <div className="px-4 py-4 pb-24 max-w-4xl mx-auto">
           {/* Subtitle */}
           <p className="text-sm text-muted-foreground mb-3">
-            Browse all frequently asked questions about VolleySmart.
+            {t("faqs.subtitle")}
           </p>
 
           {/* Search */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search questions..."
+              placeholder={t("faqs.searchPlaceholder")}
               value={searchQuery}
               onChange={handleSearchChange}
               className="pl-10 h-9"
@@ -113,7 +113,7 @@ const FaqsPage = () => {
 
           {isLoading && (
             <p className="py-8 text-center text-muted-foreground text-sm">
-              Loading FAQs...
+              {t("faqs.loading")}
             </p>
           )}
 
@@ -123,7 +123,7 @@ const FaqsPage = () => {
 
           {!isLoading && !error && faqsByCategory.length === 0 && (
             <p className="py-8 text-center text-muted-foreground text-sm">
-              No FAQs match your search.
+              {t("faqs.noResults")}
             </p>
           )}
 

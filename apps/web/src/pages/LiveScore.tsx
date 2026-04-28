@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +45,7 @@ const LiveScore = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation("games");
   const queryClient = useQueryClient();
 
   const [teamAPoints, setTeamAPoints] = useState(0);
@@ -262,8 +264,8 @@ const LiveScore = () => {
       queryClient.invalidateQueries({ queryKey: ["game", matchDayId] });
 
       toast({
-        title: `Set ${currentSetNumber} saved!`,
-        description: `${teamAPoints} - ${teamBPoints}`,
+        title: t("liveScore.setSavedTitle", { setNumber: currentSetNumber }),
+        description: t("liveScore.setSavedDescription", { scoreA: teamAPoints, scoreB: teamBPoints }),
         duration: 1500,
       });
 
@@ -282,8 +284,8 @@ const LiveScore = () => {
     } catch (error) {
       console.error("Error saving set:", error);
       toast({
-        title: "Failed to save set",
-        description: "Please try again.",
+        title: t("liveScore.failedToSaveSet"),
+        description: t("liveScore.pleaseTryAgain"),
         variant: "destructive",
         duration: 2000,
       });
@@ -320,7 +322,7 @@ const LiveScore = () => {
   if (!matchData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
-        Game not found
+        {t("liveScore.gameNotFound")}
       </div>
     );
   }
@@ -330,14 +332,14 @@ const LiveScore = () => {
   const endSetContent = (
     <>
       <div className="text-center py-4">
-        <p className="text-lg font-semibold mb-2">Save Set {currentSetNumber}?</p>
+        <p className="text-lg font-semibold mb-2">{t("liveScore.saveSetTitle", { setNumber: currentSetNumber })}</p>
         <p className="text-4xl font-bold">
           <span className="text-red-500">{teamAPoints}</span>
           <span className="mx-2 text-muted-foreground">-</span>
           <span className="text-emerald-500">{teamBPoints}</span>
         </p>
         {teamAPoints === 0 && teamBPoints === 0 && (
-          <p className="text-sm text-amber-500 mt-2">Both scores are 0</p>
+          <p className="text-sm text-amber-500 mt-2">{t("liveScore.bothScoresZero")}</p>
         )}
       </div>
       <div className="flex gap-3">
@@ -346,14 +348,14 @@ const LiveScore = () => {
           className="flex-1"
           onClick={() => setShowEndSetConfirm(false)}
         >
-          Cancel
+          {t("liveScore.cancel")}
         </Button>
         <Button
           className="flex-1"
           onClick={handleEndSet}
           disabled={isSaving}
         >
-          {isSaving ? "Saving..." : "Save Set"}
+          {isSaving ? t("liveScore.saving") : t("liveScore.saveSet")}
         </Button>
       </div>
     </>
@@ -362,9 +364,9 @@ const LiveScore = () => {
   const exitContent = (
     <>
       <div className="text-center py-4">
-        <p className="text-lg font-semibold mb-2">Unsaved set in progress</p>
+        <p className="text-lg font-semibold mb-2">{t("liveScore.unsavedSetInProgress")}</p>
         <p className="text-muted-foreground">
-          Set {currentSetNumber}: {teamAPoints} - {teamBPoints} will be lost.
+          {t("liveScore.setWillBeLost", { setNumber: currentSetNumber, scoreA: teamAPoints, scoreB: teamBPoints })}
         </p>
       </div>
       <div className="flex gap-3">
@@ -373,14 +375,14 @@ const LiveScore = () => {
           className="flex-1"
           onClick={() => setShowExitConfirm(false)}
         >
-          Keep Scoring
+          {t("liveScore.keepScoring")}
         </Button>
         <Button
           variant="destructive"
           className="flex-1"
           onClick={confirmExit}
         >
-          Discard & Exit
+          {t("liveScore.discardAndExit")}
         </Button>
       </div>
     </>
@@ -410,7 +412,7 @@ const LiveScore = () => {
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <h1 className="text-base font-semibold">SET {currentSetNumber}</h1>
+        <h1 className="text-base font-semibold">{t("liveScore.setHeader", { setNumber: currentSetNumber })}</h1>
         <button
           onClick={handleUndo}
           disabled={undoStack.length === 0}
@@ -450,8 +452,8 @@ const LiveScore = () => {
             <span className="text-emerald-500">{teamBPoints}</span>
           </div>
           <div className="flex justify-between px-4 mt-1">
-            <span className="text-sm text-muted-foreground">Team A</span>
-            <span className="text-sm text-muted-foreground">Team B</span>
+            <span className="text-sm text-muted-foreground">{t("liveScore.teamA")}</span>
+            <span className="text-sm text-muted-foreground">{t("liveScore.teamB")}</span>
           </div>
         </div>
       </div>
@@ -461,7 +463,7 @@ const LiveScore = () => {
         {allSetsComplete ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-lg text-muted-foreground font-medium">
-              All sets complete
+              {t("liveScore.allSetsComplete")}
             </p>
           </div>
         ) : (
@@ -475,12 +477,12 @@ const LiveScore = () => {
               }`}
             >
               <span className="text-red-600 dark:text-red-400 text-2xl font-bold">
-                Team A
+                {t("liveScore.teamA")}
               </span>
               <span className="text-red-500/60 text-lg mt-1">+1</span>
               {teamAHasSetPoint && (
                 <span className="text-xs font-semibold text-red-600 dark:text-red-400 mt-2 uppercase tracking-wider">
-                  Set Point
+                  {t("liveScore.setPoint")}
                 </span>
               )}
             </button>
@@ -493,12 +495,12 @@ const LiveScore = () => {
               }`}
             >
               <span className="text-emerald-600 dark:text-emerald-400 text-2xl font-bold">
-                Team B
+                {t("liveScore.teamB")}
               </span>
               <span className="text-emerald-500/60 text-lg mt-1">+1</span>
               {teamBHasSetPoint && (
                 <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-2 uppercase tracking-wider">
-                  Set Point
+                  {t("liveScore.setPoint")}
                 </span>
               )}
             </button>
@@ -513,7 +515,7 @@ const LiveScore = () => {
           onClick={() => setShowEndSetConfirm(true)}
           disabled={allSetsComplete}
         >
-          End Set
+          {t("liveScore.endSet")}
         </Button>
       </div>
 
@@ -521,8 +523,8 @@ const LiveScore = () => {
       <Dialog open={showEndSetConfirm} onOpenChange={setShowEndSetConfirm}>
         <DialogContent>
           <DialogHeader className="sr-only">
-            <DialogTitle>End Set</DialogTitle>
-            <DialogDescription>Confirm saving the current set score</DialogDescription>
+            <DialogTitle>{t("liveScore.endSetDialogTitle")}</DialogTitle>
+            <DialogDescription>{t("liveScore.endSetDialogDescription")}</DialogDescription>
           </DialogHeader>
           {endSetContent}
         </DialogContent>
@@ -532,8 +534,8 @@ const LiveScore = () => {
       <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
         <DialogContent>
           <DialogHeader className="sr-only">
-            <DialogTitle>Exit</DialogTitle>
-            <DialogDescription>Confirm exiting with unsaved score</DialogDescription>
+            <DialogTitle>{t("liveScore.exitDialogTitle")}</DialogTitle>
+            <DialogDescription>{t("liveScore.exitDialogDescription")}</DialogDescription>
           </DialogHeader>
           {exitContent}
         </DialogContent>

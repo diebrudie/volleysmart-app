@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { TFunction } from "i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,29 +20,33 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { Check } from "lucide-react";
 
-const resetPasswordSchema = z
-  .object({
-    password: z
-      .string()
-      .min(6, { message: "Password must be at least 6 characters" }),
-    confirmPassword: z
-      .string()
-      .min(6, { message: "Password must be at least 6 characters" }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+function createResetPasswordSchema(t: TFunction) {
+  return z
+    .object({
+      password: z
+        .string()
+        .min(6, { message: t("validation:password.tooShort", { min: 6 }) }),
+      confirmPassword: z
+        .string()
+        .min(6, { message: t("validation:password.tooShort", { min: 6 }) }),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("auth:signup.passwordsDoNotMatch"),
+      path: ["confirmPassword"],
+    });
+}
 
-type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+type ResetPasswordFormValues = z.infer<ReturnType<typeof createResetPasswordSchema>>;
 
 const ResetPassword = () => {
+  const { t } = useTranslation("auth");
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isValidLink, setIsValidLink] = useState(true);
 
+  const resetPasswordSchema = useMemo(() => createResetPasswordSchema(t), [t]);
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
@@ -57,8 +63,8 @@ const ResetPassword = () => {
       if (error || !data.session) {
         setIsValidLink(false);
         toast({
-          title: "Invalid or expired link",
-          description: "Please request a new password reset link.",
+          title: t("resetPassword.invalidLinkToast"),
+          description: t("resetPassword.invalidLinkToastDescription"),
           variant: "destructive",
           duration: 2000,
         });
@@ -82,8 +88,8 @@ const ResetPassword = () => {
       setIsSuccess(true);
 
       toast({
-        title: "Password updated",
-        description: "Your password has been successfully updated.",
+        title: t("resetPassword.toastTitle"),
+        description: t("resetPassword.toastDescription"),
         duration: 1500,
       });
 
@@ -94,9 +100,9 @@ const ResetPassword = () => {
     } catch (error: unknown) {
       console.error("Password reset error:", error);
       toast({
-        title: "Error",
+        title: t("resetPassword.errorTitle"),
         description:
-          error instanceof Error ? error.message : "Failed to reset password.",
+          error instanceof Error ? error.message : t("resetPassword.errorDefault"),
         variant: "destructive",
         duration: 2000,
       });
@@ -110,13 +116,13 @@ const ResetPassword = () => {
       <AuthLayout>
         <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
           <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-            Invalid Link
+            {t("resetPassword.invalidLink")}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            This password reset link is invalid or has expired.
+            {t("resetPassword.invalidLinkDescription")}
           </p>
           <Button variant="primary" asChild className="w-full">
-            <Link to="/forgot-password">Request new reset link</Link>
+            <Link to="/forgot-password">{t("resetPassword.requestNewLink")}</Link>
           </Button>
         </div>
       </AuthLayout>
@@ -127,10 +133,10 @@ const ResetPassword = () => {
     <AuthLayout>
       <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full">
         <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-          Reset Password
+          {t("resetPassword.title")}
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Enter a new password for your account.
+          {t("resetPassword.subtitle")}
         </p>
 
         {isSuccess ? (
@@ -139,14 +145,13 @@ const ResetPassword = () => {
               <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
             <h3 className="text-lg font-medium mb-2 text-gray-900 dark:text-gray-100">
-              Password Updated!
+              {t("resetPassword.passwordUpdated")}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Your password has been successfully reset. You will be redirected
-              to the login page shortly.
+              {t("resetPassword.passwordUpdatedDescription")}
             </p>
             <Button variant="primary" asChild>
-              <Link to="/login">Back to login</Link>
+              <Link to="/login">{t("resetPassword.backToLogin")}</Link>
             </Button>
           </div>
         ) : (
@@ -157,11 +162,11 @@ const ResetPassword = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Password</FormLabel>
+                    <FormLabel>{t("resetPassword.newPassword")}</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="Enter new password"
+                        placeholder={t("resetPassword.newPasswordPlaceholder")}
                         {...field}
                       />
                     </FormControl>
@@ -174,11 +179,11 @@ const ResetPassword = () => {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel>{t("resetPassword.confirmPassword")}</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="Confirm new password"
+                        placeholder={t("resetPassword.confirmPasswordPlaceholder")}
                         {...field}
                       />
                     </FormControl>
@@ -192,7 +197,7 @@ const ResetPassword = () => {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Resetting..." : "Reset Password"}
+                {isLoading ? t("resetPassword.resetting") : t("resetPassword.submit")}
               </Button>
             </form>
           </Form>

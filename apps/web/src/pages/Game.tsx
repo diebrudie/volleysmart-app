@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -120,7 +121,7 @@ const canEditGame = (gameDate: string | Date): boolean => {
 };
 
 /** Prefer snapshot_name; then live player name; then fallback */
-function displayPlayerName(gp: GamePlayerData): string {
+function displayPlayerName(gp: GamePlayerData, deletedLabel = "Deleted P."): string {
   const snap = gp.snapshot_name?.trim();
   if (snap) {
     const parts = snap.split(/\s+/).filter(Boolean);
@@ -133,12 +134,13 @@ function displayPlayerName(gp: GamePlayerData): string {
   if (p?.first_name || p?.last_name) {
     return formatShortName(p.first_name ?? "", p.last_name ?? "");
   }
-  return "Deleted P.";
+  return deletedLabel;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
 
 const Game = () => {
+  const { t } = useTranslation("games");
   const { matchDayId } = useParams<{ matchDayId: string }>();
   const navigate = useNavigate();
   const loc = useLocation();
@@ -245,14 +247,14 @@ const Game = () => {
           return {
             player_id: gp.player_id,
             team_name: gp.team_name,
-            position_name: gp.position_played || "No Position",
+            position_name: gp.position_played || t("game.noPosition"),
             order_index: gp.order_index,
             snapshot_name: gp.snapshot_name,
             players: player || {
               id: gp.player_id,
               user_id: null,
-              first_name: "Unknown",
-              last_name: "Player",
+              first_name: t("game.unknownFirstName"),
+              last_name: t("game.unknownLastName"),
             },
           };
         });
@@ -340,12 +342,12 @@ const Game = () => {
           .eq("id", game.id);
         if (error) throw error;
       }
-      toast({ title: "Changes saved", description: "Scores updated.", duration: 1200 });
+      toast({ title: t("game.toastChangesSaved"), description: t("game.toastScoresUpdated"), duration: 1200 });
       setEditing(false);
       refetch();
     } catch (error) {
       console.error("Error saving changes:", error);
-      toast({ title: "Error", description: "Failed to save changes.", variant: "destructive", duration: 2000 });
+      toast({ title: t("game.toastError"), description: t("game.toastFailedSaveChanges"), variant: "destructive", duration: 2000 });
     }
   };
 
@@ -439,11 +441,11 @@ const Game = () => {
         .delete()
         .eq("id", matchData.id);
       if (error) throw error;
-      toast({ title: "Match deleted", duration: 1500 });
+      toast({ title: t("game.toastMatchDeleted"), duration: 1500 });
       navigate(`/games/${matchData.club_id}`);
     } catch (error) {
       console.error("Error deleting match:", error);
-      toast({ title: "Error", description: "Failed to delete match.", variant: "destructive", duration: 2000 });
+      toast({ title: t("game.toastError"), description: t("game.toastFailedDeleteMatch"), variant: "destructive", duration: 2000 });
     }
   };
 
@@ -481,16 +483,16 @@ const Game = () => {
         team_name: gp.team_name,
         original_team_name: gp.team_name,
         manually_adjusted: false,
-        position_played: gp.position_name === "No Position" ? null : gp.position_name,
+        position_played: gp.position_name === t("game.noPosition") ? null : gp.position_name,
       }));
       const { error: gpError } = await supabase.from("game_players").insert(gamePlayersToInsert);
       if (gpError) throw gpError;
 
-      toast({ title: "Game created!", description: "New game with the same teams", duration: 1500 });
+      toast({ title: t("game.toastGameCreated"), description: t("game.toastNewGameSameTeams"), duration: 1500 });
       navigate(`/game/${matchDay.id}`);
     } catch (error) {
       console.error("Error creating new game:", error);
-      toast({ title: "Error", description: "Failed to create new game.", variant: "destructive", duration: 2000 });
+      toast({ title: t("game.toastError"), description: t("game.toastFailedCreateGame"), variant: "destructive", duration: 2000 });
     }
   };
 
@@ -508,11 +510,11 @@ const Game = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Match not found</h2>
+          <h2 className="text-xl font-semibold mb-2">{t("game.matchNotFound")}</h2>
           <p className="text-muted-foreground mb-4">
-            The match you're looking for doesn't exist or you don't have access.
+            {t("game.matchNotFoundDescription")}
           </p>
-          <Button onClick={goBack}>Go Back</Button>
+          <Button onClick={goBack}>{t("game.goBack")}</Button>
         </div>
       </div>
     );
@@ -522,8 +524,8 @@ const Game = () => {
 
   const toUI = (gp: GamePlayerData): UIPlayer => ({
     id: gp.player_id,
-    name: displayPlayerName(gp),
-    position: gp.position_name ?? "No Position",
+    name: displayPlayerName(gp, t("game.deletedPlayer")),
+    position: gp.position_name ?? t("game.noPosition"),
     sortRole: normalizeRole(gp.position_name),
     orderIndex: gp.order_index ?? null,
   });
@@ -557,18 +559,18 @@ const Game = () => {
   );
   const winner = hasPlayedAnySet
     ? teamAWins > teamBWins
-      ? "Team A"
+      ? t("game.teamA")
       : teamBWins > teamAWins
-      ? "Team B"
-      : "Tie"
-    : "TBD";
+      ? t("game.teamB")
+      : t("game.tie")
+    : t("game.tbd");
 
   const matchWinner =
     teamAWins > teamBWins
-      ? "Team A"
+      ? t("game.teamA")
       : teamBWins > teamAWins
-      ? "Team B"
-      : "Draw";
+      ? t("game.teamB")
+      : t("game.draw");
 
   // ── Date formatting ────────────────────────────────────────────────────────
 
@@ -596,7 +598,7 @@ const Game = () => {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <h1 className="text-base font-semibold">
-            {isMatchToday ? "Today's Game" : "Game Details"}
+            {isMatchToday ? t("game.todaysGame") : t("game.gameDetails")}
           </h1>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -612,14 +614,14 @@ const Game = () => {
                   }
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit Teams
+                  {t("game.editTeams")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
                 onClick={() => setIsEditingLocation(true)}
               >
                 <MapPin className="mr-2 h-4 w-4" />
-                Edit Location
+                {t("game.editLocation")}
               </DropdownMenuItem>
               {matchData.planned_event_id && (
                 <DropdownMenuItem
@@ -628,7 +630,7 @@ const Game = () => {
                   }
                 >
                   <CalendarCheck className="mr-2 h-4 w-4" />
-                  View Event
+                  {t("game.viewEvent")}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -661,7 +663,7 @@ const Game = () => {
             )}
             <span className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
-              {teamAPlayers.length + teamBPlayers.length} players
+              {t("game.playerCount", { count: teamAPlayers.length + teamBPlayers.length })}
             </span>
           </div>
         </div>
@@ -672,7 +674,7 @@ const Game = () => {
         {/* Location editing inline */}
         {isEditingLocation && (
           <div className="rounded-lg border border-border p-4 space-y-3 bg-card">
-            <p className="text-sm font-medium">Update Location</p>
+            <p className="text-sm font-medium">{t("game.updateLocation")}</p>
             <LocationSelector
               clubId={matchData.club_id}
               value={matchData.location_id || undefined}
@@ -683,22 +685,22 @@ const Game = () => {
                     .update({ location_id: locationId })
                     .eq("id", matchData.id);
                   if (error) throw error;
-                  toast({ title: "Location updated", duration: 1500 });
+                  toast({ title: t("game.toastLocationUpdated"), duration: 1500 });
                   setIsEditingLocation(false);
                   refetch();
                 } catch (err) {
                   console.error("Error updating location:", err);
-                  toast({ title: "Error", description: "Failed to update location.", variant: "destructive", duration: 2000 });
+                  toast({ title: t("game.toastError"), description: t("game.toastFailedUpdateLocation"), variant: "destructive", duration: 2000 });
                 }
               }}
-              placeholder="Select or create location"
+              placeholder={t("game.selectOrCreateLocation")}
             />
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsEditingLocation(false)}
             >
-              Cancel
+              {t("game.cancel")}
             </Button>
           </div>
         )}
@@ -708,7 +710,7 @@ const Game = () => {
           <div className="flex">
             <div className="w-1/2 bg-card">
               <h3 className="bg-red-500 dark:bg-red-600 text-white py-2 px-3 text-center text-sm font-semibold">
-                Team A
+                {t("game.teamA")}
               </h3>
               <ul className="space-y-1 p-3">
                 {teamAPlayers.map((player, index) => (
@@ -719,7 +721,7 @@ const Game = () => {
                     <span className="font-medium truncate">
                       {player.name}
                     </span>
-                    {player.position && player.position !== "No Position" && (
+                    {player.position && player.position !== t("game.noPosition") && (
                       <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
                         — {shortenPosition(player.position)}
                       </span>
@@ -730,7 +732,7 @@ const Game = () => {
             </div>
             <div className="w-1/2 bg-card border-l border-border">
               <h3 className="bg-emerald-500 dark:bg-emerald-600 text-white py-2 px-3 text-center text-sm font-semibold">
-                Team B
+                {t("game.teamB")}
               </h3>
               <ul className="space-y-1 p-3">
                 {teamBPlayers.map((player, index) => (
@@ -741,7 +743,7 @@ const Game = () => {
                     <span className="font-medium truncate">
                       {player.name}
                     </span>
-                    {player.position && player.position !== "No Position" && (
+                    {player.position && player.position !== t("game.noPosition") && (
                       <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
                         — {shortenPosition(player.position)}
                       </span>
@@ -756,11 +758,11 @@ const Game = () => {
         {/* Score overview */}
         <div className="rounded-lg overflow-hidden border border-border">
           <div className="bg-primary text-primary-foreground py-3 text-center">
-            <h2 className="text-lg font-bold tracking-wide">SCORE</h2>
+            <h2 className="text-lg font-bold tracking-wide">{t("game.score")}</h2>
           </div>
           <div className="bg-card p-6 text-center">
             <p className="text-2xl font-bold mb-2">
-              {hasPlayedAnySet ? winner : "TBD"}
+              {hasPlayedAnySet ? winner : t("game.tbd")}
             </p>
             <div className="text-5xl font-bold">
               <span className="text-red-500">{teamAWins}</span>
@@ -778,7 +780,7 @@ const Game = () => {
             onClick={() => navigate(`/live-score/${matchDayId}`)}
           >
             <Radio className="h-4 w-4 mr-2" />
-            Live Score Tracker
+            {t("game.liveScoreTracker")}
           </Button>
         )}
 
@@ -854,23 +856,23 @@ const Game = () => {
         {editing && (
           <div className="rounded-xl border border-border bg-card p-3 sm:p-6 mb-8">
             <h3 className="text-lg font-semibold mb-4 text-foreground">
-              Edit Match Scores
+              {t("game.editMatchScores")}
             </h3>
             <div className="rounded-md border border-border overflow-x-auto">
               <table className="min-w-full divide-y divide-border">
                 <thead className="bg-muted">
                   <tr>
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Set
+                      {t("game.set")}
                     </th>
                     <th className="px-2 sm:px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Team A
+                      {t("game.teamA")}
                     </th>
                     <th className="px-2 sm:px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Team B
+                      {t("game.teamB")}
                     </th>
                     <th className="pl-6 pr-2 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Winner
+                      {t("game.winner")}
                     </th>
                   </tr>
                 </thead>
@@ -880,7 +882,7 @@ const Game = () => {
                     .map((game, index) => (
                       <tr key={game.id}>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap font-medium text-foreground text-sm">
-                          Set {game.game_number}
+                          {t("game.setNumber", { number: game.game_number })}
                         </td>
                         <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right">
                           <Input
@@ -916,14 +918,14 @@ const Game = () => {
                               }`}
                             >
                               {game.team_a_score > game.team_b_score
-                                ? "Team A"
+                                ? t("game.teamA")
                                 : game.team_b_score > game.team_a_score
-                                ? "Team B"
-                                : "Tie"}
+                                ? t("game.teamB")
+                                : t("game.tie")}
                             </span>
                           ) : (
                             <span className="text-muted-foreground text-xs">
-                              Not played
+                              {t("game.notPlayed")}
                             </span>
                           )}
                         </td>
@@ -931,7 +933,7 @@ const Game = () => {
                     ))}
                   <tr className="bg-muted font-semibold">
                     <td className="px-3 sm:px-6 py-4 text-sm text-foreground">
-                      Total Points
+                      {t("game.totalPoints")}
                     </td>
                     <td className="px-2 sm:px-6 py-4 text-right text-foreground">
                       {editedGames.reduce((s, g) => s + g.team_a_score, 0)}
@@ -942,9 +944,9 @@ const Game = () => {
                     <td className="pl-6 pr-2 sm:px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          matchWinner === "Team A"
+                          matchWinner === t("game.teamA")
                             ? "bg-red-500/10 text-red-600 dark:bg-red-900/20 dark:text-red-400"
-                            : matchWinner === "Team B"
+                            : matchWinner === t("game.teamB")
                             ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
                             : "bg-muted text-muted-foreground"
                         }`}
@@ -967,7 +969,7 @@ const Game = () => {
                 className="flex items-center gap-1"
               >
                 <X className="h-4 w-4" />
-                Cancel
+                {t("game.cancel")}
               </Button>
               <Button
                 variant="default"
@@ -976,7 +978,7 @@ const Game = () => {
                 className="flex items-center gap-1"
               >
                 <Save className="h-4 w-4" />
-                Save Changes
+                {t("game.saveChanges")}
               </Button>
             </div>
           </div>
@@ -987,18 +989,17 @@ const Game = () => {
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Are you sure you want to delete?</DialogTitle>
+            <DialogTitle>{t("game.deleteConfirmTitle")}</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently delete the
-              match and all associated data.
+              {t("game.deleteConfirmDescription")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
-              Cancel
+              {t("game.cancel")}
             </Button>
             <Button variant="destructive" onClick={handleDeleteMatch}>
-              Delete
+              {t("game.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

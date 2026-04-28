@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 
 const VerifyEmail = () => {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const location = useLocation();
   const [countdown, setCountdown] = useState(15);
@@ -33,11 +35,11 @@ const VerifyEmail = () => {
         </div>
 
         <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100 mb-2">
-          Check Your Email
+          {t("verifyEmail.title")}
         </h1>
 
         <p className="text-center mt-2 text-gray-600 dark:text-gray-400 mb-6">
-          We sent a verification link to{" "}
+          {t("verifyEmail.sentTo")}{" "}
           <span className="font-medium text-gray-900 dark:text-gray-100">
             {email}
           </span>
@@ -45,20 +47,19 @@ const VerifyEmail = () => {
 
         <div className="mt-6 space-y-4">
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-            Please click the link in your email to verify your account. If you
-            don't see it, check your spam folder.
+            {t("verifyEmail.instructions")}
           </p>
 
           <div className="text-center mt-6">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Redirecting to login in {countdown} seconds...
+              {t("verifyEmail.redirecting", { countdown })}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3 mt-4">
               <Button variant="action" onClick={() => navigate("/login")}>
-                Go to Login
+                {t("verifyEmail.goToLogin")}
               </Button>
               <Button variant="primary" onClick={() => navigate("/")}>
-                Back to Home
+                {t("verifyEmail.backToHome")}
               </Button>
             </div>
           </div>

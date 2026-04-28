@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ const Signup = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
   const { signup, signInWithOAuth, isAuthenticated } = useAuth();
+  const { t } = useTranslation("auth");
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -49,7 +51,7 @@ const Signup = () => {
 
     if (password !== confirmPassword) {
       toast({
-        title: "Passwords do not match",
+        title: t("signup.passwordsDoNotMatch"),
         variant: "destructive",
         duration: 2000,
       });
@@ -82,10 +84,10 @@ const Signup = () => {
           </Link>
 
           <h1 className="mt-10 text-3xl font-semibold tracking-tight">
-            Welcome to VolleySmart
+            {t("signup.title")}
           </h1>
           <p className="mt-2 text-slate-600">
-            Create balanced volleyball teams with ease
+            {t("signup.subtitle")}
           </p>
 
           {step === 1 ? (
@@ -108,25 +110,23 @@ const Signup = () => {
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                     </svg>
                   )}
-                  Continue with Google
+                  {t("signup.continueWithGoogle")}
                 </button>
 
               </div>
 
-              {/* Divider */}
               <div className="relative mt-5">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-gray-100 px-3 text-gray-500">or sign up with email</span>
+                  <span className="bg-gray-100 px-3 text-gray-500">{t("signup.orSignUpWithEmail")}</span>
                 </div>
               </div>
 
-              {/* Email entry */}
               <form onSubmit={handleEmailContinue} className="mt-5">
                 <div className="space-y-1">
-                  <Label htmlFor="email">Email address</Label>
+                  <Label htmlFor="email">{t("signup.emailAddress")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -134,7 +134,7 @@ const Signup = () => {
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
+                    placeholder={t("signup.emailPlaceholder")}
                     required
                   />
                 </div>
@@ -143,14 +143,14 @@ const Signup = () => {
                   className="w-full mt-4"
                   disabled={!email}
                 >
-                  Continue with email
+                  {t("signup.continueWithEmail")}
                 </Button>
               </form>
 
               <p className="mt-6 text-sm text-slate-600">
-                Already have an account?{" "}
+                {t("signup.alreadyHaveAccount")}{" "}
                 <Link to="/login" className="text-blue-600 hover:underline">
-                  Log in
+                  {t("signup.logIn")}
                 </Link>
               </p>
             </>
@@ -158,64 +158,64 @@ const Signup = () => {
             <>
               {/* Step 2: name + password */}
               <p className="mt-2 text-slate-500 text-sm">
-                Creating account for <span className="font-medium text-slate-700">{email}</span>{" "}
+                {t("signup.creatingAccountFor")} <span className="font-medium text-slate-700">{email}</span>{" "}
                 <button
                   type="button"
                   onClick={() => setStep(1)}
                   className="text-blue-600 hover:underline"
                 >
-                  (Edit)
+                  {t("signup.edit")}
                 </button>
               </p>
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <Label htmlFor="firstName">First name</Label>
+                    <Label htmlFor="firstName">{t("signup.firstName")}</Label>
                     <Input
                       id="firstName"
                       autoComplete="given-name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Jane"
+                      placeholder={t("signup.firstNamePlaceholder")}
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="lastName">Last name</Label>
+                    <Label htmlFor="lastName">{t("signup.lastName")}</Label>
                     <Input
                       id="lastName"
                       autoComplete="family-name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Doe"
+                      placeholder={t("signup.lastNamePlaceholder")}
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t("signup.password")}</Label>
                   <Input
                     id="password"
                     type="password"
                     autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Create a password"
+                    placeholder={t("signup.passwordPlaceholder")}
                     required
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="confirmPassword">Confirm password</Label>
+                  <Label htmlFor="confirmPassword">{t("signup.confirmPassword")}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
                     autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat your password"
+                    placeholder={t("signup.confirmPasswordPlaceholder")}
                     required
                   />
                 </div>
@@ -225,14 +225,14 @@ const Signup = () => {
                   className="w-full mt-3"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Creating account..." : "Create account"}
+                  {isSubmitting ? t("signup.creatingAccount") : t("signup.createAccount")}
                 </Button>
               </form>
 
               <p className="mt-6 text-sm text-slate-600">
-                Already have an account?{" "}
+                {t("signup.alreadyHaveAccount")}{" "}
                 <Link to="/login" className="text-blue-600 hover:underline">
-                  Log in
+                  {t("signup.logIn")}
                 </Link>
               </p>
             </>

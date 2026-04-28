@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ interface NewClubFormData {
 }
 
 const NewClub = () => {
+  const { t } = useTranslation("clubs");
   const {
     register,
     handleSubmit,
@@ -118,8 +120,8 @@ const NewClub = () => {
   const onSubmit = async (data: NewClubFormData) => {
     if (!user) {
       toast({
-        title: "Error",
-        description: "You must be logged in to create a club",
+        title: t("toast.errorTitle"),
+        description: t("newClub.toastLoginError"),
         variant: "destructive",
         duration: 2000,
       });
@@ -139,8 +141,8 @@ const NewClub = () => {
           imageUrl = await uploadImage(imageFile);
           if (!imageUrl) {
             toast({
-              title: "Notice",
-              description: "Image upload failed, but club will be created without an image.",
+              title: t("newClub.toastImageFailed"),
+              description: t("newClub.toastImageFailed"),
               variant: "default",
               duration: 1500,
             });
@@ -178,8 +180,8 @@ const NewClub = () => {
       }
 
       toast({
-        title: "Club created!",
-        description: "Your club has been created successfully.",
+        title: t("newClub.toastCreatedTitle"),
+        description: t("newClub.toastCreatedDescription"),
         duration: 1500,
       });
 
@@ -191,10 +193,10 @@ const NewClub = () => {
       const msg =
         error instanceof Error
           ? error.message
-          : "Failed to create club. Please try again.";
+          : t("newClub.toastDefaultError");
       setServerError(msg);
       toast({
-        title: "Error",
+        title: t("toast.errorTitle"),
         description: msg,
         variant: "destructive",
         duration: 2000,
@@ -215,7 +217,7 @@ const NewClub = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h1 className="text-base font-semibold">Create a Club</h1>
+          <h1 className="text-base font-semibold">{t("newClub.title")}</h1>
         </div>
       </div>
       <div className="h-14" />
@@ -235,11 +237,11 @@ const NewClub = () => {
 
           {/* Club Name */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-foreground">Club Name</Label>
+            <Label className="text-sm font-medium text-foreground">{t("newClub.clubName")}</Label>
             <Input
-              placeholder="e.g., Beach Volleyball Berlin"
+              placeholder={t("newClub.clubNamePlaceholder")}
               className="h-12 bg-muted/50 border-border"
-              {...register("name", { required: "Club name is required" })}
+              {...register("name", { required: t("newClub.clubNameRequired") })}
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -249,10 +251,10 @@ const NewClub = () => {
           {/* Description */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-foreground">
-              Description (optional)
+              {t("newClub.description")}
             </Label>
             <Textarea
-              placeholder="Tell people about your club..."
+              placeholder={t("newClub.descriptionPlaceholder")}
               className="bg-muted/50 border-border resize-none min-h-[80px]"
               maxLength={200}
               {...register("description")}
@@ -267,8 +269,8 @@ const NewClub = () => {
             <CityLocationSelector
               value={location}
               onChange={setLocation}
-              label="City"
-              placeholder="Type the city your Club is located..."
+              label={t("settings.manualCity")}
+              placeholder={t("newClub.cityPlaceholder")}
             />
             {location && (
               <p className="text-xs text-muted-foreground">
@@ -280,7 +282,7 @@ const NewClub = () => {
           {/* Club Image */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-foreground">
-              Club Image (optional)
+              {t("newClub.clubImage")}
             </Label>
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20 shrink-0">
@@ -302,7 +304,7 @@ const NewClub = () => {
                   <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-border rounded-lg hover:border-muted-foreground transition-colors bg-muted/30 w-fit">
                     <Upload className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium text-foreground">
-                      {imagePreview ? "Change Photo" : "Upload Photo"}
+                      {imagePreview ? t("newClub.changePhoto") : t("newClub.uploadPhoto")}
                     </span>
                   </div>
                 </label>
@@ -326,9 +328,9 @@ const NewClub = () => {
                       type="button"
                       onClick={handleClearSelectedImage}
                       className="text-red-500 hover:text-red-600 text-sm font-medium"
-                      aria-label="Remove selected image"
+                      aria-label={t("newClub.removeImage")}
                     >
-                      Remove
+                      {t("newClub.removeImage")}
                     </button>
                   </div>
                 )}
@@ -348,7 +350,7 @@ const NewClub = () => {
               <div className="flex items-center justify-between py-3 border-t border-border">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="is_club_discoverable" className="m-0 text-sm">
-                    Make this club discoverable
+                    {t("newClub.discoverableLabel")}
                   </Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -367,7 +369,7 @@ const NewClub = () => {
                       collisionPadding={12}
                       className="text-sm max-w-xs rounded-md border bg-popover p-3 text-popover-foreground shadow-md"
                     >
-                      If enabled, others can find this club on the Discover page.
+                      {t("newClub.discoverableHelp")}
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -395,10 +397,10 @@ const NewClub = () => {
             {isSubmitting ? (
               <>
                 <Spinner className="mr-2 h-4 w-4" />
-                Creating...
+                {t("newClub.creating")}
               </>
             ) : (
-              "Create Club"
+              t("newClub.createClub")
             )}
           </Button>
         </div>

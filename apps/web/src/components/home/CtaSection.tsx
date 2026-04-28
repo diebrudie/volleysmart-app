@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 
@@ -10,6 +11,8 @@ import { ArrowRight, Sparkles } from "lucide-react";
  * - Content unchanged (tag, headline, paragraph, button, subtext)
  */
 const CTA = () => {
+  const { t } = useTranslation("home");
+
   return (
     <section className="bg-white text-gray-900 pb-24">
       <div className="container mx-auto px-6">
@@ -26,31 +29,26 @@ const CTA = () => {
               <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 backdrop-blur-sm">
                 <Sparkles className="h-4 w-4 text-white" />
                 <span className="text-sm font-medium text-white">
-                  Ready to Get Started?
+                  {t("cta.heading")}
                 </span>
               </div>
             </div>
 
-            {/* Headline */}
             <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
-              Join Players Using{" "}
-              <span className="text-white">VolleySmart</span>
+              {t("cta.highlight")}
             </h2>
 
-            {/* Paragraph */}
             <p className="mb-10 text-xl leading-relaxed text-white/90">
-              Plan events, generate fair teams, track scores, and manage your
-              volleyball community — all for free.
+              {t("cta.description")}
             </p>
 
-            {/* CTA */}
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link to="/signup">
                 <Button
                   size="lg"
                   className="bg-white text-primary hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/60"
                 >
-                  Get Started Free
+                  {t("cta.button")}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>

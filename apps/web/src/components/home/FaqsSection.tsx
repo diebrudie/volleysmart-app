@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface Faq {
 }
 
 const FaqsSection = () => {
+  const { t } = useTranslation("home");
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,12 +65,10 @@ const FaqsSection = () => {
         {/* Heading */}
         <div className="text-center mb-10 sm:mb-12">
           <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">
-            FAQs
+            {t("faqs.heading")}
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Find quick answers to how VolleySmart works — from creating Clubs
-            and generating fair teams to tracking games and managing your
-            players.
+            {t("faqs.subheading")}
           </p>
         </div>
 
@@ -76,7 +76,7 @@ const FaqsSection = () => {
         <div className="border-t border-gray-200">
           {isLoading && (
             <p className="py-12 text-center text-muted-foreground">
-              Loading FAQs...
+              {t("faqs.loading")}
             </p>
           )}
 
@@ -86,7 +86,7 @@ const FaqsSection = () => {
 
           {!isLoading && !error && faqs.length === 0 && (
             <p className="py-8 text-center text-gray-600">
-              No FAQs available yet.
+              {t("faqs.empty")}
             </p>
           )}
 
@@ -115,11 +115,10 @@ const FaqsSection = () => {
         {/* Still have questions */}
         <div className="mt-12 sm:mt-16 border-b border-gray-200 pb-16 text-center">
           <h3 className="text-2xl sm:text-3xl font-semibold">
-            Still have questions?
+            {t("faqs.stillHaveQuestions")}
           </h3>
           <p className="mt-3 text-base text-gray-600">
-            If you didn’t find what you were looking for, you can browse all
-            FAQs or reach out to us directly. We’re happy to help.
+            {t("faqs.stillHaveQuestionsDescription")}
           </p>
 
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -128,7 +127,7 @@ const FaqsSection = () => {
                 size="lg"
                 className="bg-black text-white border border-black hover:bg-[hsl(var(--primary))] hover:text-white hover:border-[hsl(var(--primary))]"
               >
-                View all FAQs
+                {t("faqs.viewAll")}
               </Button>
             </Link>
             <Button
@@ -137,7 +136,7 @@ const FaqsSection = () => {
               className="border-black text-black bg-white hover:bg-black hover:text-white"
               onClick={() => setIsContactOpen(true)}
             >
-              Contact us
+              {t("faqs.contactUs")}
             </Button>
           </div>
         </div>

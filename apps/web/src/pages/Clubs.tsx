@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,6 +79,7 @@ type CreatedClubRow = {
 type ClubRow = Database["public"]["Tables"]["clubs"]["Row"];
 
 const Clubs = () => {
+  const { t } = useTranslation("clubs");
   const { user } = useAuth();
   const navigate = useNavigate();
   const isCompact = useIsCompact();
@@ -312,8 +314,8 @@ const Clubs = () => {
       }
 
       toast({
-        title: "Club removed",
-        description: "The club is now removed from all members.",
+        title: t("toast.removedTitle"),
+        description: t("toast.removedDescription"),
         duration: 1500,
       });
     } catch (err) {
@@ -323,10 +325,10 @@ const Clubs = () => {
 
       console.error("Error soft-deleting club:", err);
       const msg = (err as { message?: string })?.message?.includes("permission")
-        ? "You don't have permission to remove this club."
-        : "Failed to remove the club.";
+        ? t("toast.permissionError")
+        : t("toast.genericError");
       toast({
-        title: "Error",
+        title: t("toast.errorTitle"),
         description: msg,
         variant: "destructive",
         duration: 2000,
@@ -368,14 +370,14 @@ const Clubs = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           {/* Header with action buttons */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">Your Clubs</h2>
+            <h2 className="text-xl font-bold text-foreground">{t("title")}</h2>
             <div className="flex gap-2">
 <Button
                 size="sm"
                 onClick={handleCreateClub}
               >
                 <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-                Create Club
+                {t("createClub")}
               </Button>
             </div>
           </div>
@@ -424,7 +426,7 @@ const Clubs = () => {
                             </h3>
                             {isClubAdmin(club) && (
                               <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase">
-                                Admin
+                                {t("adminBadge")}
                               </span>
                             )}
                           </div>
@@ -434,7 +436,7 @@ const Clubs = () => {
                                 <button
                                   className="h-7 w-7 shrink-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
                                   onClick={(e) => e.stopPropagation()}
-                                  aria-label="Club menu"
+                                  aria-label={t("clubMenuAriaLabel")}
                                 >
                                   <MoreVertical className="h-4 w-4" />
                                 </button>
@@ -451,7 +453,7 @@ const Clubs = () => {
                                     onClick={(e) => handleEditClick(e, club)}
                                     icon={<Edit className="h-4 w-4" />}
                                   >
-                                    Edit Club
+                                    {t("editClub")}
                                   </Button>
                                   <Button
                                     variant="ghost"
@@ -460,7 +462,7 @@ const Clubs = () => {
                                     onClick={(e) => handleDeleteClick(e, club)}
                                     icon={<Trash className="h-4 w-4" />}
                                   >
-                                    Delete Club
+                                    {t("deleteClub")}
                                   </Button>
                                 </div>
                               </PopoverContent>
@@ -468,12 +470,12 @@ const Clubs = () => {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Playing since {formatDate(club.created_at)}
+                          {t("playingSince", { date: formatDate(club.created_at) })}
                         </p>
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                           <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                           <span className="truncate">
-                            {club.city ? club.city : "Location not set"}
+                            {club.city ? club.city : t("locationNotSet")}
                           </span>
                         </div>
                       </div>
@@ -500,7 +502,7 @@ const Clubs = () => {
             ) : pendingRequests.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground text-base">
-                  You haven't joined any clubs yet.
+                  {t("emptyState")}
                 </p>
               </div>
             ) : null}
@@ -523,7 +525,7 @@ const Clubs = () => {
                     {/* Club info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">
-                        {req.clubs?.name ?? "Unknown Club"}
+                        {req.clubs?.name ?? t("unknownClub")}
                       </p>
                       {req.clubs?.city && (
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
@@ -534,7 +536,7 @@ const Clubs = () => {
 
                     {/* Pending badge */}
                     <span className="shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                      Pending
+                      {t("pendingBadge")}
                     </span>
                   </div>
                 ))}
@@ -545,7 +547,7 @@ const Clubs = () => {
           {/* Discover */}
           {discoverableClubs.length > 0 && (
             <section>
-              <h2 className="text-xl font-bold text-foreground mb-4">Discover</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">{t("discoverTitle")}</h2>
               <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
                 {discoverableClubs.slice(0, 6).map((club) => (
                   <button
@@ -576,7 +578,7 @@ const Clubs = () => {
                     {club.memberCount > 0 && (
                       <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                         <Users className="h-3 w-3" />
-                        {club.memberCount} {club.memberCount === 1 ? "member" : "members"}
+                        {t("memberCount", { count: club.memberCount })}
                       </p>
                     )}
                   </button>
@@ -603,20 +605,18 @@ const Clubs = () => {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              club "{clubToDelete?.name}" and remove the club from everyone's
-              view.
+              {t("deleteDialog.description", { name: clubToDelete?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("deleteDialog.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Club
+              {t("deleteClub")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

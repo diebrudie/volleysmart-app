@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { List, MapPin, CalendarDays } from "lucide-react";
@@ -13,6 +14,7 @@ import { EventCard } from "@/components/events/EventCard";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 
 const DiscoverEvents: React.FC = () => {
+  const { t } = useTranslation("events");
   const { user } = useAuth();
   const navigate = useNavigate();
   const [view, setView] = React.useState<"list" | "map">("list");
@@ -44,7 +46,7 @@ const DiscoverEvents: React.FC = () => {
     <div className="px-4 py-4 pb-24">
       {/* View toggle */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Public Events</h1>
+        <h1 className="text-xl font-bold">{t("discover.title")}</h1>
         <div className="flex items-center border rounded-lg overflow-hidden">
           <button
             type="button"
@@ -57,7 +59,7 @@ const DiscoverEvents: React.FC = () => {
             )}
           >
             <List className="h-3.5 w-3.5" />
-            List
+            {t("discover.list")}
           </button>
           <button
             type="button"
@@ -70,7 +72,7 @@ const DiscoverEvents: React.FC = () => {
             )}
           >
             <MapPin className="h-3.5 w-3.5" />
-            Map
+            {t("discover.map")}
           </button>
         </div>
       </div>
@@ -84,9 +86,9 @@ const DiscoverEvents: React.FC = () => {
           <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
             <CalendarDays className="h-12 w-12 text-muted-foreground" />
             <div>
-              <p className="font-medium">No public events</p>
+              <p className="font-medium">{t("discover.noPublicEvents")}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Check back later for events in your area
+                {t("discover.checkBack")}
               </p>
             </div>
           </div>
@@ -106,9 +108,9 @@ const DiscoverEvents: React.FC = () => {
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center rounded-2xl border bg-card">
           <MapPin className="h-12 w-12 text-muted-foreground" />
           <div>
-            <p className="font-medium">Map view coming soon</p>
+            <p className="font-medium">{t("discover.mapComingSoon")}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Events will be shown on an interactive map
+              {t("discover.mapDescription")}
             </p>
           </div>
         </div>

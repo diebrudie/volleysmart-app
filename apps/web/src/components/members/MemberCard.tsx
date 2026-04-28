@@ -8,6 +8,7 @@
 import { Link } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 
 interface MemberCardProps {
   member: {
@@ -42,10 +43,12 @@ export const MemberCard = ({
   isSelected = false,
   onSelectionChange,
 }: MemberCardProps) => {
-  // Find the primary position
-  const primaryPosition =
-    member.player_positions?.find((pos) => pos.is_primary)?.positions.name ||
-    "No position";
+  const { t } = useTranslation("clubs");
+  const rawPosition =
+    member.player_positions?.find((pos) => pos.is_primary)?.positions.name;
+  const primaryPosition = rawPosition
+    ? t(`members.position.${rawPosition}`, rawPosition)
+    : t("members.noPosition");
 
   // Get first letter of last name
   const lastNameInitial = member.last_name

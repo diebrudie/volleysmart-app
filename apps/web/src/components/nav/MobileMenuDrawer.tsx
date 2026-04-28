@@ -2,11 +2,13 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { MoonStar, LogOut, HelpCircle, Mail } from "lucide-react";
+import { MoonStar, LogOut, HelpCircle, Mail, Globe } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ThemePicker from "./ThemePicker";
 import ContactSheet from "@/components/common/ContactSheet";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
 /**
  * Full-screen right-to-left drawer that covers everything (incl. bottom nav).
@@ -44,8 +46,10 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
     navigate(path);
   };
 
+  const { t } = useTranslation("common");
   const [themeOpen, setThemeOpen] = React.useState(false);
   const [contactOpen, setContactOpen] = React.useState(false);
+  const [languageOpen, setLanguageOpen] = React.useState(false);
 
   return (
     <>
@@ -56,9 +60,8 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                  pb-[max(env(safe-area-inset-bottom),0px)]"
         >
           <div className="flex items-center justify-between px-4 py-3 border-b h-12">
-            <div className="text-base font-medium">Menu</div>
-            {/* A11y: required dialog title for screen readers (visually hidden) */}
-            <SheetTitle className="sr-only">Menu</SheetTitle>
+            <div className="text-base font-medium">{t("nav.menu")}</div>
+            <SheetTitle className="sr-only">{t("nav.menu")}</SheetTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -73,17 +76,22 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
           <div className="p-4 space-y-3">
             <MenuItem
               icon={<MoonStar className="h-5 w-5" />}
-              label="Theme"
+              label={t("theme.title")}
               onClick={() => setThemeOpen(true)}
             />
             <MenuItem
+              icon={<Globe className="h-5 w-5" />}
+              label={t("language.title")}
+              onClick={() => setLanguageOpen(true)}
+            />
+            <MenuItem
               icon={<HelpCircle className="h-5 w-5" />}
-              label="FAQs"
+              label={t("nav.faqs")}
               onClick={() => go("/faqs")}
             />
             <MenuItem
               icon={<Mail className="h-5 w-5" />}
-              label="Contact Us"
+              label={t("nav.contactUs")}
               onClick={() => {
                 onOpenChange(false);
                 setContactOpen(true);
@@ -98,13 +106,14 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
               className="w-full flex items-center gap-3 rounded-xl border px-3 py-3 text-left hover:bg-muted text-red-600"
             >
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span>{t("nav.logOut")}</span>
             </button>
           </div>
         </SheetContent>
       </Sheet>
 
       <ThemePicker open={themeOpen} onOpenChange={setThemeOpen} />
+      <LanguageSwitcher open={languageOpen} onOpenChange={setLanguageOpen} />
       <ContactSheet open={contactOpen} onOpenChange={setContactOpen} source="hamburger_menu" />
     </>
   );

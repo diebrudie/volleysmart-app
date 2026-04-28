@@ -4,6 +4,7 @@
  * On mobile it appears below the last existing set because we place it last in DOM order.
  */
 import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 interface AddSetBoxProps {
@@ -17,6 +18,7 @@ export default function AddSetBox({
   className,
   disabled,
 }: AddSetBoxProps) {
+  const { t } = useTranslation("games");
   return (
     <button
       type="button"
@@ -37,11 +39,11 @@ export default function AddSetBox({
         "disabled:opacity-50 disabled:cursor-not-allowed",
         className
       )}
-      aria-label="Add Set"
+      aria-label={t("game.addSet")}
     >
       <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
         <Plus className="h-5 w-5" />
-        <span className="font-medium">Add Set</span>
+        <span className="font-medium">{t("game.addSet")}</span>
       </div>
     </button>
   );

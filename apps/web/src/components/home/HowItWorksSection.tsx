@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   UserPlus,
@@ -18,34 +19,30 @@ import {
 
 type Step = {
   icon: LucideIcon;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
 };
 
 const STEPS: Step[] = [
   {
     icon: Users,
-    title: "Start a Club",
-    description:
-      "Create your volleyball club in seconds. Share your Club ID so players can request to join — no app download required.",
+    titleKey: "howItWorks.step1.title",
+    descriptionKey: "howItWorks.step1.description",
   },
   {
     icon: UserPlus,
-    title: "Plan Events & RSVP",
-    description:
-      "Schedule practices, friendly matches, or league games. Players RSVP with a tap, and you can set deadlines to lock attendance.",
+    titleKey: "howItWorks.step2.title",
+    descriptionKey: "howItWorks.step2.description",
   },
   {
     icon: Volleyball,
-    title: "Generate Fair Teams",
-    description:
-      "One tap creates balanced teams based on skill ratings and preferred positions. Edit teams or add guest players on the fly.",
+    titleKey: "howItWorks.step3.title",
+    descriptionKey: "howItWorks.step3.description",
   },
   {
     icon: TrendingUp,
-    title: "Track Scores & History",
-    description:
-      "Record set-by-set scores in real time. Any team player can add scores. Browse your full game archive anytime.",
+    titleKey: "howItWorks.step4.title",
+    descriptionKey: "howItWorks.step4.description",
   },
 ];
 
@@ -62,6 +59,8 @@ function StepNumberCircle({ index }: { index: number }) {
 }
 
 export default function HowItWorksSection() {
+  const { t } = useTranslation("home");
+
   return (
     <section id="how-it-works" className="bg-white text-gray-900">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
@@ -69,14 +68,14 @@ export default function HowItWorksSection() {
           {/* Left: heading, subheading, CTA */}
           <div className="max-w-xl">
             <h2 className="text-5xl sm:text-4xl font-bold tracking-tight">
-              How&nbsp;It&nbsp;Works
+              {t("howItWorks.heading")}
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Get started in minutes with our simple, intuitive process.
+              {t("howItWorks.subheading")}
             </p>
             <div className="mt-8">
               <Link to="/signup">
-                <Button size="lg">Join today</Button>
+                <Button size="lg">{t("howItWorks.cta")}</Button>
               </Link>
             </div>
           </div>
@@ -92,23 +91,21 @@ export default function HowItWorksSection() {
               {STEPS.map((step, idx) => {
                 const Icon = step.icon;
                 return (
-                  <li key={step.title} className="relative flex gap-4">
-                    {/* Number circle */}
+                  <li key={step.titleKey} className="relative flex gap-4">
                     <div className="shrink-0">
                       <StepNumberCircle index={idx} />
                     </div>
 
-                    {/* Title (icon inline) + description */}
                     <div className="pt-1 pl-2">
                       <h3 className="text-xl font-semibold leading-none flex items-center gap-2">
                         <Icon
                           className="h-5 w-5 text-primary"
                           aria-hidden="true"
                         />
-                        {step.title}
+                        {t(step.titleKey)}
                       </h3>
                       <p className="mt-2 text-lg text-gray-600 leading-8">
-                        {step.description}
+                        {t(step.descriptionKey)}
                       </p>
                     </div>
                   </li>

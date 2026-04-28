@@ -1,7 +1,9 @@
 import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
+import { getDateLocale } from "@/lib/dateLocale";
 import {
   ArrowLeft,
   Settings,
@@ -99,6 +101,7 @@ function formatDisplayName(firstName: string, lastName: string): string {
 const ClubOverview: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation("clubs");
   const { user } = useAuth();
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
@@ -283,7 +286,7 @@ const ClubOverview: React.FC = () => {
     );
   }
 
-  const createdLabel = format(parseISO(club.created_at), "MMM. yyyy");
+  const createdLabel = format(parseISO(club.created_at), "MMM. yyyy", { locale: getDateLocale() });
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
@@ -306,7 +309,7 @@ const ClubOverview: React.FC = () => {
           type="button"
           onClick={() => navigate("/clubs")}
           className="absolute top-4 left-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center"
-          aria-label="Go back"
+          aria-label={t("overview.backAriaLabel")}
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -317,7 +320,7 @@ const ClubOverview: React.FC = () => {
             type="button"
             onClick={() => setSettingsOpen(true)}
             className="absolute top-4 right-4 z-10 h-9 w-9 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur flex items-center justify-center"
-            aria-label="Club settings"
+            aria-label={t("overview.settingsAriaLabel")}
           >
             <Settings className="h-5 w-5" />
           </button>
@@ -334,7 +337,7 @@ const ClubOverview: React.FC = () => {
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5" />
-            Club created in {createdLabel}
+            {t("overview.createdIn", { date: createdLabel })}
           </span>
           {club.city && (
             <span className="flex items-center gap-1.5">
@@ -344,7 +347,7 @@ const ClubOverview: React.FC = () => {
           )}
           <span className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5" />
-            {memberCount} {memberCount === 1 ? "Member" : "Members"}
+            {t("overview.member", { count: memberCount })}
           </span>
         </div>
 
@@ -363,30 +366,30 @@ const ClubOverview: React.FC = () => {
             <>
               <ActionButton
                 icon={<UserPlus className="h-5 w-5" />}
-                label="Invite"
+                label={t("overview.actions.invite")}
                 onClick={() => setInviteOpen(true)}
               />
               <ActionButton
                 icon={<Users className="h-5 w-5" />}
-                label="Members"
+                label={t("overview.actions.members")}
                 onClick={() => setActiveTab("members")}
               />
               {isAdmin && (
                 <ActionButton
                   icon={<UserCheck className="h-5 w-5" />}
-                  label="Guests"
+                  label={t("overview.actions.guests")}
                   onClick={() => setGuestsOpen(true)}
                 />
               )}
               <ActionButton
                 icon={<BarChart3 className="h-5 w-5" />}
-                label="Stats"
+                label={t("overview.actions.stats")}
                 onClick={() => setActiveTab("stats")}
               />
               {userRole && !isAdmin && (
                 <ActionButton
                   icon={<LogOut className="h-5 w-5" />}
-                  label="Leave"
+                  label={t("overview.actions.leave")}
                   onClick={() => setLeaveOpen(true)}
                 />
               )}
@@ -395,7 +398,7 @@ const ClubOverview: React.FC = () => {
             <>
               <ActionButton
                 icon={joinStatus === "pending_approval" ? <UserCheck className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
-                label={joinStatus === "pending_approval" ? "Pending" : "Join"}
+                label={joinStatus === "pending_approval" ? t("overview.actions.pending") : t("overview.actions.join")}
                 disabled={joinRequesting || joinStatus === "pending_approval"}
                 onClick={async () => {
                   setJoinRequesting(true);
@@ -403,15 +406,15 @@ const ClubOverview: React.FC = () => {
                     const result = await requestJoinClub(clubId!);
                     setJoinStatus(result);
                     if (result === "pending_approval") {
-                      toast({ title: "Request sent", description: "The club admin will review your request.", duration: 2000 });
+                      toast({ title: t("overview.toasts.requestSent"), description: t("overview.toasts.requestSentDescription"), duration: 2000 });
                     } else if (result === "already_member") {
-                      toast({ title: "Already a member", duration: 2000 });
+                      toast({ title: t("overview.toasts.alreadyMember"), duration: 2000 });
                     } else if (result === "already_pending") {
                       setJoinStatus("pending_approval");
-                      toast({ title: "Request already pending", duration: 2000 });
+                      toast({ title: t("overview.toasts.requestPending"), duration: 2000 });
                     }
                   } catch {
-                    toast({ title: "Error", description: "Failed to send join request.", variant: "destructive", duration: 2000 });
+                    toast({ title: t("overview.toasts.error"), description: t("overview.toasts.joinError"), variant: "destructive", duration: 2000 });
                   } finally {
                     setJoinRequesting(false);
                   }
@@ -419,7 +422,7 @@ const ClubOverview: React.FC = () => {
               />
               <ActionButton
                 icon={<MessageCircle className="h-5 w-5" />}
-                label="Message"
+                label={t("overview.actions.message")}
                 disabled
               />
             </>
@@ -432,14 +435,14 @@ const ClubOverview: React.FC = () => {
         {isMember ? (
           <>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold">Upcoming Event</h2>
+              <h2 className="text-lg font-bold">{t("overview.upcomingEvent")}</h2>
               <button
                 type="button"
                 onClick={() => navigate(`/events/new?clubId=${clubId}`)}
                 className="flex items-center gap-1 text-sm font-medium text-primary"
               >
                 <Plus className="h-4 w-4" />
-                Create an event
+                {t("overview.createAnEvent")}
               </button>
             </div>
 
@@ -453,7 +456,7 @@ const ClubOverview: React.FC = () => {
               <div className="rounded-2xl border bg-card p-6 text-center">
                 <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  No upcoming events
+                  {t("overview.noUpcomingEvents")}
                 </p>
                 <Button
                   size="sm"
@@ -461,14 +464,14 @@ const ClubOverview: React.FC = () => {
                   onClick={() => navigate(`/events/new?clubId=${clubId}`)}
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
-                  Create Event
+                  {t("overview.createEvent")}
                 </Button>
               </div>
             )}
           </>
         ) : (
           <>
-            <h2 className="text-lg font-bold mb-3">Upcoming Events</h2>
+            <h2 className="text-lg font-bold mb-3">{t("overview.upcomingEvents")}</h2>
             {publicEvents.length > 0 ? (
               <div className="space-y-3">
                 {publicEvents.map((ev) => (
@@ -483,7 +486,7 @@ const ClubOverview: React.FC = () => {
             ) : (
               <div className="rounded-2xl border bg-card p-6 text-center">
                 <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No upcoming events</p>
+                <p className="text-sm text-muted-foreground">{t("overview.noUpcomingEvents")}</p>
               </div>
             )}
           </>
@@ -495,13 +498,13 @@ const ClubOverview: React.FC = () => {
         <div className="px-4 pt-6">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "members" | "stats")}>
             <TabsList className="w-full">
-              <TabsTrigger value="members" className="flex-1">Members</TabsTrigger>
-              <TabsTrigger value="stats" className="flex-1">Stats</TabsTrigger>
+              <TabsTrigger value="members" className="flex-1">{t("overview.tabs.members")}</TabsTrigger>
+              <TabsTrigger value="stats" className="flex-1">{t("overview.tabs.stats")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="members" className="mt-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold">Members</h2>
+                <h2 className="text-lg font-bold">{t("overview.membersSection.title")}</h2>
                 {isAdmin && (
                   <button
                     type="button"
@@ -511,7 +514,7 @@ const ClubOverview: React.FC = () => {
                       setSelectedUserIds([]);
                     }}
                   >
-                    {manageMode ? "Done" : "Manage"}
+                    {manageMode ? t("overview.membersSection.done") : t("overview.membersSection.manage")}
                   </button>
                 )}
               </div>
@@ -567,7 +570,7 @@ const ClubOverview: React.FC = () => {
                         <p className="text-sm font-medium truncate flex items-center gap-1">
                           {formatDisplayName(m.first_name, m.last_name)}
                           {m.member_association && (
-                            <span className="shrink-0" title="Association member">🏐</span>
+                            <span className="shrink-0" title={t("overview.membersSection.associationMember")}>🏐</span>
                           )}
                         </p>
                         {m.primary_position && (
@@ -575,7 +578,7 @@ const ClubOverview: React.FC = () => {
                         )}
                       </div>
                       {m.role === "admin" && (
-                        <span className="text-xs text-muted-foreground shrink-0">Admin</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{t("overview.membersSection.admin")}</span>
                       )}
                     </div>
                   );
@@ -591,15 +594,14 @@ const ClubOverview: React.FC = () => {
                   onClick={() => setConfirmOpen(true)}
                 >
                   <Trash2 className="h-4 w-4 mr-1.5" />
-                  Remove {selectedUserIds.length}{" "}
-                  {selectedUserIds.length === 1 ? "member" : "members"}
+                  {t("overview.membersSection.removeCount", { count: selectedUserIds.length })}
                 </Button>
               )}
             </TabsContent>
 
             <TabsContent value="stats" className="mt-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold">Stats</h2>
+                <h2 className="text-lg font-bold">{t("overview.statsSection.title")}</h2>
                 <select
                   className="text-sm bg-muted/50 border rounded-md px-2 py-1"
                   value={statsYear}
@@ -617,17 +619,17 @@ const ClubOverview: React.FC = () => {
                     <div className="rounded-xl border bg-card p-3 text-center">
                       <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
                       <p className="text-xl font-bold">{clubStats.totalEncounters}</p>
-                      <p className="text-[10px] text-muted-foreground">Games</p>
+                      <p className="text-[10px] text-muted-foreground">{t("overview.statsSection.games")}</p>
                     </div>
                     <div className="rounded-xl border bg-card p-3 text-center">
                       <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
                       <p className="text-xl font-bold">{clubStats.totalHours}</p>
-                      <p className="text-[10px] text-muted-foreground">Hours</p>
+                      <p className="text-[10px] text-muted-foreground">{t("overview.statsSection.hours")}</p>
                     </div>
                     <div className="rounded-xl border bg-card p-3 text-center">
                       <Users className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
                       <p className="text-xl font-bold">{clubStats.attendanceRate}%</p>
-                      <p className="text-[10px] text-muted-foreground">Attendance</p>
+                      <p className="text-[10px] text-muted-foreground">{t("overview.statsSection.attendance")}</p>
                     </div>
                   </div>
 
@@ -635,7 +637,7 @@ const ClubOverview: React.FC = () => {
                     <div className="rounded-xl border bg-card p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <Trophy className="h-4 w-4 text-amber-500" />
-                        <p className="text-sm font-semibold">Best Team Combinations</p>
+                        <p className="text-sm font-semibold">{t("overview.statsSection.bestCombinations")}</p>
                       </div>
                       <div className="space-y-3">
                         {clubStats.topCombinations.map((combo, i) => (
@@ -645,7 +647,7 @@ const ClubOverview: React.FC = () => {
                                 {combo.playerNames.join(", ")}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {combo.wins}W / {combo.gamesPlayed} games · {combo.winRate}% win rate
+                                {t("overview.statsSection.comboRecord", { wins: combo.wins, gamesPlayed: combo.gamesPlayed, winRate: combo.winRate })}
                               </p>
                             </div>
                             {i === 0 && (
@@ -660,7 +662,7 @@ const ClubOverview: React.FC = () => {
               ) : (
                 <div className="rounded-xl border bg-card p-6 text-center">
                   <BarChart3 className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No games played in {statsYear}</p>
+                  <p className="text-sm text-muted-foreground">{t("overview.statsSection.noGames", { year: statsYear })}</p>
                 </div>
               )}
             </TabsContent>
@@ -674,7 +676,7 @@ const ClubOverview: React.FC = () => {
       <Sheet open={guestsOpen} onOpenChange={setGuestsOpen}>
         <SheetContent side={isCompact ? "bottom" : "right"} className={cn(isCompact && "max-h-[75vh] rounded-t-2xl", "overflow-y-auto")}>
           <SheetHeader>
-            <SheetTitle>Guests ({guests.length})</SheetTitle>
+            <SheetTitle>{t("overview.guestsSheet.title", { count: guests.length })}</SheetTitle>
           </SheetHeader>
           <div className="py-4 space-y-1">
             {guests.length > 0 ? (
@@ -694,9 +696,9 @@ const ClubOverview: React.FC = () => {
                       if (!error) {
                         await supabase.from("players").delete().eq("id", g.player_id);
                         queryClient.invalidateQueries({ queryKey: ["club-guests", clubId] });
-                        toast({ title: "Guest removed", duration: 1500 });
+                        toast({ title: t("overview.toasts.guestRemoved"), duration: 1500 });
                       } else {
-                        toast({ title: "Error", description: "Failed to remove guest", variant: "destructive", duration: 2000 });
+                        toast({ title: t("overview.toasts.error"), description: t("overview.toasts.guestRemoveError"), variant: "destructive", duration: 2000 });
                       }
                     }}
                   >
@@ -706,8 +708,8 @@ const ClubOverview: React.FC = () => {
               ))
             ) : (
               <div className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">No guests added yet.</p>
-                <p className="text-xs text-muted-foreground mt-1">Guests are added when starting a game.</p>
+                <p className="text-sm text-muted-foreground">{t("overview.guestsSheet.noGuestsTitle")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("overview.guestsSheet.noGuestsDescription")}</p>
               </div>
             )}
           </div>
@@ -718,15 +720,15 @@ const ClubOverview: React.FC = () => {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove members?</AlertDialogTitle>
+            <AlertDialogTitle>{t("overview.removeDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
               {selectedUserIds.length === 1
-                ? "This member will be removed from the club."
-                : `${selectedUserIds.length} members will be removed from the club.`}
+                ? t("overview.removeDialog.descriptionOne")
+                : t("overview.removeDialog.descriptionMany", { count: selectedUserIds.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t("overview.removeDialog.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={deleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -741,16 +743,16 @@ const ClubOverview: React.FC = () => {
                     queryKey: ["club-member-count", clubId],
                   });
                   toast({
-                    title: "Removed",
-                    description: `${selectedUserIds.length} member${selectedUserIds.length > 1 ? "s" : ""} removed.`,
+                    title: t("overview.toasts.removed"),
+                    description: t("overview.toasts.removedDescription", { count: selectedUserIds.length }),
                     duration: 2000,
                   });
                   setSelectedUserIds([]);
                   setManageMode(false);
                 } catch {
                   toast({
-                    title: "Error",
-                    description: "Failed to remove members.",
+                    title: t("overview.toasts.error"),
+                    description: t("overview.toasts.removeError"),
                     variant: "destructive",
                     duration: 2000,
                   });
@@ -760,7 +762,7 @@ const ClubOverview: React.FC = () => {
                 }
               }}
             >
-              {deleting ? "Removing…" : "Remove"}
+              {deleting ? t("overview.removeDialog.removing") : t("overview.removeDialog.remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -770,14 +772,13 @@ const ClubOverview: React.FC = () => {
       <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave {club?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>{t("overview.leaveDialog.title", { name: club?.name })}</AlertDialogTitle>
             <AlertDialogDescription>
-              You will no longer be a member of this club. You can request to
-              join again later.
+              {t("overview.leaveDialog.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={leaving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={leaving}>{t("overview.leaveDialog.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={leaving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -787,9 +788,8 @@ const ClubOverview: React.FC = () => {
                   const result = await leaveClub(clubId!);
                   if (result.result_status === "sole_admin") {
                     toast({
-                      title: "Cannot leave",
-                      description:
-                        "You're the only admin. Transfer the admin role first.",
+                      title: t("overview.toasts.cannotLeave"),
+                      description: t("overview.toasts.cannotLeaveDescription"),
                       variant: "destructive",
                       duration: 2000,
                     });
@@ -801,16 +801,16 @@ const ClubOverview: React.FC = () => {
                       queryKey: ["club-member-count", clubId],
                     });
                     toast({
-                      title: "Left club",
-                      description: `You left ${club?.name}.`,
+                      title: t("overview.toasts.leftClub"),
+                      description: t("overview.toasts.leftClubDescription", { name: club?.name }),
                       duration: 2000,
                     });
                     navigate("/clubs");
                   }
                 } catch {
                   toast({
-                    title: "Error",
-                    description: "Failed to leave the club.",
+                    title: t("overview.toasts.error"),
+                    description: t("overview.toasts.leaveError"),
                     variant: "destructive",
                     duration: 2000,
                   });
@@ -820,7 +820,7 @@ const ClubOverview: React.FC = () => {
                 }
               }}
             >
-              {leaving ? "Leaving…" : "Leave"}
+              {leaving ? t("overview.leaveDialog.leaving") : t("overview.leaveDialog.leave")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -830,7 +830,7 @@ const ClubOverview: React.FC = () => {
       <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
         <SheetContent side={isCompact ? "bottom" : "right"} className={isCompact ? "rounded-t-2xl" : ""}>
           <SheetHeader className="pb-4">
-            <SheetTitle>Invite Members</SheetTitle>
+            <SheetTitle>{t("overview.inviteSheet.title")}</SheetTitle>
           </SheetHeader>
           <ClubInviteSharePanel clubId={club.id} />
         </SheetContent>
