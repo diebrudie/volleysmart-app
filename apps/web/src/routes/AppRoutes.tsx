@@ -41,6 +41,7 @@ import EventDetail from "@/pages/EventDetail";
 import ClubOverview from "@/pages/ClubOverview";
 import Notifications from "@/pages/Notifications";
 import DiscoverEvents from "@/pages/DiscoverEvents";
+import LiveScore from "@/pages/LiveScore";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -220,6 +221,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Game />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/live-score/:matchDayId"
+      element={
+        <ProtectedRoute>
+          <LiveScore />
         </ProtectedRoute>
       }
     />
