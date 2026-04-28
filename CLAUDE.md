@@ -2,7 +2,7 @@
 
 ## Current status
 - Working on: Nothing active
-- Last change: FEAT-28 merged — analytics filter redesign, Profile clubs cleanup, email in edit drawer
+- Last change: FEAT-27 merged — Live Score Tracker (courtside tap-to-score, forced landscape, wake lock)
 - Current branch: `main`
 - Next step: Pick next feature from backlog
 
@@ -13,6 +13,7 @@ Branches stack on each other (not merged to main yet):
 - `feat/discovery` branched from `feat/phase-11-club-overview` (merged to main)
 - `feat/analytics` branched from `feat/discovery` (merged to main)
 - `feat/analytics-filter-redesign` branched from `main` (merged to main)
+- `feat/live-score-tracker` branched from `main` (merged to main)
 
 ## Phase 14 in-progress work (Notifications + Bug Fixes)
 1. ~~**Notification triggers (DB)**~~: 9 types — join request/accepted/rejected, member joined, event created/cancelled, RSVP, RSVP deadline reminder (pg_cron), game started
@@ -134,6 +135,7 @@ Branches stack on each other (not merged to main yet):
 - `apps/web/src/pages/MembersGlobal.tsx` — Global members page (across all user's clubs)
 - `apps/web/src/integrations/supabase/notifications.ts` — Notification queries (fetch, mark read, unread count)
 - `apps/web/src/components/common/RealtimeAppEffect.tsx` — Realtime subscriptions (notifications, etc.)
+- `apps/web/src/pages/LiveScore.tsx` — Live Score Tracker (courtside tap-to-score, forced landscape)
 - `apps/web/src/routes/AppRoutes.tsx` — All routes
 
 ## DB migrations applied
@@ -171,7 +173,7 @@ Branches stack on each other (not merged to main yet):
 ### Group B: Event & Game Enhancements (branch: `feat/event-enhancements`)
 - **FEAT-21: Event Image Suggestions** — Suggest volleyball-related images when creating an event, so the club always has an image. Field not required but suggestions help adoption. Use a public API or curated set.
 - **FEAT-22: Edit Guests from Club Details** — Add admin-only "Edit Guests" button on Club Details (audit where guests are currently managed). Update FAQ "Can I add guests?" to say the game must start first, then guests can be added by editing teams.
-- **FEAT-27: Live Score Tracker** — Button on Game Details page to open a live score-tracking screen (for a person keeping score while watching). Score screen has an "End Set" button; when pressed the score is saved and advances to the next available set. Button only available from game start and only on the day of the game.
+- ~~**FEAT-27: Live Score Tracker**~~ — Full-screen courtside scoring at `/live-score/:matchDayId`. Tap-to-score, undo, set point hints, forced landscape, wake lock. Yellow button on Game page (game day only). Saves set scores to existing `matches` table on "End Set".
 - **Phase 15: Advanced Filters** — Custom month range, filter by city
 
 ### Group C: Analytics & Stats (branch: `feat/analytics`) — IN PROGRESS
