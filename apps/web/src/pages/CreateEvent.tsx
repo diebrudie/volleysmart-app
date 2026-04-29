@@ -238,10 +238,11 @@ const CreateEvent: React.FC = () => {
       if (!user?.id) return [];
       const { data } = await supabase
         .from("club_members")
-        .select("clubs(id, name)")
+        .select("clubs!inner(id, name, status)")
         .eq("user_id", user.id)
         .eq("is_active", true)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("clubs.status", "active");
       return (data ?? [])
         .map((m) => m.clubs)
         .filter(Boolean) as { id: string; name: string }[];
