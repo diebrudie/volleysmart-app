@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { TFunction } from "i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,17 +24,20 @@ import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
 // uncomment to force a repaint at the right moments on the login screen
 // import { useIosPwaKeyboardRepaint } from "@/hooks/use-ios-pwa-keyboard-repaint";
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters" }),
-});
+function createLoginSchema(t: TFunction) {
+  return z.object({
+    email: z.string().email({ message: t("validation:email.invalid") }),
+    password: z
+      .string()
+      .min(6, { message: t("validation:password.tooShort", { min: 6 }) }),
+  });
+}
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = z.infer<ReturnType<typeof createLoginSchema>>;
 
 const Login = () => {
   const { login, signInWithOAuth, isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { t } = useTranslation("auth");
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -130,6 +135,7 @@ const Login = () => {
     normalizedFrom,
     navigate,
   ]);
+  const loginSchema = useMemo(() => createLoginSchema(t), [t]);
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -168,7 +174,7 @@ const Login = () => {
         <div className="flex items-center justify-center p-8">
           <Spinner className="h-8 w-8" />
           <span className="ml-2 text-gray-900 dark:text-gray-100">
-            Checking profile...
+            {t("common:checkingProfile")}
           </span>
         </div>
       </AuthLayout>
@@ -191,11 +197,10 @@ const Login = () => {
             </Link>
 
             <h1 className="mt-10 text-3xl font-semibold tracking-tight">
-              Sign in to VolleySmart
+              {t("login.title")}
             </h1>
 
             <div className="mt-8 space-y-4">
-              {/* Social sign-in */}
               <div className="space-y-3">
                 <button
                   type="button"
@@ -213,18 +218,17 @@ const Login = () => {
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                     </svg>
                   )}
-                  Continue with Google
+                  {t("login.continueWithGoogle")}
                 </button>
 
               </div>
 
-              {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-gray-100 px-3 text-gray-500">or continue with email</span>
+                  <span className="bg-gray-100 px-3 text-gray-500">{t("login.orContinueWithEmail")}</span>
                 </div>
               </div>
 
@@ -238,13 +242,13 @@ const Login = () => {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t("login.email")}</FormLabel>
                         <FormControl>
                           <Input
                             type="email"
                             inputMode="email"
                             autoComplete="email"
-                            placeholder="name@example.com"
+                            placeholder={t("login.emailPlaceholder")}
                             {...field}
                           />
                         </FormControl>
@@ -258,12 +262,12 @@ const Login = () => {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t("login.password")}</FormLabel>
                         <FormControl>
                           <Input
                             type="password"
                             autoComplete="current-password"
-                            placeholder="Your password"
+                            placeholder={t("login.passwordPlaceholder")}
                             {...field}
                           />
                         </FormControl>
@@ -273,28 +277,28 @@ const Login = () => {
                   />
 
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign in"}
+                    {isLoading ? t("login.submitting") : t("login.submit")}
                   </Button>
                 </form>
               </Form>
             </div>
 
             <p className="mt-6 text-sm text-slate-600">
-              Forgot your password?{" "}
+              {t("login.forgotPassword")}{" "}
               <Link
                 to="/forgot-password"
                 className="text-blue-600 hover:underline"
               >
-                Reset it here
+                {t("login.resetItHere")}
               </Link>
               .
             </p>
             <p className="mt-2 text-sm text-slate-600">
-              New to VolleySmart?{" "}
+              {t("login.newToVolleySmart")}{" "}
               <Link to="/signup" className="text-blue-600 hover:underline">
-                Create an account
+                {t("login.createAccount")}
               </Link>{" "}
-              instead
+              {t("login.instead")}
             </p>
           </div>
         </div>

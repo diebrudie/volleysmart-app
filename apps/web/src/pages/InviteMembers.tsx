@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ interface ClubMeta {
 }
 
 const InviteMembers = () => {
+  const { t } = useTranslation("clubs");
   const navigate = useNavigate();
 
   // Read clubId from URL if present, otherwise from context
@@ -68,12 +70,12 @@ const InviteMembers = () => {
               <Users className="h-8 w-8 text-primary" />
             </div>
             <h2 className="text-2xl font-bold mb-2">
-              Invite your teammates
+              {t("invite.heading")}
             </h2>
             <p className="text-muted-foreground">
               {clubMeta?.name
-                ? `Share the invite link so others can join ${clubMeta.name}.`
-                : "Share the invite link so others can join your club."}
+                ? t("invite.descriptionWithName", { name: clubMeta.name })
+                : t("invite.descriptionGeneric")}
             </p>
           </div>
 
@@ -83,11 +85,11 @@ const InviteMembers = () => {
               <ClubInviteSharePanel clubId={clubId} />
             ) : isClubLoading ? (
               <p className="text-center text-sm text-muted-foreground">
-                Loading invite link...
+                {t("invite.loadingLink")}
               </p>
             ) : clubError || !clubId ? (
               <p className="text-center text-sm text-destructive">
-                Couldn&apos;t load invite link. Please go back and try again.
+                {t("invite.loadError")}
               </p>
             ) : null}
           </div>
@@ -99,7 +101,7 @@ const InviteMembers = () => {
               className="w-full"
               onClick={handleGoToClub}
             >
-              Go to Club
+              {t("invite.goToClub")}
             </Button>
             <Button
               type="button"
@@ -107,7 +109,7 @@ const InviteMembers = () => {
               className="w-full text-muted-foreground"
               onClick={handleGoToClub}
             >
-              Skip for now
+              {t("invite.skipForNow")}
             </Button>
           </div>
         </div>

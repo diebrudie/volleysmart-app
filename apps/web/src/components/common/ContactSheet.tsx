@@ -1,4 +1,5 @@
 import { useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Sheet,
   SheetContent,
@@ -35,6 +36,7 @@ const ContactSheet = ({
   source,
   forceLight,
 }: ContactSheetProps) => {
+  const { t } = useTranslation("common");
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [reason, setReason] = useState<ContactReason>("general_question");
@@ -63,7 +65,7 @@ const ContactSheet = ({
         throw error;
       }
 
-      setFeedback("Thank you for your message! We will get back to you soon.");
+      setFeedback(t("contact.successDescription"));
       setName("");
       setEmail("");
       setReason("general_question");
@@ -71,9 +73,7 @@ const ContactSheet = ({
       setAcceptTerms(false);
     } catch (error) {
       console.error("Error submitting contact form:", error);
-      setFeedback(
-        "Something went wrong while sending your message. Please try again later."
-      );
+      setFeedback(t("contact.errorDescription"));
     } finally {
       setIsSubmitting(false);
     }
@@ -90,13 +90,12 @@ const ContactSheet = ({
       >
         <SheetHeader className="px-6 pt-6 pb-4 text-left">
           <SheetTitle className={forceLight ? "text-gray-900" : undefined}>
-            Contact us
+            {t("contact.title")}
           </SheetTitle>
           <SheetDescription
             className={forceLight ? "text-gray-600" : undefined}
           >
-            Send us a question, report a bug, or request a feature. We’ll get
-            back to you as soon as we can.
+            {t("contact.description")}
           </SheetDescription>
         </SheetHeader>
 
@@ -109,7 +108,7 @@ const ContactSheet = ({
               htmlFor="contact-name"
               className="text-sm font-medium text-gray-900"
             >
-              Name
+              {t("contact.name")}
             </label>
             <input
               id="contact-name"
@@ -117,7 +116,7 @@ const ContactSheet = ({
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
-              placeholder="Your name"
+              placeholder={t("contact.namePlaceholder")}
               required
             />
           </div>
@@ -127,7 +126,7 @@ const ContactSheet = ({
               htmlFor="contact-email"
               className="text-sm font-medium text-gray-900"
             >
-              Email
+              {t("contact.email")}
             </label>
             <input
               id="contact-email"
@@ -135,7 +134,7 @@ const ContactSheet = ({
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
-              placeholder="you@example.com"
+              placeholder={t("contact.emailPlaceholder")}
               required
             />
           </div>
@@ -145,7 +144,7 @@ const ContactSheet = ({
               htmlFor="contact-reason"
               className="text-sm font-medium text-gray-900"
             >
-              Reason
+              {t("contact.reason")}
             </label>
             <select
               id="contact-reason"
@@ -155,10 +154,10 @@ const ContactSheet = ({
               }
               className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
             >
-              <option value="general_question">General question</option>
-              <option value="account_support">Account support</option>
-              <option value="report_bug">Report a bug</option>
-              <option value="feature_request">Feature request</option>
+              <option value="general_question">{t("contact.reasonGeneral")}</option>
+              <option value="account_support">{t("contact.reasonAccount")}</option>
+              <option value="report_bug">{t("contact.reasonBug")}</option>
+              <option value="feature_request">{t("contact.reasonFeature")}</option>
             </select>
           </div>
 
@@ -167,14 +166,14 @@ const ContactSheet = ({
               htmlFor="contact-message"
               className="text-sm font-medium text-gray-900"
             >
-              Message
+              {t("contact.message")}
             </label>
             <textarea
               id="contact-message"
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               className="mt-1 block w-full min-h-[120px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
-              placeholder="Type your message..."
+              placeholder={t("contact.messagePlaceholder")}
               required
             />
           </div>
@@ -187,8 +186,7 @@ const ContactSheet = ({
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300"
             />
             <span>
-              I accept that my data will be used to contact me regarding my
-              request.
+              {t("contact.consent")}
             </span>
           </label>
 
@@ -202,14 +200,14 @@ const ContactSheet = ({
               className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t("contact.cancel")}
             </button>
             <button
               type="submit"
               disabled={!acceptTerms || isSubmitting}
               className="px-4 py-2 text-sm rounded-md bg-[hsl(var(--primary))] text-white hover:bg-[hsl(225,80%,28%)] disabled:opacity-60"
             >
-              {isSubmitting ? "Sending..." : "Submit"}
+              {isSubmitting ? t("contact.submitting") : t("contact.submit")}
             </button>
           </div>
         </form>

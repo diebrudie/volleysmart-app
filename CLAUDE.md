@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Nothing active
-- Last change: FEAT-27 merged — Live Score Tracker (courtside tap-to-score, forced landscape, wake lock)
-- Current branch: `main`
-- Next step: Pick next feature from backlog
+- Working on: i18n polish — content updates, UI fixes (language switcher, birthday overflow, skill rating visibility)
+- Last change: feat/i18n — full internationalization across app + UX fixes
+- Current branch: `feat/i18n` (branched from `main`)
+- Next step: Commit & push i18n branch, create PR, merge
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -14,6 +14,35 @@ Branches stack on each other (not merged to main yet):
 - `feat/analytics` branched from `feat/discovery` (merged to main)
 - `feat/analytics-filter-redesign` branched from `main` (merged to main)
 - `feat/live-score-tracker` branched from `main` (merged to main)
+- `feat/i18n` branched from `main`
+
+## i18n (Internationalization) — EN/ES/DE
+**Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
+
+### What was done
+1. ~~**Infrastructure**~~: i18next init, language detection (localStorage), `getDateLocale()` utility
+2. ~~**LanguageSwitcher**~~: Drawer/Dialog picker (globe icon in navbar on homepage, in menu drawer for authenticated pages)
+3. ~~**10 namespace files**~~: common, home, auth, onboarding, events, games, clubs, profile, notifications, validation — all 3 languages
+4. ~~**String extraction**~~: Every page + component translated — public pages, onboarding, authenticated pages, game flow, members, clubs
+5. ~~**Zod schemas**~~: Factory functions with TFunction for auth validation messages
+6. ~~**Date locale**~~: `getDateLocale()` utility, date-fns locale integration, capitalization for ES/DE day names
+7. ~~**Position translations**~~: Client-side mapping from English DB names → translated display (Setter/Colocador/Zuspieler, etc.)
+8. ~~**Contact form**~~: Full i18n (ContactSheet.tsx)
+9. ~~**Manage Requests**~~: Full i18n (ManageMembers.tsx)
+10. ~~**Location selector**~~: Full i18n (EventLocationSelector.tsx)
+11. ~~**Game pages**~~: EditGame + NewGame fully translated
+12. ~~**Hero overflow fix**~~: Removed `whitespace-nowrap` causing DE/ES text overflow
+
+### Not translated (DB-driven content)
+- **FAQs**: Content from Supabase `faqs` table — would need translated columns in DB
+- **Notification body text**: Dynamic server-generated strings like "Isabel is attending XXX Event"
+- **Position data values**: DB stores English names; only display is translated client-side
+
+### Key files
+- `apps/web/src/i18n/index.ts` — i18next init + config
+- `apps/web/src/i18n/locales/{en,es,de}/*.json` — 10 namespace files × 3 languages
+- `apps/web/src/lib/dateLocale.ts` — `getDateLocale()` utility
+- `apps/web/src/components/common/LanguageSwitcher.tsx` — Language picker component
 
 ## Phase 14 in-progress work (Notifications + Bug Fixes)
 1. ~~**Notification triggers (DB)**~~: 9 types — join request/accepted/rejected, member joined, event created/cancelled, RSVP, RSVP deadline reminder (pg_cron), game started

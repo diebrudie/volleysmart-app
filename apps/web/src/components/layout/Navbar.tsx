@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useIsCompact } from "@/hooks/use-compact";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
   CalendarDays,
   Building2,
   Users,
+  Globe,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
@@ -44,6 +46,7 @@ import {
   DrawerFooter,
 } from "@/components/ui/drawer";
 import ContactSheet from "@/components/common/ContactSheet";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
 /**
  * Local types to avoid `any` and satisfy ESLint.
@@ -135,9 +138,11 @@ function getAvatarAndInitials(
 const Navbar = () => {
   const { isAuthenticated, user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation("common");
 
   const [isOpen, setIsOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const { clubId, membershipStatus, initialized } = useClub();
 
   const { data: unreadCount = 0 } = useQuery({
@@ -266,19 +271,19 @@ const Navbar = () => {
   // Global nav items — shown to all authenticated users, no club dependency
   const navItems = isAuthenticated
     ? [
-        { label: "Home", path: "/home", visible: true },
-        { label: "Events", path: "/events", visible: true },
-        { label: "Clubs", path: "/clubs", visible: true },
-        { label: "Members", path: "/members", visible: true },
+        { label: t("nav.home"), path: "/home", visible: true },
+        { label: t("nav.events"), path: "/events", visible: true },
+        { label: t("nav.clubs"), path: "/clubs", visible: true },
+        { label: t("nav.members"), path: "/members", visible: true },
       ]
     : [];
 
   const accountItems: AccountMenuItem[] = [
-    { label: "Profile", path: `/user/${user?.id}`, icon: User },
-    { label: "FAQs", path: "/faqs", icon: HelpCircle },
-    { label: "Contact Us", icon: Mail, action: "contact" },
+    { label: t("nav.profile"), path: `/user/${user?.id}`, icon: User },
+    { label: t("nav.faqs"), path: "/faqs", icon: HelpCircle },
+    { label: t("nav.contactUs"), icon: Mail, action: "contact" },
     {
-      label: "Settings",
+      label: t("nav.settings"),
       icon: Settings,
       disabled: true,
     },
@@ -334,33 +339,41 @@ const Navbar = () => {
               onClick={() => handleLandingNavClick("features")}
               className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
-              Features
+              {t("nav.features")}
             </button>
             <button
               type="button"
               onClick={() => handleLandingNavClick("how-it-works")}
               className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
-              How it works
+              {t("nav.howItWorks")}
             </button>
             <button
               type="button"
               onClick={() => handleLandingNavClick("faqs")}
               className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
-              FAQs
+              {t("nav.faqs")}
             </button>
           </div>
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setLanguageOpen(true)}
+              className="p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              aria-label={t("language.title")}
+            >
+              <Globe className="h-5 w-5" />
+            </button>
             <Link to="/login">
               <Button
                 variant="outline"
                 size="sm"
                 className="border-gray-900 bg-white text-gray-900 hover:bg-gray-100 hover:text-gray-900"
               >
-                Login
+                {t("nav.login")}
               </Button>
             </Link>
             <Link to="/signup">
@@ -369,7 +382,7 @@ const Navbar = () => {
                 size="sm"
                 className="!bg-[hsl(var(--primary))] !text-white hover:!bg-[hsl(225,80%,28%)]"
               >
-                Sign Up
+                {t("nav.signUp")}
               </Button>
             </Link>
           </div>
@@ -379,10 +392,10 @@ const Navbar = () => {
   );
 
   const sidebarNavItems = [
-    { label: "Home", path: "/home", icon: Home },
-    { label: "Events", path: "/events", icon: CalendarDays },
-    { label: "Clubs", path: "/clubs", icon: Building2 },
-    { label: "Members", path: "/members", icon: Users },
+    { label: t("nav.home"), path: "/home", icon: Home },
+    { label: t("nav.events"), path: "/events", icon: CalendarDays },
+    { label: t("nav.clubs"), path: "/clubs", icon: Building2 },
+    { label: t("nav.members"), path: "/members", icon: Users },
   ];
 
   const isNavActive = (path: string) => {
@@ -446,7 +459,7 @@ const Navbar = () => {
                 <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
               )}
             </span>
-            Notifications
+            {t("nav.notifications")}
           </button>
 
           <button
@@ -455,10 +468,19 @@ const Navbar = () => {
             className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground opacity-40 cursor-not-allowed"
           >
             <MessageSquare className="h-5 w-5 shrink-0" />
-            Chat
+            {t("nav.chat")}
           </button>
 
-          <ThemeToggle className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors justify-start h-auto p-0 bg-transparent border-0 shadow-none font-normal" showLabel />
+          <ThemeToggle className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors justify-start h-auto bg-transparent border-0 shadow-none font-normal" showLabel />
+
+          <button
+            type="button"
+            onClick={() => setLanguageOpen(true)}
+            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+          >
+            <Globe className="h-5 w-5 shrink-0" />
+            {t("language.title")}
+          </button>
         </div>
 
         {/* Profile section */}
@@ -563,7 +585,7 @@ const Navbar = () => {
                   focus:bg-gray-100 focus:text-gray-900
                   dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
               >
-                Log Out
+                {t("nav.logOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -610,7 +632,7 @@ const Navbar = () => {
             >
               <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
                 <DrawerHeader className="h-3 border-border">
-                  <DrawerTitle className="sr-only">Navigation Menu</DrawerTitle>
+                  <DrawerTitle className="sr-only">{t("nav.navigationMenu")}</DrawerTitle>
                 </DrawerHeader>
 
                 {/* Body */}
@@ -678,7 +700,7 @@ const Navbar = () => {
                           navigate(`/new-game/${clubId}`);
                         }}
                       >
-                        Create Game
+                        {t("nav.createGame")}
                       </Button>
                     )}
 
@@ -690,7 +712,7 @@ const Navbar = () => {
                       handleLogout();
                     }}
                   >
-                    Log Out
+                    {t("nav.logOut")}
                   </Button>
                 </DrawerFooter>
               </div>
@@ -725,7 +747,15 @@ const Navbar = () => {
             />
           </Link>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
+            <button
+              type="button"
+              onClick={() => setLanguageOpen(true)}
+              className="p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              aria-label={t("language.title")}
+            >
+              <Globe className="h-5 w-5" />
+            </button>
             <Drawer open={isOpen} onOpenChange={setIsOpen}>
               <DrawerTrigger asChild>
                 <Button
@@ -743,7 +773,7 @@ const Navbar = () => {
                 <div className="flex h-full max-h-[calc(100dvh-48px)] flex-col">
                   <DrawerHeader className="py-3 border-0">
                     <DrawerTitle className="sr-only">
-                      Navigation Menu
+                      {t("nav.navigationMenu")}
                     </DrawerTitle>
                   </DrawerHeader>
 
@@ -759,7 +789,7 @@ const Navbar = () => {
                           }}
                           className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
-                          Features
+                          {t("nav.features")}
                         </button>
                       </DrawerClose>
                       <DrawerClose asChild>
@@ -771,7 +801,7 @@ const Navbar = () => {
                           }}
                           className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
-                          How it works
+                          {t("nav.howItWorks")}
                         </button>
                       </DrawerClose>
                       <DrawerClose asChild>
@@ -783,7 +813,7 @@ const Navbar = () => {
                           }}
                           className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
-                          FAQs
+                          {t("nav.faqs")}
                         </button>
                       </DrawerClose>
                     </div>
@@ -797,7 +827,7 @@ const Navbar = () => {
                           className="w-full border-black text-black bg-white hover:bg-gray-100 text-xl py-6"
                           onClick={() => setIsOpen(false)}
                         >
-                          Login
+                          {t("nav.login")}
                         </Button>
                       </Link>
                     </DrawerClose>
@@ -810,7 +840,7 @@ const Navbar = () => {
                           className="w-full text-xl py-6 !bg-[hsl(var(--primary))] !text-white hover:!bg-[hsl(225,80%,28%)]"
                           onClick={() => setIsOpen(false)}
                         >
-                          Sign Up
+                          {t("nav.signUp")}
                         </Button>
                       </Link>
                     </DrawerClose>
@@ -830,8 +860,12 @@ const Navbar = () => {
 
   // Return different navbar based on authentication status
   if (!isAuthenticated) {
-    // Public experience: homepage-style navbars on all public routes
-    return isCompact ? <MobileHomepageNav /> : <HomepageNav />;
+    return (
+      <>
+        {isCompact ? <MobileHomepageNav /> : <HomepageNav />}
+        <LanguageSwitcher open={languageOpen} onOpenChange={setLanguageOpen} />
+      </>
+    );
   }
 
   // On authenticated routes:
@@ -849,6 +883,7 @@ const Navbar = () => {
     <>
       <DesktopNav />
       <ContactSheet open={contactOpen} onOpenChange={setContactOpen} source="profile_menu" />
+      <LanguageSwitcher open={languageOpen} onOpenChange={setLanguageOpen} />
     </>
   );
 };

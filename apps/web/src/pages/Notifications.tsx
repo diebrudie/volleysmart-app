@@ -1,7 +1,9 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
+import { getDateLocale } from "@/lib/dateLocale";
 import {
   ArrowLeft,
   Users,
@@ -29,7 +31,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 // ─── Notification display config ─────────────────────────────────────────────
 
-function getNotificationConfig(n: Notification): {
+function getNotificationConfig(n: Notification, t: (key: string, opts?: Record<string, string>) => string): {
   icon: React.ReactNode;
   title: string;
   description: string;
@@ -41,84 +43,86 @@ function getNotificationConfig(n: Notification): {
     case "club_join_request":
       return {
         icon: <UserPlus className="h-5 w-5 text-blue-500" />,
-        title: "Join Request",
-        description: `${p.requester_name ?? "Someone"} wants to join ${p.club_name ?? "your club"}`,
+        title: t("type.joinRequest.title"),
+        description: t("type.joinRequest.description", { name: p.requester_name ?? "Someone", club: p.club_name ?? "your club" }),
         href: "/manage-requests",
       };
     case "club_join_accepted":
       return {
         icon: <UserCheck className="h-5 w-5 text-emerald-500" />,
-        title: "Request Accepted",
-        description: `You've been accepted into ${p.club_name ?? "a club"}`,
+        title: t("type.joinAccepted.title"),
+        description: t("type.joinAccepted.description", { club: p.club_name ?? "a club" }),
         href: p.club_id ? `/clubs/${p.club_id}` : null,
       };
     case "club_join_rejected":
       return {
         icon: <UserX className="h-5 w-5 text-red-500" />,
-        title: "Request Declined",
-        description: `Your request to join ${p.club_name ?? "a club"} was declined`,
+        title: t("type.joinRejected.title"),
+        description: t("type.joinRejected.description", { club: p.club_name ?? "a club" }),
         href: null,
       };
     case "club_member_joined":
       return {
         icon: <Users className="h-5 w-5 text-blue-500" />,
-        title: "New Member",
-        description: `${p.member_name ?? "A member"} joined ${p.club_name ?? "your club"}`,
+        title: t("type.memberJoined.title"),
+        description: t("type.memberJoined.description", { name: p.member_name ?? "A member", club: p.club_name ?? "your club" }),
         href: p.club_id ? `/clubs/${p.club_id}` : null,
       };
     case "event_created":
       return {
         icon: <Calendar className="h-5 w-5 text-primary" />,
-        title: "New Event",
-        description: `${p.event_title ?? "An event"} — RSVP now!`,
+        title: t("type.eventCreated.title"),
+        description: t("type.eventCreated.description", { event: p.event_title ?? "An event" }),
         href: p.event_id ? `/events/${p.event_id}` : null,
       };
     case "event_cancelled":
       return {
         icon: <CalendarX className="h-5 w-5 text-red-500" />,
-        title: "Event Cancelled",
-        description: `${p.event_title ?? "An event"}${p.event_date ? ` on ${format(parseISO(p.event_date), "MMM d")}` : ""} has been cancelled`,
+        title: t("type.eventCancelled.title"),
+        description: p.event_date
+          ? t("type.eventCancelledDate.description", { event: p.event_title ?? "An event", date: format(parseISO(p.event_date), "MMM d", { locale: getDateLocale() }) })
+          : t("type.eventCancelled.description", { event: p.event_title ?? "An event" }),
         href: p.event_id ? `/events/${p.event_id}` : null,
       };
     case "event_rsvp":
       return {
         icon: <MessageSquare className="h-5 w-5 text-primary" />,
-        title: "RSVP Update",
-        description: `${p.player_name ?? "Someone"} is ${p.rsvp_status ?? "attending"} ${p.event_title ?? "an event"}`,
+        title: t("type.rsvp.title"),
+        description: t("type.rsvp.description", { name: p.player_name ?? "Someone", status: p.rsvp_status ?? "attending", event: p.event_title ?? "an event" }),
         href: p.event_id ? `/events/${p.event_id}` : null,
       };
     case "rsvp_deadline_reminder":
       return {
         icon: <Bell className="h-5 w-5 text-amber-500" />,
-        title: "RSVP Reminder",
-        description: `Last day to RSVP for ${p.event_title ?? "an event"}`,
+        title: t("type.rsvpReminder.title"),
+        description: t("type.rsvpReminder.description", { event: p.event_title ?? "an event" }),
         href: p.event_id ? `/events/${p.event_id}` : null,
       };
     case "game_started":
       return {
         icon: <Volleyball className="h-5 w-5 text-emerald-500" />,
-        title: "Game Started",
-        description: `${p.event_title ?? "A game"} has started`,
+        title: t("type.gameStarted.title"),
+        description: t("type.gameStarted.description", { event: p.event_title ?? "A game" }),
         href: p.match_day_id ? `/game/${p.match_day_id}` : null,
       };
     case "club_member_left":
       return {
         icon: <UserMinus className="h-5 w-5 text-red-500" />,
-        title: "Member Left",
-        description: `${p.member_name ?? "A member"} left ${p.club_name ?? "your club"}`,
+        title: t("type.memberLeft.title"),
+        description: t("type.memberLeft.description", { name: p.member_name ?? "A member", club: p.club_name ?? "your club" }),
         href: p.club_id ? `/clubs/${p.club_id}` : null,
       };
     case "club_member_removed":
       return {
         icon: <UserX className="h-5 w-5 text-red-500" />,
-        title: "Removed from Club",
-        description: `You've been removed from ${p.club_name ?? "a club"}`,
+        title: t("type.memberRemoved.title"),
+        description: t("type.memberRemoved.description", { club: p.club_name ?? "a club" }),
         href: null,
       };
     default:
       return {
         icon: <Bell className="h-5 w-5 text-muted-foreground" />,
-        title: "Notification",
+        title: t("type.default.title"),
         description: "",
         href: null,
       };
@@ -128,6 +132,7 @@ function getNotificationConfig(n: Notification): {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const Notifications: React.FC = () => {
+  const { t } = useTranslation("notifications");
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -151,7 +156,7 @@ const Notifications: React.FC = () => {
   });
 
   const handleTap = async (n: Notification) => {
-    const config = getNotificationConfig(n);
+    const config = getNotificationConfig(n, t);
     if (!n.read) {
       await markAsRead(n.id);
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
@@ -175,7 +180,7 @@ const Notifications: React.FC = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h1 className="text-base font-semibold">Notifications</h1>
+          <h1 className="text-base font-semibold">{t("header")}</h1>
           {unreadCount > 0 && (
             <Button
               variant="outline"
@@ -185,7 +190,7 @@ const Notifications: React.FC = () => {
               className="absolute right-4 text-xs h-8"
             >
               <CheckCheck className="h-3.5 w-3.5 mr-1" />
-              Read all
+              {t("readAll")}
             </Button>
           )}
         </div>
@@ -202,13 +207,13 @@ const Notifications: React.FC = () => {
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Bell className="h-12 w-12 text-muted-foreground/30 mb-4" />
               <p className="text-muted-foreground text-sm">
-                No notifications yet
+                {t("empty")}
               </p>
             </div>
           ) : (
             <div className="space-y-1">
               {notifications.map((n) => {
-                const config = getNotificationConfig(n);
+                const config = getNotificationConfig(n, t);
                 return (
                   <button
                     key={n.id}
@@ -241,6 +246,7 @@ const Notifications: React.FC = () => {
                       <p className="text-xs text-muted-foreground/70 mt-1">
                         {formatDistanceToNow(parseISO(n.created_at), {
                           addSuffix: true,
+                          locale: getDateLocale(),
                         })}
                       </p>
                     </div>

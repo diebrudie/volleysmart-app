@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import {
   Users,
@@ -139,9 +140,12 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
 
 // ─── List item component ──────────────────────────────────────────────────────
 const MemberListItem = ({ member }: { member: GlobalMember }) => {
-  const primaryPosition =
-    member.player_positions?.find((pos) => pos.is_primary)?.positions.name ||
-    "No position";
+  const { t } = useTranslation("clubs");
+  const rawPosition =
+    member.player_positions?.find((pos) => pos.is_primary)?.positions.name;
+  const primaryPosition = rawPosition
+    ? t(`members.position.${rawPosition}`, rawPosition)
+    : t("members.noPosition");
   const lastNameInitial = member.last_name
     ? member.last_name.charAt(0).toUpperCase()
     : "";
@@ -178,6 +182,7 @@ const MemberListItem = ({ member }: { member: GlobalMember }) => {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const MembersGlobal: React.FC = () => {
+  const { t } = useTranslation("clubs");
   const { user } = useAuth();
   const navigate = useNavigate();
   const isCompact = useIsCompact();
@@ -303,9 +308,9 @@ const MembersGlobal: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center pb-24 lg:ml-60">
           <Users className="h-12 w-12 text-muted-foreground" />
           <div>
-            <h1 className="text-xl font-semibold">No members yet</h1>
+            <h1 className="text-xl font-semibold">{t("members.emptyTitle")}</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Members from all your clubs will appear here.
+              {t("members.emptyDescription")}
             </p>
           </div>
         </div>
@@ -321,7 +326,7 @@ const MembersGlobal: React.FC = () => {
         <main className="flex-grow lg:ml-60">
           <div className="max-w-6xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-xl font-bold">Members</h1>
+              <h1 className="text-xl font-bold">{t("members.title")}</h1>
               {adminClubs.length > 0 && (
                 <Button
                   variant="outline"
@@ -330,7 +335,7 @@ const MembersGlobal: React.FC = () => {
                   className="relative"
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  Manage Requests
+                  {t("members.manageRequests")}
                   {totalPendingRequests > 0 && (
                     <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
                   )}
@@ -342,7 +347,7 @@ const MembersGlobal: React.FC = () => {
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search members..."
+                placeholder={t("members.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -356,7 +361,7 @@ const MembersGlobal: React.FC = () => {
                   type="button"
                   onClick={() => setSortAsc((prev) => !prev)}
                   className="flex items-center justify-center h-8 w-8 border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-                  aria-label={sortAsc ? "Sort Z to A" : "Sort A to Z"}
+                  aria-label={sortAsc ? t("members.sortZtoA") : t("members.sortAtoZ")}
                 >
                   <ArrowUpDown className="h-3.5 w-3.5" />
                 </button>
@@ -368,7 +373,7 @@ const MembersGlobal: React.FC = () => {
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
-                    Filter
+                    {t("members.filter")}
                     {activeFilterCount > 0 && (
                       <span className="ml-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
                         {activeFilterCount}
@@ -388,7 +393,7 @@ const MembersGlobal: React.FC = () => {
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted"
                   )}
-                  aria-label="Grid view"
+                  aria-label={t("members.gridView")}
                 >
                   <Grid3X3 className="h-3.5 w-3.5" />
                 </button>
@@ -401,7 +406,7 @@ const MembersGlobal: React.FC = () => {
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted"
                   )}
-                  aria-label="List view"
+                  aria-label={t("members.listView")}
                 >
                   <List className="h-3.5 w-3.5" />
                 </button>
@@ -411,7 +416,7 @@ const MembersGlobal: React.FC = () => {
             {/* Members display */}
             {filtered.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground text-sm">
-                No members match your search.
+                {t("members.noResults")}
               </div>
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -440,9 +445,9 @@ const MembersGlobal: React.FC = () => {
 
             {filtered.length > 0 && (
               <p className="text-xs text-muted-foreground text-right mt-4">
-                {filtered.length} member{filtered.length !== 1 ? "s" : ""}
+                {t("members.count", { count: filtered.length })}
                 {filtered.length !== members.length
-                  ? ` (filtered from ${members.length})`
+                  ? ` ${t("members.filteredFrom", { total: members.length })}`
                   : ""}
               </p>
             )}
@@ -453,9 +458,9 @@ const MembersGlobal: React.FC = () => {
         <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <SheetContent side="right">
             <SheetHeader>
-              <SheetTitle>Filter by Club</SheetTitle>
+              <SheetTitle>{t("members.filterByClub")}</SheetTitle>
               <SheetDescription>
-                Select which clubs to show members from.
+                {t("members.filterDescription")}
               </SheetDescription>
             </SheetHeader>
             <div className="mt-6 space-y-4">
@@ -478,7 +483,7 @@ const MembersGlobal: React.FC = () => {
                   onClick={() => setFilterClub(new Set())}
                   className="mt-2"
                 >
-                  Clear all
+                  {t("members.clearAll")}
                 </Button>
               )}
             </div>
@@ -495,7 +500,7 @@ const MembersGlobal: React.FC = () => {
         <div className="px-4 py-4 pb-24">
           {/* Headline + Manage Requests */}
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold">Members</h1>
+            <h1 className="text-xl font-bold">{t("members.title")}</h1>
             {adminClubs.length > 0 && (
               <button
                 type="button"
@@ -503,7 +508,7 @@ const MembersGlobal: React.FC = () => {
                 className="relative flex items-center gap-1.5 text-xs font-medium text-primary"
               >
                 <Settings className="h-3.5 w-3.5" />
-                Manage Requests
+                {t("members.manageRequests")}
                 {totalPendingRequests > 0 && (
                   <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500" />
                 )}
@@ -515,7 +520,7 @@ const MembersGlobal: React.FC = () => {
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search members..."
+              placeholder={t("members.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 h-9"
@@ -529,7 +534,7 @@ const MembersGlobal: React.FC = () => {
                 type="button"
                 onClick={() => setSortAsc((prev) => !prev)}
                 className="flex items-center justify-center h-8 w-8 border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-                aria-label={sortAsc ? "Sort Z to A" : "Sort A to Z"}
+                aria-label={sortAsc ? t("members.sortZtoA") : t("members.sortAtoZ")}
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
               </button>
@@ -562,7 +567,7 @@ const MembersGlobal: React.FC = () => {
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted"
                 )}
-                aria-label="Grid view"
+                aria-label={t("members.gridView")}
               >
                 <Grid3X3 className="h-3.5 w-3.5" />
               </button>
@@ -575,7 +580,7 @@ const MembersGlobal: React.FC = () => {
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted"
                 )}
-                aria-label="List view"
+                aria-label={t("members.listView")}
               >
                 <List className="h-3.5 w-3.5" />
               </button>
@@ -585,7 +590,7 @@ const MembersGlobal: React.FC = () => {
           {/* Members display */}
           {filtered.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground text-sm">
-              No members match your search.
+              {t("members.noResults")}
             </div>
           ) : viewMode === "grid" ? (
             <div className="grid grid-cols-2 gap-3">
@@ -614,9 +619,9 @@ const MembersGlobal: React.FC = () => {
 
           {filtered.length > 0 && (
             <p className="text-xs text-muted-foreground text-right mt-4">
-              {filtered.length} member{filtered.length !== 1 ? "s" : ""}
+              {t("members.count", { count: filtered.length })}
               {filtered.length !== members.length
-                ? ` (filtered from ${members.length})`
+                ? ` ${t("members.filteredFrom", { total: members.length })}`
                 : ""}
             </p>
           )}
@@ -627,9 +632,9 @@ const MembersGlobal: React.FC = () => {
       <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
         <SheetContent side="right">
           <SheetHeader>
-            <SheetTitle>Filter by Club</SheetTitle>
+            <SheetTitle>{t("members.filterByClub")}</SheetTitle>
             <SheetDescription>
-              Select which clubs to show members from.
+              {t("members.filterDescription")}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-4">
@@ -652,7 +657,7 @@ const MembersGlobal: React.FC = () => {
                 onClick={() => setFilterClub(new Set())}
                 className="mt-2"
               >
-                Clear all
+                {t("members.clearAll")}
               </Button>
             )}
           </div>

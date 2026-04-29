@@ -12,6 +12,7 @@ import {
   endOfWeek,
   isWithinInterval,
 } from "date-fns";
+import { getDateLocale } from "@/lib/dateLocale";
 import { useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
@@ -24,6 +25,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -60,26 +62,26 @@ type EventTypeValue =
   | "training"
   | "tournament";
 
-const RSVP_OPTIONS: { value: RsvpFilterValue; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "attending", label: "Going" },
-  { value: "declined", label: "Not going" },
-  { value: "none", label: "Not responded" },
+const RSVP_OPTIONS: { value: RsvpFilterValue; labelKey: string }[] = [
+  { value: "all", labelKey: "upcoming.rsvpAll" },
+  { value: "attending", labelKey: "upcoming.rsvpGoing" },
+  { value: "declined", labelKey: "upcoming.rsvpNotGoing" },
+  { value: "none", labelKey: "upcoming.rsvpNotResponded" },
 ];
 
-const EVENT_TYPE_OPTIONS: { value: EventTypeValue; label: string }[] = [
-  { value: "friendly_game", label: "Friendly Game" },
-  { value: "social_game", label: "Social Game" },
-  { value: "training", label: "Training" },
-  { value: "tournament", label: "Tournament" },
+const EVENT_TYPE_OPTIONS: { value: EventTypeValue; labelKey: string }[] = [
+  { value: "friendly_game", labelKey: "upcoming.eventTypeFriendly" },
+  { value: "social_game", labelKey: "upcoming.eventTypeSocial" },
+  { value: "training", labelKey: "upcoming.eventTypeTraining" },
+  { value: "tournament", labelKey: "upcoming.eventTypeTournament" },
 ];
 
 type MonthFilterValue = "all" | "current" | "last" | "next";
-const MONTH_FILTER_OPTIONS: { value: MonthFilterValue; label: string }[] = [
-  { value: "all", label: "All months" },
-  { value: "current", label: "This month" },
-  { value: "last", label: "Last month" },
-  { value: "next", label: "Next month" },
+const MONTH_FILTER_OPTIONS: { value: MonthFilterValue; labelKey: string }[] = [
+  { value: "all", labelKey: "upcoming.monthAll" },
+  { value: "current", labelKey: "upcoming.monthCurrent" },
+  { value: "last", labelKey: "upcoming.monthLast" },
+  { value: "next", labelKey: "upcoming.monthNext" },
 ];
 
 // ─── Mini calendar ────────────────────────────────────────────────────────
@@ -98,6 +100,7 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({
   selectedDay,
   onDaySelect,
 }) => {
+  const { t } = useTranslation("events");
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -112,18 +115,18 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({
           type="button"
           onClick={() => onMonthChange(subMonths(month, 1))}
           className="p-1 rounded hover:bg-muted"
-          aria-label="Previous month"
+          aria-label={t("upcoming.previousMonth")}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="text-sm font-medium">
-          {format(month, "MMMM yyyy")}
+          {format(month, "MMMM yyyy", { locale: getDateLocale() })}
         </span>
         <button
           type="button"
           onClick={() => onMonthChange(addMonths(month, 1))}
           className="p-1 rounded hover:bg-muted"
-          aria-label="Next month"
+          aria-label={t("upcoming.nextMonth")}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -193,9 +196,10 @@ const EventList: React.FC<{
   isLoading,
   onEventClick,
   onCreateEvent,
-  emptyLabel = "No upcoming events",
+  emptyLabel,
   currentPlayerId,
 }) => {
+  const { t } = useTranslation("events");
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -209,14 +213,14 @@ const EventList: React.FC<{
       <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
         <CalendarDays className="h-12 w-12 text-muted-foreground" />
         <div>
-          <p className="font-medium">{emptyLabel}</p>
+          <p className="font-medium">{emptyLabel || t("upcoming.noUpcomingEvents")}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Create one to get started
+            {t("upcoming.createToGetStarted")}
           </p>
         </div>
         <Button size="sm" onClick={onCreateEvent}>
           <Plus className="h-4 w-4 mr-1.5" />
-          Create Event
+          {t("upcoming.createEvent")}
         </Button>
       </div>
     );
@@ -243,6 +247,7 @@ const PastEventsList: React.FC<{
   onViewDetails: (matchDayId: string) => void;
   onEventClick: (eventId: string) => void;
 }> = ({ events, isLoading, onViewDetails, onEventClick }) => {
+  const { t } = useTranslation("events");
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -255,7 +260,7 @@ const PastEventsList: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
         <CalendarDays className="h-12 w-12 text-muted-foreground" />
-        <p className="font-medium">No past events</p>
+        <p className="font-medium">{t("upcoming.noPastEvents")}</p>
       </div>
     );
   }
@@ -266,17 +271,17 @@ const PastEventsList: React.FC<{
       <div className="flex items-center gap-4 px-3 py-2 border-b">
         <div className="flex-1 min-w-0">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Date
+            {t("upcoming.tableDate")}
           </span>
         </div>
         <div className="shrink-0 w-16 text-center">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Score
+            {t("upcoming.tableScore")}
           </span>
         </div>
         <div className="shrink-0 w-20 text-right">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Details
+            {t("upcoming.tableDetails")}
           </span>
         </div>
       </div>
@@ -292,7 +297,7 @@ const PastEventsList: React.FC<{
           {/* Date + title (left) */}
           <div className="flex-1 min-w-0">
             <p className="text-xs text-muted-foreground">
-              {format(parseISO(e.date), "MMM. d, yyyy")}
+              {format(parseISO(e.date), "MMM. d, yyyy", { locale: getDateLocale() })}
             </p>
             <p className="text-sm font-medium text-primary truncate">
               {e.title}
@@ -322,7 +327,7 @@ const PastEventsList: React.FC<{
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Eye className="h-3.5 w-3.5" />
-              View
+              {t("upcoming.view")}
             </button>
           </div>
         </div>
@@ -337,6 +342,7 @@ const UpcomingEvents: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isCompact = useIsCompact();
+  const { t } = useTranslation("events");
 
   // Restore tab from location state (e.g. coming back from GameDetail)
   const initialTab =
@@ -558,7 +564,7 @@ const UpcomingEvents: React.FC = () => {
               : "text-muted-foreground hover:bg-muted"
           )}
         >
-          Upcoming
+          {t("upcoming.tabUpcoming")}
         </button>
         <button
           type="button"
@@ -570,11 +576,11 @@ const UpcomingEvents: React.FC = () => {
               : "text-muted-foreground hover:bg-muted"
           )}
         >
-          Past events
+          {t("upcoming.tabPast")}
         </button>
       </div>
     ),
-    [tab, handleTabChange]
+    [tab, handleTabChange, t]
   );
 
   // ── Controls row ────────────────────────────────────────────────────────
@@ -586,7 +592,7 @@ const UpcomingEvents: React.FC = () => {
             type="button"
             onClick={() => setSortAsc((prev) => !prev)}
             className="flex items-center justify-center h-8 w-8 border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-            aria-label={sortAsc ? "Sort descending" : "Sort ascending"}
+            aria-label={sortAsc ? t("upcoming.sortDescending") : t("upcoming.sortAscending")}
           >
             <ArrowUpDown className="h-3.5 w-3.5" />
           </button>
@@ -597,7 +603,7 @@ const UpcomingEvents: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filter
+            {t("upcoming.filter")}
             {activeFilterCount > 0 && (
               <span className="ml-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
                 {activeFilterCount}
@@ -623,7 +629,7 @@ const UpcomingEvents: React.FC = () => {
             )}
           >
             <List className="h-3.5 w-3.5" />
-            List
+            {t("upcoming.viewList")}
           </button>
           <button
             type="button"
@@ -636,12 +642,12 @@ const UpcomingEvents: React.FC = () => {
             )}
           >
             <CalendarDays className="h-3.5 w-3.5" />
-            Calendar
+            {t("upcoming.viewCalendar")}
           </button>
         </div>
       </div>
     ),
-    [sortAsc, activeFilterCount, tab, view]
+    [sortAsc, activeFilterCount, tab, view, t]
   );
 
   // ── Filter drawer ───────────────────────────────────────────────────────
@@ -649,14 +655,14 @@ const UpcomingEvents: React.FC = () => {
     <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
       <SheetContent side="left" className="w-72 p-0 flex flex-col">
         <SheetHeader className="px-4 pt-4 pb-3 border-b">
-          <SheetTitle>Filters</SheetTitle>
+          <SheetTitle>{t("upcoming.filtersTitle")}</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
           {/* RSVP filter — dropdown */}
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              RSVP Status
+              {t("upcoming.filterRsvpStatus")}
             </p>
             <Select
               value={rsvpFilter}
@@ -668,7 +674,7 @@ const UpcomingEvents: React.FC = () => {
               <SelectContent>
                 {RSVP_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -678,7 +684,7 @@ const UpcomingEvents: React.FC = () => {
           {/* Month filter — dropdown */}
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Month
+              {t("upcoming.filterMonth")}
             </p>
             <Select
               value={monthFilter}
@@ -690,7 +696,7 @@ const UpcomingEvents: React.FC = () => {
               <SelectContent>
                 {MONTH_FILTER_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -700,7 +706,7 @@ const UpcomingEvents: React.FC = () => {
           {/* Event type — checkboxes */}
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Event Type
+              {t("upcoming.filterEventType")}
             </p>
             <div className="flex flex-col gap-2">
               {EVENT_TYPE_OPTIONS.map((opt) => (
@@ -712,7 +718,7 @@ const UpcomingEvents: React.FC = () => {
                     checked={eventTypeFilters.has(opt.value)}
                     onCheckedChange={() => toggleEventType(opt.value)}
                   />
-                  <span className="text-sm">{opt.label}</span>
+                  <span className="text-sm">{t(opt.labelKey)}</span>
                 </label>
               ))}
             </div>
@@ -722,7 +728,7 @@ const UpcomingEvents: React.FC = () => {
           {clubNames.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Club
+                {t("upcoming.filterClub")}
               </p>
               <div className="flex flex-col gap-2">
                 {clubNames.map((name) => (
@@ -756,7 +762,7 @@ const UpcomingEvents: React.FC = () => {
                 setMonthFilter("all");
               }}
             >
-              Clear all filters
+              {t("upcoming.clearAllFilters")}
             </Button>
           </div>
         )}
@@ -772,10 +778,10 @@ const UpcomingEvents: React.FC = () => {
         <main className="flex-grow lg:ml-60">
           <div className="max-w-6xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-xl font-bold">Events</h1>
+              <h1 className="text-xl font-bold">{t("upcoming.title")}</h1>
               <Button onClick={() => navigate("/events/new")} size="sm">
                 <Plus className="h-4 w-4 mr-1.5" />
-                Create Event
+                {t("upcoming.createEvent")}
               </Button>
             </div>
 
@@ -801,7 +807,7 @@ const UpcomingEvents: React.FC = () => {
                       onClick={() => setSelectedDay(null)}
                       className="mt-3 w-full text-xs text-muted-foreground hover:text-foreground"
                     >
-                      Clear filter
+                      {t("upcoming.clearFilter")}
                     </button>
                   )}
                 </div>
@@ -817,7 +823,7 @@ const UpcomingEvents: React.FC = () => {
                     type="button"
                     onClick={() => setSortAsc((prev) => !prev)}
                     className="flex items-center justify-center h-8 w-8 border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-                    aria-label={sortAsc ? "Sort descending" : "Sort ascending"}
+                    aria-label={sortAsc ? t("upcoming.sortDescending") : t("upcoming.sortAscending")}
                   >
                     <ArrowUpDown className="h-3.5 w-3.5" />
                   </button>
@@ -828,7 +834,7 @@ const UpcomingEvents: React.FC = () => {
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
-                    Filter
+                    {t("upcoming.filter")}
                     {activeFilterCount > 0 && (
                       <span className="ml-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
                         {activeFilterCount}
@@ -865,7 +871,7 @@ const UpcomingEvents: React.FC = () => {
   // ── Mobile / tablet ────────────────────────────────────────────────────
   return (
     <div className="px-4 py-4 pb-24">
-      <h1 className="text-xl font-bold mb-3">Events</h1>
+      <h1 className="text-xl font-bold mb-3">{t("upcoming.title")}</h1>
 
       {TabToggle}
       {ControlsRow}
@@ -885,7 +891,7 @@ const UpcomingEvents: React.FC = () => {
               onClick={() => setSelectedDay(null)}
               className="mt-2 w-full text-xs text-muted-foreground"
             >
-              Show all events
+              {t("upcoming.showAllEvents")}
             </button>
           )}
         </div>

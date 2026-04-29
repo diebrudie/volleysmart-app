@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,6 +133,7 @@ const calculateSkillLevel = (answers: OnboardingAnswers): number => {
 };
 
 const PlayerOnboarding = () => {
+  const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -225,8 +227,8 @@ const PlayerOnboarding = () => {
     } catch (error) {
       console.error("Error fetching positions:", error);
       toast({
-        title: "Error",
-        description: "Failed to load positions",
+        title: t("toast.errorTitle"),
+        description: t("toast.loadPositionsFailed"),
         variant: "destructive",
         duration: 2000,
       });
@@ -238,8 +240,8 @@ const PlayerOnboarding = () => {
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast({
-          title: "Error",
-          description: "Image size must be less than 5MB",
+          title: t("toast.errorTitle"),
+          description: t("toast.imageTooLarge"),
           variant: "destructive",
           duration: 2000,
         });
@@ -248,8 +250,8 @@ const PlayerOnboarding = () => {
 
       if (!file.type.startsWith("image/")) {
         toast({
-          title: "Error",
-          description: "Please select a valid image file",
+          title: t("toast.errorTitle"),
+          description: t("toast.invalidImage"),
           variant: "destructive",
           duration: 2000,
         });
@@ -363,8 +365,8 @@ const PlayerOnboarding = () => {
       !cityLocation
     ) {
       toast({
-        title: "Error",
-        description: "Please answer all required questions",
+        title: t("toast.errorTitle"),
+        description: t("toast.answerAllRequired"),
         variant: "destructive",
         duration: 2000,
       });
@@ -376,8 +378,8 @@ const PlayerOnboarding = () => {
 
     if (!fn || !ln) {
       toast({
-        title: "Error",
-        description: "Please enter your first and last name to continue.",
+        title: t("toast.errorTitle"),
+        description: t("toast.enterName"),
         variant: "destructive",
         duration: 2000,
       });
@@ -396,7 +398,7 @@ const PlayerOnboarding = () => {
       if (existingPlayer) {
         toast({
           title: "Success",
-          description: "Player profile already exists!",
+          description: t("toast.profileExists"),
           duration: 1500,
         });
         navigate("/home", { replace: true });
@@ -416,8 +418,7 @@ const PlayerOnboarding = () => {
           console.warn("Image upload error:", uploadError.message);
           toast({
             title: "Notice",
-            description:
-              "Image upload failed, but profile will be created without photo.",
+            description: t("toast.imageUploadFailed"),
             variant: "default",
             duration: 2000,
           });
@@ -486,7 +487,7 @@ const PlayerOnboarding = () => {
           console.error("🚨 Error creating player positions:", positionsError);
           toast({
             title: "Warning",
-            description: "Player created but positions failed to save",
+            description: t("toast.positionsFailed"),
             variant: "destructive",
             duration: 2000,
           });
@@ -499,7 +500,7 @@ const PlayerOnboarding = () => {
 
       toast({
         title: "Success",
-        description: `Player profile created! Skill level: ${calculatedSkillLevel}/100`,
+        description: t("toast.profileCreated", { level: calculatedSkillLevel }),
         duration: 1500,
       });
 
@@ -515,8 +516,8 @@ const PlayerOnboarding = () => {
       const errorMessage =
         error instanceof Error ? error.message : "An unexpected error occurred";
       toast({
-        title: "Error",
-        description: `Failed to create player profile: ${errorMessage}`,
+        title: t("toast.errorTitle"),
+        description: t("toast.createFailed", { error: errorMessage }),
         variant: "destructive",
         duration: 2000,
       });
@@ -533,11 +534,10 @@ const PlayerOnboarding = () => {
           <div className="space-y-8 text-center max-w-2xl mx-auto">
             <div className="space-y-4">
               <h1 className="text-4xl font-bold text-foreground">
-                🏐 Let's Complete Your Player Profile
+                🏐 {t("welcome.title")}
               </h1>
               <p className="text-xl text-muted-foreground">
-                Help us get to know your volleyball style so we can match you
-                with the right team!
+                {t("welcome.subtitle")}
               </p>
             </div>
 
@@ -545,27 +545,27 @@ const PlayerOnboarding = () => {
             {!namesAutoFilled && (
               <div className="text-left space-y-3 bg-muted/50 rounded-lg p-4">
                 <p className="text-sm font-medium text-foreground">
-                  First, tell us your name:
+                  {t("welcome.namePrompt")}
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <Label htmlFor="ob-first-name">First name</Label>
+                    <Label htmlFor="ob-first-name">{t("welcome.firstName")}</Label>
                     <Input
                       id="ob-first-name"
                       autoComplete="given-name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Jane"
+                      placeholder={t("welcome.firstNamePlaceholder")}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="ob-last-name">Last name</Label>
+                    <Label htmlFor="ob-last-name">{t("welcome.lastName")}</Label>
                     <Input
                       id="ob-last-name"
                       autoComplete="family-name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Doe"
+                      placeholder={t("welcome.lastNamePlaceholder")}
                     />
                   </div>
                 </div>
@@ -573,7 +573,7 @@ const PlayerOnboarding = () => {
             )}
 
             <p className="text-muted-foreground">
-              This will take about 2-4 minutes to complete.
+              {t("welcome.duration")}
             </p>
           </div>
         );
@@ -584,7 +584,7 @@ const PlayerOnboarding = () => {
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <h2 className="text-2xl font-bold text-foreground">
-                  What's your main position on the court?
+                  {t("primaryPosition.title")}
                 </h2>
 
                 {/* Inline help icon */}
@@ -600,11 +600,11 @@ const PlayerOnboarding = () => {
                       <HelpCircle className="h-4 w-4" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>Show positions diagram</TooltipContent>
+                  <TooltipContent>{t("positionsHelp.showDiagram")}</TooltipContent>
                 </Tooltip>
               </div>
               <p className="text-muted-foreground">
-                This is the position you feel most comfortable playing.
+                {t("primaryPosition.subtitle")}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
@@ -645,7 +645,7 @@ const PlayerOnboarding = () => {
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <h2 className="text-2xl font-bold text-foreground">
-                  What other positions can you play? *
+                  {t("secondaryPosition.title")}
                 </h2>
 
                 {/* Inline help icon */}
@@ -661,13 +661,12 @@ const PlayerOnboarding = () => {
                       <HelpCircle className="h-4 w-4" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>Show positions diagram</TooltipContent>
+                  <TooltipContent>{t("positionsHelp.showDiagram")}</TooltipContent>
                 </Tooltip>
               </div>
 
               <p className="text-muted-foreground">
-                Select at least one other position that you're comfortable
-                playing
+                {t("secondaryPosition.subtitle")}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
@@ -707,18 +706,18 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                How would you rate your current skill level?
+                {t("skillLevel.title")}
               </h2>
               <p className="text-muted-foreground">
-                This helps us understand your general playing experience.
+                {t("skillLevel.subtitle")}
               </p>
             </div>
             <div className="grid grid-cols-1 gap-4 max-w-lg mx-auto">
               {[
-                { value: "just-starting", label: "Just starting out" },
-                { value: "intermediate", label: "Intermediate" },
-                { value: "advanced", label: "Advanced" },
-                { value: "competitive", label: "Competitive / Professional" },
+                { value: "just-starting", label: t("skillLevel.justStarting") },
+                { value: "intermediate", label: t("skillLevel.intermediate") },
+                { value: "advanced", label: t("skillLevel.advanced") },
+                { value: "competitive", label: t("skillLevel.competitive") },
               ].map((option) => (
                 <label
                   key={option.value}
@@ -755,16 +754,16 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                Are you receiving regular volleyball training?
+                {t("training.title")}
               </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 max-w-lg mx-auto">
               {[
-                { value: "no", label: "No" },
-                { value: "used-to", label: "I used to train, but not anymore" },
+                { value: "no", label: t("training.no") },
+                { value: "used-to", label: t("training.usedTo") },
                 {
                   value: "currently",
-                  label: "Yes, I currently train regularly",
+                  label: t("training.currently"),
                 },
               ].map((option) => (
                 <label
@@ -802,17 +801,17 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                At what level do you usually compete?
+                {t("competition.title")}
               </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 max-w-lg mx-auto">
               {[
-                { value: "casual", label: "Just casual games with friends" },
-                { value: "friendly", label: "Friendly or local tournaments" },
-                { value: "amateur", label: "Amateur league matches" },
+                { value: "casual", label: t("competition.casual") },
+                { value: "friendly", label: t("competition.friendly") },
+                { value: "amateur", label: t("competition.amateur") },
                 {
                   value: "federated",
-                  label: "Federated or official competitions",
+                  label: t("competition.federated"),
                 },
               ].map((option) => (
                 <label
@@ -851,39 +850,19 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                How would you describe your performance during games?
+                {t("performance.title")}
               </h2>
               <p className="text-muted-foreground">
-                Pick the option that best reflects your typical performance
-                level.
+                {t("performance.subtitle")}
               </p>
             </div>
             <div className="grid grid-cols-1 gap-4 max-w-2xl mx-auto">
               {[
-                {
-                  value: "basic-contact",
-                  label:
-                    "I can make basic contact with the ball and serve underhand",
-                },
-                {
-                  value: "consistent-play",
-                  label:
-                    "I can serve overhand and play consistently without major errors",
-                },
-                {
-                  value: "tactical-aware",
-                  label:
-                    "I understand positioning and can execute basic tactics",
-                },
-                {
-                  value: "advanced-skills",
-                  label: "I can spike, block, and set with good technique",
-                },
-                {
-                  value: "competitive-level",
-                  label:
-                    "I play at a competitive level with advanced skills and game awareness",
-                },
+                { value: "basic-contact", label: t("performance.basicContact") },
+                { value: "consistent-play", label: t("performance.consistentPlay") },
+                { value: "tactical-aware", label: t("performance.tacticalAware") },
+                { value: "advanced-skills", label: t("performance.advancedSkills") },
+                { value: "competitive-level", label: t("performance.competitiveLevel") },
               ].map((option) => (
                 <label
                   key={option.value}
@@ -920,22 +899,19 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                How many volleyball matches have you played?
+                {t("matchExperience.title")}
               </h2>
               <p className="text-muted-foreground">
-                Include both competitive and casual matches.
+                {t("matchExperience.subtitle")}
               </p>
             </div>
             <div className="grid grid-cols-1 gap-4 max-w-lg mx-auto">
               {[
-                {
-                  value: "none",
-                  label: "None or just a few practice sessions",
-                },
-                { value: "few", label: "1-10 matches" },
-                { value: "some", label: "11-50 matches" },
-                { value: "many", label: "51-200 matches" },
-                { value: "extensive", label: "200+ matches" },
+                { value: "none", label: t("matchExperience.none") },
+                { value: "few", label: t("matchExperience.few") },
+                { value: "some", label: t("matchExperience.some") },
+                { value: "many", label: t("matchExperience.many") },
+                { value: "extensive", label: t("matchExperience.extensive") },
               ].map((option) => (
                 <label
                   key={option.value}
@@ -972,10 +948,10 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                What's your height?
+                {t("height.title")}
               </h2>
               <p className="text-muted-foreground">
-                This helps us create balanced teams for blocking and attacking.
+                {t("height.subtitle")}
               </p>
             </div>
             <div className="max-w-xs mx-auto">
@@ -995,7 +971,7 @@ const PlayerOnboarding = () => {
                   className="text-center"
                 />
                 <span className="text-sm text-muted-foreground">
-                  cm
+                  {t("height.unit")}
                 </span>
               </div>
             </div>
@@ -1012,10 +988,10 @@ const PlayerOnboarding = () => {
           <div className="space-y-6 w-full">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                When's your birthday?
+                {t("birthday.title")}
               </h2>
             </div>
-            <div className="relative">
+            <div className="relative max-w-full">
               <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
               <Input
                 type="date"
@@ -1030,7 +1006,7 @@ const PlayerOnboarding = () => {
                     setSelectedDate(new Date(e.target.value));
                   }
                 }}
-                className="w-full min-w-0 text-left dark:bg-card dark:border-border dark:text-foreground dark:[color-scheme:dark] pl-10"
+                className="w-full min-w-0 max-w-full text-left dark:bg-card dark:border-border dark:text-foreground dark:[color-scheme:dark] pl-10 [&::-webkit-datetime-edit]:min-w-0"
                 placeholder="YYYY-MM-DD"
               />
             </div>
@@ -1043,16 +1019,16 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                Which city are you based in?
+                {t("city.title")}
               </h2>
               <p className="text-muted-foreground">
-                This helps us connect you with local players and clubs.
+                {t("city.subtitle")}
               </p>
             </div>
             <div className="max-w-sm mx-auto">
               <CityLocationSelector
-                label="City"
-                placeholder="Start typing your city..."
+                label={t("city.label")}
+                placeholder={t("city.placeholder")}
                 value={cityLocation}
                 onChange={setCityLocation}
               />
@@ -1071,17 +1047,17 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                What's your gender?
+                {t("gender.title")}
               </h2>
               <p className="text-muted-foreground">
-                This helps us create balanced teams.
+                {t("gender.subtitle")}
               </p>
             </div>
             <div className="grid grid-cols-1 gap-4 max-w-sm mx-auto">
               {[
-                { value: "male", label: "Male" },
-                { value: "female", label: "Female" },
-                { value: "diverse", label: "Diverse" },
+                { value: "male", label: t("gender.male") },
+                { value: "female", label: t("gender.female") },
+                { value: "diverse", label: t("gender.diverse") },
               ].map((option) => (
                 <label
                   key={option.value}
@@ -1118,10 +1094,10 @@ const PlayerOnboarding = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                Upload a profile picture
+                {t("photo.title")}
               </h2>
               <p className="text-muted-foreground">
-                Add a photo so your teammates can recognize you!
+                {t("photo.subtitle")}
               </p>
             </div>
             <div className="flex flex-col items-center space-y-6">
@@ -1141,7 +1117,7 @@ const PlayerOnboarding = () => {
                   <div className="flex items-center justify-center space-x-2 px-6 py-3 border-2 border-dashed border-border rounded-lg hover:border-muted-foreground transition-colors bg-card">
                     <Upload className="h-5 w-5 text-muted-foreground" />
                     <span className="font-medium text-foreground">
-                      {imageFile ? "Change Photo" : "Upload Photo"}
+                      {imageFile ? t("photo.change") : t("photo.upload")}
                     </span>
                   </div>
                 </Label>
@@ -1162,14 +1138,14 @@ const PlayerOnboarding = () => {
                     className="flex items-center space-x-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                     icon={<X className="h-4 w-4" />}
                   >
-                    Remove
+                    {t("photo.remove")}
                   </Button>
                 )}
               </div>
 
               {imageFile && (
                 <p className="text-sm text-green-600 dark:text-green-400">
-                  ✓ {imageFile.name} selected
+                  {t("photo.selected", { name: imageFile.name })}
                 </p>
               )}
             </div>
@@ -1193,8 +1169,8 @@ const PlayerOnboarding = () => {
       <div className="h-10" />
 
       {/* Scrollable content — vertically centered */}
-      <div className="flex-1 overflow-y-auto pb-28 flex items-center">
-        <div className="max-w-lg mx-auto px-4 py-6 w-full">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-28 flex items-center">
+        <div className="max-w-lg mx-auto px-4 py-6 w-full min-w-0">
           {renderStepContent()}
         </div>
       </div>
@@ -1213,7 +1189,7 @@ const PlayerOnboarding = () => {
             }`}
             icon={<ChevronLeft className="h-4 w-4" />}
           >
-            Previous
+            {t("nav.previous")}
           </Button>
 
           {/* Next/Submit Button */}
@@ -1226,7 +1202,7 @@ const PlayerOnboarding = () => {
               className="flex items-center space-x-2"
               icon={<ChevronRight className="h-4 w-4" />}
             >
-              Next
+              {t("nav.next")}
             </Button>
           ) : (
             <Button
@@ -1239,11 +1215,11 @@ const PlayerOnboarding = () => {
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
-                  <span>Creating Profile...</span>
+                  <span>{t("nav.creatingProfile")}</span>
                 </>
               ) : (
                 <>
-                  <span>Complete Profile</span>
+                  <span>{t("nav.completeProfile")}</span>
                   <ChevronRight className="h-4 w-4" />
                 </>
               )}
@@ -1260,12 +1236,11 @@ const PlayerOnboarding = () => {
               <div className="mx-auto w-full md:max-w-3xl">
                 <img
                   src="/positions-volleyball-players-en.png"
-                  alt="Volleyball player positions on court"
+                  alt={t("positionsHelp.diagramAlt")}
                   className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
                 />
                 <p className="mt-3 text-center text-sm text-muted-foreground">
-                  Use this diagram to confirm your primary and secondary
-                  roles.
+                  {t("positionsHelp.diagramCaption")}
                 </p>
               </div>
             </div>
@@ -1286,9 +1261,9 @@ const PlayerOnboarding = () => {
                   <X className="h-4 w-4" />
                 </DrawerClose>
                 <DrawerHeader className="pt-8">
-                  <DrawerTitle>Volleyball court positions</DrawerTitle>
+                  <DrawerTitle>{t("positionsHelp.title")}</DrawerTitle>
                   <DrawerDescription>
-                    Reference diagram to pick your positions.
+                    {t("positionsHelp.description")}
                   </DrawerDescription>
                 </DrawerHeader>
                 {positionsContent}
@@ -1298,9 +1273,9 @@ const PlayerOnboarding = () => {
             <Sheet open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen}>
               <SheetContent side="right" className="overflow-y-auto">
                 <SheetHeader>
-                  <SheetTitle>Volleyball court positions</SheetTitle>
+                  <SheetTitle>{t("positionsHelp.title")}</SheetTitle>
                   <SheetDescription>
-                    Reference diagram to pick your positions.
+                    {t("positionsHelp.description")}
                   </SheetDescription>
                 </SheetHeader>
                 {positionsContent}

@@ -1,5 +1,7 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { format, parseISO, isToday } from "date-fns";
+import { getDateLocale } from "@/lib/dateLocale";
 import { Clock, Users, CalendarClock, ChevronRight, CheckCircle2, XCircle, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlannedEvent } from "@/integrations/supabase/plannedEvents";
@@ -11,9 +13,11 @@ interface EventCardProps {
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPlayerId }) => {
+  const { t } = useTranslation("events");
   const parsedDate = parseISO(event.date);
   const isTodayEvent = isToday(parsedDate);
-  const dateLabel = format(parsedDate, "EEE, MMM d");
+  const locale = getDateLocale();
+  const dateLabel = format(parsedDate, "EEE, MMM d", { locale });
   const timeLabel = event.start_time.slice(0, 5);
   const attendingCount =
     event.event_rsvp?.filter((r) => r.status === "attending").length ?? 0;
@@ -28,7 +32,9 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
     : false;
 
   const deadlineLabel = event.rsvp_deadline
-    ? `RSVP by ${deadlineIsToday ? "today" : format(parseISO(event.rsvp_deadline), "MMM d")}`
+    ? deadlineIsToday
+      ? t("card.rsvpByToday")
+      : t("card.rsvpBy", { date: format(parseISO(event.rsvp_deadline), "MMM d", { locale }) })
     : null;
 
   return (
@@ -57,7 +63,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
           )}
         >
           <span className="text-[10px] font-semibold uppercase">
-            {isTodayEvent ? "Today" : format(parsedDate, "MMM")}
+            {isTodayEvent ? t("card.today") : format(parsedDate, "MMM", { locale })}
           </span>
         </div>
         <div className="bg-white dark:bg-card text-foreground text-center py-1">
@@ -65,7 +71,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
             {format(parsedDate, "d")}
           </span>
           <span className="text-[10px] text-muted-foreground">
-            {format(parsedDate, "EEE")}
+            {format(parsedDate, "EEE", { locale })}
           </span>
         </div>
       </div>
@@ -78,11 +84,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
           </h3>
           {event.status === "cancelled" ? (
             <span className="shrink-0 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
-              Cancelled
+              {t("card.cancelled")}
             </span>
           ) : isTodayEvent ? (
             <span className="shrink-0 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground">
-              Today
+              {t("card.today")}
             </span>
           ) : null}
         </div>
@@ -95,23 +101,23 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
           </div>
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 shrink-0" />
-            <span>{attendingCount} attending</span>
+            <span>{t("card.attending", { count: attendingCount })}</span>
             {event.is_public && (
               <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                 <Globe className="h-2.5 w-2.5" />
-                Public
+                {t("card.public")}
               </span>
             )}
           </div>
           {myRsvp?.status === "attending" ? (
             <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
               <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-              <span className="font-medium">You're going</span>
+              <span className="font-medium">{t("card.youreGoing")}</span>
             </div>
           ) : myRsvp?.status === "declined" ? (
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <XCircle className="h-3.5 w-3.5 shrink-0" />
-              <span className="font-medium">You declined</span>
+              <span className="font-medium">{t("card.youDeclined")}</span>
             </div>
           ) : deadlineLabel ? (
             <div className="flex items-center gap-1.5">

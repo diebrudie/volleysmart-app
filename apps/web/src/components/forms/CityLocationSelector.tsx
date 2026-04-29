@@ -13,6 +13,7 @@ export interface LocationValue {
 interface CityLocationSelectorProps {
   id?: string;
   label?: string;
+  labelClassName?: string;
   labelExtra?: ReactNode;
   placeholder?: string;
   value: LocationValue | null;
@@ -43,6 +44,7 @@ interface MapboxPlacesResponse {
 export default function CityLocationSelector({
   id = "club-location",
   label = "City",
+  labelClassName,
   labelExtra,
   placeholder = "Start typing a city...",
   value,
@@ -73,8 +75,9 @@ export default function CityLocationSelector({
         )}.json`
       );
       url.searchParams.set("types", "place,locality");
-      url.searchParams.set("language", "en");
+      url.searchParams.set("language", navigator.language || "en");
       url.searchParams.set("limit", "5");
+      url.searchParams.set("proximity", "ip");
       url.searchParams.set("access_token", token);
 
       const res = await fetch(url.toString());
@@ -110,7 +113,7 @@ export default function CityLocationSelector({
   return (
     <div className="space-y-2 relative">
       <div className="flex items-center justify-start">
-        <Label htmlFor={id} className="m-0">
+        <Label htmlFor={id} className={labelClassName ?? "m-0"}>
           {label}
         </Label>
         {labelExtra ? <div className="ml-2">{labelExtra}</div> : null}

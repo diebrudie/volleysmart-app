@@ -1,7 +1,9 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { parseISO, format, startOfMonth, endOfMonth } from "date-fns";
+import { getDateLocale } from "@/lib/dateLocale";
 import { Volleyball, Trophy, TrendingUp, CheckCircle2, Eye, Users, Plus, Compass, CalendarDays, Swords, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -276,6 +278,7 @@ function useMonthlyStats(
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const HomeDashboard: React.FC = () => {
+  const { t } = useTranslation("events");
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: playerId } = useCurrentPlayerId();
@@ -382,13 +385,13 @@ const HomeDashboard: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Volleyball className="h-5 w-5 text-primary" />
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                    Today's Game
+                    {t("home.todaysGame")}
                   </h3>
                 </div>
                 {todaysEvent?.currentUserRsvp === "attending" && (
                   <span className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="h-4 w-4" />
-                    You're going
+                    {t("home.youreGoing")}
                   </span>
                 )}
               </div>
@@ -404,8 +407,7 @@ const HomeDashboard: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <Users className="h-4 w-4" />
-                    {todaysEvent.attendingCount} player
-                    {todaysEvent.attendingCount !== 1 ? "s" : ""} attending
+                    {t("home.playersAttending", { count: todaysEvent.attendingCount })}
                   </div>
                   <Button
                     className="w-full"
@@ -416,20 +418,20 @@ const HomeDashboard: React.FC = () => {
                         : navigate(`/events/${todaysEvent.eventId}`)
                     }
                   >
-                    {todaysEvent.matchDayId ? "View Game" : "Start Game"}
+                    {todaysEvent.matchDayId ? t("home.viewGame") : t("home.startGame")}
                   </Button>
                 </div>
               ) : (
                 <div className="py-6 text-center space-y-3">
                   <p className="text-muted-foreground text-sm">
-                    No game scheduled today
+                    {t("home.noGameToday")}
                   </p>
                   <Button
                     size="sm"
                     onClick={() => navigate("/events/new")}
                   >
                     <Plus className="h-4 w-4 mr-1.5" />
-                    Create Event
+                    {t("home.createEvent")}
                   </Button>
                 </div>
               )}
@@ -448,13 +450,13 @@ const HomeDashboard: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-primary" />
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                    Last Game
+                    {t("home.lastGame")}
                   </h3>
                 </div>
                 {lastGame && (
                   <span className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Eye className="h-4 w-4" />
-                    View
+                    {t("home.view")}
                   </span>
                 )}
               </div>
@@ -465,7 +467,7 @@ const HomeDashboard: React.FC = () => {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {lastGame.clubName} &middot;{" "}
-                    {format(parseISO(lastGame.date), "d MMM yyyy")}
+                    {format(parseISO(lastGame.date), "d MMM yyyy", { locale: getDateLocale() })}
                   </p>
                   <div className="flex items-center justify-center gap-3 pt-2">
                     <span className="text-4xl font-bold text-red-500">
@@ -478,7 +480,7 @@ const HomeDashboard: React.FC = () => {
                   </div>
                   <p className="text-sm">
                     {lastGame.winner === "Draw" ? (
-                      <span className="text-muted-foreground">Draw</span>
+                      <span className="text-muted-foreground">{t("home.draw")}</span>
                     ) : (
                       <>
                         <span className={`font-medium ${
@@ -492,7 +494,7 @@ const HomeDashboard: React.FC = () => {
                           lastGame.winner === "Team A"
                             ? "text-red-500"
                             : "text-emerald-600 dark:text-emerald-400"
-                        }`}>wins</span>
+                        }`}>{t("home.wins")}</span>
                       </>
                     )}
                   </p>
@@ -500,7 +502,7 @@ const HomeDashboard: React.FC = () => {
               ) : (
                 <div className="py-6 text-center">
                   <p className="text-muted-foreground text-sm">
-                    No games played yet
+                    {t("home.noGamesYet")}
                   </p>
                 </div>
               )}
@@ -514,7 +516,7 @@ const HomeDashboard: React.FC = () => {
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  This Month
+                  {t("home.thisMonth")}
                 </h3>
               </div>
               <div className="grid grid-cols-3 gap-3 pt-2">
@@ -524,7 +526,7 @@ const HomeDashboard: React.FC = () => {
                     {monthlyStats?.gamesPlayed ?? 0}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Games
+                    {t("home.games")}
                   </p>
                 </div>
                 <div className="text-center">
@@ -533,7 +535,7 @@ const HomeDashboard: React.FC = () => {
                     {monthlyStats?.winRate ?? 0}%
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Win Rate
+                    {t("home.winRate")}
                   </p>
                 </div>
                 <div className="text-center">
@@ -542,7 +544,7 @@ const HomeDashboard: React.FC = () => {
                     {monthlyStats?.hoursPlayed ?? 0}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Hours
+                    {t("home.hours")}
                   </p>
                 </div>
               </div>
@@ -572,7 +574,7 @@ const HomeDashboard: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Compass className="h-5 w-5 text-muted-foreground" />
                 <h2 className="text-xl font-bold text-foreground">
-                  Discover Events
+                  {t("home.discoverEvents")}
                 </h2>
               </div>
               {discoverEvents.length > 0 && (
@@ -581,7 +583,7 @@ const HomeDashboard: React.FC = () => {
                   onClick={() => navigate("/discover-events")}
                   className="text-sm font-medium text-primary hover:underline"
                 >
-                  See more
+                  {t("home.seeMore")}
                 </button>
               )}
             </div>
@@ -601,15 +603,16 @@ const HomeDashboard: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-12 gap-4 text-center rounded-xl border bg-card">
                 <CalendarDays className="h-10 w-10 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  No public events happening in{" "}
-                  {playerCity || "your area"}
+                  {playerCity
+                    ? t("home.noPublicEvents", { city: playerCity })
+                    : t("home.noPublicEventsDefault")}
                 </p>
                 <Button
                   size="sm"
                   onClick={() => navigate("/events/new")}
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
-                  Create Event
+                  {t("home.createEvent")}
                 </Button>
               </div>
             )}

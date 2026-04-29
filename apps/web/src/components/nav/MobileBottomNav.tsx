@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Home, Users, Building2, Plus, CalendarDays } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -8,6 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
  * Center FAB opens the Create Event flow.
  */
 const MobileBottomNav: React.FC = () => {
+  const { t } = useTranslation("common");
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
@@ -65,7 +67,7 @@ const MobileBottomNav: React.FC = () => {
           <TabLink
             to="/home"
             icon={<Home className="h-5 w-5" />}
-            label="Home"
+            label={t("nav.home")}
             active={isActive(/^\/home(\/|$)/)}
             activeColor={activeColorClass}
           />
@@ -73,7 +75,7 @@ const MobileBottomNav: React.FC = () => {
           <TabLink
             to="/events"
             icon={<CalendarDays className="h-5 w-5" />}
-            label="Events"
+            label={t("nav.events")}
             active={isActive(/^\/events(\/|$)/)}
             activeColor={activeColorClass}
           />
@@ -95,14 +97,14 @@ const MobileBottomNav: React.FC = () => {
           <TabLink
             to="/clubs"
             icon={<Building2 className="h-5 w-5" />}
-            label="Clubs"
+            label={t("nav.clubs")}
             active={isActive(/^\/clubs(\/|$)/)}
             activeColor={activeColorClass}
           />
           <TabLink
             to="/members"
             icon={<Users className="h-5 w-5" />}
-            label="Members"
+            label={t("nav.members")}
             active={isActive(/^\/members(\/|$)/)}
             activeColor={activeColorClass}
           />

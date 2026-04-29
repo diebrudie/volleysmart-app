@@ -5,34 +5,34 @@
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface Feature {
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
   image: string;
   alt: string;
 }
 
 const FeaturesSection: React.FC = () => {
+  const { t } = useTranslation("home");
+
   const features: Feature[] = [
     {
-      title: "Smart Team Generation",
-      description:
-        "Balanced teams in one tap. The algorithm considers skill ratings, preferred positions, and team size to create fair matchups every time.",
+      titleKey: "features.smartTeams.title",
+      descriptionKey: "features.smartTeams.description",
       image: "/img-home-teamCelebrating-v2.png",
       alt: "Players celebrating after volleyball match",
     },
     {
-      title: "Live Score Tracking",
-      description:
-        "Track set-by-set scores in real time — any team player can add or edit scores. Browse your full game archive with complete results.",
+      titleKey: "features.liveScore.title",
+      descriptionKey: "features.liveScore.description",
       image: "/img-home-scoreboard-v1.png",
       alt: "Scoreboard tracking live volleyball game",
     },
     {
-      title: "Clubs, Events & RSVP",
-      description:
-        "Create clubs, plan events with RSVP deadlines, manage members, and handle join requests. Real-time notifications keep everyone in the loop.",
+      titleKey: "features.clubs.title",
+      descriptionKey: "features.clubs.description",
       image: "/img-home-manageClubs-v1.png",
       alt: "Dashboard for managing volleyball clubs and members",
     },
@@ -44,11 +44,10 @@ const FeaturesSection: React.FC = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
-            Everything You Need to <span className="text-gradient">Play</span>
+            {t("features.heading")} <span className="text-gradient">{t("features.headingHighlight")}</span>
           </h2>
           <p className="text-xl text-gray-500">
-            From planning events to tracking scores — everything your volleyball
-            community needs, in one place.
+            {t("features.subheading")}
           </p>
         </div>
 
@@ -56,7 +55,7 @@ const FeaturesSection: React.FC = () => {
         <div className="grid md:grid-cols-3 gap-12">
           {features.map((feature) => (
             <div
-              key={feature.title}
+              key={feature.titleKey}
               className="flex flex-col items-center text-left space-y-6"
             >
               <div className="w-full overflow-hidden rounded-2xl shadow-lg aspect-[4/3]">
@@ -69,10 +68,10 @@ const FeaturesSection: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-2xl font-bold mb-3 text-gray-900">
-                  {feature.title}
+                  {t(feature.titleKey)}
                 </h3>
                 <p className="text-gray-500 leading-relaxed">
-                  {feature.description}
+                  {t(feature.descriptionKey)}
                 </p>
               </div>
             </div>

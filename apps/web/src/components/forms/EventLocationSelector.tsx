@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface LocationRecord {
   id: string;
@@ -37,6 +38,7 @@ export const EventLocationSelector = ({
   onValueChange,
   proximity,
 }: EventLocationSelectorProps) => {
+  const { t } = useTranslation("events");
   const { user } = useAuth();
   const [locationName, setLocationName] = useState("");
   const [address, setAddress] = useState("");
@@ -189,11 +191,9 @@ export const EventLocationSelector = ({
         )}.json`
       );
       url.searchParams.set("types", "address,poi,place");
-      url.searchParams.set("language", "en");
+      url.searchParams.set("language", navigator.language || "en");
       url.searchParams.set("limit", "5");
-      if (proximity) {
-        url.searchParams.set("proximity", proximity.join(","));
-      }
+      url.searchParams.set("proximity", proximity ? proximity.join(",") : "ip");
       url.searchParams.set("access_token", token);
 
       try {
@@ -302,7 +302,7 @@ export const EventLocationSelector = ({
       } else if (!selectedLocationId) {
         // Create new location — address is required
         if (!address.trim()) {
-          toast.error("Please add an address for the new location.");
+          toast.error(t("location.addressRequired"));
           return;
         }
         const insertPayload: Record<string, any> = {
@@ -344,10 +344,10 @@ export const EventLocationSelector = ({
           queryKey: ["eventLocations", clubId],
         });
         onValueChange(result.data.id);
-        toast.success("Location saved");
+        toast.success(t("location.saved"));
       }
     } catch {
-      toast.error("Failed to save location.");
+      toast.error(t("location.saveFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -397,11 +397,11 @@ export const EventLocationSelector = ({
     <div className="space-y-3">
       {/* Location Name */}
       <div className="space-y-1.5" ref={nameRef}>
-        <Label className="text-sm">Location Name *</Label>
+        <Label className="text-sm">{t("location.nameLabel")}</Label>
         <div className="relative">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="e.g. Berlin Sports Hall"
+            placeholder={t("location.namePlaceholder")}
             value={locationName}
             onChange={(e) => handleNameChange(e.target.value)}
             onFocus={() => setShowNameDropdown(true)}
@@ -457,7 +457,7 @@ export const EventLocationSelector = ({
       {/* Address */}
       <div className="space-y-1.5" ref={addressRef}>
         <Label className="text-sm">
-          Address {!selectedLocationId && locationName.trim() && "*"}
+          {t("location.addressLabel")} {!selectedLocationId && locationName.trim() && "*"}
         </Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -469,7 +469,7 @@ export const EventLocationSelector = ({
             return (
               <>
                 <Input
-                  placeholder="Search for an address..."
+                  placeholder={t("location.addressPlaceholder")}
                   value={address}
                   onChange={(e) => handleAddressChange(e.target.value)}
                   onFocus={() => {
@@ -529,7 +529,7 @@ export const EventLocationSelector = ({
       </div>
 
       {isSaving && (
-        <p className="text-xs text-muted-foreground">Saving location...</p>
+        <p className="text-xs text-muted-foreground">{t("location.saving")}</p>
       )}
     </div>
   );

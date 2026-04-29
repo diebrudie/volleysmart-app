@@ -2,6 +2,7 @@ import * as React from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO, isToday, isBefore, startOfDay } from "date-fns";
+import { getDateLocale } from "@/lib/dateLocale";
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -74,6 +75,7 @@ import {
 } from "@/integrations/supabase/plannedEvents";
 import { EventLocationSelector } from "@/components/forms/EventLocationSelector";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { assignTeams } from "@/features/teams/assignLineup";
 import type { PlayerForTeams } from "@/features/teams/assignLineup";
 import { normalizeRole } from "@/features/teams/positions";
@@ -83,19 +85,19 @@ import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
 // ─── Event type display config ──────────────────────────────────────────────
 const EVENT_TYPE_CONFIG: Record<
   string,
-  { label: string; Icon: React.FC<{ className?: string }> }
+  { labelKey: string; Icon: React.FC<{ className?: string }> }
 > = {
-  friendly_game: { label: "Friendly Game", Icon: Swords },
-  social_game: { label: "Social Game", Icon: Users },
-  training: { label: "Training", Icon: Dumbbell },
-  tournament: { label: "Tournament", Icon: Trophy },
+  friendly_game: { labelKey: "detail.eventTypeFriendly", Icon: Swords },
+  social_game: { labelKey: "detail.eventTypeSocial", Icon: Users },
+  training: { labelKey: "detail.eventTypeTraining", Icon: Dumbbell },
+  tournament: { labelKey: "detail.eventTypeTournament", Icon: Trophy },
 };
 
-const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] = [
-  { value: "friendly_game", label: "Friendly Game" },
-  { value: "social_game", label: "Social Game" },
-  { value: "training", label: "Training" },
-  { value: "tournament", label: "Tournament" },
+const EVENT_TYPE_OPTIONS: { value: EventType; labelKey: string }[] = [
+  { value: "friendly_game", labelKey: "detail.eventTypeFriendly" },
+  { value: "social_game", labelKey: "detail.eventTypeSocial" },
+  { value: "training", labelKey: "detail.eventTypeTraining" },
+  { value: "tournament", labelKey: "detail.eventTypeTournament" },
 ];
 
 // ─── RSVP attendee with profile info ─────────────────────────────────────────
@@ -124,6 +126,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
   onSave,
   saving,
 }) => {
+  const { t } = useTranslation("events");
   const isCompact = useIsCompact();
   const [title, setTitle] = React.useState(event.title);
   const [eventType, setEventType] = React.useState<EventType>(
@@ -162,7 +165,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      toast.error("Event name is required");
+      toast.error(t("detail.eventNameRequired"));
       return;
     }
     onSave({
@@ -182,23 +185,23 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side={isCompact ? "bottom" : "right"} className="h-[95dvh] flex flex-col p-0 overflow-x-hidden">
         <SheetHeader className="px-4 pt-4 pb-2 border-b">
-          <SheetTitle>Edit Event</SheetTitle>
+          <SheetTitle>{t("detail.editEvent")}</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-5">
           {/* Event Name */}
           <div className="space-y-1.5">
-            <Label>Event Name</Label>
+            <Label>{t("detail.eventName")}</Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Event name"
+              placeholder={t("detail.eventNamePlaceholder")}
             />
           </div>
 
           {/* Event Type */}
           <div className="space-y-1.5">
-            <Label>Event Type</Label>
+            <Label>{t("detail.eventType")}</Label>
             <Select
               value={eventType}
               onValueChange={(v) => setEventType(v as EventType)}
@@ -214,7 +217,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
                         const cfg = EVENT_TYPE_CONFIG[opt.value];
                         return cfg ? <cfg.Icon className="h-4 w-4" /> : null;
                       })()}
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </div>
                   </SelectItem>
                 ))}
@@ -224,7 +227,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
 
           {/* Date */}
           <div className="space-y-1.5">
-            <Label>Date</Label>
+            <Label>{t("detail.date")}</Label>
             <Input
               type="date"
               value={date}
@@ -236,7 +239,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
           {/* Start + End time */}
           <div className="grid grid-cols-2 gap-3 min-w-0">
             <div className="space-y-1.5 min-w-0">
-              <Label>Start Time</Label>
+              <Label>{t("detail.startTime")}</Label>
               <Input
                 type="time"
                 value={startTime}
@@ -245,7 +248,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
               />
             </div>
             <div className="space-y-1.5 min-w-0">
-              <Label>End Time</Label>
+              <Label>{t("detail.endTime")}</Label>
               <Input
                 type="time"
                 value={endTime}
@@ -264,14 +267,14 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
 
           {/* Max Players */}
           <div className="space-y-1.5">
-            <Label>Max Players</Label>
+            <Label>{t("detail.maxPlayers")}</Label>
             <Input
               type="number"
               min="2"
               max="100"
               value={maxPlayers}
               onChange={(e) => setMaxPlayers(e.target.value)}
-              placeholder="No limit"
+              placeholder={t("detail.maxPlayersPlaceholder")}
             />
           </div>
 
@@ -285,12 +288,12 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
               )}
               <div>
                 <p className="text-sm font-medium">
-                  {isPublic ? "Public Event" : "Club Members Only"}
+                  {isPublic ? t("detail.publicEvent") : t("detail.clubMembersOnly")}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {isPublic
-                    ? "Anyone can see this event"
-                    : "Only club members can see this"}
+                    ? t("detail.anyoneCanSee")
+                    : t("detail.onlyMembersCanSee")}
                 </p>
               </div>
             </div>
@@ -300,20 +303,20 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
               size="sm"
               onClick={() => setIsPublic(!isPublic)}
             >
-              {isPublic ? "Make Private" : "Make Public"}
+              {isPublic ? t("detail.makePrivate") : t("detail.makePublic")}
             </Button>
           </div>
 
           {/* Description / Notes */}
           <div className="space-y-1.5">
-            <Label>Description / Notes (optional)</Label>
+            <Label>{t("detail.descriptionNotesLabel")}</Label>
             <Textarea
               value={notes}
               onChange={(e) => {
                 if (e.target.value.length <= 100) setNotes(e.target.value);
               }}
               maxLength={100}
-              placeholder="Add a description or notes..."
+              placeholder={t("detail.descriptionNotesPlaceholder")}
               rows={3}
             />
             <p className="text-xs text-muted-foreground text-right">
@@ -329,7 +332,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
             onClick={handleSubmit}
             disabled={saving || !title.trim()}
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? t("detail.saving") : t("detail.save")}
           </Button>
         </div>
       </SheetContent>
@@ -339,6 +342,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
 
 // ─── Main page ───────────────────────────────────────────────────────────────
 const EventDetail: React.FC = () => {
+  const { t } = useTranslation("events");
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -510,7 +514,7 @@ const EventDetail: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["event-attendees", eventId] });
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
     },
-    onError: () => toast.error("Failed to update RSVP"),
+    onError: () => toast.error(t("detail.failedToUpdateRsvp")),
   });
 
   const cancelRsvpMutation = useMutation({
@@ -523,7 +527,7 @@ const EventDetail: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["event-attendees", eventId] });
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
     },
-    onError: () => toast.error("Failed to cancel RSVP"),
+    onError: () => toast.error(t("detail.failedToCancelRsvp")),
   });
 
   // Update mutation
@@ -539,9 +543,9 @@ const EventDetail: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
       setEditSheetOpen(false);
       setEditSeries(false);
-      toast.success(editSeries ? "All future events updated" : "Event updated");
+      toast.success(editSeries ? t("detail.allFutureEventsUpdated") : t("detail.eventUpdated"));
     },
-    onError: () => toast.error("Failed to update event"),
+    onError: () => toast.error(t("detail.failedToUpdate")),
   });
 
   const isRecurring = !!(event?.recurrence_rule || event?.recurrence_parent_id);
@@ -562,9 +566,9 @@ const EventDetail: React.FC = () => {
       setCancelReason("");
       setCancelComment("");
       setCancelSeries(false);
-      toast.success(cancelSeries ? "Recurring event cancelled" : "Event cancelled");
+      toast.success(cancelSeries ? t("detail.recurringEventCancelled") : t("detail.eventCancelled"));
     },
-    onError: () => toast.error("Failed to cancel event"),
+    onError: () => toast.error(t("detail.failedToCancel")),
   });
 
   // Delete mutation
@@ -572,10 +576,10 @@ const EventDetail: React.FC = () => {
     mutationFn: () => deletePlannedEvent(eventId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["upcoming-events"] });
-      toast.success("Event deleted");
+      toast.success(t("detail.eventDeleted"));
       navigate("/events");
     },
-    onError: () => toast.error("Failed to delete event"),
+    onError: () => toast.error(t("detail.failedToDelete")),
   });
 
   // Check if a game already exists for this event
@@ -600,7 +604,7 @@ const EventDetail: React.FC = () => {
 
     const attending = attendees.filter((a) => a.status === "attending");
     if (attending.length < 4) {
-      toast.error("At least 4 attending players are needed to start a game");
+      toast.error(t("detail.minPlayersNeeded"));
       return;
     }
 
@@ -684,16 +688,16 @@ const EventDetail: React.FC = () => {
         .insert(allGamePlayers);
       if (gpError) throw gpError;
 
-      const compromiseNote =
-        teamAssignment.compromises.length > 0
-          ? ` Note: ${teamAssignment.compromises.join("; ")}`
-          : "";
-      toast.success(`Game started!${compromiseNote}`);
+      if (teamAssignment.compromises.length > 0) {
+        toast.success(t("detail.gameStartedWithNote", { note: teamAssignment.compromises.join("; ") }));
+      } else {
+        toast.success(t("detail.gameStarted"));
+      }
 
       navigate(`/game/${matchDay.id}`);
     } catch (error) {
       console.error("Error starting game:", error);
-      toast.error("Failed to start game. Please try again.");
+      toast.error(t("detail.failedToStartGame"));
     } finally {
       setIsStartingGame(false);
     }
@@ -704,16 +708,16 @@ const EventDetail: React.FC = () => {
   const isEventPast = eventDateParsed ? isBefore(eventDateParsed, startOfDay(new Date())) : false;
   const shareMessage = linkedMatchDay
     ? isEventPast
-      ? `Look how the last Volleyball Game finished. Super interesting!\n${eventUrl}`
-      : `Our Volleyball game is ready! Check the teams, and track points\n${eventUrl}`
-    : `Check this Volleyball Event, and let me know if you can make it\n${eventUrl}`;
+      ? t("detail.sharePastGame", { url: eventUrl })
+      : t("detail.shareActiveGame", { url: eventUrl })
+    : t("detail.shareEvent", { url: eventUrl });
 
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({ title: event?.title ?? "Event", text: shareMessage });
     } else {
       navigator.clipboard.writeText(shareMessage);
-      toast.success("Link copied to clipboard");
+      toast.success(t("detail.linkCopied"));
     }
   };
 
@@ -736,10 +740,10 @@ const EventDetail: React.FC = () => {
           </div>
           <DialogHeader className="space-y-2">
             <DialogTitle className="text-xl">
-              Your event was created successfully
+              {t("detail.createdSuccessTitle")}
             </DialogTitle>
             <DialogDescription>
-              Modify details, share the event and get moving.
+              {t("detail.createdSuccessDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 w-full mt-2">
@@ -748,7 +752,7 @@ const EventDetail: React.FC = () => {
               onClick={handleShare}
             >
               <Share2 className="h-4 w-4" />
-              Share event
+              {t("detail.shareEventButton")}
             </Button>
             <Button
               variant="outline"
@@ -759,7 +763,7 @@ const EventDetail: React.FC = () => {
                 setSearchParams(searchParams, { replace: true });
               }}
             >
-              Dismiss
+              {t("detail.dismiss")}
             </Button>
           </div>
         </div>
@@ -770,7 +774,7 @@ const EventDetail: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Loading event...</p>
+        <p className="text-muted-foreground">{t("detail.loadingEvent")}</p>
         {createdDialog}
       </div>
     );
@@ -779,9 +783,9 @@ const EventDetail: React.FC = () => {
   if (error || !event) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-muted-foreground">Event not found</p>
+        <p className="text-muted-foreground">{t("detail.eventNotFound")}</p>
         <Button variant="outline" onClick={() => navigate("/events")}>
-          Go home
+          {t("detail.goHome")}
         </Button>
         {createdDialog}
       </div>
@@ -796,22 +800,23 @@ const EventDetail: React.FC = () => {
   const parsedDate = parseISO(event.date);
   const isEventToday = isToday(parsedDate);
   const isPastEvent = isBefore(parsedDate, startOfDay(new Date()));
-  const formattedDate = format(parsedDate, "EEEE, d MMMM yyyy");
+  const rawDate = format(parsedDate, "EEEE, d MMMM yyyy", { locale: getDateLocale() });
+  const formattedDate = rawDate.charAt(0).toUpperCase() + rawDate.slice(1);
   const startTime = event.start_time?.slice(0, 5); // HH:MM
   const endTime = event.end_time?.slice(0, 5);
   const attendingCount = attendingPlayerIds.length;
 
   const rsvpLabel = currentRsvp
     ? currentRsvp.status === "attending"
-      ? isPastEvent ? "Attended" : "Going"
-      : "Not Going"
-    : "RSVP";
+      ? isPastEvent ? t("detail.attended") : t("detail.going")
+      : t("detail.notGoing")
+    : t("detail.rsvp");
 
   const typeConfig = EVENT_TYPE_CONFIG[event.event_type];
 
   const creatorName = creatorProfile
     ? formatShortName(creatorProfile.first_name, creatorProfile.last_name)
-    : "Unknown";
+    : t("detail.unknown");
   const isMember = event.club_id
     ? userClubIds.includes(event.club_id)
     : false;
@@ -843,7 +848,7 @@ const EventDetail: React.FC = () => {
                 onClick={handleShare}
               >
                 <Share2 className="h-4 w-4" />
-                Share event
+                {t("detail.shareEventButton")}
               </DropdownMenuItem>
               {isCreator && (
                 <>
@@ -859,7 +864,7 @@ const EventDetail: React.FC = () => {
                       }}
                     >
                       <Pencil className="h-4 w-4" />
-                      Edit event
+                      {t("detail.editEventDropdown")}
                     </DropdownMenuItem>
                   )}
                   {!isPastEvent && event.status !== "cancelled" && (
@@ -874,7 +879,7 @@ const EventDetail: React.FC = () => {
                       }}
                     >
                       <XCircle className="h-4 w-4" />
-                      Cancel event
+                      {t("detail.cancelEvent")}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
@@ -882,7 +887,7 @@ const EventDetail: React.FC = () => {
                     onClick={() => setDeleteDialogOpen(true)}
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete event
+                    {t("detail.deleteEvent")}
                   </DropdownMenuItem>
                 </>
               )}
@@ -899,15 +904,15 @@ const EventDetail: React.FC = () => {
           <div className="w-16 rounded-lg overflow-hidden shadow-md border border-border">
             <div className={`${isToday(parsedDate) ? "bg-primary" : "bg-[#EB534C]"} text-white text-center py-1`}>
               <span className="text-xs font-semibold uppercase">
-                {isToday(parsedDate) ? "Today" : format(parsedDate, "MMM")}
+                {isToday(parsedDate) ? t("detail.today") : format(parsedDate, "MMM", { locale: getDateLocale() })}
               </span>
             </div>
             <div className="bg-white dark:bg-card text-foreground text-center py-1.5">
               <span className="text-2xl font-bold leading-none block">
-                {format(parsedDate, "d")}
+                {format(parsedDate, "d", { locale: getDateLocale() })}
               </span>
               <span className="text-xs text-muted-foreground">
-                {format(parsedDate, "EEE")}
+                {format(parsedDate, "EEE", { locale: getDateLocale() })}
               </span>
             </div>
           </div>
@@ -915,8 +920,8 @@ const EventDetail: React.FC = () => {
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground pb-1">
               <User className="h-4 w-4" />
               {currentRsvp.status === "attending"
-                ? isPastEvent ? "You Attended" : "You're Going"
-                : "Not Going"}
+                ? isPastEvent ? t("detail.youAttended") : t("detail.youreGoing")
+                : t("detail.notGoing")}
             </div>
           )}
         </div>
@@ -931,17 +936,17 @@ const EventDetail: React.FC = () => {
             {event.is_public ? (
               <span className="inline-flex items-center gap-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
                 <Globe className="h-3 w-3" />
-                Public
+                {t("detail.public")}
               </span>
             ) : (
               <span className="inline-block text-xs font-medium bg-muted px-2 py-0.5 rounded">
-                Club Members Only
+                {t("detail.clubMembersOnly")}
               </span>
             )}
             {isRecurring && (
               <span className="inline-flex items-center gap-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
                 <Repeat className="h-3 w-3" />
-                {(event.recurrence_rule ?? "weekly") === "weekly" ? "Weekly" : "Monthly"}
+                {(event.recurrence_rule ?? "weekly") === "weekly" ? t("detail.weekly") : t("detail.monthly")}
               </span>
             )}
           </div>
@@ -949,7 +954,7 @@ const EventDetail: React.FC = () => {
 
         {/* Details section */}
         <div className="space-y-4">
-          <h2 className="text-lg font-bold">Details</h2>
+          <h2 className="text-lg font-bold">{t("detail.details")}</h2>
 
           {/* Date + time */}
           <div className="flex items-start gap-3">
@@ -989,7 +994,7 @@ const EventDetail: React.FC = () => {
               <Swords className="h-5 w-5 text-muted-foreground mt-0.5" />
             )}
             <p className="text-sm">
-              {typeConfig?.label ?? event.event_type}
+              {typeConfig ? t(typeConfig.labelKey) : event.event_type}
             </p>
           </div>
 
@@ -998,10 +1003,10 @@ const EventDetail: React.FC = () => {
         {/* Cancellation block OR Description / Notes */}
         {event.status === "cancelled" ? (
           <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4 space-y-1">
-            <h2 className="text-lg font-bold text-amber-800 dark:text-amber-300">Event Cancelled</h2>
+            <h2 className="text-lg font-bold text-amber-800 dark:text-amber-300">{t("detail.eventCancelledTitle")}</h2>
             {event.cancellation_reason && (
               <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                Reason: {event.cancellation_reason}
+                {t("detail.reason", { reason: event.cancellation_reason })}
               </p>
             )}
             {event.cancellation_comment && (
@@ -1010,14 +1015,14 @@ const EventDetail: React.FC = () => {
           </div>
         ) : event.notes ? (
           <div className="space-y-2">
-            <h2 className="text-lg font-bold">Description / Notes</h2>
+            <h2 className="text-lg font-bold">{t("detail.descriptionNotes")}</h2>
             <p className="text-sm">{event.notes}</p>
           </div>
         ) : null}
 
         {/* Hosted by section */}
         <div className="space-y-3">
-          <h2 className="text-lg font-bold">Hosted by</h2>
+          <h2 className="text-lg font-bold">{t("detail.hostedBy")}</h2>
           <div className="rounded-xl border shadow-sm overflow-hidden">
             {/* Club row — always show when event has a club */}
             {event.clubs && (
@@ -1040,7 +1045,7 @@ const EventDetail: React.FC = () => {
                   <p className="font-semibold">{event.clubs.name}</p>
                   {memberCount !== undefined && memberCount > 0 && (
                     <p className="text-sm text-muted-foreground">
-                      {memberCount} {memberCount === 1 ? "Member" : "Members"}
+                      {t("detail.memberCount", { count: memberCount })}
                     </p>
                   )}
                 </div>
@@ -1069,7 +1074,7 @@ const EventDetail: React.FC = () => {
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-semibold">{creatorName}</p>
-                <p className="text-sm text-muted-foreground">Organizer</p>
+                <p className="text-sm text-muted-foreground">{t("detail.organizer")}</p>
               </div>
               {!isCreator && (
                 <button
@@ -1087,19 +1092,19 @@ const EventDetail: React.FC = () => {
 
         {/* RSVP section */}
         <div className="space-y-3">
-          <h2 className="text-lg font-bold">{attendingCount} Going</h2>
+          <h2 className="text-lg font-bold">{t("detail.countGoing", { count: attendingCount })}</h2>
           {(() => {
             // Not RSVPed or declined → prompt to RSVP (public non-members)
             if (isPublicNonMember && !isAttending) {
               return (
-                <p className="text-sm text-muted-foreground">RSVP to see who's going</p>
+                <p className="text-sm text-muted-foreground">{t("detail.rsvpToSee")}</p>
               );
             }
 
             // Public event, non-organizer (including club members) → anonymized + own row
             if (event.is_public && !isCreator) {
               if (attendingCount === 0) {
-                return <p className="text-sm text-muted-foreground">No responses yet</p>;
+                return <p className="text-sm text-muted-foreground">{t("detail.noResponsesYet")}</p>;
               }
               // Show own row (real data) + anonymized rows for others
               const isCurrentPlayerAttending = isAttending && currentPlayer;
@@ -1142,7 +1147,7 @@ const EventDetail: React.FC = () => {
                         <User className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium">Player {i + 1}</p>
+                        <p className="text-sm font-medium">{t("detail.playerN", { n: i + 1 })}</p>
                       </div>
                     </div>
                   ))}
@@ -1189,7 +1194,7 @@ const EventDetail: React.FC = () => {
                         <User className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium">Player {attendees.length + i + 1}</p>
+                        <p className="text-sm font-medium">{t("detail.playerN", { n: attendees.length + i + 1 })}</p>
                       </div>
                     </div>
                   ))}
@@ -1197,7 +1202,7 @@ const EventDetail: React.FC = () => {
               );
             }
 
-            return <p className="text-sm text-muted-foreground">No responses yet</p>;
+            return <p className="text-sm text-muted-foreground">{t("detail.noResponsesYet")}</p>;
           })()}
         </div>
       </div>
@@ -1227,20 +1232,20 @@ const EventDetail: React.FC = () => {
                 className="gap-2"
                 onClick={() => rsvpMutation.mutate("attending")}
               >
-                Going
+                {t("detail.rsvpGoing")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="gap-2"
                 onClick={() => rsvpMutation.mutate("declined")}
               >
-                Not Going
+                {t("detail.rsvpNotGoing")}
               </DropdownMenuItem>
               {currentRsvp && (
                 <DropdownMenuItem
                   className="gap-2 text-muted-foreground"
                   onClick={() => cancelRsvpMutation.mutate()}
                 >
-                  Cancel RSVP
+                  {t("detail.cancelRsvp")}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -1254,7 +1259,7 @@ const EventDetail: React.FC = () => {
               onClick={() => navigate(`/game/${linkedMatchDay.id}`)}
               disabled={event.status === "cancelled"}
             >
-              View Game
+              {t("detail.viewGame")}
             </Button>
           ) : isAttending ? (
             <Button
@@ -1262,7 +1267,7 @@ const EventDetail: React.FC = () => {
               onClick={handleStartGame}
               disabled={!isEventToday || isStartingGame || event.status === "cancelled" || attendees.filter((a) => a.status === "attending").length < 4}
             >
-              {isStartingGame ? "Starting..." : "Start Game"}
+              {isStartingGame ? t("detail.starting") : t("detail.startGame")}
             </Button>
           ) : null}
         </div>
@@ -1288,26 +1293,26 @@ const EventDetail: React.FC = () => {
       }}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Cancel event</DialogTitle>
+            <DialogTitle>{t("detail.cancelDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Select a reason for cancelling this event.
+              {t("detail.cancelDialogDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             <Select value={cancelReason} onValueChange={setCancelReason}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a reason" />
+                <SelectValue placeholder={t("detail.selectReason")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Not enough players">Not enough players</SelectItem>
-                <SelectItem value="Bad weather">Bad weather</SelectItem>
-                <SelectItem value="Venue unavailable">Venue unavailable</SelectItem>
-                <SelectItem value="Scheduling conflict">Scheduling conflict</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
+                <SelectItem value="Not enough players">{t("detail.reasonNotEnoughPlayers")}</SelectItem>
+                <SelectItem value="Bad weather">{t("detail.reasonBadWeather")}</SelectItem>
+                <SelectItem value="Venue unavailable">{t("detail.reasonVenueUnavailable")}</SelectItem>
+                <SelectItem value="Scheduling conflict">{t("detail.reasonSchedulingConflict")}</SelectItem>
+                <SelectItem value="Other">{t("detail.reasonOther")}</SelectItem>
               </SelectContent>
             </Select>
             <Textarea
-              placeholder={cancelReason === "Other" ? "Please describe the reason (required)" : "Additional comment (optional)"}
+              placeholder={cancelReason === "Other" ? t("detail.cancelCommentOtherPlaceholder") : t("detail.cancelCommentPlaceholder")}
               value={cancelComment}
               onChange={(e) => setCancelComment(e.target.value)}
               maxLength={200}
@@ -1319,14 +1324,14 @@ const EventDetail: React.FC = () => {
                 className="flex-1"
                 onClick={() => setCancelDialogOpen(false)}
               >
-                Back
+                {t("detail.back")}
               </Button>
               <Button
                 className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
                 disabled={!cancelReason || (cancelReason === "Other" && !cancelComment.trim()) || cancelMutation.isPending}
                 onClick={() => cancelMutation.mutate()}
               >
-                {cancelMutation.isPending ? "Cancelling..." : "Cancel Event"}
+                {cancelMutation.isPending ? t("detail.cancelling") : t("detail.cancelEventButton")}
               </Button>
             </div>
           </div>
@@ -1338,7 +1343,7 @@ const EventDetail: React.FC = () => {
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
             <DialogTitle>
-              {recurrenceScopeAction === "cancel" ? "Cancel recurring event" : "Edit recurring event"}
+              {recurrenceScopeAction === "cancel" ? t("detail.cancelRecurringTitle") : t("detail.editRecurringTitle")}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2 mt-2">
@@ -1355,7 +1360,7 @@ const EventDetail: React.FC = () => {
                 setRecurrenceScopeAction(null);
               }}
             >
-              This event only
+              {t("detail.thisEventOnly")}
             </Button>
             <Button
               variant="outline"
@@ -1370,7 +1375,7 @@ const EventDetail: React.FC = () => {
                 setRecurrenceScopeAction(null);
               }}
             >
-              This and all future events
+              {t("detail.thisAndAllFuture")}
             </Button>
           </div>
         </DialogContent>
@@ -1380,10 +1385,9 @@ const EventDetail: React.FC = () => {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Delete event</DialogTitle>
+            <DialogTitle>{t("detail.deleteDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{event.title}"? This action
-              cannot be undone.
+              {t("detail.deleteDialogDescription", { title: event.title })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 mt-2">
@@ -1392,7 +1396,7 @@ const EventDetail: React.FC = () => {
               className="flex-1"
               onClick={() => setDeleteDialogOpen(false)}
             >
-              Cancel
+              {t("detail.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -1400,7 +1404,7 @@ const EventDetail: React.FC = () => {
               disabled={deleteMutation.isPending}
               onClick={() => deleteMutation.mutate()}
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending ? t("detail.deleting") : t("detail.delete")}
             </Button>
           </div>
         </DialogContent>

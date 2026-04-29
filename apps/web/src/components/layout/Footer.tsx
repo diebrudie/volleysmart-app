@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t } = useTranslation("common");
+
   return (
     <footer
       className="border-t border-gray-200"
@@ -22,7 +25,7 @@ const Footer = () => {
 
           {/* Copyright (fixed neutral color) */}
           <div className="text-sm text-gray-600">
-            © 2025 VolleySmart. All rights reserved.
+            {t("footer.copyright")}
           </div>
         </div>
       </div>

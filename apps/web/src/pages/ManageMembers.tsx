@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 // Extended row with club info
 interface RequestRow extends ManageMemberRow {
@@ -21,18 +22,8 @@ interface RequestRow extends ManageMemberRow {
   club_id: string;
 }
 
-function timeAgo(dateStr: string | null): string {
-  if (!dateStr) return "";
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "1 day ago";
-  return `${diffDays} days ago`;
-}
-
 export default function ManageMembers() {
+  const { t } = useTranslation("clubs");
   const { clubId: urlClubId } = useParams<{ clubId: string }>();
   const { clubId: clubIdFromCtx, setClubId } = useClub();
   const navigate = useNavigate();
@@ -148,11 +139,11 @@ export default function ManageMembers() {
     mutationFn: (id: string) => approveMembership(id),
     onSuccess: async () => {
       await invalidateAll();
-      toast({ title: "Membership approved", duration: 1500 });
+      toast({ title: t("manageRequests.approved"), duration: 1500 });
     },
     onError: (e) => {
       toast({
-        title: "Approval failed",
+        title: t("manageRequests.approvalFailed"),
         description: e instanceof Error ? e.message : "Unknown error",
         variant: "destructive",
         duration: 2000,
@@ -164,11 +155,11 @@ export default function ManageMembers() {
     mutationFn: (id: string) => rejectMembership(id),
     onSuccess: async () => {
       await invalidateAll();
-      toast({ title: "Request rejected", duration: 1500 });
+      toast({ title: t("manageRequests.rejected"), duration: 1500 });
     },
     onError: (e) => {
       toast({
-        title: "Reject failed",
+        title: t("manageRequests.rejectFailed"),
         description: e instanceof Error ? e.message : "Unknown error",
         variant: "destructive",
         duration: 2000,
@@ -194,7 +185,7 @@ export default function ManageMembers() {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h1 className="text-base font-semibold">Manage Requests</h1>
+          <h1 className="text-base font-semibold">{t("manageRequests.title")}</h1>
         </div>
       </div>
       <div className="h-14" />
@@ -203,7 +194,7 @@ export default function ManageMembers() {
       <main className="flex-grow">
         <div className="max-w-lg mx-auto px-4 py-6 pb-24">
           <h2 className="text-lg font-bold text-foreground mb-4">
-            All Club Requests
+            {t("manageRequests.allRequests")}
           </h2>
 
           {isLoading ? (
@@ -213,7 +204,7 @@ export default function ManageMembers() {
           ) : allRequests.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-muted-foreground text-sm">
-                No pending requests.
+                {t("manageRequests.noPending")}
               </p>
             </div>
           ) : (
@@ -256,7 +247,13 @@ export default function ManageMembers() {
                         </p>
                       </div>
                       <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0">
-                        {timeAgo(req.requested_at)}
+                        {(() => {
+                          if (!req.requested_at) return "";
+                          const diffDays = Math.floor((Date.now() - new Date(req.requested_at).getTime()) / (1000 * 60 * 60 * 24));
+                          if (diffDays === 0) return t("manageRequests.today");
+                          if (diffDays === 1) return t("manageRequests.oneDayAgo");
+                          return t("manageRequests.daysAgo", { count: diffDays });
+                        })()}
                       </span>
                     </div>
 
@@ -269,7 +266,7 @@ export default function ManageMembers() {
                         onClick={() => rejectMut.mutate(req.membership_id)}
                         disabled={approveMut.isPending || rejectMut.isPending}
                       >
-                        Reject
+                        {t("manageRequests.reject")}
                       </Button>
                       <Button
                         size="sm"
@@ -277,7 +274,7 @@ export default function ManageMembers() {
                         onClick={() => approveMut.mutate(req.membership_id)}
                         disabled={approveMut.isPending || rejectMut.isPending}
                       >
-                        Accept
+                        {t("manageRequests.accept")}
                       </Button>
                     </div>
                   </div>

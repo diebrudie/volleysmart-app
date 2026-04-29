@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -13,17 +14,43 @@ import ReactMarkdown from "react-markdown";
 
 type FaqPageDisplayed = "faqs" | "homepage_faqs";
 
-interface Faq {
+interface FaqRow {
   id: string;
   group_label: string;
   category: string;
   question: string;
   answer: string;
+  question_es: string | null;
+  answer_es: string | null;
+  question_de: string | null;
+  answer_de: string | null;
+  category_es: string | null;
+  category_de: string | null;
   page_displayed: FaqPageDisplayed;
   sort_order: number;
 }
 
+interface Faq {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+  sort_order: number;
+}
+
+function localizeFaq(row: FaqRow, lang: string): Faq {
+  const suffix = lang === "es" ? "_es" : lang === "de" ? "_de" : null;
+  return {
+    id: row.id,
+    category: (suffix && row[`category${suffix}` as keyof FaqRow] as string) || row.category,
+    question: (suffix && row[`question${suffix}` as keyof FaqRow] as string) || row.question,
+    answer: (suffix && row[`answer${suffix}` as keyof FaqRow] as string) || row.answer,
+    sort_order: row.sort_order,
+  };
+}
+
 const FaqsPage = () => {
+  const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -43,19 +70,17 @@ const FaqsPage = () => {
 
       if (queryError) {
         console.error("Error loading FAQs:", queryError);
-        setError(
-          "We could not load the FAQs right now. Please try again later."
-        );
+        setError(t("faqs.loadError"));
         setIsLoading(false);
         return;
       }
 
-      setFaqs((data ?? []) as Faq[]);
+      setFaqs((data ?? []).map((row: FaqRow) => localizeFaq(row, i18n.language)));
       setIsLoading(false);
     };
 
     void loadFaqs();
-  }, []);
+  }, [i18n.language]);
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
@@ -88,7 +113,7 @@ const FaqsPage = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h1 className="text-base font-semibold">FAQs</h1>
+          <h1 className="text-base font-semibold">{t("faqs.title")}</h1>
         </div>
       </div>
       <div className="h-14" />
@@ -97,14 +122,14 @@ const FaqsPage = () => {
         <div className="px-4 py-4 pb-24 max-w-4xl mx-auto">
           {/* Subtitle */}
           <p className="text-sm text-muted-foreground mb-3">
-            Browse all frequently asked questions about VolleySmart.
+            {t("faqs.subtitle")}
           </p>
 
           {/* Search */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search questions..."
+              placeholder={t("faqs.searchPlaceholder")}
               value={searchQuery}
               onChange={handleSearchChange}
               className="pl-10 h-9"
@@ -113,7 +138,7 @@ const FaqsPage = () => {
 
           {isLoading && (
             <p className="py-8 text-center text-muted-foreground text-sm">
-              Loading FAQs...
+              {t("faqs.loading")}
             </p>
           )}
 
@@ -123,7 +148,7 @@ const FaqsPage = () => {
 
           {!isLoading && !error && faqsByCategory.length === 0 && (
             <p className="py-8 text-center text-muted-foreground text-sm">
-              No FAQs match your search.
+              {t("faqs.noResults")}
             </p>
           )}
 
