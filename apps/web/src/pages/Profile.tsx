@@ -881,7 +881,7 @@ const Profile = () => {
               <p className="text-xs text-primary font-medium">{t("header.gender")}</p>
             </div>
             <p className="text-base font-bold text-foreground capitalize">
-              {profile.gender || "—"}
+              {profile.gender ? t(`edit.gender${profile.gender.charAt(0).toUpperCase()}${profile.gender.slice(1)}`) : "—"}
             </p>
           </div>
         </div>
