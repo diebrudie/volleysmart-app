@@ -191,11 +191,9 @@ export const EventLocationSelector = ({
         )}.json`
       );
       url.searchParams.set("types", "address,poi,place");
-      url.searchParams.set("language", "en");
+      url.searchParams.set("language", navigator.language || "en");
       url.searchParams.set("limit", "5");
-      if (proximity) {
-        url.searchParams.set("proximity", proximity.join(","));
-      }
+      url.searchParams.set("proximity", proximity ? proximity.join(",") : "ip");
       url.searchParams.set("access_token", token);
 
       try {

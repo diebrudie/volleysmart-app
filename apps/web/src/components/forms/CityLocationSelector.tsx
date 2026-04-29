@@ -75,8 +75,9 @@ export default function CityLocationSelector({
         )}.json`
       );
       url.searchParams.set("types", "place,locality");
-      url.searchParams.set("language", "en");
+      url.searchParams.set("language", navigator.language || "en");
       url.searchParams.set("limit", "5");
+      url.searchParams.set("proximity", "ip");
       url.searchParams.set("access_token", token);
 
       const res = await fetch(url.toString());
