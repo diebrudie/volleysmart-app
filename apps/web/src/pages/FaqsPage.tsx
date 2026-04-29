@@ -14,18 +14,43 @@ import ReactMarkdown from "react-markdown";
 
 type FaqPageDisplayed = "faqs" | "homepage_faqs";
 
-interface Faq {
+interface FaqRow {
   id: string;
   group_label: string;
   category: string;
   question: string;
   answer: string;
+  question_es: string | null;
+  answer_es: string | null;
+  question_de: string | null;
+  answer_de: string | null;
+  category_es: string | null;
+  category_de: string | null;
   page_displayed: FaqPageDisplayed;
   sort_order: number;
 }
 
+interface Faq {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+  sort_order: number;
+}
+
+function localizeFaq(row: FaqRow, lang: string): Faq {
+  const suffix = lang === "es" ? "_es" : lang === "de" ? "_de" : null;
+  return {
+    id: row.id,
+    category: (suffix && row[`category${suffix}` as keyof FaqRow] as string) || row.category,
+    question: (suffix && row[`question${suffix}` as keyof FaqRow] as string) || row.question,
+    answer: (suffix && row[`answer${suffix}` as keyof FaqRow] as string) || row.answer,
+    sort_order: row.sort_order,
+  };
+}
+
 const FaqsPage = () => {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -50,12 +75,12 @@ const FaqsPage = () => {
         return;
       }
 
-      setFaqs((data ?? []) as Faq[]);
+      setFaqs((data ?? []).map((row: FaqRow) => localizeFaq(row, i18n.language)));
       setIsLoading(false);
     };
 
     void loadFaqs();
-  }, []);
+  }, [i18n.language]);
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);

@@ -35,6 +35,11 @@
   "positions.diagramCaption": "Usa este diagrama para confirmar tus roles principal y secundario.",
   "positions.drawerTitle": "Posiciones en la cancha de voleibol",
   "positions.drawerDescription": "Diagrama de referencia para elegir tus posiciones.",
+  "positions.name.Setter": "Colocador",
+  "positions.name.Outside Hitter": "Atacante",
+  "positions.name.Middle Blocker": "Central",
+  "positions.name.Libero": "Líbero",
+  "positions.name.Opposite": "Opuesto",
 
   "clubs.manageAssociations": "Gestiona tus asociaciones de club",
   "clubs.associationHelp": "Miembro de Asociación significa que eres un miembro de pago del club. Si no estás seguro, deja esto sin marcar.",

@@ -35,6 +35,11 @@
   "positions.diagramCaption": "Nutze dieses Diagramm, um deine Haupt- und Nebenrollen zu bestätigen.",
   "positions.drawerTitle": "Volleyball-Positionen auf dem Spielfeld",
   "positions.drawerDescription": "Referenzdiagramm zur Auswahl deiner Positionen.",
+  "positions.name.Setter": "Zuspieler",
+  "positions.name.Outside Hitter": "Außenangreifer",
+  "positions.name.Middle Blocker": "Mittelblocker",
+  "positions.name.Libero": "Libero",
+  "positions.name.Opposite": "Diagonal",
 
   "clubs.manageAssociations": "Vereinsmitgliedschaften verwalten",
   "clubs.associationHelp": "Vereinsmitgliedschaft bedeutet, dass du ein zahlendes Mitglied des Vereins bist. Wenn du unsicher bist, lass dies deaktiviert.",

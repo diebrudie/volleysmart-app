@@ -35,6 +35,11 @@
   "positions.diagramCaption": "Use this diagram to confirm your primary and secondary roles.",
   "positions.drawerTitle": "Volleyball court positions",
   "positions.drawerDescription": "Reference diagram to pick your positions.",
+  "positions.name.Setter": "Setter",
+  "positions.name.Outside Hitter": "Outside Hitter",
+  "positions.name.Middle Blocker": "Middle Blocker",
+  "positions.name.Libero": "Libero",
+  "positions.name.Opposite": "Opposite",
 
   "clubs.manageAssociations": "Manage your club member associations",
   "clubs.associationHelp": "Member Association means you are a paid member of the club. If you are not sure, leave this unchecked.",

@@ -734,6 +734,7 @@ const Profile = () => {
       <div className="space-y-1.5">
         <CityLocationSelector
           label={t("edit.location")}
+          labelClassName="text-xs text-muted-foreground"
           placeholder={t("edit.locationPlaceholder")}
           value={cityLocation}
           onChange={(val) => {
@@ -758,7 +759,7 @@ const Profile = () => {
           <SelectTrigger className="h-11 bg-muted/50 border-border"><SelectValue placeholder={t("edit.mainPositionPlaceholder")} /></SelectTrigger>
           <SelectContent>
             {positions.map((position) => (
-              <SelectItem key={position.id} value={position.id}>{position.name}</SelectItem>
+              <SelectItem key={position.id} value={position.id}>{t(`positions.name.${position.name}`, position.name)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -775,7 +776,7 @@ const Profile = () => {
             return (
               <button key={position.id} type="button" onClick={() => updateSecondaryPosition(position.id)}
                 className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${isSecondary ? "border-primary/40 bg-primary/10 text-primary font-medium" : "border-border bg-muted/30 text-muted-foreground hover:border-muted-foreground"}`}
-              >{position.name}</button>
+              >{t(`positions.name.${position.name}`, position.name)}</button>
             );
           })}
         </div>
@@ -1068,7 +1069,7 @@ const Profile = () => {
                         <p className="text-xs text-muted-foreground mb-2">{t("positions.mainPosition")}</p>
                         <div className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
                           <div className="h-2 w-2 rounded-full bg-primary" />
-                          <span className="text-base font-semibold text-primary">{primaryName}</span>
+                          <span className="text-base font-semibold text-primary">{t(`positions.name.${primaryName}`, primaryName)}</span>
                         </div>
                       </div>
                     )}
@@ -1086,7 +1087,7 @@ const Profile = () => {
                                 className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5"
                               >
                                 <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
-                                <span className="text-base text-foreground">{pos.name}</span>
+                                <span className="text-base text-foreground">{t(`positions.name.${pos.name}`, pos.name)}</span>
                               </div>
                             );
                           })}

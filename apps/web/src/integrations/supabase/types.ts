@@ -323,34 +323,52 @@ export type Database = {
       faqs: {
         Row: {
           answer: string
+          answer_de: string | null
+          answer_es: string | null
           category: string
+          category_de: string | null
+          category_es: string | null
           created_at: string
           group_label: string
           id: string
           page_displayed: Database["public"]["Enums"]["faq_page_display"]
           question: string
+          question_de: string | null
+          question_es: string | null
           sort_order: number
           updated_at: string
         }
         Insert: {
           answer: string
+          answer_de?: string | null
+          answer_es?: string | null
           category: string
+          category_de?: string | null
+          category_es?: string | null
           created_at?: string
           group_label: string
           id?: string
           page_displayed?: Database["public"]["Enums"]["faq_page_display"]
           question: string
+          question_de?: string | null
+          question_es?: string | null
           sort_order?: number
           updated_at?: string
         }
         Update: {
           answer?: string
+          answer_de?: string | null
+          answer_es?: string | null
           category?: string
+          category_de?: string | null
+          category_es?: string | null
           created_at?: string
           group_label?: string
           id?: string
           page_displayed?: Database["public"]["Enums"]["faq_page_display"]
           question?: string
+          question_de?: string | null
+          question_es?: string | null
           sort_order?: number
           updated_at?: string
         }

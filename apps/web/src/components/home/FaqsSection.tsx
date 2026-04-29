@@ -14,18 +14,39 @@ import ContactSheet from "@/components/common/ContactSheet";
 
 type FaqPageDisplayed = "faqs" | "homepage_faqs";
 
-interface Faq {
+interface FaqRow {
   id: string;
   group_label: string;
   category: string;
   question: string;
   answer: string;
+  question_es: string | null;
+  answer_es: string | null;
+  question_de: string | null;
+  answer_de: string | null;
   page_displayed: FaqPageDisplayed;
   sort_order: number;
 }
 
+interface Faq {
+  id: string;
+  question: string;
+  answer: string;
+  sort_order: number;
+}
+
+function localizeFaq(row: FaqRow, lang: string): Faq {
+  const suffix = lang === "es" ? "_es" : lang === "de" ? "_de" : null;
+  return {
+    id: row.id,
+    question: (suffix && row[`question${suffix}` as keyof FaqRow] as string) || row.question,
+    answer: (suffix && row[`answer${suffix}` as keyof FaqRow] as string) || row.answer,
+    sort_order: row.sort_order,
+  };
+}
+
 const FaqsSection = () => {
-  const { t } = useTranslation("home");
+  const { t, i18n } = useTranslation("home");
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,12 +73,12 @@ const FaqsSection = () => {
         return;
       }
 
-      setFaqs((data ?? []) as Faq[]);
+      setFaqs((data ?? []).map((row: FaqRow) => localizeFaq(row, i18n.language)));
       setIsLoading(false);
     };
 
     void loadFaqs();
-  }, []);
+  }, [i18n.language]);
 
   return (
     <section id="faqs" className="bg-white text-gray-900">
