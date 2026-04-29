@@ -991,7 +991,7 @@ const PlayerOnboarding = () => {
                 {t("birthday.title")}
               </h2>
             </div>
-            <div className="relative">
+            <div className="relative max-w-full">
               <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
               <Input
                 type="date"
@@ -1006,7 +1006,7 @@ const PlayerOnboarding = () => {
                     setSelectedDate(new Date(e.target.value));
                   }
                 }}
-                className="w-full min-w-0 text-left dark:bg-card dark:border-border dark:text-foreground dark:[color-scheme:dark] pl-10"
+                className="w-full min-w-0 max-w-full text-left dark:bg-card dark:border-border dark:text-foreground dark:[color-scheme:dark] pl-10 [&::-webkit-datetime-edit]:min-w-0"
                 placeholder="YYYY-MM-DD"
               />
             </div>
@@ -1169,8 +1169,8 @@ const PlayerOnboarding = () => {
       <div className="h-10" />
 
       {/* Scrollable content — vertically centered */}
-      <div className="flex-1 overflow-y-auto pb-28 flex items-center">
-        <div className="max-w-lg mx-auto px-4 py-6 w-full">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-28 flex items-center">
+        <div className="max-w-lg mx-auto px-4 py-6 w-full min-w-0">
           {renderStepContent()}
         </div>
       </div>

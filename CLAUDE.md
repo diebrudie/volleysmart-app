@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: i18n (EN/ES/DE) — all pages translated, ready for PR
-- Last change: feat/i18n — full internationalization across app
+- Working on: i18n polish — content updates, UI fixes (language switcher, birthday overflow, skill rating visibility)
+- Last change: feat/i18n — full internationalization across app + UX fixes
 - Current branch: `feat/i18n` (branched from `main`)
-- Next step: Merge i18n PR, then pick next feature from backlog
+- Next step: Commit & push i18n branch, create PR, merge
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):

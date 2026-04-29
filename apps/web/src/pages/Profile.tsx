@@ -1017,33 +1017,34 @@ const Profile = () => {
                       </div>
                     </div>
 
-                    {/* Skill Rating */}
-                    {profile.skill_rating != null && (
-                      <div className="rounded-xl border bg-card p-4 flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <TrendingUp className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs text-muted-foreground">{t("analytics.skillRating")}</p>
-                          <div className="flex items-baseline gap-2">
-                            <p className="text-2xl font-bold">{profile.skill_rating}</p>
-                            <span className="text-xs text-muted-foreground">{t("analytics.skillMax")}</span>
-                            {playerStats && (() => {
-                              const bonus = Math.round(calculateGameplayBonus(playerStats));
-                              return bonus > 0 ? (
-                                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{t("analytics.fromGameplay", { bonus })}</span>
-                              ) : null;
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </>
                 ) : (
                   <div className="rounded-xl border bg-card p-6 text-center">
                     <Swords className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">{t("analytics.noGames")}</p>
                     <p className="text-xs text-muted-foreground mt-1">{t("analytics.noGamesHint")}</p>
+                  </div>
+                )}
+
+                {/* Skill Rating — always visible when available */}
+                {profile.skill_rating != null && (
+                  <div className="rounded-xl border bg-card p-4 flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">{t("analytics.skillRating")}</p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-2xl font-bold">{profile.skill_rating}</p>
+                        <span className="text-xs text-muted-foreground">{t("analytics.skillMax")}</span>
+                        {playerStats && (() => {
+                          const bonus = Math.round(calculateGameplayBonus(playerStats));
+                          return bonus > 0 ? (
+                            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{t("analytics.fromGameplay", { bonus })}</span>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
