@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: i18n polish — content updates, UI fixes (language switcher, birthday overflow, skill rating visibility)
-- Last change: feat/i18n — full internationalization across app + UX fixes
-- Current branch: `feat/i18n` (branched from `main`)
-- Next step: Commit & push i18n branch, create PR, merge
+- Working on: nothing — ready to pick next feature from backlog
+- Last change: feat/i18n merged to main — full i18n (EN/ES/DE), FAQ translated columns, position translations, UX fixes
+- Current branch: `main`
+- Next step: Pick next feature from backlog
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -14,7 +14,7 @@ Branches stack on each other (not merged to main yet):
 - `feat/analytics` branched from `feat/discovery` (merged to main)
 - `feat/analytics-filter-redesign` branched from `main` (merged to main)
 - `feat/live-score-tracker` branched from `main` (merged to main)
-- `feat/i18n` branched from `main`
+- `feat/i18n` branched from `main` (merged to main)
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
@@ -203,6 +203,9 @@ Branches stack on each other (not merged to main yet):
 - **FEAT-21: Event Image Suggestions** — Suggest volleyball-related images when creating an event, so the club always has an image. Field not required but suggestions help adoption. Use a public API or curated set.
 - **FEAT-22: Edit Guests from Club Details** — Add admin-only "Edit Guests" button on Club Details (audit where guests are currently managed). Update FAQ "Can I add guests?" to say the game must start first, then guests can be added by editing teams.
 - ~~**FEAT-27: Live Score Tracker**~~ — Full-screen courtside scoring at `/live-score/:matchDayId`. Tap-to-score, undo, set point hints, forced landscape, wake lock. Yellow button on Game page (game day only). Saves set scores to existing `matches` table on "End Set".
+- **FEAT-29: Event Gender Type** — Add event gender field: Women only, Men only, Mixed. Display on EventCard + EventDetail. Filter support on discover/upcoming.
+- **FEAT-30: Event Activity Type** — Add activity type: Beach or Indoor. Display on EventCard + EventDetail.
+- **FEAT-31: Auto-link Event Description** — Render URLs in event description as clickable links. Applies to CreateEvent, EditEvent, and EventDetail.
 - **Phase 15: Advanced Filters** — Custom month range, filter by city
 
 ### Group C: Analytics & Stats (branch: `feat/analytics`) — IN PROGRESS
@@ -216,6 +219,10 @@ Branches stack on each other (not merged to main yet):
 - `apps/web/src/integrations/supabase/clubStats.ts` — fetchClubStats (encounters, hours, attendance, combos)
 - `apps/web/src/pages/Profile.tsx` — Volleyball tab stats section with club filter
 - `apps/web/src/pages/ClubOverview.tsx` — Stats section with year filter, best team combos
+
+### Group F: Onboarding & UX (branch: `feat/onboarding-ux`)
+- **FEAT-32: New User Home Onboarding** — For users with no clubs/events, show guided action cards on HomeDashboard: skill level (slide 1), "Create your first club" (slide 2), "Start playing to grow your analytics" (slide 3). Replace generic empty-state cards with contextual next-step CTAs. Once user has data, cards revert to normal stats.
+- **FEAT-33: Contact Form Image Attachments** — Add image upload to ContactSheet so users can attach screenshots for bug reports. Store in Supabase Storage or send as email attachments.
 
 ### Group D: Business & Legal (branch: `feat/business`)
 - **FEAT-25: Paid Tiers Architecture** — Audit and propose paid-tier architecture. Free-tier limits: max 2 clubs/user, max 20 members + 5 guests/club, inter-club tournaments require ≥1 paying user/club. Suggest schema, enforcement, payment provider, additional paywalled features. No implementation.
