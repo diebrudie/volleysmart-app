@@ -12,7 +12,7 @@ import {
   Globe,
   Lock,
   Building,
-  Umbrella,
+  Palmtree,
   CalendarIcon,
   Check,
   Bookmark,
@@ -428,7 +428,8 @@ const CreateEvent: React.FC = () => {
         !!form.title.trim() &&
         !!form.date &&
         !!form.start_time &&
-        !!form.end_time
+        !!form.end_time &&
+        !!form.location_id
       );
     if (step === 3) return true; // all step 3 fields are optional
     return false;
@@ -988,7 +989,7 @@ const CreateEvent: React.FC = () => {
                         : "border-border hover:bg-muted"
                     )}
                   >
-                    <Umbrella className="h-4 w-4" />
+                    <Palmtree className="h-4 w-4" />
                     {t("create.activityTypeBeach")}
                   </button>
                 </div>

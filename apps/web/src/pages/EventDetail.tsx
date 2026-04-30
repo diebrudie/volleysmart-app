@@ -25,7 +25,7 @@ import {
   MessageCircle,
   Globe,
   Building,
-  Umbrella,
+  Palmtree,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -339,7 +339,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
                 <button type="button" onClick={() => setActivityType("beach")}
                   className={cn("flex-1 flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors",
                     activityType === "beach" ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-muted")}>
-                  <Umbrella className="h-4 w-4" />{t("detail.activityTypeBeach")}
+                  <Palmtree className="h-4 w-4" />{t("detail.activityTypeBeach")}
                 </button>
               </div>
             </div>
@@ -1025,11 +1025,11 @@ const EventDetail: React.FC = () => {
           )}
 
           {/* Event type */}
-          <div className="flex items-start gap-3">
+          <div className="flex items-center gap-3">
             {typeConfig ? (
-              <typeConfig.Icon className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <typeConfig.Icon className="h-5 w-5 text-muted-foreground" />
             ) : (
-              <Swords className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <Swords className="h-5 w-5 text-muted-foreground" />
             )}
             <p className="text-sm">
               {typeConfig ? t(typeConfig.labelKey) : event.event_type}
@@ -1037,11 +1037,11 @@ const EventDetail: React.FC = () => {
           </div>
 
           {/* Activity type */}
-          <div className="flex items-start gap-3">
+          <div className="flex items-center gap-3">
             {event.activity_type === "beach" ? (
-              <Umbrella className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <Palmtree className="h-5 w-5 text-muted-foreground" />
             ) : (
-              <Building className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <Building className="h-5 w-5 text-muted-foreground" />
             )}
             <p className="text-sm">
               {t(`detail.activityType${event.activity_type === "beach" ? "Beach" : "Indoor"}`)}
@@ -1050,8 +1050,8 @@ const EventDetail: React.FC = () => {
 
           {/* Event gender */}
           {event.event_gender && event.event_gender !== "mixed" && (
-            <div className="flex items-start gap-3">
-              <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm">
                 {t(`detail.eventGender${event.event_gender === "women_only" ? "WomenOnly" : "MenOnly"}`)}
               </p>

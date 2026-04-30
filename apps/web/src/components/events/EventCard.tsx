@@ -2,7 +2,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { format, parseISO, isToday } from "date-fns";
 import { getDateLocale } from "@/lib/dateLocale";
-import { Clock, Users, CalendarClock, ChevronRight, CheckCircle2, XCircle, Globe, Building, Umbrella } from "lucide-react";
+import { Clock, Users, CalendarClock, ChevronRight, CheckCircle2, XCircle, Globe, Building, Palmtree } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlannedEvent } from "@/integrations/supabase/plannedEvents";
 
@@ -110,7 +110,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
             )}
             {event.activity_type === "beach" && (
               <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
-                <Umbrella className="h-2.5 w-2.5" />
+                <Palmtree className="h-2.5 w-2.5" />
                 Beach
               </span>
             )}
