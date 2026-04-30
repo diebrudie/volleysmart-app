@@ -180,10 +180,10 @@ function useLastGame(clubIds: string[]) {
           teamBWins,
           winner:
             teamAWins > teamBWins
-              ? "Team A"
+              ? "A"
               : teamBWins > teamAWins
-              ? "Team B"
-              : "Draw",
+              ? "B"
+              : "draw",
         };
       }
       return null;
@@ -279,6 +279,7 @@ function useMonthlyStats(
 
 const HomeDashboard: React.FC = () => {
   const { t } = useTranslation("events");
+  const { t: tGames } = useTranslation("games");
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: playerId } = useCurrentPlayerId();
@@ -479,19 +480,19 @@ const HomeDashboard: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-sm">
-                    {lastGame.winner === "Draw" ? (
+                    {lastGame.winner === "draw" ? (
                       <span className="text-muted-foreground">{t("home.draw")}</span>
                     ) : (
                       <>
                         <span className={`font-medium ${
-                          lastGame.winner === "Team A"
+                          lastGame.winner === "A"
                             ? "text-red-500"
                             : "text-emerald-600 dark:text-emerald-400"
                         }`}>
-                          {lastGame.winner}
+                          {tGames(`game.team${lastGame.winner}`)}
                         </span>{" "}
                         <span className={`font-medium ${
-                          lastGame.winner === "Team A"
+                          lastGame.winner === "A"
                             ? "text-red-500"
                             : "text-emerald-600 dark:text-emerald-400"
                         }`}>{t("home.wins")}</span>

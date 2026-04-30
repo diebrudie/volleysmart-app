@@ -1,4 +1,5 @@
 import React, { useState, KeyboardEvent, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Pencil, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -60,6 +61,7 @@ const SetBox: React.FC<SetBoxProps> = ({
   isEditingAllowed = true,
   isDeletable = false,
 }) => {
+  const { t } = useTranslation("games");
   const [localTeamAScore, setLocalTeamAScore] = useState<string>(
     teamAScore && teamAScore > 0 ? String(teamAScore) : ""
   );
@@ -367,7 +369,7 @@ const SetBox: React.FC<SetBoxProps> = ({
       </div>
 
       <p className="text-sm text-center text-muted-foreground">
-        Team A vs. Team B
+        {t("game.teamA")} vs. {t("game.teamB")}
       </p>
 
       {isEditingAllowed && (
@@ -418,7 +420,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                   <div className="flex items-center justify-center gap-4 mb-6">
                     <div className="text-center">
                       <p className="text-sm font-medium mb-2 text-red-500">
-                        Team A
+                        {t("game.teamA")}
                       </p>
                       <input
                         ref={teamAInputRef}
@@ -439,7 +441,7 @@ const SetBox: React.FC<SetBoxProps> = ({
 
                     <div className="text-center">
                       <p className="text-sm font-medium mb-2 text-emerald-500">
-                        Team B
+                        {t("game.teamB")}
                       </p>
                       <input
                         type="number"
@@ -511,7 +513,7 @@ const SetBox: React.FC<SetBoxProps> = ({
                   <div className="flex items-center justify-center gap-4 mb-6">
                     <div className="text-center">
                       <p className="text-sm font-medium mb-2 text-red-500">
-                        Team A
+                        {t("game.teamA")}
                       </p>
                       <input
                         ref={teamAInputRef}
@@ -532,7 +534,7 @@ const SetBox: React.FC<SetBoxProps> = ({
 
                     <div className="text-center">
                       <p className="text-sm font-medium mb-2 text-emerald-500">
-                        Team B
+                        {t("game.teamB")}
                       </p>
                       <input
                         type="number"

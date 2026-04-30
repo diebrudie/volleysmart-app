@@ -128,7 +128,7 @@ export async function fetchPlayerStats(
     }
   }
 
-  const gamesPlayed = filteredMdIds.length;
+  const gamesPlayed = mdSetWins.size;
   const totalSets = setsWon + setsLost + setsTied;
   const winRate = totalSets > 0 ? Math.round((setsWon / totalSets) * 100) : 0;
 
