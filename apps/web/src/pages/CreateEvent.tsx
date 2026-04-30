@@ -11,6 +11,8 @@ import {
   Dumbbell,
   Globe,
   Lock,
+  Building,
+  Umbrella,
   CalendarIcon,
   Check,
   Bookmark,
@@ -141,6 +143,8 @@ interface FormState {
   extra_club_ids: string[];
   max_players: string;
   is_public: boolean;
+  event_gender: "mixed" | "women_only" | "men_only";
+  activity_type: "indoor" | "beach";
   notes: string;
   save_template: boolean;
   template_name: string;
@@ -162,6 +166,8 @@ const INITIAL_STATE: FormState = {
   extra_club_ids: [],
   max_players: "",
   is_public: true,
+  event_gender: "mixed",
+  activity_type: "indoor",
   notes: "",
   save_template: false,
   template_name: "",
@@ -366,6 +372,8 @@ const CreateEvent: React.FC = () => {
       club_id: clubId,
       location_id: form.location_id,
       is_public: form.is_public,
+      event_gender: form.event_gender,
+      activity_type: form.activity_type,
       max_players: form.max_players ? parseInt(form.max_players, 10) : undefined,
       notes: form.notes.trim() || undefined,
       rsvp_deadline: computeRsvpDeadline(form),
@@ -937,6 +945,53 @@ const CreateEvent: React.FC = () => {
                   <Lock className="h-4 w-4" />
                   {t("create.private")}
                 </button>
+              </div>
+            </div>
+
+            {/* Event Gender + Activity Type */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>{t("create.eventGender")}</Label>
+                <Select value={form.event_gender} onValueChange={(v) => set("event_gender", v as FormState["event_gender"])}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mixed">{t("create.eventGenderMixed")}</SelectItem>
+                    <SelectItem value="women_only">{t("create.eventGenderWomenOnly")}</SelectItem>
+                    <SelectItem value="men_only">{t("create.eventGenderMenOnly")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>{t("create.activityType")}</Label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => set("activity_type", "indoor")}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors",
+                      form.activity_type === "indoor"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border hover:bg-muted"
+                    )}
+                  >
+                    <Building className="h-4 w-4" />
+                    {t("create.activityTypeIndoor")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => set("activity_type", "beach")}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors",
+                      form.activity_type === "beach"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border hover:bg-muted"
+                    )}
+                  >
+                    <Umbrella className="h-4 w-4" />
+                    {t("create.activityTypeBeach")}
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -7,6 +7,8 @@ export type EventType =
   | "tournament";
 
 export type EventStatus = "open" | "confirmed" | "cancelled" | "completed";
+export type EventGender = "mixed" | "women_only" | "men_only";
+export type ActivityType = "indoor" | "beach";
 export type RsvpStatus = "attending" | "declined";
 
 export interface PlannedEvent {
@@ -15,6 +17,8 @@ export interface PlannedEvent {
   created_by: string;
   title: string;
   event_type: EventType;
+  event_gender: EventGender;
+  activity_type: ActivityType;
   date: string; // YYYY-MM-DD
   start_time: string; // HH:MM:SS
   end_time: string | null; // HH:MM:SS
@@ -406,6 +410,8 @@ export async function cancelPlannedEvent(
 export interface CreateEventInput {
   title: string;
   event_type: EventType;
+  event_gender?: EventGender;
+  activity_type?: ActivityType;
   date: string; // YYYY-MM-DD
   start_time: string; // HH:MM
   end_time: string; // HH:MM
@@ -442,6 +448,8 @@ export async function createPlannedEvent(
       notes: input.notes ?? null,
       rsvp_deadline: input.rsvp_deadline ?? null,
       recurrence_rule: input.recurrence_rule ?? null,
+      event_gender: input.event_gender ?? "mixed",
+      activity_type: input.activity_type ?? "indoor",
     })
     .select("id")
     .single();
@@ -464,6 +472,8 @@ export async function createPlannedEvent(
 export interface UpdateEventInput {
   title?: string;
   event_type?: EventType;
+  event_gender?: EventGender;
+  activity_type?: ActivityType;
   date?: string;
   start_time?: string; // HH:MM
   end_time?: string; // HH:MM
@@ -489,6 +499,8 @@ export async function updatePlannedEvent(
   if (input.is_public !== undefined) updates.is_public = input.is_public;
   if (input.max_players !== undefined) updates.max_players = input.max_players;
   if (input.notes !== undefined) updates.notes = input.notes;
+  if (input.event_gender !== undefined) updates.event_gender = input.event_gender;
+  if (input.activity_type !== undefined) updates.activity_type = input.activity_type;
 
   const { error } = await supabase
     .from("planned_events")

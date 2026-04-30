@@ -24,6 +24,8 @@ import {
   Repeat,
   MessageCircle,
   Globe,
+  Building,
+  Umbrella,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,6 +149,8 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
     event.max_players?.toString() ?? ""
   );
   const [notes, setNotes] = React.useState(event.notes ?? "");
+  const [eventGender, setEventGender] = React.useState(event.event_gender ?? "mixed");
+  const [activityType, setActivityType] = React.useState(event.activity_type ?? "indoor");
 
   // Reset form when event changes or sheet opens
   React.useEffect(() => {
@@ -160,6 +164,8 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
       setIsPublic(event.is_public);
       setMaxPlayers(event.max_players?.toString() ?? "");
       setNotes(event.notes ?? "");
+      setEventGender(event.event_gender ?? "mixed");
+      setActivityType(event.activity_type ?? "indoor");
     }
   }, [open, event]);
 
@@ -178,6 +184,8 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
       is_public: isPublic,
       max_players: maxPlayers ? parseInt(maxPlayers, 10) : null,
       notes: notes.trim() || null,
+      event_gender: eventGender,
+      activity_type: activityType,
     });
   };
 
@@ -305,6 +313,36 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
             >
               {isPublic ? t("detail.makePrivate") : t("detail.makePublic")}
             </Button>
+          </div>
+
+          {/* Event Gender + Activity Type */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>{t("detail.eventGender")}</Label>
+              <Select value={eventGender} onValueChange={(v) => setEventGender(v as typeof eventGender)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mixed">{t("detail.eventGenderMixed")}</SelectItem>
+                  <SelectItem value="women_only">{t("detail.eventGenderWomenOnly")}</SelectItem>
+                  <SelectItem value="men_only">{t("detail.eventGenderMenOnly")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("detail.activityType")}</Label>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setActivityType("indoor")}
+                  className={cn("flex-1 flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors",
+                    activityType === "indoor" ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-muted")}>
+                  <Building className="h-4 w-4" />{t("detail.activityTypeIndoor")}
+                </button>
+                <button type="button" onClick={() => setActivityType("beach")}
+                  className={cn("flex-1 flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors",
+                    activityType === "beach" ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-muted")}>
+                  <Umbrella className="h-4 w-4" />{t("detail.activityTypeBeach")}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Description / Notes */}
@@ -997,6 +1035,28 @@ const EventDetail: React.FC = () => {
               {typeConfig ? t(typeConfig.labelKey) : event.event_type}
             </p>
           </div>
+
+          {/* Activity type */}
+          <div className="flex items-start gap-3">
+            {event.activity_type === "beach" ? (
+              <Umbrella className="h-5 w-5 text-muted-foreground mt-0.5" />
+            ) : (
+              <Building className="h-5 w-5 text-muted-foreground mt-0.5" />
+            )}
+            <p className="text-sm">
+              {t(`detail.activityType${event.activity_type === "beach" ? "Beach" : "Indoor"}`)}
+            </p>
+          </div>
+
+          {/* Event gender */}
+          {event.event_gender && event.event_gender !== "mixed" && (
+            <div className="flex items-start gap-3">
+              <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <p className="text-sm">
+                {t(`detail.eventGender${event.event_gender === "women_only" ? "WomenOnly" : "MenOnly"}`)}
+              </p>
+            </div>
+          )}
 
         </div>
 
