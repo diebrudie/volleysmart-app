@@ -693,11 +693,13 @@ export type Database = {
       }
       planned_events: {
         Row: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
           club_id: string | null
           created_at: string
           created_by: string
           date: string
           end_time: string
+          event_gender: Database["public"]["Enums"]["event_gender"]
           event_type: Database["public"]["Enums"]["event_type"]
           id: string
           is_public: boolean
@@ -712,11 +714,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
           club_id?: string | null
           created_at?: string
           created_by: string
           date: string
           end_time: string
+          event_gender?: Database["public"]["Enums"]["event_gender"]
           event_type: Database["public"]["Enums"]["event_type"]
           id?: string
           is_public?: boolean
@@ -731,11 +735,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
           club_id?: string | null
           created_at?: string
           created_by?: string
           date?: string
           end_time?: string
+          event_gender?: Database["public"]["Enums"]["event_gender"]
           event_type?: Database["public"]["Enums"]["event_type"]
           id?: string
           is_public?: boolean
@@ -1245,6 +1251,8 @@ export type Database = {
     }
     Enums: {
       club_status: "active" | "deleted"
+      activity_type: "indoor" | "beach"
+      event_gender: "mixed" | "women_only" | "men_only"
       event_status: "open" | "confirmed" | "cancelled" | "completed"
       event_type: "friendly_game" | "social_game" | "training" | "tournament"
       faq_page_display: "faqs" | "homepage_faqs"
@@ -1381,6 +1389,8 @@ export const Constants = {
   public: {
     Enums: {
       club_status: ["active", "deleted"],
+      activity_type: ["indoor", "beach"],
+      event_gender: ["mixed", "women_only", "men_only"],
       event_status: ["open", "confirmed", "cancelled", "completed"],
       event_type: ["friendly_game", "social_game", "training", "tournament"],
       faq_page_display: ["faqs", "homepage_faqs"],

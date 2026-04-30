@@ -306,16 +306,18 @@ const HomeDashboard: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Player's city for empty state message
-  const { data: playerCity } = useQuery({
-    queryKey: ["player-city", user?.id],
+  const isNewUser = clubs.length === 0;
+
+  // Player info for empty state message + onboarding cards
+  const { data: playerInfo } = useQuery({
+    queryKey: ["player-info", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("players")
-        .select("city")
+        .select("city, first_name, skill_rating")
         .eq("user_id", user!.id)
         .maybeSingle();
-      return data?.city ?? null;
+      return data ?? null;
     },
     enabled: !!user?.id,
     staleTime: 10 * 60 * 1000,
@@ -380,176 +382,274 @@ const HomeDashboard: React.FC = () => {
               scrollPaddingInline: "1rem",
             }}
           >
-            {/* Card 1 — Today's Game */}
-            <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Volleyball className="h-5 w-5 text-primary" />
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                    {t("home.todaysGame")}
-                  </h3>
-                </div>
-                {todaysEvent?.currentUserRsvp === "attending" && (
-                  <span className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4" />
-                    {t("home.youreGoing")}
-                  </span>
-                )}
-              </div>
-              {todaysEvent ? (
-                <div className="space-y-3">
-                  <div>
+            {isNewUser ? (
+              <>
+                {/* Onboarding Card 1 — Welcome + Skill Level */}
+                <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Volleyball className="h-5 w-5 text-primary" />
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t("home.onboarding.welcome")}
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
                     <p className="text-lg font-semibold text-foreground">
-                      {todaysEvent.title}
+                      {t("home.onboarding.hiName", { name: playerInfo?.first_name ?? "" })}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {todaysEvent.clubName}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    {t("home.playersAttending", { count: todaysEvent.attendingCount })}
-                  </div>
-                  <Button
-                    className="w-full"
-                    variant={todaysEvent.matchDayId ? "outline" : "default"}
-                    onClick={() =>
-                      todaysEvent.matchDayId
-                        ? navigate(`/game/${todaysEvent.matchDayId}`)
-                        : navigate(`/events/${todaysEvent.eventId}`)
-                    }
-                  >
-                    {todaysEvent.matchDayId ? t("home.viewGame") : t("home.startGame")}
-                  </Button>
-                </div>
-              ) : (
-                <div className="py-6 text-center space-y-3">
-                  <p className="text-muted-foreground text-sm">
-                    {t("home.noGameToday")}
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={() => navigate("/events/new")}
-                  >
-                    <Plus className="h-4 w-4 mr-1.5" />
-                    {t("home.createEvent")}
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Card 2 — Last Game Played */}
-            <div
-              className={`snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 ${
-                lastGame ? "cursor-pointer hover:shadow-md transition-shadow" : ""
-              }`}
-              onClick={() =>
-                lastGame && navigate(`/game/${lastGame.matchDayId}`)
-              }
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-primary" />
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                    {t("home.lastGame")}
-                  </h3>
-                </div>
-                {lastGame && (
-                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Eye className="h-4 w-4" />
-                    {t("home.view")}
-                  </span>
-                )}
-              </div>
-              {lastGame ? (
-                <div className="space-y-2 text-center">
-                  <p className="text-lg font-semibold text-foreground">
-                    {lastGame.title}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {lastGame.clubName} &middot;{" "}
-                    {format(parseISO(lastGame.date), "d MMM yyyy", { locale: getDateLocale() })}
-                  </p>
-                  <div className="flex items-center justify-center gap-3 pt-2">
-                    <span className="text-4xl font-bold text-red-500">
-                      {lastGame.teamAWins}
-                    </span>
-                    <span className="text-2xl font-bold text-foreground">-</span>
-                    <span className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
-                      {lastGame.teamBWins}
-                    </span>
-                  </div>
-                  <p className="text-sm">
-                    {lastGame.winner === "draw" ? (
-                      <span className="text-muted-foreground">{t("home.draw")}</span>
-                    ) : (
-                      <>
-                        <span className={`font-medium ${
-                          lastGame.winner === "A"
-                            ? "text-red-500"
-                            : "text-emerald-600 dark:text-emerald-400"
-                        }`}>
-                          {tGames(`game.team${lastGame.winner}`)}
-                        </span>{" "}
-                        <span className={`font-medium ${
-                          lastGame.winner === "A"
-                            ? "text-red-500"
-                            : "text-emerald-600 dark:text-emerald-400"
-                        }`}>{t("home.wins")}</span>
-                      </>
+                    {playerInfo?.skill_rating != null && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{t("home.onboarding.yourSkillLevel")}</span>
+                          <span className="font-semibold text-foreground">{playerInfo.skill_rating}/100</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all"
+                            style={{ width: `${playerInfo.skill_rating}%` }}
+                          />
+                        </div>
+                      </div>
                     )}
-                  </p>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => navigate(`/profile/${user?.id}`)}
+                    >
+                      {t("home.onboarding.viewProfile")}
+                    </Button>
+                  </div>
                 </div>
-              ) : (
-                <div className="py-6 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    {t("home.noGamesYet")}
-                  </p>
-                </div>
-              )}
-            </div>
 
-            {/* Card 3 — Monthly Stats */}
-            <div
-              className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 cursor-pointer hover:border-primary/40 transition-colors"
-              onClick={() => navigate(`/profile/${user?.id}?tab=analytics`)}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  {t("home.thisMonth")}
-                </h3>
-              </div>
-              <div className="grid grid-cols-3 gap-3 pt-2">
-                <div className="text-center">
-                  <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
-                  <p className="text-3xl font-bold text-foreground">
-                    {monthlyStats?.gamesPlayed ?? 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("home.games")}
-                  </p>
+                {/* Onboarding Card 2 — Create or Join a Club */}
+                <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-primary/30 rounded-xl bg-card p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Users className="h-5 w-5 text-primary" />
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t("home.onboarding.getStarted")}
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      {t("home.onboarding.clubsDescription")}
+                    </p>
+                    <Button className="w-full" onClick={() => navigate("/new-club")}>
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      {t("home.onboarding.createClub")}
+                    </Button>
+                    <Button variant="outline" className="w-full" onClick={() => navigate("/clubs")}>
+                      <Compass className="h-4 w-4 mr-1.5" />
+                      {t("home.onboarding.browseClubs")}
+                    </Button>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <TrendingUp className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
-                  <p className="text-3xl font-bold text-foreground">
-                    {monthlyStats?.winRate ?? 0}%
+
+                {/* Onboarding Card 3 — Analytics Teaser */}
+                <div
+                  className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 cursor-pointer hover:border-primary/40 transition-colors"
+                  onClick={() => navigate(`/profile/${user?.id}?tab=analytics`)}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t("home.onboarding.yourStats")}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {t("home.onboarding.playToUnlock")}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("home.winRate")}
-                  </p>
+                  <div className="grid grid-cols-3 gap-3 pt-2">
+                    <div className="text-center">
+                      <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
+                      <p className="text-3xl font-bold text-muted-foreground/40">--</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("home.games")}</p>
+                    </div>
+                    <div className="text-center">
+                      <TrendingUp className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
+                      <p className="text-3xl font-bold text-muted-foreground/40">--</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("home.winRate")}</p>
+                    </div>
+                    <div className="text-center">
+                      <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                      <p className="text-3xl font-bold text-muted-foreground/40">--</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("home.hours")}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-                  <p className="text-3xl font-bold text-foreground">
-                    {monthlyStats?.hoursPlayed ?? 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("home.hours")}
-                  </p>
+              </>
+            ) : (
+              <>
+                {/* Card 1 — Today's Game */}
+                <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Volleyball className="h-5 w-5 text-primary" />
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        {t("home.todaysGame")}
+                      </h3>
+                    </div>
+                    {todaysEvent?.currentUserRsvp === "attending" && (
+                      <span className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-4 w-4" />
+                        {t("home.youreGoing")}
+                      </span>
+                    )}
+                  </div>
+                  {todaysEvent ? (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-lg font-semibold text-foreground">
+                          {todaysEvent.title}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {todaysEvent.clubName}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        {t("home.playersAttending", { count: todaysEvent.attendingCount })}
+                      </div>
+                      <Button
+                        className="w-full"
+                        variant={todaysEvent.matchDayId ? "outline" : "default"}
+                        onClick={() =>
+                          todaysEvent.matchDayId
+                            ? navigate(`/game/${todaysEvent.matchDayId}`)
+                            : navigate(`/events/${todaysEvent.eventId}`)
+                        }
+                      >
+                        {todaysEvent.matchDayId ? t("home.viewGame") : t("home.startGame")}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center space-y-3">
+                      <p className="text-muted-foreground text-sm">
+                        {t("home.noGameToday")}
+                      </p>
+                      <Button
+                        size="sm"
+                        onClick={() => navigate("/events/new")}
+                      >
+                        <Plus className="h-4 w-4 mr-1.5" />
+                        {t("home.createEvent")}
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
+
+                {/* Card 2 — Last Game Played */}
+                <div
+                  className={`snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 ${
+                    lastGame ? "cursor-pointer hover:shadow-md transition-shadow" : ""
+                  }`}
+                  onClick={() =>
+                    lastGame && navigate(`/game/${lastGame.matchDayId}`)
+                  }
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Trophy className="h-5 w-5 text-primary" />
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        {t("home.lastGame")}
+                      </h3>
+                    </div>
+                    {lastGame && (
+                      <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Eye className="h-4 w-4" />
+                        {t("home.view")}
+                      </span>
+                    )}
+                  </div>
+                  {lastGame ? (
+                    <div className="space-y-2 text-center">
+                      <p className="text-lg font-semibold text-foreground">
+                        {lastGame.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {lastGame.clubName} &middot;{" "}
+                        {format(parseISO(lastGame.date), "d MMM yyyy", { locale: getDateLocale() })}
+                      </p>
+                      <div className="flex items-center justify-center gap-3 pt-2">
+                        <span className="text-4xl font-bold text-red-500">
+                          {lastGame.teamAWins}
+                        </span>
+                        <span className="text-2xl font-bold text-foreground">-</span>
+                        <span className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
+                          {lastGame.teamBWins}
+                        </span>
+                      </div>
+                      <p className="text-sm">
+                        {lastGame.winner === "draw" ? (
+                          <span className="text-muted-foreground">{t("home.draw")}</span>
+                        ) : (
+                          <>
+                            <span className={`font-medium ${
+                              lastGame.winner === "A"
+                                ? "text-red-500"
+                                : "text-emerald-600 dark:text-emerald-400"
+                            }`}>
+                              {tGames(`game.team${lastGame.winner}`)}
+                            </span>{" "}
+                            <span className={`font-medium ${
+                              lastGame.winner === "A"
+                                ? "text-red-500"
+                                : "text-emerald-600 dark:text-emerald-400"
+                            }`}>{t("home.wins")}</span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center">
+                      <p className="text-muted-foreground text-sm">
+                        {t("home.noGamesYet")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card 3 — Monthly Stats */}
+                <div
+                  className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 cursor-pointer hover:border-primary/40 transition-colors"
+                  onClick={() => navigate(`/profile/${user?.id}?tab=analytics`)}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t("home.thisMonth")}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 pt-2">
+                    <div className="text-center">
+                      <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
+                      <p className="text-3xl font-bold text-foreground">
+                        {monthlyStats?.gamesPlayed ?? 0}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t("home.games")}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <TrendingUp className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
+                      <p className="text-3xl font-bold text-foreground">
+                        {monthlyStats?.winRate ?? 0}%
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t("home.winRate")}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <Clock className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                      <p className="text-3xl font-bold text-foreground">
+                        {monthlyStats?.hoursPlayed ?? 0}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t("home.hours")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Trailing spacer (mobile only) */}
             <div className="shrink-0 w-1 lg:hidden" aria-hidden="true" />
@@ -604,8 +704,8 @@ const HomeDashboard: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-12 gap-4 text-center rounded-xl border bg-card">
                 <CalendarDays className="h-10 w-10 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  {playerCity
-                    ? t("home.noPublicEvents", { city: playerCity })
+                  {playerInfo?.city
+                    ? t("home.noPublicEvents", { city: playerInfo.city })
                     : t("home.noPublicEventsDefault")}
                 </p>
                 <Button
