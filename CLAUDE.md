@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: i18n polish — content updates, UI fixes (language switcher, birthday overflow, skill rating visibility)
-- Last change: feat/i18n — full internationalization across app + UX fixes
-- Current branch: `feat/i18n` (branched from `main`)
-- Next step: Commit & push i18n branch, create PR, merge
+- Working on: bug fixes — analytics gamesPlayed mismatch, Spanish team translations, calendar UX
+- Last change: fix/analytics-and-translations — gamesPlayed counts only scored match days, "Equipo B gana" instead of "Team B wins" / "victorias", SetBox team labels translated, calendar previous-month disabled at current month
+- Current branch: `fix/analytics-and-translations` (branched from `main`)
+- Next step: Merge `fix/analytics-and-translations` into main
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -14,7 +14,8 @@ Branches stack on each other (not merged to main yet):
 - `feat/analytics` branched from `feat/discovery` (merged to main)
 - `feat/analytics-filter-redesign` branched from `main` (merged to main)
 - `feat/live-score-tracker` branched from `main` (merged to main)
-- `feat/i18n` branched from `main`
+- `feat/i18n` branched from `main` (merged to main)
+- `fix/analytics-and-translations` branched from `main`
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
@@ -43,6 +44,22 @@ Branches stack on each other (not merged to main yet):
 - `apps/web/src/i18n/locales/{en,es,de}/*.json` — 10 namespace files × 3 languages
 - `apps/web/src/lib/dateLocale.ts` — `getDateLocale()` utility
 - `apps/web/src/components/common/LanguageSwitcher.tsx` — Language picker component
+
+## Bug fixes — analytics + translations + calendar UX
+**Branch:** `fix/analytics-and-translations` (branched from `main`)
+
+1. ~~**Analytics gamesPlayed**~~: `playerStats.ts` — `gamesPlayed = mdSetWins.size` so games with no scored sets (or only 0-0 sets) don't count. Profile total now matches the win/loss denominator (e.g. 11/11 instead of 14 vs 5/11).
+2. ~~**Last Game winner translated**~~: `HomeDashboard.tsx` — `useLastGame` now returns winner identifier (`"A" | "B" | "draw"`); render uses `tGames("game.teamA"/"teamB")` + `t("home.wins")` so Spanish reads "Equipo B gana".
+3. ~~**Spanish "wins" wording**~~: `es/events.json` — `home.wins`: `"victorias"` → `"gana"` (correct verb conjugation).
+4. ~~**SetBox team labels**~~: `SetBox.tsx` — added `useTranslation("games")`; replaced 5 visible "Team A"/"Team B" labels (set card + edit dialog + edit drawer) with `t("game.teamA"/"teamB")`. Screen-reader-only description left as-is.
+5. ~~**Calendar UX**~~: `UpcomingEvents.tsx` — disabled the previous-month chevron when calendar is at or before the current month (greyed out, unclickable). Forward navigation unaffected.
+
+### Key files
+- `apps/web/src/integrations/supabase/playerStats.ts:131` — `gamesPlayed = mdSetWins.size`
+- `apps/web/src/pages/HomeDashboard.tsx:181-186, 280, 480-500` — winner identifier + translated render
+- `apps/web/src/components/match/SetBox.tsx` — `useTranslation("games")` + 5 label replacements
+- `apps/web/src/i18n/locales/es/events.json:13` — `home.wins: "gana"`
+- `apps/web/src/pages/UpcomingEvents.tsx:109-128` — `isAtCurrentMonth` + disabled prev button
 
 ## Phase 14 in-progress work (Notifications + Bug Fixes)
 1. ~~**Notification triggers (DB)**~~: 9 types — join request/accepted/rejected, member joined, event created/cancelled, RSVP, RSVP deadline reminder (pg_cron), game started

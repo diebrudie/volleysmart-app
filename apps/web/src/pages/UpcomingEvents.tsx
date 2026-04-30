@@ -107,6 +107,7 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({
   const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
   const eventDates = new Set(events.map((e) => e.date));
+  const isAtCurrentMonth = monthStart <= startOfMonth(new Date());
 
   return (
     <div className="select-none">
@@ -114,7 +115,8 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({
         <button
           type="button"
           onClick={() => onMonthChange(subMonths(month, 1))}
-          className="p-1 rounded hover:bg-muted"
+          disabled={isAtCurrentMonth}
+          className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           aria-label={t("upcoming.previousMonth")}
         >
           <ChevronLeft className="h-4 w-4" />
