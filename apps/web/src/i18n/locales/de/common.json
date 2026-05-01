@@ -77,6 +77,10 @@
     "submitting": "Wird gesendet...",
     "submit": "Absenden",
     "successDescription": "Vielen Dank für deine Nachricht! Wir melden uns bald bei dir.",
-    "errorDescription": "Beim Senden deiner Nachricht ist ein Fehler aufgetreten. Bitte versuche es später erneut."
+    "errorDescription": "Beim Senden deiner Nachricht ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
+    "attachment": "Screenshot (optional)",
+    "addImage": "Screenshot hinzufügen",
+    "invalidImage": "Bitte wähle eine Bilddatei aus.",
+    "imageTooLarge": "Das Bild muss kleiner als 5 MB sein."
   }
 }

@@ -1,10 +1,10 @@
 # VolleySmart App
 
 ## Current status
-- Working on: nothing — ready to pick next feature from backlog
-- Last change: fix/analytics-and-translations + feat/i18n both merged to main
-- Current branch: `main`
-- Next step: Pick next feature from backlog
+- Working on: FEAT-31 (auto-link descriptions) + FEAT-33 (contact form images)
+- Last change: feat/event-gender-activity merged to main (FEAT-29, FEAT-30, FEAT-32)
+- Current branch: `feat/quick-wins`
+- Next step: Implement quick win features
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -14,6 +14,7 @@ Branches stack on each other (not merged to main yet):
 - `feat/analytics` branched from `feat/discovery` (merged to main)
 - `feat/analytics-filter-redesign` branched from `main` (merged to main)
 - `feat/live-score-tracker` branched from `main` (merged to main)
+- `feat/event-gender-activity` branched from `main` (merged to main)
 - `feat/i18n` branched from `main` (merged to main)
 - `fix/analytics-and-translations` branched from `main` (merged to main)
 
@@ -214,14 +215,14 @@ Branches stack on each other (not merged to main yet):
 
 ### Group A: Chat & Communication (branch: `feat/chat`)
 - **FEAT-20: Chat Architecture** — Audit and propose architecture for a shared chat system covering both club chat (entry: Club Details) and event chat (entry: Event Details). Same component, different room scope. Cover data model, RLS, and Realtime approach. No implementation. (Chat icon placeholder already added in EventDetail)
-- **Backlog: Email notifications** — Set up email notifications for key events
+- **FEAT-34: Email Notification Templates** — DB notification triggers exist but no emails are sent. Create email templates (Supabase Edge Functions or Resend/Postmark) for all 9 notification types: join request, accepted/rejected, member joined, event created/cancelled, RSVP, RSVP deadline reminder, game started. Test delivery end-to-end.
 
 ### Group B: Event & Game Enhancements (branch: `feat/event-enhancements`)
 - **FEAT-21: Event Image Suggestions** — Suggest volleyball-related images when creating an event, so the club always has an image. Field not required but suggestions help adoption. Use a public API or curated set.
 - **FEAT-22: Edit Guests from Club Details** — Add admin-only "Edit Guests" button on Club Details (audit where guests are currently managed). Update FAQ "Can I add guests?" to say the game must start first, then guests can be added by editing teams.
 - ~~**FEAT-27: Live Score Tracker**~~ — Full-screen courtside scoring at `/live-score/:matchDayId`. Tap-to-score, undo, set point hints, forced landscape, wake lock. Yellow button on Game page (game day only). Saves set scores to existing `matches` table on "End Set".
-- **FEAT-29: Event Gender Type** — Add event gender field: Women only, Men only, Mixed. Display on EventCard + EventDetail. Filter support on discover/upcoming.
-- **FEAT-30: Event Activity Type** — Add activity type: Beach or Indoor. Display on EventCard + EventDetail.
+- ~~**FEAT-29: Event Gender Type**~~ — Add event gender field: Women only, Men only, Mixed. Display on EventCard + EventDetail.
+- ~~**FEAT-30: Event Activity Type**~~ — Add activity type: Beach or Indoor. Display on EventCard + EventDetail.
 - **FEAT-31: Auto-link Event Description** — Render URLs in event description as clickable links. Applies to CreateEvent, EditEvent, and EventDetail.
 - **Phase 15: Advanced Filters** — Custom month range, filter by city
 
@@ -242,7 +243,7 @@ Branches stack on each other (not merged to main yet):
 - **FEAT-26: Terms & Conditions Page** — Add `/terms` page with placeholder content, link from homepage footer + signup consent.
 
 ### Group F: Onboarding & UX (branch: `feat/onboarding-ux`)
-- **FEAT-32: New User Home Onboarding** — For users with no clubs/events, show guided action cards on HomeDashboard: skill level (slide 1), "Create your first club" (slide 2), "Start playing to grow your analytics" (slide 3). Replace generic empty-state cards with contextual next-step CTAs. Once user has data, cards revert to normal stats.
+- ~~**FEAT-32: New User Home Onboarding**~~ — Guided action cards on HomeDashboard for users with no clubs. Auto-reverts once user joins a club.
 - **FEAT-33: Contact Form Image Attachments** — Add image upload to ContactSheet so users can attach screenshots for bug reports. Store in Supabase Storage or send as email attachments.
 
 ### Group E: Platform (branch: `feat/platform`)

@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, useRef, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Sheet,
@@ -8,6 +8,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
+import { ImagePlus, X } from "lucide-react";
 
 type ContactReason =
   | "general_question"
@@ -18,17 +19,11 @@ type ContactReason =
 interface ContactSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /**
-   * Optional string to know from which part of the app the contact comes.
-   * Example: "homepage_faqs_section".
-   */
   source?: string;
-  /**
-   * When true, force light theme styling inside the sheet
-   * (useful for public landing pages).
-   */
   forceLight?: boolean;
 }
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 const ContactSheet = ({
   open,
@@ -37,6 +32,7 @@ const ContactSheet = ({
   forceLight,
 }: ContactSheetProps) => {
   const { t } = useTranslation("common");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [reason, setReason] = useState<ContactReason>("general_question");
@@ -44,6 +40,33 @@ const ContactSheet = ({
   const [acceptTerms, setAcceptTerms] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setFeedback(t("contact.invalidImage"));
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setFeedback(t("contact.imageTooLarge"));
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setFeedback(null);
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,17 +76,35 @@ const ContactSheet = ({
     setFeedback(null);
 
     try {
+      let attachmentUrl: string | null = null;
+
+      if (imageFile) {
+        const ext = imageFile.name.split(".").pop();
+        const fileName = `contact-${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("contact-attachments")
+          .upload(fileName, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage
+          .from("contact-attachments")
+          .getPublicUrl(fileName);
+        attachmentUrl = publicUrl;
+      }
+
       const { error } = await supabase.from("contact_submissions").insert({
         name,
         email,
         reason,
         message,
         source: source ?? "unknown",
+        attachment_url: attachmentUrl,
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       setFeedback(t("contact.successDescription"));
       setName("");
@@ -71,6 +112,7 @@ const ContactSheet = ({
       setReason("general_question");
       setMessage("");
       setAcceptTerms(false);
+      removeImage();
     } catch (error) {
       console.error("Error submitting contact form:", error);
       setFeedback(t("contact.errorDescription"));
@@ -176,6 +218,45 @@ const ContactSheet = ({
               placeholder={t("contact.messagePlaceholder")}
               required
             />
+          </div>
+
+          {/* Image attachment */}
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-900">
+              {t("contact.attachment")}
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            {imagePreview ? (
+              <div className="relative inline-block">
+                <img
+                  src={imagePreview}
+                  alt=""
+                  className="h-24 w-auto rounded-lg border border-gray-300 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute -top-2 -right-2 rounded-full bg-gray-800 p-0.5 text-white hover:bg-gray-700"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600"
+              >
+                <ImagePlus className="h-4 w-4" />
+                {t("contact.addImage")}
+              </button>
+            )}
           </div>
 
           <label className="mt-2 flex items-start gap-2 text-xs text-gray-700">

@@ -77,6 +77,10 @@
     "submitting": "Enviando...",
     "submit": "Enviar",
     "successDescription": "¡Gracias por tu mensaje! Te responderemos pronto.",
-    "errorDescription": "Algo salió mal al enviar tu mensaje. Por favor, inténtalo más tarde."
+    "errorDescription": "Algo salió mal al enviar tu mensaje. Por favor, inténtalo más tarde.",
+    "attachment": "Captura de pantalla (opcional)",
+    "addImage": "Añadir una captura",
+    "invalidImage": "Por favor selecciona un archivo de imagen.",
+    "imageTooLarge": "La imagen debe ser menor de 5 MB."
   }
 }
