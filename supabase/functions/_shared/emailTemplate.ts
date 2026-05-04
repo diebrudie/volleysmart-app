@@ -54,7 +54,7 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
           <!-- Logo -->
           <tr>
             <td style="padding:28px 32px 0;text-align:center;">
-              <img src="https://volleysmart.app/volleysmart-logo.png" alt="VolleySmart"
+              <img src="https://volleysmart.app/logo-volleySmart%20-%20email%20lightmode.png" alt="VolleySmart"
                    style="height:40px;width:auto;" />
             </td>
           </tr>
