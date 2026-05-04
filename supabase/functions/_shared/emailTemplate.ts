@@ -53,15 +53,17 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
         <tbody>
           <!-- Logo -->
           <tr>
-            <td style="padding:28px 32px 0;text-align:center;">
-              <img src="https://volleysmart.app/logo-volleySmart%20-%20email%20lightmode.png" alt="VolleySmart"
-                   style="height:40px;width:auto;" />
+            <td style="padding:28px 32px 0;text-align:left;">
+              <a href="https://volleysmart.app" target="_blank" style="text-decoration:none;">
+                <img src="https://volleysmart.app/logo-volleySmart%20-%20email%20lightmode.png" alt="VolleySmart"
+                     style="height:40px;width:auto;" />
+              </a>
             </td>
           </tr>
           <!-- Heading -->
           <tr>
             <td style="padding:24px 32px 8px;">
-              <h1 style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#111827;text-align:center;">
+              <h1 style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#111827;text-align:left;">
                 ${heading}
               </h1>
             </td>
