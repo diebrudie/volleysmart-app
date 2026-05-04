@@ -106,6 +106,13 @@ const ContactSheet = ({
 
       if (error) throw error;
 
+      // Fire-and-forget: notify team via Edge Function
+      supabase.functions
+        .invoke("notify-contact-submission", {
+          body: { record: { name, email, reason, message, attachment_url: attachmentUrl, source: source ?? "unknown" } },
+        })
+        .catch((e) => console.error("Email notification failed:", e));
+
       setFeedback(t("contact.successDescription"));
       setName("");
       setEmail("");
