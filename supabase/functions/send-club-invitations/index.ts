@@ -1,57 +1,14 @@
 /**
  * send-club-invitations
- * Gmail SMTP sender for club invites (VolleySmart).
- * Fixes Deno 2 runtime issue by polyfilling Deno.writeAll before importing smtp client.
+ * Sends branded club invitation emails via Resend.
  *
- * Required secrets (project-level):
- *  SMTP_HOST=smtp.gmail.com
- *  SMTP_PORT=465
- *  SMTP_USER=isabel.b@diebrudie.com
- *  SMTP_PASS=<Gmail App Password>
- *  FROM_EMAIL=noreply@volleysmart.app
- *  FROM_NAME="VolleySmart App"
+ * Required secret: RESEND_API_KEY
  */
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { writeAll } from "https://deno.land/std@0.177.0/streams/write_all.ts";
+import { buildEmailHtml, sendEmail } from "../_shared/emailTemplate.ts";
 
-// --------- Polyfill for Deno 2 ----------
-/**
- * Some third-party libs still call `Deno.writeAll`, which was removed in Deno 2.
- * We safely attach a polyfill using std/streams/write_all.
- */
-try {
-  (Deno as unknown as { writeAll?: typeof writeAll }).writeAll = writeAll;
-} catch {
-  // ignore if not allowed – runtime will still have the global polyfilled
-}
-// ----------------------------------------
-
-/**
- * Dynamic import of the SMTP client *after* polyfilling writeAll.
- * Minimal interface to avoid `any`.
- */
-interface ISmtpClient {
-  connectTLS(options: {
-    hostname: string;
-    port: number;
-    username: string;
-    password: string;
-  }): Promise<void>;
-  send(options: {
-    from: string;
-    to: string;
-    subject: string;
-    content: string;
-  }): Promise<void>;
-  close(): Promise<void>;
-}
-
-const { SmtpClient } = await import("https://deno.land/x/smtp/mod.ts");
-const SmtpCtor = SmtpClient as unknown as { new (): ISmtpClient };
-
-// CORS
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -59,7 +16,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 } as const;
 
-// ---- Types ----
 interface Invite {
   name: string;
   email: string;
@@ -74,53 +30,34 @@ interface RequestBody {
   clubInfo: ClubInfo;
 }
 
-// ---- Env ----
-const SMTP_HOST = Deno.env.get("SMTP_HOST") ?? "smtp.gmail.com";
-const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") ?? 465); // SMTPS
-const SMTP_USER = Deno.env.get("SMTP_USER") ?? "";
-const SMTP_PASS = Deno.env.get("SMTP_PASS") ?? "";
-const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "noreply@volleysmart.app";
-const FROM_NAME = Deno.env.get("FROM_NAME") ?? "VolleySmart App";
-
-// ---- Helpers ----
 const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 
-function buildText(
-  invite: Invite,
-  club: ClubInfo
-): { subject: string; text: string } {
-  const joinUrl = `https://volleysmart.app/invite/${club.inviteToken}`;
-  const subject = `You're invited to join ${club.name} on VolleySmart`;
-  const text =
-    `Hello ${invite.name || "there"},\n\n` +
-    `You’ve been invited to join ${club.name} on VolleySmart.\n` +
-    `Join using this link: ${joinUrl}\n\n` +
-    `If you didn’t expect this, you can ignore this email.\n\n` +
-    `— ${FROM_NAME}`;
-  return { subject, text };
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
-function hasSmtpSecrets(): boolean {
-  return Boolean(
-    SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && FROM_EMAIL && FROM_NAME
-  );
-}
-
-// ---- Main handler ----
 serve(async (req: Request) => {
   if (req.method === "OPTIONS")
     return new Response(null, { headers: corsHeaders });
 
   try {
-    // Auth
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "RESEND_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const authHeader = req.headers.get("authorization")?.split(" ")[1];
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: "No authorization header" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -141,7 +78,6 @@ serve(async (req: Request) => {
       });
     }
 
-    // Parse + validate body
     let parsed: unknown;
     try {
       parsed = await req.json();
@@ -173,10 +109,7 @@ serve(async (req: Request) => {
     if (invalid) {
       return new Response(
         JSON.stringify({ error: "Missing or invalid invites/club info" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -184,7 +117,7 @@ serve(async (req: Request) => {
     const { data: clubRow, error: clubErr } = await supabase
       .from("clubs")
       .select("created_by")
-      .eq("id", clubInfo.id)
+      .eq("id", clubInfo!.id)
       .single();
 
     if (clubErr || !clubRow) {
@@ -199,7 +132,7 @@ serve(async (req: Request) => {
         .from("club_members")
         .select("role")
         .eq("user_id", user.id)
-        .eq("club_id", clubInfo.id)
+        .eq("club_id", clubInfo!.id)
         .eq("is_active", true)
         .eq("status", "active")
         .maybeSingle();
@@ -207,64 +140,46 @@ serve(async (req: Request) => {
       const notAdmin = !!memberErr || !memberRow || memberRow.role !== "admin";
       if (notAdmin) {
         return new Response(
-          JSON.stringify({
-            error: "Not authorized to invite members to this club",
-          }),
-          {
-            status: 403,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: "Not authorized to invite members to this club" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
 
-    if (!hasSmtpSecrets()) {
-      return new Response(JSON.stringify({ error: "SMTP is not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // SMTPS 465
-    const smtp: ISmtpClient = new SmtpCtor();
-    await smtp.connectTLS({
-      hostname: SMTP_HOST,
-      port: SMTP_PORT,
-      username: SMTP_USER,
-      password: SMTP_PASS,
-    });
+    const club = clubInfo as ClubInfo;
+    const joinUrl = `https://volleysmart.app/invite/${club.inviteToken}`;
 
     const results: Array<{ email: string; ok: boolean; error?: string }> = [];
-    for (const invite of invites) {
-      try {
-        const { subject, text } = buildText(
-          invite as Invite,
-          clubInfo as ClubInfo
-        );
-        await smtp.send({
-          from: `${FROM_NAME} <${FROM_EMAIL}>`,
-          to: invite.email,
-          subject,
-          content: text, // plaintext for deliverability
-        });
-        results.push({ email: invite.email, ok: true });
-      } catch (e) {
-        const message = e instanceof Error ? e.message : "Unknown error";
-        console.error("Invite send failed:", invite.email, message);
-        results.push({ email: invite.email, ok: false, error: message });
-      }
-    }
+    for (const invite of invites as Invite[]) {
+      const html = buildEmailHtml({
+        heading: `You're invited to join ${escapeHtml(club.name)}`,
+        bodyHtml: `<p style="margin:0 0 8px;">Hi ${escapeHtml(invite.name || "there")},</p>
+          <p style="margin:0;">You've been invited to join <strong>${escapeHtml(club.name)}</strong> on VolleySmart.</p>`,
+        ctaUrl: joinUrl,
+        ctaText: `Join ${escapeHtml(club.name)}`,
+        footerText: "If you didn't expect this invitation, you can ignore this email.",
+      });
 
-    await smtp.close();
+      const subject = `You're invited to join ${club.name} on VolleySmart`;
+      const result = await sendEmail(RESEND_API_KEY, {
+        to: invite.email,
+        subject,
+        html,
+      });
+
+      results.push({
+        email: invite.email,
+        ok: result.ok,
+        error: result.error,
+      });
+    }
 
     const sent = results.filter((r) => r.ok).length;
     const failed = results.length - sent;
 
     return new Response(
       JSON.stringify({ success: failed === 0, sent, failed, results }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     const message =
