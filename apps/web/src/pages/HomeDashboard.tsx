@@ -413,7 +413,7 @@ const HomeDashboard: React.FC = () => {
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => navigate(`/profile/${user?.id}`)}
+                      onClick={() => navigate(`/user/${user?.id}`)}
                     >
                       {t("home.onboarding.viewProfile")}
                     </Button>
