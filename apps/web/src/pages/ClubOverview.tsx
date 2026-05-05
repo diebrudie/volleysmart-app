@@ -406,6 +406,7 @@ const ClubOverview: React.FC = () => {
                     const result = await requestJoinClub(clubId!);
                     setJoinStatus(result);
                     if (result === "pending_approval") {
+                      supabase.functions.invoke("notify-join-request", { body: { club_id: clubId } }).catch(() => {});
                       toast({ title: t("overview.toasts.requestSent"), description: t("overview.toasts.requestSentDescription"), duration: 2000 });
                     } else if (result === "already_member") {
                       toast({ title: t("overview.toasts.alreadyMember"), duration: 2000 });

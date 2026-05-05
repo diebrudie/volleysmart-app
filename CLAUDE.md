@@ -1,11 +1,12 @@
 # VolleySmart App
 
 ## Current status
-- Working on: ResetPassword layout fix on `fix/reset-password-layout`
-- Last change: `feat/quick-wins` merged to main (FEAT-31, FEAT-33, branded emails, contact form UX, Button asChild fix, ForgotPassword cleanup, Profile back nav)
-- Current branch: `fix/reset-password-layout`
+- Working on: `feat/join-request-email-and-fixes` (join request email to admins + account deletion fix)
+- Last change: `fix/reset-password-layout` merged to main
+- Current branch: `feat/join-request-email-and-fixes`
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
-- Next step: Merge reset-password fix, deploy send-club-invitations, test club invitation emails
+- Note: `send-club-invitations` edge function is deployed but unused — frontend uses link-based invite flow. Can be deleted or repurposed.
+- Next step: Deploy `notify-join-request` edge function, apply migration `20260505000001`, then Phase 16 (Settings page + notification preferences)
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -19,7 +20,8 @@ Branches stack on each other (not merged to main yet):
 - `feat/i18n` branched from `main` (merged to main)
 - `fix/analytics-and-translations` branched from `main` (merged to main)
 - `feat/quick-wins` branched from `main` (merged to main)
-- `fix/reset-password-layout` branched from `main`
+- `fix/reset-password-layout` branched from `main` (merged to main)
+- `feat/join-request-email-and-fixes` branched from `main`
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
