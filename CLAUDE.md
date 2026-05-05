@@ -1,11 +1,11 @@
 # VolleySmart App
 
 ## Current status
-- Working on: Quick wins on `feat/quick-wins` branch
-- Last change: Contact form UX fixes + password reset crash fix + branded email templates
-- Current branch: `feat/quick-wins`
-- Completed on this branch: FEAT-31, FEAT-33, contact email notifications, branded auth templates, club invitations Resend migration, contact form UX improvements, Button asChild crash fix
-- Next step: Test password reset flow on staging, configure Supabase Dashboard auth email templates, deploy send-club-invitations
+- Working on: ResetPassword layout fix on `fix/reset-password-layout`
+- Last change: `feat/quick-wins` merged to main (FEAT-31, FEAT-33, branded emails, contact form UX, Button asChild fix, ForgotPassword cleanup, Profile back nav)
+- Current branch: `fix/reset-password-layout`
+- Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
+- Next step: Merge reset-password fix, deploy send-club-invitations, test club invitation emails
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -18,6 +18,8 @@ Branches stack on each other (not merged to main yet):
 - `feat/event-gender-activity` branched from `main` (merged to main)
 - `feat/i18n` branched from `main` (merged to main)
 - `fix/analytics-and-translations` branched from `main` (merged to main)
+- `feat/quick-wins` branched from `main` (merged to main)
+- `fix/reset-password-layout` branched from `main`
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
