@@ -8,7 +8,8 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { ImagePlus, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { CheckCircle2, ImagePlus, X } from "lucide-react";
 
 type ContactReason =
   | "general_question"
@@ -32,14 +33,16 @@ const ContactSheet = ({
   forceLight,
 }: ContactSheetProps) => {
   const { t } = useTranslation("common");
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
+  const [email, setEmail] = useState<string>(user?.email ?? "");
   const [reason, setReason] = useState<ContactReason>("general_question");
   const [message, setMessage] = useState<string>("");
   const [acceptTerms, setAcceptTerms] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -48,17 +51,17 @@ const ContactSheet = ({
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setFeedback(t("contact.invalidImage"));
+      setErrorMsg(t("contact.invalidImage"));
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      setFeedback(t("contact.imageTooLarge"));
+      setErrorMsg(t("contact.imageTooLarge"));
       return;
     }
 
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
-    setFeedback(null);
+    setErrorMsg(null);
   };
 
   const removeImage = () => {
@@ -73,7 +76,7 @@ const ContactSheet = ({
     if (!acceptTerms || isSubmitting) return;
 
     setIsSubmitting(true);
-    setFeedback(null);
+    setErrorMsg(null);
 
     try {
       let attachmentUrl: string | null = null;
@@ -106,23 +109,22 @@ const ContactSheet = ({
 
       if (error) throw error;
 
-      // Fire-and-forget: notify team via Edge Function
       supabase.functions
         .invoke("notify-contact-submission", {
           body: { record: { name, email, reason, message, attachment_url: attachmentUrl, source: source ?? "unknown" } },
         })
         .catch((e) => console.error("Email notification failed:", e));
 
-      setFeedback(t("contact.successDescription"));
+      setIsSuccess(true);
       setName("");
-      setEmail("");
+      setEmail(user?.email ?? "");
       setReason("general_question");
       setMessage("");
       setAcceptTerms(false);
       removeImage();
     } catch (error) {
       console.error("Error submitting contact form:", error);
-      setFeedback(t("contact.errorDescription"));
+      setErrorMsg(t("contact.errorDescription"));
     } finally {
       setIsSubmitting(false);
     }
@@ -148,6 +150,29 @@ const ContactSheet = ({
           </SheetDescription>
         </SheetHeader>
 
+        {isSuccess ? (
+          <div className="flex-1 flex flex-col items-center justify-center px-6 pb-4 text-center">
+            <div className="mx-auto w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <CheckCircle2 className="h-7 w-7 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {t("contact.successTitle")}
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              {t("contact.successDescription")}
+            </p>
+            <button
+              type="button"
+              className="px-6 py-2 text-sm rounded-md bg-[hsl(var(--primary))] text-white hover:bg-[hsl(225,80%,28%)]"
+              onClick={() => {
+                setIsSuccess(false);
+                onOpenChange(false);
+              }}
+            >
+              {t("contact.close")}
+            </button>
+          </div>
+        ) : (
         <form
           onSubmit={handleSubmit}
           className="flex-1 flex flex-col gap-4 overflow-y-auto px-6 pb-4"
@@ -182,7 +207,10 @@ const ContactSheet = ({
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+              readOnly={!!user?.email}
+              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] ${
+                user?.email ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+              }`}
               placeholder={t("contact.emailPlaceholder")}
               required
             />
@@ -227,7 +255,6 @@ const ContactSheet = ({
             />
           </div>
 
-          {/* Image attachment */}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-900">
               {t("contact.attachment")}
@@ -278,8 +305,10 @@ const ContactSheet = ({
             </span>
           </label>
 
-          {feedback && (
-            <p className="mt-2 text-xs text-muted-foreground">{feedback}</p>
+          {errorMsg && (
+            <div className="mt-2 rounded-md bg-red-50 border border-red-200 px-3 py-2">
+              <p className="text-xs text-red-700">{errorMsg}</p>
+            </div>
           )}
 
           <div className="mt-4 flex justify-end gap-3">
@@ -299,6 +328,7 @@ const ContactSheet = ({
             </button>
           </div>
         </form>
+        )}
       </SheetContent>
     </Sheet>
   );
