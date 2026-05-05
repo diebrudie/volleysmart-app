@@ -118,7 +118,7 @@ const Profile = () => {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/home");
   };
 
   // Track if anything has changed
