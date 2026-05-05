@@ -76,7 +76,13 @@
     "cancel": "Cancel",
     "submitting": "Sending...",
     "submit": "Submit",
+    "successTitle": "Message sent!",
     "successDescription": "Thank you for your message! We will get back to you soon.",
-    "errorDescription": "Something went wrong while sending your message. Please try again later."
+    "errorDescription": "Something went wrong while sending your message. Please try again later.",
+    "close": "Close",
+    "attachment": "Screenshot (optional)",
+    "addImage": "Add a screenshot",
+    "invalidImage": "Please select an image file.",
+    "imageTooLarge": "Image must be smaller than 5 MB."
   }
 }

@@ -87,9 +87,6 @@ const ForgotPassword = () => {
             />
           </Link>
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 w-full space-y-2">
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {t("forgotPassword.description")}
-            </p>
             {isSubmitted ? (
               <div className="text-center py-6">
                 <div className="mx-auto w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mb-4">
@@ -106,46 +103,50 @@ const ForgotPassword = () => {
                 </Button>
               </div>
             ) : (
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-4"
-                >
-                  <div className="grid grid-col gap-4">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("forgotPassword.email")}</FormLabel>
-                          <FormControl>
-                            <Input placeholder={t("forgotPassword.emailPlaceholder")} {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      className="w-full"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? t("forgotPassword.sending") : t("forgotPassword.sendResetLink")}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
+              <>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {t("forgotPassword.description")}
+                </p>
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-4"
+                  >
+                    <div className="grid grid-col gap-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("forgotPassword.email")}</FormLabel>
+                            <FormControl>
+                              <Input placeholder={t("forgotPassword.emailPlaceholder")} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        variant="primary"
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? t("forgotPassword.sending") : t("forgotPassword.sendResetLink")}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+                <div className="flex justify-center pt-4">
+                  <Link
+                    to="/login"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    {t("forgotPassword.returnToLogin")}
+                  </Link>
+                </div>
+              </>
             )}
-          </div>
-
-          <div className="flex justify-center mt-6">
-            <Link
-              to="/login"
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {t("forgotPassword.returnToLogin")}
-            </Link>
           </div>
         </div>
       </div>

@@ -58,6 +58,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { Linkify } from "@/lib/linkify";
 import { useIsCompact } from "@/hooks/use-compact";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -1076,7 +1077,7 @@ const EventDetail: React.FC = () => {
         ) : event.notes ? (
           <div className="space-y-2">
             <h2 className="text-lg font-bold">{t("detail.descriptionNotes")}</h2>
-            <p className="text-sm">{event.notes}</p>
+            <p className="text-sm"><Linkify>{event.notes}</Linkify></p>
           </div>
         ) : null}
 
