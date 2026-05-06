@@ -17,6 +17,10 @@ import {
   Bell,
   Volleyball,
   CheckCheck,
+  Sparkles,
+  CalendarPlus,
+  Globe,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -118,6 +122,41 @@ function getNotificationConfig(n: Notification, t: (key: string, opts?: Record<s
         title: t("type.memberRemoved.title"),
         description: t("type.memberRemoved.description", { club: p.club_name ?? "a club" }),
         href: null,
+      };
+    case "engagement_welcome":
+      return {
+        icon: <Sparkles className="h-5 w-5 text-primary" />,
+        title: t("type.engagementWelcome.title"),
+        description: t("type.engagementWelcome.description"),
+        href: null,
+      };
+    case "engagement_create_club":
+      return {
+        icon: <Users className="h-5 w-5 text-blue-500" />,
+        title: t("type.engagementCreateClub.title"),
+        description: t("type.engagementCreateClub.description"),
+        href: "/new-club",
+      };
+    case "engagement_create_event":
+      return {
+        icon: <CalendarPlus className="h-5 w-5 text-primary" />,
+        title: t("type.engagementCreateEvent.title"),
+        description: t("type.engagementCreateEvent.description"),
+        href: "/events/new",
+      };
+    case "engagement_public_event":
+      return {
+        icon: <Globe className="h-5 w-5 text-emerald-500" />,
+        title: t("type.engagementPublicEvent.title"),
+        description: t("type.engagementPublicEvent.description", { event: p.event_title ?? "An event" }),
+        href: p.event_id ? `/events/${p.event_id}` : "/discover-events",
+      };
+    case "engagement_come_back":
+      return {
+        icon: <Heart className="h-5 w-5 text-amber-500" />,
+        title: t("type.engagementComeBack.title"),
+        description: t("type.engagementComeBack.description"),
+        href: "/home",
       };
     default:
       return {

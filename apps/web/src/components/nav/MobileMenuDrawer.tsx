@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   LogOut,
@@ -12,7 +11,6 @@ import {
   Bell,
   FileText,
   Shield,
-  X,
   ChevronRight,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -84,26 +82,14 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
           <SheetTitle className="sr-only">{t("nav.menu")}</SheetTitle>
 
           <div className="flex flex-col h-full">
-            {/* Close button */}
-            <div className="flex justify-end px-4 pt-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t("nav.closeMenu")}
-                onClick={() => onOpenChange(false)}
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-
             {/* User header */}
             <button
               type="button"
-              className="flex flex-col items-center gap-2 px-4 pb-6 pt-2"
+              className="flex flex-col items-center gap-2 px-4 pb-4 pt-10"
               onClick={() => go(`/user/${user?.id}`)}
             >
               <Avatar className="h-16 w-16">
-                <AvatarImage src={profile?.image_url ?? undefined} />
+                <AvatarImage src={profile?.image_url ?? undefined} className="object-cover" />
                 <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">
                   {initials}
                 </AvatarFallback>

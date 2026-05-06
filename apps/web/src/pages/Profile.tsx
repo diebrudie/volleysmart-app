@@ -785,7 +785,7 @@ const Profile = () => {
 
       {/* Delete account */}
       {isOwnProfile && (
-        <div className="pt-6">
+        <div className="pt-6 pb-8">
           <button onClick={() => setShowDeleteDialog(true)} className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors">
             <Trash2 className="h-4 w-4" /> {t("account.deleteAccount")}
           </button>

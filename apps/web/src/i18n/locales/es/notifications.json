@@ -25,6 +25,16 @@
   "type.memberLeft.description": "{{name}} dejó {{club}}",
   "type.memberRemoved.title": "Eliminado del club",
   "type.memberRemoved.description": "Has sido eliminado de {{club}}",
+  "type.engagementWelcome.title": "¡Bienvenido a VolleySmart!",
+  "type.engagementWelcome.description": "Todo listo. Explora clubes y eventos cerca de ti.",
+  "type.engagementCreateClub.title": "Crea tu primer club",
+  "type.engagementCreateClub.description": "Crea un club e invita a tus compañeros de vóley.",
+  "type.engagementCreateEvent.title": "Planifica tu primer evento",
+  "type.engagementCreateEvent.description": "Crea un partido o entrenamiento para tu club.",
+  "type.engagementPublicEvent.title": "Evento público abierto",
+  "type.engagementPublicEvent.description": "{{event}} está abierto. ¡Confirma tu asistencia!",
+  "type.engagementComeBack.title": "¡Te echamos de menos!",
+  "type.engagementComeBack.description": "Vuelve y mira qué hay de nuevo en tus clubes.",
   "type.default.title": "Notificación",
   "preferences.title": "Preferencias de notificaciones",
   "preferences.category.clubActivity": "Actividad del club",
@@ -34,5 +44,6 @@
   "preferences.channel.push": "Push",
   "preferences.channel.email": "Email",
   "preferences.comingSoon": "Próximamente",
+  "preferences.category.engagement": "Engagement y consejos",
   "preferences.saved": "Preferencia guardada"
 }

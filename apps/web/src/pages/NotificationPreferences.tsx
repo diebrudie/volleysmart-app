@@ -13,6 +13,10 @@ import {
   MessageSquare,
   Bell,
   Volleyball,
+  Sparkles,
+  CalendarPlus,
+  Globe,
+  Heart,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -51,6 +55,14 @@ const eventTypes: TypeConfig[] = [
 
 const gameTypes: TypeConfig[] = [
   { type: "game_started", titleKey: "type.gameStarted.title", icon: <Volleyball className="h-4 w-4 text-emerald-500" /> },
+];
+
+const engagementTypes: TypeConfig[] = [
+  { type: "engagement_welcome", titleKey: "type.engagementWelcome.title", icon: <Sparkles className="h-4 w-4 text-primary" /> },
+  { type: "engagement_create_club", titleKey: "type.engagementCreateClub.title", icon: <Users className="h-4 w-4 text-blue-500" /> },
+  { type: "engagement_create_event", titleKey: "type.engagementCreateEvent.title", icon: <CalendarPlus className="h-4 w-4 text-primary" /> },
+  { type: "engagement_public_event", titleKey: "type.engagementPublicEvent.title", icon: <Globe className="h-4 w-4 text-emerald-500" /> },
+  { type: "engagement_come_back", titleKey: "type.engagementComeBack.title", icon: <Heart className="h-4 w-4 text-amber-500" /> },
 ];
 
 export default function NotificationPreferences() {
@@ -162,6 +174,7 @@ export default function NotificationPreferences() {
         {renderCategory(t("preferences.category.clubActivity"), clubActivityTypes)}
         {renderCategory(t("preferences.category.events"), eventTypes)}
         {renderCategory(t("preferences.category.games"), gameTypes)}
+        {renderCategory(t("preferences.category.engagement"), engagementTypes)}
       </div>
     </div>
   );

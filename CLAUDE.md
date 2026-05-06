@@ -7,7 +7,7 @@
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused — frontend uses link-based invite flow. Can be deleted or repurposed.
 - Deploy status: `notify-join-request` edge function needs deploying, migration `20260505000001` needs applying
-- Phase 16 migrations needed: `20260506000001_notification_preferences.sql`, `20260506000002_filter_notification_preferences.sql`
+- Phase 16 migrations needed: `20260506000001_notification_preferences.sql`, `20260506000002_filter_notification_preferences.sql`, `20260506000003_engagement_notifications.sql`
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -248,6 +248,9 @@ Branches stack on each other (not merged to main yet):
 4. ~~**Position translations**~~: Game.tsx, EventDetail.tsx, ClubOverview.tsx — positions display in user's language via `tProfile("positions.name.X")`
 5. ~~**Cancelled reason translation**~~: EventDetail.tsx — maps DB English values to existing i18n keys
 6. ~~**Desktop Navbar**~~: Added Notifications link to profile dropdown, removed disabled Settings item
+7. ~~**Menu drawer fixes**~~: Removed double close X (SheetContent has built-in one), fixed stretched avatar (object-cover), tightened header spacing
+8. ~~**Profile edit drawer padding**~~: Added pb-8 to "Delete my account" wrapper so it doesn't overlap fixed footer
+9. ~~**Engagement notifications**~~: 5 new types (welcome, create club, create event, public event, come back) as onboarding drip campaign. Welcome fires via DB trigger on player insert. Others via pg_cron daily at 9 AM UTC with 3-day cooldown, 30-day cap, priority ordering. New "Engagement & Tips" category in notification preferences.
 
 ### Phase 16 key files
 - `apps/web/src/pages/NotificationPreferences.tsx` — Notification preferences page
@@ -255,6 +258,7 @@ Branches stack on each other (not merged to main yet):
 - `apps/web/src/components/nav/MobileMenuDrawer.tsx` — Grouped menu drawer
 - `supabase/migrations/20260506000001_notification_preferences.sql` — notification_preferences table
 - `supabase/migrations/20260506000002_filter_notification_preferences.sql` — Filter triggers by preferences
+- `supabase/migrations/20260506000003_engagement_notifications.sql` — Welcome trigger + daily engagement cron
 
 ## Phases overview
 - Phases 1-8: Completed (nav, events, RSVP, archive, clubs, members, bug fixes)
