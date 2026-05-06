@@ -9,7 +9,7 @@ export interface ClubStats {
 }
 
 export interface TeamCombination {
-  playerNames: string[];
+  players: { name: string; position: string | null }[];
   gamesPlayed: number;
   wins: number;
   winRate: number;
@@ -189,12 +189,15 @@ export async function fetchClubStats(
   const allPlayerIds = [...new Set((gamePlayers ?? []).map((gp) => gp.player_id))];
   const { data: playerRows } = await supabase
     .from("players")
-    .select("id, first_name, last_name")
+    .select("id, first_name, last_name, primary_position")
     .in("id", allPlayerIds);
 
-  const playerNameMap = new Map<string, string>();
+  const playerMap = new Map<string, { name: string; position: string | null }>();
   for (const p of playerRows ?? []) {
-    playerNameMap.set(p.id, `${p.first_name} ${p.last_name?.charAt(0) ?? ""}.`);
+    playerMap.set(p.id, {
+      name: `${p.first_name} ${p.last_name?.charAt(0) ?? ""}.`,
+      position: p.primary_position ?? null,
+    });
   }
 
   // Sort combos: most wins, then most played, take top 3
@@ -203,7 +206,7 @@ export async function fetchClubStats(
     .sort((a, b) => b.wins - a.wins || b.played - a.played)
     .slice(0, 3)
     .map((c) => ({
-      playerNames: c.playerIds.map((id) => playerNameMap.get(id) ?? "Unknown"),
+      players: c.playerIds.map((id) => playerMap.get(id) ?? { name: "Unknown", position: null }),
       gamesPlayed: c.played,
       wins: c.wins,
       winRate: c.played > 0 ? Math.round((c.wins / c.played) * 100) : 0,

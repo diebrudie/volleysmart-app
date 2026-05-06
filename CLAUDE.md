@@ -273,6 +273,10 @@ Branches stack on each other (not merged to main yet):
 - ~~**Backlog: Skill Score progression**~~ — Onboarding capped at 75, gameplay bonus (max 25) via logarithmic formula (participation + win rate + hours). Recalculates on Profile load, score never decreases. `skillProgression.ts`, `rating_history` stored in DB.
 - **Phase 16: Settings page & Notification preferences**
 
+### Group G: Team Management (branch: `feat/team-management`)
+- **FEAT-35: Admin Team Pairing** — New "Teams" button on ClubOverview (same level as Invite, Members, Stats). Admin can create persistent player pairings/groups (e.g. a setter always with a specific middle blocker). When teams are generated, these locked combinations stay together. Only override if there aren't enough players for the constraint (e.g. not enough setters). Needs DB model for saved pairings + integration with `assignTeams()`.
+- **FEAT-36: Review Best Team Combinations Algorithm** — Current logic in `clubStats.ts` sorts combos by most wins then most played (min 2 games). Issues: (1) staging shows "best" combos that may not have won any matches, (2) production may not show combos at all if no team has played ≥2 games together. Audit the algorithm, consider alternative ranking (e.g. win rate with minimum threshold, point differential, weighted scoring). Document findings and propose improvements.
+
 ## Discover feature (implemented)
 - Discoverable clubs + public events are live on `feat/discovery` branch
 - RLS, RPCs, and attendee privacy all in place

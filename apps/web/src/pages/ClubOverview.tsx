@@ -103,6 +103,7 @@ const ClubOverview: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation("clubs");
+  const { t: tProfile } = useTranslation("profile");
   const { user } = useAuth();
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
@@ -646,22 +647,25 @@ const ClubOverview: React.FC = () => {
                         <Trophy className="h-4 w-4 text-amber-500" />
                         <p className="text-sm font-semibold">{t("overview.statsSection.bestCombinations")}</p>
                       </div>
-                      <div className="space-y-4">
+                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
                         {clubStats.topCombinations.map((combo, i) => (
-                          <div key={i}>
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <p className="text-xs text-muted-foreground">
+                          <div key={i} className="shrink-0 w-[75%] min-w-[200px] snap-start rounded-lg border bg-muted/30 p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-[10px] text-muted-foreground">
                                 {t("overview.statsSection.comboRecord", { wins: combo.wins, gamesPlayed: combo.gamesPlayed, winRate: combo.winRate })}
                               </p>
-                              {i === 0 && (
-                                <span className="text-amber-500 text-lg shrink-0">🏆</span>
-                              )}
+                              {i === 0 && <span className="text-sm">🏆</span>}
                             </div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {combo.playerNames.map((name, j) => (
-                                <span key={j} className="text-xs font-medium bg-muted px-2 py-0.5 rounded-full">
-                                  {name}
-                                </span>
+                            <div className="space-y-1.5">
+                              {combo.players.map((p, j) => (
+                                <div key={j} className="flex items-center justify-between gap-2">
+                                  <span className="text-sm font-medium">{p.name}</span>
+                                  {p.position && (
+                                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                                      {tProfile(`positions.name.${p.position}`, { defaultValue: p.position })}
+                                    </span>
+                                  )}
+                                </div>
                               ))}
                             </div>
                           </div>

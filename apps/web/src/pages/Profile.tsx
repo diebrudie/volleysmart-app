@@ -795,7 +795,7 @@ const Profile = () => {
   );
 
   const editFooter = (
-    <div className="flex gap-3 pt-4">
+    <div className="flex gap-3">
       <Button variant="outline" onClick={handleCancelEdit} className="flex-1">{t("edit.cancel")}</Button>
       <Button onClick={handleSave} disabled={saving || !hasChanges()} className="flex-1">{saving ? t("edit.saving") : t("edit.save")}</Button>
     </div>
@@ -1209,19 +1209,21 @@ const Profile = () => {
       {(() => {
         return isCompact ? (
           <Drawer open={isEditing} onOpenChange={(open) => { if (!open) handleCancelEdit(); }} shouldScaleBackground>
-            <DrawerContent className="max-h-[85vh] pb-6">
+            <DrawerContent className="max-h-[85vh] flex flex-col pb-0">
               <DrawerClose
                 aria-label="Close"
-                className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring z-10"
               >
                 <X className="h-4 w-4" />
               </DrawerClose>
-              <DrawerHeader className="pt-8">
+              <DrawerHeader className="pt-8 shrink-0">
                 <DrawerTitle>{t("edit.title")}</DrawerTitle>
                 <DrawerDescription>{t("edit.description")}</DrawerDescription>
               </DrawerHeader>
-              <div className="px-4 overflow-y-auto flex-1">
+              <div className="px-4 overflow-y-auto flex-1 min-h-0">
                 {editFormContent}
+              </div>
+              <div className="px-4 py-4 border-t border-border shrink-0 bg-background">
                 {editFooter}
               </div>
             </DrawerContent>
