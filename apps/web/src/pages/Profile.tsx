@@ -708,7 +708,7 @@ const Profile = () => {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="birthday" className="text-xs text-muted-foreground">{t("edit.birthday")}</Label>
-          <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border" />
+          <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border min-w-0" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="height" className="text-xs text-muted-foreground">{t("edit.height")}</Label>
