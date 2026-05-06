@@ -706,11 +706,11 @@ const Profile = () => {
 
       {/* Birthday + Height */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 min-w-0">
           <Label htmlFor="birthday" className="text-xs text-muted-foreground">{t("edit.birthday")}</Label>
-          <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border min-w-0" />
+          <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border min-w-0 w-full" />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 min-w-0">
           <Label htmlFor="height" className="text-xs text-muted-foreground">{t("edit.height")}</Label>
           <Input id="height" type="number" min="100" max="250" value={profile.height_cm || ""} onChange={(e) => setProfile({ ...profile, height_cm: e.target.value ? parseInt(e.target.value) : null })} placeholder={t("edit.heightPlaceholder")} className="bg-muted/50 border-border" />
         </div>
