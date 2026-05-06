@@ -704,30 +704,30 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Birthday + Height */}
+      {/* Height + Gender */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5 min-w-0">
-          <Label htmlFor="birthday" className="text-xs text-muted-foreground">{t("edit.birthday")}</Label>
-          <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border min-w-0 w-full" />
-        </div>
-        <div className="space-y-1.5 min-w-0">
+        <div className="space-y-1.5">
           <Label htmlFor="height" className="text-xs text-muted-foreground">{t("edit.height")}</Label>
           <Input id="height" type="number" min="100" max="250" value={profile.height_cm || ""} onChange={(e) => setProfile({ ...profile, height_cm: e.target.value ? parseInt(e.target.value) : null })} placeholder={t("edit.heightPlaceholder")} className="bg-muted/50 border-border" />
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">{t("edit.gender")}</Label>
+          <Select value={profile.gender} onValueChange={(value) => setProfile({ ...profile, gender: value })}>
+            <SelectTrigger className="bg-muted/50 border-border"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="male">{t("edit.genderMale")}</SelectItem>
+              <SelectItem value="female">{t("edit.genderFemale")}</SelectItem>
+              <SelectItem value="diverse">{t("edit.genderDiverse")}</SelectItem>
+              <SelectItem value="other">{t("edit.genderOther")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Gender */}
-      <div className="space-y-1.5 max-w-[calc(50%-0.375rem)]">
-        <Label className="text-xs text-muted-foreground">{t("edit.gender")}</Label>
-        <Select value={profile.gender} onValueChange={(value) => setProfile({ ...profile, gender: value })}>
-          <SelectTrigger className="bg-muted/50 border-border"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="male">{t("edit.genderMale")}</SelectItem>
-            <SelectItem value="female">{t("edit.genderFemale")}</SelectItem>
-            <SelectItem value="diverse">{t("edit.genderDiverse")}</SelectItem>
-            <SelectItem value="other">{t("edit.genderOther")}</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Birthday */}
+      <div className="space-y-1.5">
+        <Label htmlFor="birthday" className="text-xs text-muted-foreground">{t("edit.birthday")}</Label>
+        <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border" />
       </div>
 
       {/* Location */}
