@@ -215,13 +215,24 @@ export async function fetchClubStats(
     if (!playerMap.has(id)) playerMap.set(id, snap);
   }
 
+  const POSITION_ORDER: Record<string, number> = {
+    "Setter": 0,
+    "Middle Blocker": 1,
+    "Outside Hitter": 2,
+    "Libero": 3,
+    "Opposite": 4,
+  };
+  const positionRank = (pos: string | null) => pos ? (POSITION_ORDER[pos] ?? 3) : 5;
+
   // Sort combos: most wins, then most played, take top 3
   const topCombinations: TeamCombination[] = [...combos.values()]
     .filter((c) => c.played >= 2) // at least 2 games together
     .sort((a, b) => b.wins - a.wins || b.played - a.played)
     .slice(0, 3)
     .map((c) => ({
-      players: c.playerIds.map((id) => playerMap.get(id) ?? { name: "Unknown", position: null }),
+      players: c.playerIds
+        .map((id) => playerMap.get(id) ?? { name: "Unknown", position: null })
+        .sort((a, b) => positionRank(a.position) - positionRank(b.position)),
       gamesPlayed: c.played,
       wins: c.wins,
       winRate: c.played > 0 ? Math.round((c.wins / c.played) * 100) : 0,
