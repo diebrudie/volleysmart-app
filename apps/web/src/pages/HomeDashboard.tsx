@@ -478,134 +478,221 @@ const HomeDashboard: React.FC = () => {
               </>
             ) : (
               <>
-                {/* Card 1 — Today's Game */}
-                <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Volleyball className="h-5 w-5 text-primary" />
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                        {t("home.todaysGame")}
-                      </h3>
-                    </div>
-                    {todaysEvent?.currentUserRsvp === "attending" && (
-                      <span className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="h-4 w-4" />
-                        {t("home.youreGoing")}
-                      </span>
-                    )}
-                  </div>
-                  {todaysEvent ? (
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-lg font-semibold text-foreground">
-                          {todaysEvent.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {todaysEvent.clubName}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        {t("home.playersAttending", { count: todaysEvent.attendingCount })}
-                      </div>
-                      <Button
-                        className="w-full"
-                        variant={todaysEvent.matchDayId ? "outline" : "default"}
-                        onClick={() =>
-                          todaysEvent.matchDayId
-                            ? navigate(`/game/${todaysEvent.matchDayId}`)
-                            : navigate(`/events/${todaysEvent.eventId}`)
-                        }
-                      >
-                        {todaysEvent.matchDayId ? t("home.viewGame") : t("home.startGame")}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="py-6 text-center space-y-3">
-                      <p className="text-muted-foreground text-sm">
-                        {t("home.noGameToday")}
-                      </p>
-                      <Button
-                        size="sm"
-                        onClick={() => navigate("/events/new")}
-                      >
-                        <Plus className="h-4 w-4 mr-1.5" />
-                        {t("home.createEvent")}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Card 2 — Last Game Played */}
-                <div
-                  className={`snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 ${
-                    lastGame ? "cursor-pointer hover:shadow-md transition-shadow" : ""
-                  }`}
-                  onClick={() =>
-                    lastGame && navigate(`/game/${lastGame.matchDayId}`)
-                  }
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Trophy className="h-5 w-5 text-primary" />
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                        {t("home.lastGame")}
-                      </h3>
-                    </div>
-                    {lastGame && (
-                      <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Eye className="h-4 w-4" />
-                        {t("home.view")}
-                      </span>
-                    )}
-                  </div>
-                  {lastGame ? (
-                    <div className="space-y-2 text-center">
-                      <p className="text-lg font-semibold text-foreground">
-                        {lastGame.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {lastGame.clubName} &middot;{" "}
-                        {format(parseISO(lastGame.date), "d MMM yyyy", { locale: getDateLocale() })}
-                      </p>
-                      <div className="flex items-center justify-center gap-3 pt-2">
-                        <span className="text-4xl font-bold text-red-500">
-                          {lastGame.teamAWins}
-                        </span>
-                        <span className="text-2xl font-bold text-foreground">-</span>
-                        <span className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
-                          {lastGame.teamBWins}
-                        </span>
-                      </div>
-                      <p className="text-sm">
-                        {lastGame.winner === "draw" ? (
-                          <span className="text-muted-foreground">{t("home.draw")}</span>
-                        ) : (
-                          <>
-                            <span className={`font-medium ${
-                              lastGame.winner === "A"
-                                ? "text-red-500"
-                                : "text-emerald-600 dark:text-emerald-400"
-                            }`}>
-                              {tGames(`game.team${lastGame.winner}`)}
-                            </span>{" "}
-                            <span className={`font-medium ${
-                              lastGame.winner === "A"
-                                ? "text-red-500"
-                                : "text-emerald-600 dark:text-emerald-400"
-                            }`}>{t("home.wins")}</span>
-                          </>
+                {/* Slide order: Today's Game first when there IS a game today, Last Game first otherwise */}
+                {todaysEvent ? (
+                  <>
+                    {/* Today's Game (primary) */}
+                    <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Volleyball className="h-5 w-5 text-primary" />
+                          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                            {t("home.todaysGame")}
+                          </h3>
+                        </div>
+                        {todaysEvent.currentUserRsvp === "attending" && (
+                          <span className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="h-4 w-4" />
+                            {t("home.youreGoing")}
+                          </span>
                         )}
-                      </p>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-lg font-semibold text-foreground">
+                            {todaysEvent.title}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {todaysEvent.clubName}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          {t("home.playersAttending", { count: todaysEvent.attendingCount })}
+                        </div>
+                        <Button
+                          className="w-full"
+                          variant={todaysEvent.matchDayId ? "outline" : "default"}
+                          onClick={() =>
+                            todaysEvent.matchDayId
+                              ? navigate(`/game/${todaysEvent.matchDayId}`)
+                              : navigate(`/events/${todaysEvent.eventId}`)
+                          }
+                        >
+                          {todaysEvent.matchDayId ? t("home.viewGame") : t("home.startGame")}
+                        </Button>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="py-6 text-center">
-                      <p className="text-muted-foreground text-sm">
-                        {t("home.noGamesYet")}
-                      </p>
+
+                    {/* Last Game (secondary) */}
+                    <div
+                      className={`snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 ${
+                        lastGame ? "cursor-pointer hover:shadow-md transition-shadow" : ""
+                      }`}
+                      onClick={() =>
+                        lastGame && navigate(`/game/${lastGame.matchDayId}`)
+                      }
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Trophy className="h-5 w-5 text-primary" />
+                          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                            {t("home.lastGame")}
+                          </h3>
+                        </div>
+                        {lastGame && (
+                          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Eye className="h-4 w-4" />
+                            {t("home.view")}
+                          </span>
+                        )}
+                      </div>
+                      {lastGame ? (
+                        <div className="space-y-2 text-center">
+                          <p className="text-lg font-semibold text-foreground">
+                            {lastGame.title}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {lastGame.clubName} &middot;{" "}
+                            {format(parseISO(lastGame.date), "d MMM yyyy", { locale: getDateLocale() })}
+                          </p>
+                          <div className="flex items-center justify-center gap-3 pt-2">
+                            <span className="text-4xl font-bold text-red-500">
+                              {lastGame.teamAWins}
+                            </span>
+                            <span className="text-2xl font-bold text-foreground">-</span>
+                            <span className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
+                              {lastGame.teamBWins}
+                            </span>
+                          </div>
+                          <p className="text-sm">
+                            {lastGame.winner === "draw" ? (
+                              <span className="text-muted-foreground">{t("home.draw")}</span>
+                            ) : (
+                              <>
+                                <span className={`font-medium ${
+                                  lastGame.winner === "A"
+                                    ? "text-red-500"
+                                    : "text-emerald-600 dark:text-emerald-400"
+                                }`}>
+                                  {tGames(`game.team${lastGame.winner}`)}
+                                </span>{" "}
+                                <span className={`font-medium ${
+                                  lastGame.winner === "A"
+                                    ? "text-red-500"
+                                    : "text-emerald-600 dark:text-emerald-400"
+                                }`}>{t("home.wins")}</span>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="py-6 text-center">
+                          <p className="text-muted-foreground text-sm">
+                            {t("home.noGamesYet")}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Last Game (primary — no game today) */}
+                    <div
+                      className={`snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 ${
+                        lastGame ? "cursor-pointer hover:shadow-md transition-shadow" : ""
+                      }`}
+                      onClick={() =>
+                        lastGame && navigate(`/game/${lastGame.matchDayId}`)
+                      }
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Trophy className="h-5 w-5 text-primary" />
+                          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                            {t("home.lastGame")}
+                          </h3>
+                        </div>
+                        {lastGame && (
+                          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Eye className="h-4 w-4" />
+                            {t("home.view")}
+                          </span>
+                        )}
+                      </div>
+                      {lastGame ? (
+                        <div className="space-y-2 text-center">
+                          <p className="text-lg font-semibold text-foreground">
+                            {lastGame.title}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {lastGame.clubName} &middot;{" "}
+                            {format(parseISO(lastGame.date), "d MMM yyyy", { locale: getDateLocale() })}
+                          </p>
+                          <div className="flex items-center justify-center gap-3 pt-2">
+                            <span className="text-4xl font-bold text-red-500">
+                              {lastGame.teamAWins}
+                            </span>
+                            <span className="text-2xl font-bold text-foreground">-</span>
+                            <span className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
+                              {lastGame.teamBWins}
+                            </span>
+                          </div>
+                          <p className="text-sm">
+                            {lastGame.winner === "draw" ? (
+                              <span className="text-muted-foreground">{t("home.draw")}</span>
+                            ) : (
+                              <>
+                                <span className={`font-medium ${
+                                  lastGame.winner === "A"
+                                    ? "text-red-500"
+                                    : "text-emerald-600 dark:text-emerald-400"
+                                }`}>
+                                  {tGames(`game.team${lastGame.winner}`)}
+                                </span>{" "}
+                                <span className={`font-medium ${
+                                  lastGame.winner === "A"
+                                    ? "text-red-500"
+                                    : "text-emerald-600 dark:text-emerald-400"
+                                }`}>{t("home.wins")}</span>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="py-6 text-center">
+                          <p className="text-muted-foreground text-sm">
+                            {t("home.noGamesYet")}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Today's Game (secondary — no game today) */}
+                    <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Volleyball className="h-5 w-5 text-primary" />
+                          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                            {t("home.todaysGame")}
+                          </h3>
+                        </div>
+                      </div>
+                      <div className="py-6 text-center space-y-3">
+                        <p className="text-muted-foreground text-sm">
+                          {t("home.noGameToday")}
+                        </p>
+                        <Button
+                          size="sm"
+                          onClick={() => navigate("/events/new")}
+                        >
+                          <Plus className="h-4 w-4 mr-1.5" />
+                          {t("home.createEvent")}
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Card 3 — Monthly Stats */}
                 <div
