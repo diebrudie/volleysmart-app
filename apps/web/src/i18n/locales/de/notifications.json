@@ -25,5 +25,14 @@
   "type.memberLeft.description": "{{name}} hat {{club}} verlassen",
   "type.memberRemoved.title": "Aus Club entfernt",
   "type.memberRemoved.description": "Du wurdest aus {{club}} entfernt",
-  "type.default.title": "Benachrichtigung"
+  "type.default.title": "Benachrichtigung",
+  "preferences.title": "Benachrichtigungseinstellungen",
+  "preferences.category.clubActivity": "Clubaktivität",
+  "preferences.category.events": "Events",
+  "preferences.category.games": "Spiele",
+  "preferences.channel.inApp": "In-App",
+  "preferences.channel.push": "Push",
+  "preferences.channel.email": "E-Mail",
+  "preferences.comingSoon": "Demnächst",
+  "preferences.saved": "Einstellung gespeichert"
 }

@@ -25,5 +25,14 @@
   "type.memberLeft.description": "{{name}} dejó {{club}}",
   "type.memberRemoved.title": "Eliminado del club",
   "type.memberRemoved.description": "Has sido eliminado de {{club}}",
-  "type.default.title": "Notificación"
+  "type.default.title": "Notificación",
+  "preferences.title": "Preferencias de notificaciones",
+  "preferences.category.clubActivity": "Actividad del club",
+  "preferences.category.events": "Eventos",
+  "preferences.category.games": "Partidos",
+  "preferences.channel.inApp": "En app",
+  "preferences.channel.push": "Push",
+  "preferences.channel.email": "Email",
+  "preferences.comingSoon": "Próximamente",
+  "preferences.saved": "Preferencia guardada"
 }

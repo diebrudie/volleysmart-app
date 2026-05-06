@@ -42,6 +42,7 @@ import ClubOverview from "@/pages/ClubOverview";
 import Notifications from "@/pages/Notifications";
 import DiscoverEvents from "@/pages/DiscoverEvents";
 import LiveScore from "@/pages/LiveScore";
+import NotificationPreferences from "@/pages/NotificationPreferences";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -85,6 +86,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Notifications />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/settings/notifications"
+      element={
+        <ProtectedRoute>
+          <NotificationPreferences />
         </ProtectedRoute>
       }
     />
