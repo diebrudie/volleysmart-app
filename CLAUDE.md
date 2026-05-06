@@ -1,11 +1,13 @@
 # VolleySmart App
 
 ## Current status
-- Last change: `feat/join-request-email-and-fixes` merged to main
+- Working on: `feat/phase-16-settings` (grouped menu + notification preferences)
+- Last change: Phase 16 — grouped menu drawer, notification preferences page
+- Current branch: `feat/phase-16-settings`
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused — frontend uses link-based invite flow. Can be deleted or repurposed.
-- Deploy status: `notify-join-request` edge function needs deploying (`supabase functions deploy notify-join-request`), migration `20260505000001` needs applying
-- Next step: Phase 16 (Settings page + notification preferences)
+- Deploy status: `notify-join-request` edge function needs deploying, migration `20260505000001` needs applying
+- Phase 16 migrations needed: `20260506000001_notification_preferences.sql`, `20260506000002_filter_notification_preferences.sql`
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -21,6 +23,7 @@ Branches stack on each other (not merged to main yet):
 - `feat/quick-wins` branched from `main` (merged to main)
 - `fix/reset-password-layout` branched from `main` (merged to main)
 - `feat/join-request-email-and-fixes` branched from `main` (merged to main)
+- `feat/phase-16-settings` branched from `main` (merged to main)
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
@@ -238,6 +241,21 @@ Branches stack on each other (not merged to main yet):
 - `supabase/functions/notify-join-request/index.ts` — join request email edge function
 - `supabase/migrations/20260505000001_fix_delete_own_account.sql` — account deletion FK fix
 
+## Phase 16 completed work (Settings + Notification Preferences)
+1. ~~**Grouped menu drawer**~~: MobileMenuDrawer redesigned into SportEasy-style grouped layout — Help (FAQs, Contact), Preferences (Language, Theme, Notifications), Legal (T&C, Privacy — disabled)
+2. ~~**Notification Preferences page**~~: `/settings/notifications` — per-type toggles for 11 notification types across 3 categories (Club Activity, Events, Games). In-app toggles functional, Push/Email disabled with "Coming soon"
+3. ~~**DB migrations**~~: `notification_preferences` table with COALESCE pattern (no row = all enabled), `notify_club_members()` and `notify_club_admins()` rewritten to filter by preferences
+4. ~~**Position translations**~~: Game.tsx, EventDetail.tsx, ClubOverview.tsx — positions display in user's language via `tProfile("positions.name.X")`
+5. ~~**Cancelled reason translation**~~: EventDetail.tsx — maps DB English values to existing i18n keys
+6. ~~**Desktop Navbar**~~: Added Notifications link to profile dropdown, removed disabled Settings item
+
+### Phase 16 key files
+- `apps/web/src/pages/NotificationPreferences.tsx` — Notification preferences page
+- `apps/web/src/integrations/supabase/notificationPreferences.ts` — Data layer (fetch, upsert, getPref)
+- `apps/web/src/components/nav/MobileMenuDrawer.tsx` — Grouped menu drawer
+- `supabase/migrations/20260506000001_notification_preferences.sql` — notification_preferences table
+- `supabase/migrations/20260506000002_filter_notification_preferences.sql` — Filter triggers by preferences
+
 ## Phases overview
 - Phases 1-8: Completed (nav, events, RSVP, archive, clubs, members, bug fixes)
 - Phase 9: Completed — Create Event improvements + Event Detail page + Home redesign
@@ -247,6 +265,7 @@ Branches stack on each other (not merged to main yet):
 - Phase 13: Completed — UI Consistency Pass (Profile redesign, Clubs/JoinClub/NewClub/Members semantic styling)
 - Phase 14: Completed — Notifications system + bug fixes
 - Discovery: In Progress — Public events, discoverable clubs, attendee privacy, location sharing
+- Phase 16: Completed — Grouped menu drawer (Help/Preferences/Legal), Notification Preferences page, position translations, DB notification filtering
 
 ## Feature backlog
 
@@ -287,7 +306,8 @@ Branches stack on each other (not merged to main yet):
 - **Backlog: Native iOS/Android app** — Build native app using monorepo
 - **Backlog: Tournament event type** — Complex, deferred
 - ~~**Backlog: Skill Score progression**~~ — Onboarding capped at 75, gameplay bonus (max 25) via logarithmic formula (participation + win rate + hours). Recalculates on Profile load, score never decreases. `skillProgression.ts`, `rating_history` stored in DB.
-- **Phase 16: Settings page & Notification preferences**
+- ~~**Phase 16: Settings page & Notification preferences**~~ — Completed
+- **Backlog: Push notifications (native app)** — Requires native app build. notification_preferences table already has `push` column ready.
 
 ### Group G: Team Management (branch: `feat/team-management`)
 - **FEAT-35: Admin Team Pairing** — New "Teams" button on ClubOverview (same level as Invite, Members, Stats). Admin can create persistent player pairings/groups (e.g. a setter always with a specific middle blocker). When teams are generated, these locked combinations stay together. Only override if there aren't enough players for the constraint (e.g. not enough setters). Needs DB model for saved pairings + integration with `assignTeams()`.
