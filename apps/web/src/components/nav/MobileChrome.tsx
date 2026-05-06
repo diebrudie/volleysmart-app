@@ -31,6 +31,7 @@ const HIDE_CHROME = [
   /^\/user\/[^/]+\/?$/, // /user/:userId (Profile)
   /^\/manage-requests\/?$/, // /manage-requests
   /^\/notifications\/?$/, // /notifications
+  /^\/settings\/notifications\/?$/, // /settings/notifications (Notification Preferences)
   /^\/faqs\/?$/, // /faqs
   /^\/start\/?$/, // redirects to /home
   /^\/invite-members(\/[^/]+)?\/?$/,

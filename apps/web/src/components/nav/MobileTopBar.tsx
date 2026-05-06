@@ -141,7 +141,7 @@ const MobileTopBar: React.FC = () => {
 
       {/* Push page content below top bar */}
       <div className="h-14" aria-hidden="true" />
-      <MobileMenuDrawer open={menuOpen} onOpenChange={setMenuOpen} />
+      <MobileMenuDrawer open={menuOpen} onOpenChange={setMenuOpen} profile={profile} />
     </>
   );
 };

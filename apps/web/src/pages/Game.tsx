@@ -50,10 +50,11 @@ import type { CanonicalRole } from "@/features/teams/positions";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 /** Shorten two-word positions: "Outside Hitter" → "O. Hitter", "Middle Blocker" → "M. Blocker" */
-const shortenPosition = (pos: string): string => {
-  const parts = pos.split(" ");
+const shortenPosition = (pos: string, translate?: (key: string, opts?: any) => string): string => {
+  const translated = translate ? translate(`positions.name.${pos}`, { defaultValue: pos }) : pos;
+  const parts = translated.split(" ");
   if (parts.length === 2) return `${parts[0][0]}. ${parts[1]}`;
-  return pos;
+  return translated;
 };
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -141,6 +142,7 @@ function displayPlayerName(gp: GamePlayerData, deletedLabel = "Deleted P."): str
 
 const Game = () => {
   const { t } = useTranslation("games");
+  const { t: tProfile } = useTranslation("profile");
   const { matchDayId } = useParams<{ matchDayId: string }>();
   const navigate = useNavigate();
   const loc = useLocation();
@@ -723,7 +725,7 @@ const Game = () => {
                     </span>
                     {player.position && player.position !== t("game.noPosition") && (
                       <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
-                        — {shortenPosition(player.position)}
+                        — {shortenPosition(player.position, tProfile)}
                       </span>
                     )}
                   </li>
@@ -745,7 +747,7 @@ const Game = () => {
                     </span>
                     {player.position && player.position !== t("game.noPosition") && (
                       <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
-                        — {shortenPosition(player.position)}
+                        — {shortenPosition(player.position, tProfile)}
                       </span>
                     )}
                   </li>

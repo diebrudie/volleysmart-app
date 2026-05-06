@@ -664,11 +664,6 @@ const Profile = () => {
 
   const editFormContent = (
     <div className="space-y-4">
-      {/* Email */}
-      {userEmail && (
-        <p className="text-center text-sm text-muted-foreground">{userEmail}</p>
-      )}
-
       {/* Photo */}
       <div className="flex justify-center">
         <div className="relative">
@@ -785,7 +780,7 @@ const Profile = () => {
 
       {/* Delete account */}
       {isOwnProfile && (
-        <div className="pt-6">
+        <div className="pt-6 pb-8">
           <button onClick={() => setShowDeleteDialog(true)} className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors">
             <Trash2 className="h-4 w-4" /> {t("account.deleteAccount")}
           </button>
@@ -1027,8 +1022,8 @@ const Profile = () => {
                   </div>
                 )}
 
-                {/* Skill Rating — always visible when available */}
-                {profile.skill_rating != null && (
+                {/* Skill Rating — only visible to the profile owner */}
+                {isOwnProfile && profile.skill_rating != null && (
                   <div className="rounded-xl border bg-card p-4 flex items-center gap-4">
                     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <TrendingUp className="h-5 w-5 text-primary" />

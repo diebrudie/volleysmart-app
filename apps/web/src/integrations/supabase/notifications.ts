@@ -11,7 +11,12 @@ export type NotificationType =
   | "rsvp_deadline_reminder"
   | "game_started"
   | "club_member_left"
-  | "club_member_removed";
+  | "club_member_removed"
+  | "engagement_welcome"
+  | "engagement_create_club"
+  | "engagement_create_event"
+  | "engagement_public_event"
+  | "engagement_come_back";
 
 export interface Notification {
   id: string;

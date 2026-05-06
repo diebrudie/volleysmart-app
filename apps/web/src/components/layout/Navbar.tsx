@@ -282,11 +282,7 @@ const Navbar = () => {
     { label: t("nav.profile"), path: `/user/${user?.id}`, icon: User },
     { label: t("nav.faqs"), path: "/faqs", icon: HelpCircle },
     { label: t("nav.contactUs"), icon: Mail, action: "contact" },
-    {
-      label: t("nav.settings"),
-      icon: Settings,
-      disabled: true,
-    },
+    { label: t("menu.notifications"), path: "/settings/notifications", icon: Bell },
   ];
 
   const handleLandingNavClick = (
