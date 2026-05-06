@@ -45,5 +45,7 @@
   "preferences.channel.email": "E-Mail",
   "preferences.comingSoon": "Demnächst",
   "preferences.category.engagement": "Engagement & Tipps",
+  "preferences.enableAll": "Alle aktivieren",
+  "preferences.disableAll": "Alle deaktivieren",
   "preferences.saved": "Einstellung gespeichert"
 }

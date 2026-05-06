@@ -45,5 +45,7 @@
   "preferences.channel.email": "Email",
   "preferences.comingSoon": "Coming soon",
   "preferences.category.engagement": "Engagement & Tips",
+  "preferences.enableAll": "Enable all",
+  "preferences.disableAll": "Disable all",
   "preferences.saved": "Preference saved"
 }

@@ -664,11 +664,6 @@ const Profile = () => {
 
   const editFormContent = (
     <div className="space-y-4">
-      {/* Email */}
-      {userEmail && (
-        <p className="text-center text-sm text-muted-foreground">{userEmail}</p>
-      )}
-
       {/* Photo */}
       <div className="flex justify-center">
         <div className="relative">

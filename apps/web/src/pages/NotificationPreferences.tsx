@@ -26,7 +26,6 @@ import {
   fetchNotificationPreferences,
   getPref,
   upsertNotificationPreference,
-  type NotificationPref,
 } from "@/integrations/supabase/notificationPreferences";
 import type { NotificationType } from "@/integrations/supabase/notifications";
 import { cn } from "@/lib/utils";
@@ -100,59 +99,140 @@ export default function NotificationPreferences() {
     }
   };
 
+  const handleToggleAll = async (types: TypeConfig[], value: boolean) => {
+    if (!user?.id || !prefs) return;
+
+    const previous = new Map(prefs);
+    for (const config of types) {
+      const currentPref = getPref(prefs, config.type);
+      prefs.set(config.type, { ...currentPref, in_app: value });
+    }
+    queryClient.setQueryData(queryKey, new Map(prefs));
+
+    try {
+      await Promise.all(
+        types.map((config) =>
+          upsertNotificationPreference(user.id, config.type, "in_app", value)
+        )
+      );
+      toast({ description: t("preferences.saved"), duration: 1500 });
+    } catch {
+      queryClient.setQueryData(queryKey, previous);
+    }
+  };
+
+  const isAllOn = (types: TypeConfig[]) =>
+    prefs ? types.every((c) => getPref(prefs, c.type).in_app) : true;
+
+  const renderToggleColumn = (
+    label: string,
+    checked: boolean,
+    disabled: boolean,
+    comingSoon: boolean,
+    onChange?: (val: boolean) => void
+  ) => (
+    <div className="flex flex-col items-center w-14">
+      <span className="text-[10px] text-muted-foreground mb-1">{label}</span>
+      <Switch
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onChange}
+      />
+      {comingSoon && (
+        <span className="text-[9px] text-muted-foreground/60 mt-1">
+          {t("preferences.comingSoon")}
+        </span>
+      )}
+    </div>
+  );
+
   const renderTypeRow = (config: TypeConfig, isLast: boolean) => {
-    const pref = prefs ? getPref(prefs, config.type) : { in_app: true, push: true, email: true };
+    const pref = prefs
+      ? getPref(prefs, config.type)
+      : { in_app: true, push: true, email: true };
 
     return (
       <div
         key={config.type}
         className={cn(
-          "flex items-center justify-between px-4 py-3",
+          "px-4 py-3",
           !isLast && "border-b border-border"
         )}
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-            {config.icon}
+        {/* Mobile: stacked layout */}
+        <div className="lg:hidden">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+              {config.icon}
+            </div>
+            <span className="text-sm font-medium text-foreground">
+              {t(config.titleKey)}
+            </span>
           </div>
-          <span className="text-sm font-medium text-foreground truncate">
-            {t(config.titleKey)}
-          </span>
+          <div className="flex items-start gap-4 pl-11">
+            {renderToggleColumn(
+              t("preferences.channel.inApp"),
+              pref.in_app,
+              false,
+              false,
+              (val) => handleToggle(config.type, "in_app", val)
+            )}
+            {renderToggleColumn(t("preferences.channel.push"), pref.push, true, true)}
+            {renderToggleColumn(t("preferences.channel.email"), pref.email, true, true)}
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0 ml-3">
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] text-muted-foreground">In-app</span>
-            <Switch
-              checked={pref.in_app}
-              onCheckedChange={(val) => handleToggle(config.type, "in_app", val)}
-            />
+        {/* Desktop: single row */}
+        <div className="hidden lg:flex items-start justify-between">
+          <div className="flex items-center gap-3 min-w-0 flex-1 pt-1">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+              {config.icon}
+            </div>
+            <span className="text-sm font-medium text-foreground">
+              {t(config.titleKey)}
+            </span>
           </div>
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] text-muted-foreground">Push</span>
-            <Switch checked={pref.push} disabled />
-            <span className="text-[9px] text-muted-foreground/60">Coming soon</span>
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] text-muted-foreground">Email</span>
-            <Switch checked={pref.email} disabled />
-            <span className="text-[9px] text-muted-foreground/60">Coming soon</span>
+          <div className="flex items-start gap-4 shrink-0 ml-3">
+            {renderToggleColumn(
+              t("preferences.channel.inApp"),
+              pref.in_app,
+              false,
+              false,
+              (val) => handleToggle(config.type, "in_app", val)
+            )}
+            {renderToggleColumn(t("preferences.channel.push"), pref.push, true, true)}
+            {renderToggleColumn(t("preferences.channel.email"), pref.email, true, true)}
           </div>
         </div>
       </div>
     );
   };
 
-  const renderCategory = (label: string, types: TypeConfig[]) => (
-    <div>
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 mt-6">
-        {label}
-      </h2>
-      <div className="rounded-xl border border-border bg-card">
-        {types.map((config, i) => renderTypeRow(config, i === types.length - 1))}
+  const renderCategory = (label: string, types: TypeConfig[]) => {
+    const allOn = isAllOn(types);
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3 mt-6">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            {label}
+          </h2>
+          <button
+            type="button"
+            className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            onClick={() => handleToggleAll(types, !allOn)}
+          >
+            {allOn ? t("preferences.disableAll") : t("preferences.enableAll")}
+          </button>
+        </div>
+        <div className="rounded-xl border border-border bg-card">
+          {types.map((config, i) =>
+            renderTypeRow(config, i === types.length - 1)
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
