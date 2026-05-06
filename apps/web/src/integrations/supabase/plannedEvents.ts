@@ -481,6 +481,7 @@ export interface UpdateEventInput {
   is_public?: boolean;
   max_players?: number | null;
   notes?: string | null;
+  rsvp_deadline?: string | null;
 }
 
 /** Update an existing planned event. */
@@ -501,6 +502,7 @@ export async function updatePlannedEvent(
   if (input.notes !== undefined) updates.notes = input.notes;
   if (input.event_gender !== undefined) updates.event_gender = input.event_gender;
   if (input.activity_type !== undefined) updates.activity_type = input.activity_type;
+  if (input.rsvp_deadline !== undefined) updates.rsvp_deadline = input.rsvp_deadline;
 
   const { error } = await supabase
     .from("planned_events")

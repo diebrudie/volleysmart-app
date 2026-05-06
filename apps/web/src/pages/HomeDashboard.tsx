@@ -446,7 +446,7 @@ const HomeDashboard: React.FC = () => {
                 {/* Onboarding Card 3 — Analytics Teaser */}
                 <div
                   className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 cursor-pointer hover:border-primary/40 transition-colors"
-                  onClick={() => navigate(`/profile/${user?.id}?tab=analytics`)}
+                  onClick={() => navigate(`/user/${user?.id}?tab=analytics`)}
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="h-5 w-5 text-primary" />
@@ -697,7 +697,7 @@ const HomeDashboard: React.FC = () => {
                 {/* Card 3 — Monthly Stats */}
                 <div
                   className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5 cursor-pointer hover:border-primary/40 transition-colors"
-                  onClick={() => navigate(`/profile/${user?.id}?tab=analytics`)}
+                  onClick={() => navigate(`/user/${user?.id}?tab=analytics`)}
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="h-5 w-5 text-primary" />

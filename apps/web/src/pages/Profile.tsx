@@ -725,7 +725,7 @@ const Profile = () => {
       </div>
 
       {/* Birthday */}
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 overflow-hidden">
         <Label htmlFor="birthday" className="text-xs text-muted-foreground">{t("edit.birthday")}</Label>
         <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border" />
       </div>

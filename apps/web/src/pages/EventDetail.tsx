@@ -152,6 +152,9 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
   const [notes, setNotes] = React.useState(event.notes ?? "");
   const [eventGender, setEventGender] = React.useState(event.event_gender ?? "mixed");
   const [activityType, setActivityType] = React.useState(event.activity_type ?? "indoor");
+  const [rsvpDeadline, setRsvpDeadline] = React.useState(
+    event.rsvp_deadline ? event.rsvp_deadline.slice(0, 10) : ""
+  );
 
   // Reset form when event changes or sheet opens
   React.useEffect(() => {
@@ -167,6 +170,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
       setNotes(event.notes ?? "");
       setEventGender(event.event_gender ?? "mixed");
       setActivityType(event.activity_type ?? "indoor");
+      setRsvpDeadline(event.rsvp_deadline ? event.rsvp_deadline.slice(0, 10) : "");
     }
   }, [open, event]);
 
@@ -187,6 +191,7 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
       notes: notes.trim() || null,
       event_gender: eventGender,
       activity_type: activityType,
+      rsvp_deadline: rsvpDeadline ? `${rsvpDeadline}T23:59:59` : null,
     });
   };
 
@@ -235,36 +240,43 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
           </div>
 
           {/* Date */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 overflow-hidden">
             <Label>{t("detail.date")}</Label>
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full max-w-full"
             />
           </div>
 
           {/* Start + End time */}
-          <div className="grid grid-cols-2 gap-3 min-w-0">
-            <div className="space-y-1.5 min-w-0">
+          <div className="grid grid-cols-2 gap-3 overflow-hidden">
+            <div className="space-y-1.5 overflow-hidden">
               <Label>{t("detail.startTime")}</Label>
               <Input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full max-w-full"
               />
             </div>
-            <div className="space-y-1.5 min-w-0">
+            <div className="space-y-1.5 overflow-hidden">
               <Label>{t("detail.endTime")}</Label>
               <Input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full max-w-full"
               />
             </div>
+          </div>
+
+          {/* RSVP Deadline */}
+          <div className="space-y-1.5 overflow-hidden">
+            <Label>{t("create.rsvpDeadline")}</Label>
+            <Input
+              type="date"
+              value={rsvpDeadline}
+              onChange={(e) => setRsvpDeadline(e.target.value)}
+            />
           </div>
 
           {/* Location */}
