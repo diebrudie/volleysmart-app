@@ -4,19 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   UserPlus,
-  UserCheck,
-  UserX,
   Users,
-  UserMinus,
   Calendar,
   CalendarX,
   MessageSquare,
   Bell,
   Volleyball,
   Sparkles,
-  CalendarPlus,
-  Globe,
-  Heart,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -30,38 +24,71 @@ import {
 import type { NotificationType } from "@/integrations/supabase/notifications";
 import { cn } from "@/lib/utils";
 
-interface TypeConfig {
-  type: NotificationType;
+interface PrefRow {
   titleKey: string;
+  descriptionKey: string;
   icon: React.ReactNode;
+  types: NotificationType[];
 }
 
-const clubActivityTypes: TypeConfig[] = [
-  { type: "club_join_request", titleKey: "type.joinRequest.title", icon: <UserPlus className="h-4 w-4 text-blue-500" /> },
-  { type: "club_join_accepted", titleKey: "type.joinAccepted.title", icon: <UserCheck className="h-4 w-4 text-emerald-500" /> },
-  { type: "club_join_rejected", titleKey: "type.joinRejected.title", icon: <UserX className="h-4 w-4 text-red-500" /> },
-  { type: "club_member_joined", titleKey: "type.memberJoined.title", icon: <Users className="h-4 w-4 text-blue-500" /> },
-  { type: "club_member_left", titleKey: "type.memberLeft.title", icon: <UserMinus className="h-4 w-4 text-red-500" /> },
-  { type: "club_member_removed", titleKey: "type.memberRemoved.title", icon: <UserX className="h-4 w-4 text-red-500" /> },
+const clubRequestsRow: PrefRow = {
+  titleKey: "preferences.row.clubRequests.title",
+  descriptionKey: "preferences.row.clubRequests.description",
+  icon: <UserPlus className="h-4 w-4 text-blue-500" />,
+  types: ["club_join_request", "club_join_accepted", "club_join_rejected"],
+};
+
+const memberChangesRow: PrefRow = {
+  titleKey: "preferences.row.memberChanges.title",
+  descriptionKey: "preferences.row.memberChanges.description",
+  icon: <Users className="h-4 w-4 text-blue-500" />,
+  types: ["club_member_joined", "club_member_left", "club_member_removed"],
+};
+
+const clubActivityRows: PrefRow[] = [clubRequestsRow, memberChangesRow];
+
+const eventRows: PrefRow[] = [
+  {
+    titleKey: "type.eventCreated.title",
+    descriptionKey: "preferences.row.eventCreated.description",
+    icon: <Calendar className="h-4 w-4 text-primary" />,
+    types: ["event_created"],
+  },
+  {
+    titleKey: "type.eventCancelled.title",
+    descriptionKey: "preferences.row.eventCancelled.description",
+    icon: <CalendarX className="h-4 w-4 text-red-500" />,
+    types: ["event_cancelled"],
+  },
+  {
+    titleKey: "type.rsvp.title",
+    descriptionKey: "preferences.row.rsvp.description",
+    icon: <MessageSquare className="h-4 w-4 text-primary" />,
+    types: ["event_rsvp"],
+  },
+  {
+    titleKey: "type.rsvpReminder.title",
+    descriptionKey: "preferences.row.rsvpReminder.description",
+    icon: <Bell className="h-4 w-4 text-amber-500" />,
+    types: ["rsvp_deadline_reminder"],
+  },
 ];
 
-const eventTypes: TypeConfig[] = [
-  { type: "event_created", titleKey: "type.eventCreated.title", icon: <Calendar className="h-4 w-4 text-primary" /> },
-  { type: "event_cancelled", titleKey: "type.eventCancelled.title", icon: <CalendarX className="h-4 w-4 text-red-500" /> },
-  { type: "event_rsvp", titleKey: "type.rsvp.title", icon: <MessageSquare className="h-4 w-4 text-primary" /> },
-  { type: "rsvp_deadline_reminder", titleKey: "type.rsvpReminder.title", icon: <Bell className="h-4 w-4 text-amber-500" /> },
+const gameRows: PrefRow[] = [
+  {
+    titleKey: "type.gameStarted.title",
+    descriptionKey: "preferences.row.gameStarted.description",
+    icon: <Volleyball className="h-4 w-4 text-emerald-500" />,
+    types: ["game_started"],
+  },
 ];
 
-const gameTypes: TypeConfig[] = [
-  { type: "game_started", titleKey: "type.gameStarted.title", icon: <Volleyball className="h-4 w-4 text-emerald-500" /> },
-];
-
-const engagementTypes: TypeConfig[] = [
-  { type: "engagement_welcome", titleKey: "type.engagementWelcome.title", icon: <Sparkles className="h-4 w-4 text-primary" /> },
-  { type: "engagement_create_club", titleKey: "type.engagementCreateClub.title", icon: <Users className="h-4 w-4 text-blue-500" /> },
-  { type: "engagement_create_event", titleKey: "type.engagementCreateEvent.title", icon: <CalendarPlus className="h-4 w-4 text-primary" /> },
-  { type: "engagement_public_event", titleKey: "type.engagementPublicEvent.title", icon: <Globe className="h-4 w-4 text-emerald-500" /> },
-  { type: "engagement_come_back", titleKey: "type.engagementComeBack.title", icon: <Heart className="h-4 w-4 text-amber-500" /> },
+const engagementTypes: NotificationType[] = [
+  "engagement_welcome",
+  "engagement_create_club",
+  "engagement_create_event",
+  "engagement_public_event",
+  "engagement_come_back",
 ];
 
 export default function NotificationPreferences() {
@@ -79,40 +106,24 @@ export default function NotificationPreferences() {
     enabled: !!user?.id,
   });
 
-  const handleToggle = async (
-    type: NotificationType,
+  const handleToggleTypes = async (
+    types: NotificationType[],
     channel: "in_app" | "push" | "email",
     value: boolean
   ) => {
     if (!user?.id || !prefs) return;
 
     const previous = new Map(prefs);
-    const currentPref = getPref(prefs, type);
-    prefs.set(type, { ...currentPref, [channel]: value });
-    queryClient.setQueryData(queryKey, new Map(prefs));
-
-    try {
-      await upsertNotificationPreference(user.id, type, channel, value);
-      toast({ description: t("preferences.saved"), duration: 1500 });
-    } catch {
-      queryClient.setQueryData(queryKey, previous);
-    }
-  };
-
-  const handleToggleAll = async (types: TypeConfig[], value: boolean) => {
-    if (!user?.id || !prefs) return;
-
-    const previous = new Map(prefs);
-    for (const config of types) {
-      const currentPref = getPref(prefs, config.type);
-      prefs.set(config.type, { ...currentPref, in_app: value });
+    for (const type of types) {
+      const currentPref = getPref(prefs, type);
+      prefs.set(type, { ...currentPref, [channel]: value });
     }
     queryClient.setQueryData(queryKey, new Map(prefs));
 
     try {
       await Promise.all(
-        types.map((config) =>
-          upsertNotificationPreference(user.id, config.type, "in_app", value)
+        types.map((type) =>
+          upsertNotificationPreference(user.id, type, channel, value)
         )
       );
       toast({ description: t("preferences.saved"), duration: 1500 });
@@ -121,8 +132,16 @@ export default function NotificationPreferences() {
     }
   };
 
-  const isAllOn = (types: TypeConfig[]) =>
-    prefs ? types.every((c) => getPref(prefs, c.type).in_app) : true;
+  const isRowOn = (types: NotificationType[]) =>
+    prefs ? types.every((type) => getPref(prefs, type).in_app) : true;
+
+  const isAllCategoryOn = (rows: PrefRow[]) =>
+    rows.every((row) => isRowOn(row.types));
+
+  const handleToggleAllCategory = async (rows: PrefRow[], value: boolean) => {
+    const allTypes = rows.flatMap((r) => r.types);
+    await handleToggleTypes(allTypes, "in_app", value);
+  };
 
   const renderToggleColumn = (
     label: string,
@@ -131,7 +150,7 @@ export default function NotificationPreferences() {
     comingSoon: boolean,
     onChange?: (val: boolean) => void
   ) => (
-    <div className="flex flex-col items-center w-14">
+    <div className="flex flex-col items-center flex-1">
       <span className="text-[10px] text-muted-foreground mb-1">{label}</span>
       <Switch
         checked={checked}
@@ -139,77 +158,85 @@ export default function NotificationPreferences() {
         onCheckedChange={onChange}
       />
       {comingSoon && (
-        <span className="text-[9px] text-muted-foreground/60 mt-1">
+        <span className="text-[9px] text-muted-foreground/60 mt-1 whitespace-nowrap">
           {t("preferences.comingSoon")}
         </span>
       )}
     </div>
   );
 
-  const renderTypeRow = (config: TypeConfig, isLast: boolean) => {
-    const pref = prefs
-      ? getPref(prefs, config.type)
-      : { in_app: true, push: true, email: true };
+  const renderToggles = (types: NotificationType[]) => {
+    const on = isRowOn(types);
+    const pushOn = prefs
+      ? types.every((type) => getPref(prefs, type).push)
+      : true;
+    const emailOn = prefs
+      ? types.every((type) => getPref(prefs, type).email)
+      : true;
 
     return (
-      <div
-        key={config.type}
-        className={cn(
-          "px-4 py-3",
-          !isLast && "border-b border-border"
+      <div className="flex items-start gap-2">
+        {renderToggleColumn(
+          t("preferences.channel.inApp"),
+          on,
+          false,
+          false,
+          (val) => handleToggleTypes(types, "in_app", val)
         )}
-      >
-        {/* Mobile: stacked layout */}
-        <div className="lg:hidden">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-              {config.icon}
-            </div>
-            <span className="text-sm font-medium text-foreground">
-              {t(config.titleKey)}
-            </span>
-          </div>
-          <div className="flex items-start gap-4 pl-11">
-            {renderToggleColumn(
-              t("preferences.channel.inApp"),
-              pref.in_app,
-              false,
-              false,
-              (val) => handleToggle(config.type, "in_app", val)
-            )}
-            {renderToggleColumn(t("preferences.channel.push"), pref.push, true, true)}
-            {renderToggleColumn(t("preferences.channel.email"), pref.email, true, true)}
-          </div>
-        </div>
-
-        {/* Desktop: single row */}
-        <div className="hidden lg:flex items-start justify-between">
-          <div className="flex items-center gap-3 min-w-0 flex-1 pt-1">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-              {config.icon}
-            </div>
-            <span className="text-sm font-medium text-foreground">
-              {t(config.titleKey)}
-            </span>
-          </div>
-          <div className="flex items-start gap-4 shrink-0 ml-3">
-            {renderToggleColumn(
-              t("preferences.channel.inApp"),
-              pref.in_app,
-              false,
-              false,
-              (val) => handleToggle(config.type, "in_app", val)
-            )}
-            {renderToggleColumn(t("preferences.channel.push"), pref.push, true, true)}
-            {renderToggleColumn(t("preferences.channel.email"), pref.email, true, true)}
-          </div>
-        </div>
+        {renderToggleColumn(t("preferences.channel.push"), pushOn, true, true)}
+        {renderToggleColumn(
+          t("preferences.channel.email"),
+          emailOn,
+          true,
+          true
+        )}
       </div>
     );
   };
 
-  const renderCategory = (label: string, types: TypeConfig[]) => {
-    const allOn = isAllOn(types);
+  const renderRow = (row: PrefRow, isLast: boolean) => (
+    <div
+      key={row.types.join(",")}
+      className={cn("px-4 py-3", !isLast && "border-b border-border")}
+    >
+      {/* Mobile: stacked */}
+      <div className="lg:hidden">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+            {row.icon}
+          </div>
+          <span className="text-sm font-medium text-foreground">
+            {t(row.titleKey)}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3 pl-11">
+          {t(row.descriptionKey)}
+        </p>
+        <div className="pl-11">{renderToggles(row.types)}</div>
+      </div>
+
+      {/* Desktop: single row */}
+      <div className="hidden lg:flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted mt-0.5">
+            {row.icon}
+          </div>
+          <div className="min-w-0">
+            <span className="text-sm font-medium text-foreground">
+              {t(row.titleKey)}
+            </span>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t(row.descriptionKey)}
+            </p>
+          </div>
+        </div>
+        <div className="shrink-0 w-56">{renderToggles(row.types)}</div>
+      </div>
+    </div>
+  );
+
+  const renderCategory = (label: string, rows: PrefRow[]) => {
+    const allOn = isAllCategoryOn(rows);
 
     return (
       <div>
@@ -220,15 +247,110 @@ export default function NotificationPreferences() {
           <button
             type="button"
             className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-            onClick={() => handleToggleAll(types, !allOn)}
+            onClick={() => handleToggleAllCategory(rows, !allOn)}
           >
             {allOn ? t("preferences.disableAll") : t("preferences.enableAll")}
           </button>
         </div>
         <div className="rounded-xl border border-border bg-card">
-          {types.map((config, i) =>
-            renderTypeRow(config, i === types.length - 1)
-          )}
+          {rows.map((row, i) => renderRow(row, i === rows.length - 1))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderEngagement = () => {
+    const allOn = isRowOn(engagementTypes);
+    const pushOn = prefs
+      ? engagementTypes.every((type) => getPref(prefs, type).push)
+      : true;
+    const emailOn = prefs
+      ? engagementTypes.every((type) => getPref(prefs, type).email)
+      : true;
+
+    return (
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 mt-6">
+          {t("preferences.category.engagement")}
+        </h2>
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          {/* Mobile */}
+          <div className="lg:hidden">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-foreground">
+                {t("preferences.row.engagement.title")}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3 pl-11">
+              {t("preferences.row.engagement.description")}
+            </p>
+            <div className="pl-11">
+              <div className="flex items-start gap-2">
+                {renderToggleColumn(
+                  t("preferences.channel.inApp"),
+                  allOn,
+                  false,
+                  false,
+                  (val) => handleToggleTypes(engagementTypes, "in_app", val)
+                )}
+                {renderToggleColumn(
+                  t("preferences.channel.push"),
+                  pushOn,
+                  true,
+                  true
+                )}
+                {renderToggleColumn(
+                  t("preferences.channel.email"),
+                  emailOn,
+                  true,
+                  true
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop */}
+          <div className="hidden lg:flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted mt-0.5">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-sm font-medium text-foreground">
+                  {t("preferences.row.engagement.title")}
+                </span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("preferences.row.engagement.description")}
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0 w-56">
+              <div className="flex items-start gap-2">
+                {renderToggleColumn(
+                  t("preferences.channel.inApp"),
+                  allOn,
+                  false,
+                  false,
+                  (val) => handleToggleTypes(engagementTypes, "in_app", val)
+                )}
+                {renderToggleColumn(
+                  t("preferences.channel.push"),
+                  pushOn,
+                  true,
+                  true
+                )}
+                {renderToggleColumn(
+                  t("preferences.channel.email"),
+                  emailOn,
+                  true,
+                  true
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -251,10 +373,10 @@ export default function NotificationPreferences() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-20 pb-32">
-        {renderCategory(t("preferences.category.clubActivity"), clubActivityTypes)}
-        {renderCategory(t("preferences.category.events"), eventTypes)}
-        {renderCategory(t("preferences.category.games"), gameTypes)}
-        {renderCategory(t("preferences.category.engagement"), engagementTypes)}
+        {renderCategory(t("preferences.category.clubActivity"), clubActivityRows)}
+        {renderCategory(t("preferences.category.events"), eventRows)}
+        {renderCategory(t("preferences.category.games"), gameRows)}
+        {renderEngagement()}
       </div>
     </div>
   );
