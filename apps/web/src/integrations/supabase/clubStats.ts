@@ -132,7 +132,7 @@ export async function fetchClubStats(
   // Get all game_players for these match days
   const { data: gamePlayers } = await supabase
     .from("game_players")
-    .select("match_day_id, player_id, team_name")
+    .select("match_day_id, player_id, team_name, snapshot_name, position_played")
     .in("match_day_id", mdIds);
 
   // Get all set scores
@@ -185,7 +185,18 @@ export async function fetchClubStats(
     combos.set(comboKey, entry);
   }
 
-  // Get player names for top combos
+  // Build snapshot fallback map from game_players (covers guests + all players)
+  const snapshotMap = new Map<string, { name: string; position: string | null }>();
+  for (const gp of gamePlayers ?? []) {
+    if (!snapshotMap.has(gp.player_id) && gp.snapshot_name) {
+      snapshotMap.set(gp.player_id, {
+        name: gp.snapshot_name,
+        position: gp.position_played ?? null,
+      });
+    }
+  }
+
+  // Get player names from players table (more accurate names + primary_position)
   const allPlayerIds = [...new Set((gamePlayers ?? []).map((gp) => gp.player_id))];
   const { data: playerRows } = await supabase
     .from("players")
@@ -198,6 +209,10 @@ export async function fetchClubStats(
       name: `${p.first_name} ${p.last_name?.charAt(0) ?? ""}.`,
       position: p.primary_position ?? null,
     });
+  }
+  // Merge: prefer players table, fall back to snapshot
+  for (const [id, snap] of snapshotMap) {
+    if (!playerMap.has(id)) playerMap.set(id, snap);
   }
 
   // Sort combos: most wins, then most played, take top 3
