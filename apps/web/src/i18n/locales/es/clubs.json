@@ -64,6 +64,7 @@
       "games": "Partidos",
       "hours": "Horas",
       "attendance": "Asistencia",
+      "cancelled": "Cancelados",
       "bestCombinations": "Mejores combinaciones de equipo",
       "comboRecord": "{{wins}}V / {{gamesPlayed}} partidos · {{winRate}}% victorias",
       "noGames": "No se han jugado partidos en {{year}}"

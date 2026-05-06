@@ -1,11 +1,12 @@
 # VolleySmart App
 
 ## Current status
-- Working on: ResetPassword layout fix on `fix/reset-password-layout`
-- Last change: `feat/quick-wins` merged to main (FEAT-31, FEAT-33, branded emails, contact form UX, Button asChild fix, ForgotPassword cleanup, Profile back nav)
-- Current branch: `fix/reset-password-layout`
+- Working on: `feat/join-request-email-and-fixes` (join request email to admins + account deletion fix)
+- Last change: `fix/reset-password-layout` merged to main
+- Current branch: `feat/join-request-email-and-fixes`
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
-- Next step: Merge reset-password fix, deploy send-club-invitations, test club invitation emails
+- Note: `send-club-invitations` edge function is deployed but unused — frontend uses link-based invite flow. Can be deleted or repurposed.
+- Next step: Deploy `notify-join-request` edge function, apply migration `20260505000001`, then Phase 16 (Settings page + notification preferences)
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -19,7 +20,8 @@ Branches stack on each other (not merged to main yet):
 - `feat/i18n` branched from `main` (merged to main)
 - `fix/analytics-and-translations` branched from `main` (merged to main)
 - `feat/quick-wins` branched from `main` (merged to main)
-- `fix/reset-password-layout` branched from `main`
+- `fix/reset-password-layout` branched from `main` (merged to main)
+- `feat/join-request-email-and-fixes` branched from `main`
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
@@ -270,6 +272,10 @@ Branches stack on each other (not merged to main yet):
 - **Backlog: Tournament event type** — Complex, deferred
 - ~~**Backlog: Skill Score progression**~~ — Onboarding capped at 75, gameplay bonus (max 25) via logarithmic formula (participation + win rate + hours). Recalculates on Profile load, score never decreases. `skillProgression.ts`, `rating_history` stored in DB.
 - **Phase 16: Settings page & Notification preferences**
+
+### Group G: Team Management (branch: `feat/team-management`)
+- **FEAT-35: Admin Team Pairing** — New "Teams" button on ClubOverview (same level as Invite, Members, Stats). Admin can create persistent player pairings/groups (e.g. a setter always with a specific middle blocker). When teams are generated, these locked combinations stay together. Only override if there aren't enough players for the constraint (e.g. not enough setters). Needs DB model for saved pairings + integration with `assignTeams()`.
+- **FEAT-36: Review Best Team Combinations Algorithm** — Current logic in `clubStats.ts` sorts combos by most wins then most played (min 2 games). Issues: (1) staging shows "best" combos that may not have won any matches, (2) production may not show combos at all if no team has played ≥2 games together. Audit the algorithm, consider alternative ranking (e.g. win rate with minimum threshold, point differential, weighted scoring). Document findings and propose improvements.
 
 ## Discover feature (implemented)
 - Discoverable clubs + public events are live on `feat/discovery` branch

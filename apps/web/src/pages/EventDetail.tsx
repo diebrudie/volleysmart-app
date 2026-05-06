@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO, isToday, isBefore, startOfDay } from "date-fns";
+import { format, parseISO, isToday, isBefore, startOfDay, addDays, differenceInCalendarDays } from "date-fns";
 import { getDateLocale } from "@/lib/dateLocale";
 import {
   ArrowLeft,
@@ -152,6 +152,29 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
   const [notes, setNotes] = React.useState(event.notes ?? "");
   const [eventGender, setEventGender] = React.useState(event.event_gender ?? "mixed");
   const [activityType, setActivityType] = React.useState(event.activity_type ?? "indoor");
+  const RSVP_PRESETS = [
+    { labelKey: "create.rsvpSameDay", days: 0 },
+    { labelKey: "create.rsvp1DayBefore", days: 1 },
+    { labelKey: "create.rsvp3DaysBefore", days: 3 },
+    { labelKey: "create.rsvp1WeekBefore", days: 7 },
+    { labelKey: "create.rsvpCustom", days: null as number | null },
+  ];
+
+  function detectPreset(eventDate: string, deadlineStr: string | null): number | null {
+    if (!deadlineStr) return 1;
+    const evDate = parseISO(eventDate);
+    const dlDate = parseISO(deadlineStr);
+    const diff = differenceInCalendarDays(evDate, dlDate);
+    const idx = RSVP_PRESETS.findIndex((p) => p.days === diff);
+    return idx >= 0 && idx < RSVP_PRESETS.length - 1 ? idx : null;
+  }
+
+  const [rsvpPreset, setRsvpPreset] = React.useState<number | null>(
+    detectPreset(event.date, event.rsvp_deadline)
+  );
+  const [rsvpCustomDate, setRsvpCustomDate] = React.useState(
+    event.rsvp_deadline ? event.rsvp_deadline.slice(0, 10) : ""
+  );
 
   // Reset form when event changes or sheet opens
   React.useEffect(() => {
@@ -167,6 +190,8 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
       setNotes(event.notes ?? "");
       setEventGender(event.event_gender ?? "mixed");
       setActivityType(event.activity_type ?? "indoor");
+      setRsvpPreset(detectPreset(event.date, event.rsvp_deadline));
+      setRsvpCustomDate(event.rsvp_deadline ? event.rsvp_deadline.slice(0, 10) : "");
     }
   }, [open, event]);
 
@@ -187,6 +212,17 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
       notes: notes.trim() || null,
       event_gender: eventGender,
       activity_type: activityType,
+      rsvp_deadline: (() => {
+        if (rsvpPreset !== null && rsvpPreset < RSVP_PRESETS.length - 1) {
+          const days = RSVP_PRESETS[rsvpPreset].days;
+          if (days !== null) {
+            const dl = addDays(parseISO(date), -days);
+            dl.setHours(23, 59, 0, 0);
+            return dl.toISOString();
+          }
+        }
+        return rsvpCustomDate ? `${rsvpCustomDate}T23:59:59` : null;
+      })(),
     });
   };
 
@@ -235,36 +271,72 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
           </div>
 
           {/* Date */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 overflow-hidden max-w-full">
             <Label>{t("detail.date")}</Label>
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full max-w-full"
+              className="w-full max-w-full appearance-none"
+              style={{ boxSizing: 'border-box' }}
             />
           </div>
 
           {/* Start + End time */}
-          <div className="grid grid-cols-2 gap-3 min-w-0">
-            <div className="space-y-1.5 min-w-0">
+          <div className="grid grid-cols-2 gap-3 overflow-hidden max-w-full">
+            <div className="space-y-1.5 overflow-hidden min-w-0">
               <Label>{t("detail.startTime")}</Label>
               <Input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full max-w-full"
+                className="w-full max-w-full appearance-none"
+                style={{ boxSizing: 'border-box' }}
               />
             </div>
-            <div className="space-y-1.5 min-w-0">
+            <div className="space-y-1.5 overflow-hidden min-w-0">
               <Label>{t("detail.endTime")}</Label>
               <Input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full max-w-full"
+                className="w-full max-w-full appearance-none"
+                style={{ boxSizing: 'border-box' }}
               />
             </div>
+          </div>
+
+          {/* RSVP Deadline */}
+          <div className="space-y-1.5">
+            <Label>{t("create.rsvpDeadline")}</Label>
+            <Select
+              value={rsvpPreset !== null ? String(rsvpPreset) : "custom"}
+              onValueChange={(v) => {
+                if (v === "custom") {
+                  setRsvpPreset(null);
+                } else {
+                  setRsvpPreset(Number(v));
+                }
+              }}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {RSVP_PRESETS.map((p, i) => (
+                  <SelectItem key={i} value={p.days !== null ? String(i) : "custom"}>
+                    {t(p.labelKey)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {rsvpPreset === null && (
+              <Input
+                type="date"
+                value={rsvpCustomDate}
+                onChange={(e) => setRsvpCustomDate(e.target.value)}
+                className="mt-1.5 w-full max-w-full appearance-none"
+                style={{ boxSizing: 'border-box' }}
+              />
+            )}
           </div>
 
           {/* Location */}

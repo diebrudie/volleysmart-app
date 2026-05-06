@@ -64,6 +64,7 @@
       "games": "Spiele",
       "hours": "Stunden",
       "attendance": "Teilnahme",
+      "cancelled": "Abgesagt",
       "bestCombinations": "Beste Teamkombinationen",
       "comboRecord": "{{wins}}S / {{gamesPlayed}} Spiele · {{winRate}}% Siegquote",
       "noGames": "Keine Spiele in {{year}} gespielt"

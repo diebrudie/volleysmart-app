@@ -73,7 +73,7 @@ export async function fetchUpcomingEvents(
           .from("planned_events")
           .select(selectFields)
           .in("club_id", clubIds)
-          .in("status", ["open", "confirmed"])
+          .in("status", ["open", "confirmed", "cancelled"])
           .gte("date", today)
           .order("date", { ascending: true })
           .order("start_time", { ascending: true })
@@ -85,7 +85,7 @@ export async function fetchUpcomingEvents(
     .select(selectFields)
     .is("club_id", null)
     .eq("created_by", userId)
-    .in("status", ["open", "confirmed"])
+    .in("status", ["open", "confirmed", "cancelled"])
     .gte("date", today)
     .order("date", { ascending: true })
     .order("start_time", { ascending: true });
@@ -112,7 +112,7 @@ export async function fetchUpcomingEvents(
           .from("planned_events")
           .select(selectFields)
           .eq("is_public", true)
-          .in("status", ["open", "confirmed"])
+          .in("status", ["open", "confirmed", "cancelled"])
           .gte("date", today)
           .in("id", rsvpedEventIds)
           .order("date", { ascending: true })
@@ -210,6 +210,7 @@ export interface PastEventRow {
   has_score: boolean;
   match_day_id: string | null;
   rsvp_status: RsvpStatus | null; // user's own RSVP for this event
+  status: string;
 }
 
 /** Fetch past events with match scores. */
@@ -238,7 +239,7 @@ export async function fetchPastEvents(
   const playerId = playerRow?.id ?? null;
 
   const selectFields = `
-    id, title, date, start_time, event_type,
+    id, title, date, start_time, event_type, status,
     clubs!planned_events_club_id_fkey(name),
     event_rsvp(status, player_id)
   `;
@@ -328,6 +329,7 @@ export async function fetchPastEvents(
       has_score: !!md,
       match_day_id: md?.matchDayId ?? null,
       rsvp_status: myRsvp as RsvpStatus | null,
+      status: e.status ?? "open",
     };
   });
 
@@ -481,6 +483,7 @@ export interface UpdateEventInput {
   is_public?: boolean;
   max_players?: number | null;
   notes?: string | null;
+  rsvp_deadline?: string | null;
 }
 
 /** Update an existing planned event. */
@@ -501,6 +504,7 @@ export async function updatePlannedEvent(
   if (input.notes !== undefined) updates.notes = input.notes;
   if (input.event_gender !== undefined) updates.event_gender = input.event_gender;
   if (input.activity_type !== undefined) updates.activity_type = input.activity_type;
+  if (input.rsvp_deadline !== undefined) updates.rsvp_deadline = input.rsvp_deadline;
 
   const { error } = await supabase
     .from("planned_events")

@@ -148,6 +148,7 @@ const InvitePage = () => {
           duration: 2000,
         });
       } else {
+        supabase.functions.invoke("notify-join-request", { body: { token: trimmedToken } }).catch(() => {});
         toast({
           title: "Request sent!",
           description: "Your join request was sent to the club admins.",

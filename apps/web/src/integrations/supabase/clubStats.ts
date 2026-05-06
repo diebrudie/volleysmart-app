@@ -4,11 +4,12 @@ export interface ClubStats {
   totalEncounters: number;
   totalHours: number;
   attendanceRate: number; // percentage 0-100
+  cancelledEvents: number;
   topCombinations: TeamCombination[];
 }
 
 export interface TeamCombination {
-  playerNames: string[];
+  players: { name: string; position: string | null }[];
   gamesPlayed: number;
   wins: number;
   winRate: number;
@@ -34,7 +35,16 @@ export async function fetchClubStats(
     .lte("date", yearEnd);
 
   const totalEncounters = matchDays?.length ?? 0;
-  if (!totalEncounters) return emptyStats();
+
+  const { count: cancelledEvents } = await supabase
+    .from("planned_events")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", clubId)
+    .gte("date", yearStart)
+    .lte("date", yearEnd)
+    .eq("status", "cancelled");
+
+  if (!totalEncounters) return { ...emptyStats(), cancelledEvents: cancelledEvents ?? 0 };
 
   const mdIds = matchDays!.map((md) => md.id);
 
@@ -122,7 +132,7 @@ export async function fetchClubStats(
   // Get all game_players for these match days
   const { data: gamePlayers } = await supabase
     .from("game_players")
-    .select("match_day_id, player_id, team_name")
+    .select("match_day_id, player_id, team_name, snapshot_name, position_played")
     .in("match_day_id", mdIds);
 
   // Get all set scores
@@ -175,17 +185,44 @@ export async function fetchClubStats(
     combos.set(comboKey, entry);
   }
 
-  // Get player names for top combos
+  // Build snapshot fallback map from game_players (covers guests + all players)
+  const snapshotMap = new Map<string, { name: string; position: string | null }>();
+  for (const gp of gamePlayers ?? []) {
+    if (!snapshotMap.has(gp.player_id) && gp.snapshot_name) {
+      snapshotMap.set(gp.player_id, {
+        name: gp.snapshot_name,
+        position: gp.position_played ?? null,
+      });
+    }
+  }
+
+  // Get player names from players table (more accurate names + primary_position)
   const allPlayerIds = [...new Set((gamePlayers ?? []).map((gp) => gp.player_id))];
   const { data: playerRows } = await supabase
     .from("players")
-    .select("id, first_name, last_name")
+    .select("id, first_name, last_name, primary_position")
     .in("id", allPlayerIds);
 
-  const playerNameMap = new Map<string, string>();
+  const playerMap = new Map<string, { name: string; position: string | null }>();
   for (const p of playerRows ?? []) {
-    playerNameMap.set(p.id, `${p.first_name} ${p.last_name?.charAt(0) ?? ""}.`);
+    playerMap.set(p.id, {
+      name: `${p.first_name} ${p.last_name?.charAt(0) ?? ""}.`,
+      position: p.primary_position ?? null,
+    });
   }
+  // Merge: prefer players table, fall back to snapshot
+  for (const [id, snap] of snapshotMap) {
+    if (!playerMap.has(id)) playerMap.set(id, snap);
+  }
+
+  const POSITION_ORDER: Record<string, number> = {
+    "Setter": 0,
+    "Middle Blocker": 1,
+    "Outside Hitter": 2,
+    "Libero": 3,
+    "Opposite": 4,
+  };
+  const positionRank = (pos: string | null) => pos ? (POSITION_ORDER[pos] ?? 3) : 5;
 
   // Sort combos: most wins, then most played, take top 3
   const topCombinations: TeamCombination[] = [...combos.values()]
@@ -193,7 +230,9 @@ export async function fetchClubStats(
     .sort((a, b) => b.wins - a.wins || b.played - a.played)
     .slice(0, 3)
     .map((c) => ({
-      playerNames: c.playerIds.map((id) => playerNameMap.get(id) ?? "Unknown"),
+      players: c.playerIds
+        .map((id) => playerMap.get(id) ?? { name: "Unknown", position: null })
+        .sort((a, b) => positionRank(a.position) - positionRank(b.position)),
       gamesPlayed: c.played,
       wins: c.wins,
       winRate: c.played > 0 ? Math.round((c.wins / c.played) * 100) : 0,
@@ -203,6 +242,7 @@ export async function fetchClubStats(
     totalEncounters,
     totalHours: Math.round(totalHours * 10) / 10,
     attendanceRate,
+    cancelledEvents: cancelledEvents ?? 0,
     topCombinations,
   };
 }
@@ -212,6 +252,7 @@ function emptyStats(): ClubStats {
     totalEncounters: 0,
     totalHours: 0,
     attendanceRate: 0,
+    cancelledEvents: 0,
     topCombinations: [],
   };
 }

@@ -704,30 +704,30 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Birthday + Height */}
+      {/* Height + Gender */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="birthday" className="text-xs text-muted-foreground">{t("edit.birthday")}</Label>
-          <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border" />
-        </div>
         <div className="space-y-1.5">
           <Label htmlFor="height" className="text-xs text-muted-foreground">{t("edit.height")}</Label>
           <Input id="height" type="number" min="100" max="250" value={profile.height_cm || ""} onChange={(e) => setProfile({ ...profile, height_cm: e.target.value ? parseInt(e.target.value) : null })} placeholder={t("edit.heightPlaceholder")} className="bg-muted/50 border-border" />
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">{t("edit.gender")}</Label>
+          <Select value={profile.gender} onValueChange={(value) => setProfile({ ...profile, gender: value })}>
+            <SelectTrigger className="bg-muted/50 border-border"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="male">{t("edit.genderMale")}</SelectItem>
+              <SelectItem value="female">{t("edit.genderFemale")}</SelectItem>
+              <SelectItem value="diverse">{t("edit.genderDiverse")}</SelectItem>
+              <SelectItem value="other">{t("edit.genderOther")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Gender */}
-      <div className="space-y-1.5 max-w-[calc(50%-0.375rem)]">
-        <Label className="text-xs text-muted-foreground">{t("edit.gender")}</Label>
-        <Select value={profile.gender} onValueChange={(value) => setProfile({ ...profile, gender: value })}>
-          <SelectTrigger className="bg-muted/50 border-border"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="male">{t("edit.genderMale")}</SelectItem>
-            <SelectItem value="female">{t("edit.genderFemale")}</SelectItem>
-            <SelectItem value="diverse">{t("edit.genderDiverse")}</SelectItem>
-            <SelectItem value="other">{t("edit.genderOther")}</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Birthday */}
+      <div className="space-y-1.5 overflow-hidden max-w-full">
+        <Label htmlFor="birthday" className="text-xs text-muted-foreground">{t("edit.birthday")}</Label>
+        <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border w-full max-w-full appearance-none" style={{ boxSizing: 'border-box' }} />
       </div>
 
       {/* Location */}
@@ -795,16 +795,16 @@ const Profile = () => {
   );
 
   const editFooter = (
-    <div className="flex gap-3 pt-4">
+    <div className="flex gap-3">
       <Button variant="outline" onClick={handleCancelEdit} className="flex-1">{t("edit.cancel")}</Button>
       <Button onClick={handleSave} disabled={saving || !hasChanges()} className="flex-1">{saving ? t("edit.saving") : t("edit.save")}</Button>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-background lg:ml-60">
+    <div className="min-h-screen bg-background">
       {/* Header bar */}
-      <div className="fixed top-0 left-0 right-0 lg:left-60 z-20 bg-background border-b border-border">
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={handleBack}
@@ -1209,19 +1209,21 @@ const Profile = () => {
       {(() => {
         return isCompact ? (
           <Drawer open={isEditing} onOpenChange={(open) => { if (!open) handleCancelEdit(); }} shouldScaleBackground>
-            <DrawerContent className="max-h-[85vh] pb-6">
+            <DrawerContent className="max-h-[85vh] flex flex-col pb-0">
               <DrawerClose
                 aria-label="Close"
-                className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring z-10"
               >
                 <X className="h-4 w-4" />
               </DrawerClose>
-              <DrawerHeader className="pt-8">
+              <DrawerHeader className="pt-8 shrink-0">
                 <DrawerTitle>{t("edit.title")}</DrawerTitle>
                 <DrawerDescription>{t("edit.description")}</DrawerDescription>
               </DrawerHeader>
-              <div className="px-4 overflow-y-auto flex-1">
+              <div className="px-4 overflow-y-auto flex-1 min-h-0">
                 {editFormContent}
+              </div>
+              <div className="px-4 py-4 border-t border-border shrink-0 bg-background">
                 {editFooter}
               </div>
             </DrawerContent>

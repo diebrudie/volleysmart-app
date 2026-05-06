@@ -21,6 +21,7 @@ import {
   Trophy,
   Clock,
   Swords,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -102,6 +103,7 @@ const ClubOverview: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation("clubs");
+  const { t: tProfile } = useTranslation("profile");
   const { user } = useAuth();
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
@@ -406,6 +408,7 @@ const ClubOverview: React.FC = () => {
                     const result = await requestJoinClub(clubId!);
                     setJoinStatus(result);
                     if (result === "pending_approval") {
+                      supabase.functions.invoke("notify-join-request", { body: { club_id: clubId } }).catch(() => {});
                       toast({ title: t("overview.toasts.requestSent"), description: t("overview.toasts.requestSentDescription"), duration: 2000 });
                     } else if (result === "already_member") {
                       toast({ title: t("overview.toasts.alreadyMember"), duration: 2000 });
@@ -613,9 +616,9 @@ const ClubOverview: React.FC = () => {
                 </select>
               </div>
 
-              {clubStats && clubStats.totalEncounters > 0 ? (
+              {clubStats && (clubStats.totalEncounters > 0 || clubStats.cancelledEvents > 0) ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div className="rounded-xl border bg-card p-3 text-center">
                       <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
                       <p className="text-xl font-bold">{clubStats.totalEncounters}</p>
@@ -631,6 +634,11 @@ const ClubOverview: React.FC = () => {
                       <p className="text-xl font-bold">{clubStats.attendanceRate}%</p>
                       <p className="text-[10px] text-muted-foreground">{t("overview.statsSection.attendance")}</p>
                     </div>
+                    <div className="rounded-xl border bg-card p-3 text-center">
+                      <Ban className="h-4 w-4 text-red-500 mx-auto mb-1" />
+                      <p className="text-xl font-bold">{clubStats.cancelledEvents}</p>
+                      <p className="text-[10px] text-muted-foreground">{t("overview.statsSection.cancelled")}</p>
+                    </div>
                   </div>
 
                   {clubStats.topCombinations.length > 0 && (
@@ -639,20 +647,27 @@ const ClubOverview: React.FC = () => {
                         <Trophy className="h-4 w-4 text-amber-500" />
                         <p className="text-sm font-semibold">{t("overview.statsSection.bestCombinations")}</p>
                       </div>
-                      <div className="space-y-3">
+                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
                         {clubStats.topCombinations.map((combo, i) => (
-                          <div key={i} className="flex items-center justify-between">
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                {combo.playerNames.join(", ")}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
+                          <div key={i} className="shrink-0 w-[75%] min-w-[200px] snap-start rounded-lg border bg-muted/30 p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-[10px] text-muted-foreground">
                                 {t("overview.statsSection.comboRecord", { wins: combo.wins, gamesPlayed: combo.gamesPlayed, winRate: combo.winRate })}
                               </p>
+                              {i === 0 && <span className="text-sm">🏆</span>}
                             </div>
-                            {i === 0 && (
-                              <span className="text-amber-500 text-lg shrink-0 ml-2">🏆</span>
-                            )}
+                            <div className="space-y-1.5">
+                              {combo.players.map((p, j) => (
+                                <div key={j} className="flex items-center justify-between gap-2">
+                                  <span className="text-sm font-medium">{p.name}</span>
+                                  {p.position && (
+                                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                                      {tProfile(`positions.name.${p.position}`, { defaultValue: p.position })}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
