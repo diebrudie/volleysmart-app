@@ -210,6 +210,7 @@ export interface PastEventRow {
   has_score: boolean;
   match_day_id: string | null;
   rsvp_status: RsvpStatus | null; // user's own RSVP for this event
+  status: string;
 }
 
 /** Fetch past events with match scores. */
@@ -238,7 +239,7 @@ export async function fetchPastEvents(
   const playerId = playerRow?.id ?? null;
 
   const selectFields = `
-    id, title, date, start_time, event_type,
+    id, title, date, start_time, event_type, status,
     clubs!planned_events_club_id_fkey(name),
     event_rsvp(status, player_id)
   `;
@@ -328,6 +329,7 @@ export async function fetchPastEvents(
       has_score: !!md,
       match_day_id: md?.matchDayId ?? null,
       rsvp_status: myRsvp as RsvpStatus | null,
+      status: e.status ?? "open",
     };
   });
 

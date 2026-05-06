@@ -308,7 +308,11 @@ const PastEventsList: React.FC<{
 
           {/* Score (center) */}
           <div className="shrink-0 w-16 text-center">
-            {e.has_score ? (
+            {e.status === "cancelled" ? (
+              <span className="text-[10px] font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/40 px-1.5 py-0.5 rounded">
+                {t("upcoming.cancelled")}
+              </span>
+            ) : e.has_score ? (
               <span className="text-base font-semibold tracking-wider">
                 {e.team_a_wins} – {e.team_b_wins}
               </span>
@@ -322,7 +326,7 @@ const PastEventsList: React.FC<{
             <button
               type="button"
               onClick={() =>
-                e.match_day_id
+                e.match_day_id && e.status !== "cancelled"
                   ? onViewDetails(e.match_day_id)
                   : onEventClick(e.id)
               }

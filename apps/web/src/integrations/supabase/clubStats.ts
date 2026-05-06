@@ -4,6 +4,7 @@ export interface ClubStats {
   totalEncounters: number;
   totalHours: number;
   attendanceRate: number; // percentage 0-100
+  cancelledEvents: number;
   topCombinations: TeamCombination[];
 }
 
@@ -34,7 +35,16 @@ export async function fetchClubStats(
     .lte("date", yearEnd);
 
   const totalEncounters = matchDays?.length ?? 0;
-  if (!totalEncounters) return emptyStats();
+
+  const { count: cancelledEvents } = await supabase
+    .from("planned_events")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", clubId)
+    .gte("date", yearStart)
+    .lte("date", yearEnd)
+    .eq("status", "cancelled");
+
+  if (!totalEncounters) return { ...emptyStats(), cancelledEvents: cancelledEvents ?? 0 };
 
   const mdIds = matchDays!.map((md) => md.id);
 
@@ -203,6 +213,7 @@ export async function fetchClubStats(
     totalEncounters,
     totalHours: Math.round(totalHours * 10) / 10,
     attendanceRate,
+    cancelledEvents: cancelledEvents ?? 0,
     topCombinations,
   };
 }
@@ -212,6 +223,7 @@ function emptyStats(): ClubStats {
     totalEncounters: 0,
     totalHours: 0,
     attendanceRate: 0,
+    cancelledEvents: 0,
     topCombinations: [],
   };
 }

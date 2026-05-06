@@ -725,9 +725,9 @@ const Profile = () => {
       </div>
 
       {/* Birthday */}
-      <div className="space-y-1.5 overflow-hidden">
+      <div className="space-y-1.5 overflow-hidden max-w-full">
         <Label htmlFor="birthday" className="text-xs text-muted-foreground">{t("edit.birthday")}</Label>
-        <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border" />
+        <Input id="birthday" type="date" value={profile.birthday || ""} onChange={(e) => setProfile({ ...profile, birthday: e.target.value })} className="bg-muted/50 border-border w-full max-w-full appearance-none" style={{ boxSizing: 'border-box' }} />
       </div>
 
       {/* Location */}
@@ -802,9 +802,9 @@ const Profile = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background lg:ml-60">
+    <div className="min-h-screen bg-background">
       {/* Header bar */}
-      <div className="fixed top-0 left-0 right-0 lg:left-60 z-20 bg-background border-b border-border">
+      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={handleBack}

@@ -21,6 +21,7 @@ import {
   Trophy,
   Clock,
   Swords,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -614,9 +615,9 @@ const ClubOverview: React.FC = () => {
                 </select>
               </div>
 
-              {clubStats && clubStats.totalEncounters > 0 ? (
+              {clubStats && (clubStats.totalEncounters > 0 || clubStats.cancelledEvents > 0) ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div className="rounded-xl border bg-card p-3 text-center">
                       <Swords className="h-4 w-4 text-primary mx-auto mb-1" />
                       <p className="text-xl font-bold">{clubStats.totalEncounters}</p>
@@ -631,6 +632,11 @@ const ClubOverview: React.FC = () => {
                       <Users className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
                       <p className="text-xl font-bold">{clubStats.attendanceRate}%</p>
                       <p className="text-[10px] text-muted-foreground">{t("overview.statsSection.attendance")}</p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 text-center">
+                      <Ban className="h-4 w-4 text-red-500 mx-auto mb-1" />
+                      <p className="text-xl font-bold">{clubStats.cancelledEvents}</p>
+                      <p className="text-[10px] text-muted-foreground">{t("overview.statsSection.cancelled")}</p>
                     </div>
                   </div>
 
