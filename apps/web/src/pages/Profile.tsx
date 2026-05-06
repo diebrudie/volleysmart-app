@@ -1022,8 +1022,8 @@ const Profile = () => {
                   </div>
                 )}
 
-                {/* Skill Rating — always visible when available */}
-                {profile.skill_rating != null && (
+                {/* Skill Rating — only visible to the profile owner */}
+                {isOwnProfile && profile.skill_rating != null && (
                   <div className="rounded-xl border bg-card p-4 flex items-center gap-4">
                     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <TrendingUp className="h-5 w-5 text-primary" />

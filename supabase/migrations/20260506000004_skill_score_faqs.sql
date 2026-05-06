@@ -11,11 +11,11 @@ INSERT INTO public.faqs (
 
 (
   'Who can see my skill score?',
-  'Your skill score is visible on your profile to anyone in your clubs. Club members and admins can see it when they view your profile. It helps the team generator create balanced matchups, so transparency is key to fair games.',
+  'Only you can see your skill score — it is completely private and personal. No one else, not even club admins or other club members, can see it. The score is used behind the scenes by the team generator to create balanced matchups, but the actual number is never shown to anyone but you.',
   '¿Quién puede ver mi puntuación de habilidad?',
-  'Tu puntuación de habilidad es visible en tu perfil para cualquier persona en tus clubes. Los miembros y administradores del club pueden verla cuando visitan tu perfil. Ayuda al generador de equipos a crear enfrentamientos equilibrados, por lo que la transparencia es clave para partidos justos.',
+  'Solo tú puedes ver tu puntuación de habilidad — es completamente privada y personal. Nadie más, ni siquiera los administradores u otros miembros del club, puede verla. La puntuación se usa internamente por el generador de equipos para crear enfrentamientos equilibrados, pero el número real nunca se muestra a nadie más que a ti.',
   'Wer kann meinen Skill-Score sehen?',
-  'Dein Skill-Score ist auf deinem Profil für alle in deinen Clubs sichtbar. Clubmitglieder und Admins können ihn sehen, wenn sie dein Profil besuchen. Er hilft dem Teamgenerator, ausgeglichene Spiele zu erstellen — Transparenz ist der Schlüssel zu fairen Spielen.',
+  'Nur du kannst deinen Skill-Score sehen — er ist vollständig privat und persönlich. Niemand sonst, auch keine Club-Admins oder andere Clubmitglieder, kann ihn sehen. Der Score wird im Hintergrund vom Teamgenerator verwendet, um ausgeglichene Spiele zu erstellen, aber die tatsächliche Zahl wird niemandem außer dir angezeigt.',
   'Account & Profile', 'Account & Profile',
   'Cuenta y perfil', 'Konto & Profil',
   'faqs', 53
