@@ -1,4 +1,10 @@
 -- Add skill score FAQs to the Account & Profile category
+-- Idempotent: delete any existing skill score FAQs before re-inserting
+DELETE FROM public.faqs WHERE question IN (
+  'Who can see my skill score?',
+  'Can I change my skill score after onboarding?',
+  'How does my skill score change over time? Can it decrease?'
+);
 
 INSERT INTO public.faqs (
   question, answer,
