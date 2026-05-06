@@ -1,12 +1,11 @@
 # VolleySmart App
 
 ## Current status
-- Working on: `feat/join-request-email-and-fixes` (join request email to admins + account deletion fix)
-- Last change: `fix/reset-password-layout` merged to main
-- Current branch: `feat/join-request-email-and-fixes`
+- Last change: `feat/join-request-email-and-fixes` merged to main
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused — frontend uses link-based invite flow. Can be deleted or repurposed.
-- Next step: Deploy `notify-join-request` edge function, apply migration `20260505000001`, then Phase 16 (Settings page + notification preferences)
+- Deploy status: `notify-join-request` edge function needs deploying (`supabase functions deploy notify-join-request`), migration `20260505000001` needs applying
+- Next step: Phase 16 (Settings page + notification preferences)
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -21,7 +20,7 @@ Branches stack on each other (not merged to main yet):
 - `fix/analytics-and-translations` branched from `main` (merged to main)
 - `feat/quick-wins` branched from `main` (merged to main)
 - `fix/reset-password-layout` branched from `main` (merged to main)
-- `feat/join-request-email-and-fixes` branched from `main`
+- `feat/join-request-email-and-fixes` branched from `main` (merged to main)
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
@@ -200,6 +199,7 @@ Branches stack on each other (not merged to main yet):
 - `20260426000006_rescale_skill_ratings.sql` (rescale existing players' skill_rating from old 0-100 to new 0-75 scale)
 - `20260426000007_fix_skill_ratings.sql` (fix ALL players' skill_rating, overwrites any inflated scores)
 - `20260426000008_discoverable_club_member_count.sql` (**NEEDS APPLYING** — RPC get_club_member_count for non-member visibility)
+- `20260505000001_fix_delete_own_account.sql` (**NEEDS APPLYING** — NULLs FK references before auth user deletion, makes clubs.created_by nullable)
 
 ## Known issues
 1. ~~**Home CORS**~~: Resolved.
@@ -221,6 +221,22 @@ Branches stack on each other (not merged to main yet):
 - **Auth → SMTP Settings**: Custom SMTP ON, `smtp.resend.com`, port `465`, username `resend`, password = RESEND_API_KEY
 - **Auth → Email Templates**: Paste `auth-confirm-email.html` into "Confirm signup", `auth-reset-password.html` into "Reset password"
 - **Deploy**: `supabase functions deploy send-club-invitations`
+
+## Join Request Email & Fixes (feat/join-request-email-and-fixes branch)
+1. ~~**Join request email**~~: `notify-join-request` edge function — sends branded email to all club admins when someone requests to join (supports `club_id` or `token` input). Fire-and-forget calls from ClubOverview + InvitePage.
+2. ~~**Account deletion FK fix**~~: Migration `20260505000001` — NULLs all FK references (clubs.created_by, match_days.created_by, etc.) before deleting auth user. Made `clubs.created_by` nullable.
+3. ~~**Cancelled events visibility**~~: Cancelled events now appear in upcoming tab (today) and past events tab (with red badge). Cancelled count added to club stats grid.
+4. ~~**RSVP deadline dropdown**~~: Edit Event sheet uses preset dropdown (Same day, 1 day before, 3 days before, 1 week before, Custom) matching CreateEvent pattern.
+5. ~~**Profile desktop layout**~~: Removed `lg:ml-60` sidebar offset — content centers like EventDetail/Game pages.
+6. ~~**iOS date/time overflow**~~: Birthday, date, start/end time inputs use `max-w-full appearance-none` + `boxSizing: border-box` to prevent iOS overflow.
+7. ~~**Profile edit drawer sticky buttons**~~: Cancel/Save buttons fixed at bottom, only form content scrolls.
+8. ~~**Team combinations slider**~~: Horizontal snap-scroll cards with vertical player list, position badges, sorted by position (Setter → MB → OH → Libero → Opposite). Uses `snapshot_name` fallback for guest players.
+9. ~~**Home slider reorder**~~: Last Game shown first when no game today.
+10. ~~**iOS zoom prevention**~~: `maximum-scale=1.0` in viewport meta.
+
+### Key files
+- `supabase/functions/notify-join-request/index.ts` — join request email edge function
+- `supabase/migrations/20260505000001_fix_delete_own_account.sql` — account deletion FK fix
 
 ## Phases overview
 - Phases 1-8: Completed (nav, events, RSVP, archive, clubs, members, bug fixes)
