@@ -452,8 +452,17 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
 };
 
 // ─── Main page ───────────────────────────────────────────────────────────────
+const CANCELLATION_REASON_KEYS: Record<string, string> = {
+  "Not enough players": "detail.reasonNotEnoughPlayers",
+  "Bad weather": "detail.reasonBadWeather",
+  "Venue unavailable": "detail.reasonVenueUnavailable",
+  "Scheduling conflict": "detail.reasonSchedulingConflict",
+  "Other": "detail.reasonOther",
+};
+
 const EventDetail: React.FC = () => {
   const { t } = useTranslation("events");
+  const { t: tProfile } = useTranslation("profile");
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1139,7 +1148,7 @@ const EventDetail: React.FC = () => {
             <h2 className="text-lg font-bold text-amber-800 dark:text-amber-300">{t("detail.eventCancelledTitle")}</h2>
             {event.cancellation_reason && (
               <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                {t("detail.reason", { reason: event.cancellation_reason })}
+                {t("detail.reason", { reason: CANCELLATION_REASON_KEYS[event.cancellation_reason] ? t(CANCELLATION_REASON_KEYS[event.cancellation_reason]) : event.cancellation_reason })}
               </p>
             )}
             {event.cancellation_comment && (
@@ -1267,7 +1276,7 @@ const EventDetail: React.FC = () => {
                         </p>
                         {currentPlayer.primary_position && (
                           <p className="text-xs text-muted-foreground">
-                            {currentPlayer.primary_position}
+                            {tProfile(`positions.name.${currentPlayer.primary_position}`, { defaultValue: currentPlayer.primary_position })}
                           </p>
                         )}
                       </div>
@@ -1314,7 +1323,7 @@ const EventDetail: React.FC = () => {
                         </p>
                         {a.primary_position && (
                           <p className="text-xs text-muted-foreground">
-                            {a.primary_position}
+                            {tProfile(`positions.name.${a.primary_position}`, { defaultValue: a.primary_position })}
                           </p>
                         )}
                       </div>

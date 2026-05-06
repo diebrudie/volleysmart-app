@@ -577,7 +577,7 @@ const ClubOverview: React.FC = () => {
                           )}
                         </p>
                         {m.primary_position && (
-                          <p className="text-xs text-muted-foreground">{m.primary_position}</p>
+                          <p className="text-xs text-muted-foreground">{tProfile(`positions.name.${m.primary_position}`, { defaultValue: m.primary_position })}</p>
                         )}
                       </div>
                       {m.role === "admin" && (
