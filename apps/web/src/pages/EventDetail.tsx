@@ -271,31 +271,37 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
           </div>
 
           {/* Date */}
-          <div className="space-y-1.5 overflow-hidden">
+          <div className="space-y-1.5 overflow-hidden max-w-full">
             <Label>{t("detail.date")}</Label>
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              className="w-full max-w-full appearance-none"
+              style={{ boxSizing: 'border-box' }}
             />
           </div>
 
           {/* Start + End time */}
-          <div className="grid grid-cols-2 gap-3 overflow-hidden">
-            <div className="space-y-1.5 overflow-hidden">
+          <div className="grid grid-cols-2 gap-3 overflow-hidden max-w-full">
+            <div className="space-y-1.5 overflow-hidden min-w-0">
               <Label>{t("detail.startTime")}</Label>
               <Input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
+                className="w-full max-w-full appearance-none"
+                style={{ boxSizing: 'border-box' }}
               />
             </div>
-            <div className="space-y-1.5 overflow-hidden">
+            <div className="space-y-1.5 overflow-hidden min-w-0">
               <Label>{t("detail.endTime")}</Label>
               <Input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
+                className="w-full max-w-full appearance-none"
+                style={{ boxSizing: 'border-box' }}
               />
             </div>
           </div>
@@ -327,7 +333,8 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
                 type="date"
                 value={rsvpCustomDate}
                 onChange={(e) => setRsvpCustomDate(e.target.value)}
-                className="mt-1.5"
+                className="mt-1.5 w-full max-w-full appearance-none"
+                style={{ boxSizing: 'border-box' }}
               />
             )}
           </div>

@@ -646,20 +646,24 @@ const ClubOverview: React.FC = () => {
                         <Trophy className="h-4 w-4 text-amber-500" />
                         <p className="text-sm font-semibold">{t("overview.statsSection.bestCombinations")}</p>
                       </div>
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {clubStats.topCombinations.map((combo, i) => (
-                          <div key={i} className="flex items-center justify-between">
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                {combo.playerNames.join(", ")}
-                              </p>
+                          <div key={i}>
+                            <div className="flex items-start justify-between gap-2 mb-1">
                               <p className="text-xs text-muted-foreground">
                                 {t("overview.statsSection.comboRecord", { wins: combo.wins, gamesPlayed: combo.gamesPlayed, winRate: combo.winRate })}
                               </p>
+                              {i === 0 && (
+                                <span className="text-amber-500 text-lg shrink-0">🏆</span>
+                              )}
                             </div>
-                            {i === 0 && (
-                              <span className="text-amber-500 text-lg shrink-0 ml-2">🏆</span>
-                            )}
+                            <div className="flex flex-wrap gap-1.5">
+                              {combo.playerNames.map((name, j) => (
+                                <span key={j} className="text-xs font-medium bg-muted px-2 py-0.5 rounded-full">
+                                  {name}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
