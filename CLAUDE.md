@@ -1,13 +1,11 @@
 # VolleySmart App
 
 ## Current status
-- Working on: `feat/phase-16-settings` (grouped menu + notification preferences)
-- Last change: Phase 16 — grouped menu drawer, notification preferences page
-- Current branch: `feat/phase-16-settings`
+- Last change: `feat/phase-16-settings` merged to main
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused — frontend uses link-based invite flow. Can be deleted or repurposed.
-- Deploy status: `notify-join-request` edge function needs deploying, migration `20260505000001` needs applying
-- Phase 16 migrations needed: `20260506000001_notification_preferences.sql`, `20260506000002_filter_notification_preferences.sql`, `20260506000003_engagement_notifications.sql`
+- Deploy status: `notify-join-request` edge function needs deploying
+- Phase 16 migrations applied: `20260506000001` through `20260506000004`
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -251,14 +249,19 @@ Branches stack on each other (not merged to main yet):
 7. ~~**Menu drawer fixes**~~: Removed double close X (SheetContent has built-in one), fixed stretched avatar (object-cover), tightened header spacing
 8. ~~**Profile edit drawer padding**~~: Added pb-8 to "Delete my account" wrapper so it doesn't overlap fixed footer
 9. ~~**Engagement notifications**~~: 5 new types (welcome, create club, create event, public event, come back) as onboarding drip campaign. Welcome fires via DB trigger on player insert. Others via pg_cron daily at 9 AM UTC with 3-day cooldown, 30-day cap, priority ordering. New "Engagement & Tips" category in notification preferences.
+10. ~~**Notification preferences redesign**~~: Club Activity grouped into 2 subgroups (Club Requests + Member Changes) with descriptions. Events kept granular. Engagement as single toggle. Toggle columns evenly spaced. Mobile: toggles stacked below title. Enable/Disable all per category.
+11. ~~**Email removed from Profile edit drawer**~~: Already visible in hamburger menu, no duplication needed.
+12. ~~**Skill score privacy**~~: Skill rating only visible to profile owner (added `isOwnProfile` guard). Other users cannot see it.
+13. ~~**Skill score FAQs**~~: 3 new FAQs in Account & Profile (EN/ES/DE): who can see it (private), can you change it (no), how does it improve (never decreases, gameplay bonus).
 
 ### Phase 16 key files
-- `apps/web/src/pages/NotificationPreferences.tsx` — Notification preferences page
+- `apps/web/src/pages/NotificationPreferences.tsx` — Notification preferences page (grouped rows with descriptions)
 - `apps/web/src/integrations/supabase/notificationPreferences.ts` — Data layer (fetch, upsert, getPref)
 - `apps/web/src/components/nav/MobileMenuDrawer.tsx` — Grouped menu drawer
 - `supabase/migrations/20260506000001_notification_preferences.sql` — notification_preferences table
 - `supabase/migrations/20260506000002_filter_notification_preferences.sql` — Filter triggers by preferences
 - `supabase/migrations/20260506000003_engagement_notifications.sql` — Welcome trigger + daily engagement cron
+- `supabase/migrations/20260506000004_skill_score_faqs.sql` — Skill score FAQs (idempotent)
 
 ## Phases overview
 - Phases 1-8: Completed (nav, events, RSVP, archive, clubs, members, bug fixes)
@@ -269,7 +272,7 @@ Branches stack on each other (not merged to main yet):
 - Phase 13: Completed — UI Consistency Pass (Profile redesign, Clubs/JoinClub/NewClub/Members semantic styling)
 - Phase 14: Completed — Notifications system + bug fixes
 - Discovery: In Progress — Public events, discoverable clubs, attendee privacy, location sharing
-- Phase 16: Completed — Grouped menu drawer (Help/Preferences/Legal), Notification Preferences page, position translations, DB notification filtering
+- Phase 16: Completed — Grouped menu drawer, notification preferences (grouped rows), engagement notifications, position translations, skill score privacy + FAQs
 
 ## Feature backlog
 
