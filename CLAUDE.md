@@ -1,7 +1,7 @@
 # VolleySmart App
 
 ## Current status
-- Last change: `feat/phase-16-settings` merged to main
+- Last change: `feat/terms-and-privacy` merged to main
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused — frontend uses link-based invite flow. Can be deleted or repurposed.
 - Deploy status: `notify-join-request` edge function needs deploying
@@ -22,6 +22,7 @@ Branches stack on each other (not merged to main yet):
 - `fix/reset-password-layout` branched from `main` (merged to main)
 - `feat/join-request-email-and-fixes` branched from `main` (merged to main)
 - `feat/phase-16-settings` branched from `main` (merged to main)
+- `feat/terms-and-privacy` branched from `main` (merged to main)
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
@@ -263,6 +264,29 @@ Branches stack on each other (not merged to main yet):
 - `supabase/migrations/20260506000003_engagement_notifications.sql` — Welcome trigger + daily engagement cron
 - `supabase/migrations/20260506000004_skill_score_faqs.sql` — Skill score FAQs (idempotent)
 
+## Terms & Privacy + UI Polish (feat/terms-and-privacy)
+1. ~~**FEAT-26: Terms & Conditions + Privacy Policy**~~: `/terms` and `/privacy` pages with full legal text (EN/ES/DE), ReactMarkdown rendering, @tailwindcss/typography for prose styling. Auth-aware: unauthenticated shows public Navbar + Footer with forced light mode; authenticated shows scroll-hide header with back arrow.
+2. ~~**Signup consent**~~: Required checkbox for email signup, informational OAuth notice. Uses `<Trans>` with link components to `/terms` and `/privacy`.
+3. ~~**Home slider next-event fallback**~~: When no event today, queries next upcoming non-declined event. Shows "Next Event" card with date, title, "View Event" button. Only shows "Create Event" CTA if no upcoming events at all.
+4. ~~**Dark mode primary blue**~~: Brightened from `225 80% 33%` to `225 75% 55%` in dark mode for better contrast. Updated `--ring`, `--sidebar-primary`, `--sidebar-ring` to match.
+5. ~~**Position diagram i18n**~~: Dynamic image source based on `i18n.language` — loads EN/ES/DE versions from `/public/`.
+6. ~~**Position diagram viewer**~~: Desktop: replaced narrow right-side Sheet with centered `max-w-4xl` Dialog. Mobile: tap-to-zoom fullscreen overlay with close X button, z-[200] to avoid drawer interference. Applied to both Profile.tsx and PlayerOnboarding.tsx.
+7. ~~**Desktop navbar dropdown restructure**~~: Moved Theme + Language from sidebar bottom into profile dropdown. Four grouped sections with visible divider lines: Profile | Help (FAQs + Contact) | Preferences (Notifications + Theme + Language) | Logout.
+8. ~~**Notifications page layout**~~: Hidden desktop sidebar on `/notifications` and `/settings/notifications`, removed `lg:ml-60` for full-width centered layout.
+9. ~~**Team combo win count bug**~~: Changed key separator from `_` to `|` in `clubStats.ts` to prevent `split("_")` from breaking `team_a`/`team_b` names.
+10. ~~**Footer redesign**~~: Vertical centered layout with legal links row (Terms · Privacy · FAQs), `whitespace-nowrap` to prevent tablet wrapping.
+11. ~~**FAQs auth-aware**~~: Updated to same pattern as legal pages (public Navbar+Footer vs scroll-hide header).
+12. ~~**Close X enlarged**~~: Sheet component close button increased to `h-10 w-10` rounded circle for better tap targets.
+13. ~~**Menu drawer**~~: Terms + Privacy links enabled (removed disabled state + coming soon badge).
+
+### Terms & Privacy key files
+- `apps/web/src/pages/TermsPage.tsx` — Terms & Conditions page
+- `apps/web/src/pages/PrivacyPage.tsx` — Privacy Policy page
+- `apps/web/src/i18n/locales/{en,es,de}/legal.json` — Legal namespace translations
+- `apps/web/src/pages/Signup.tsx` — Consent checkbox + OAuth notice
+- `apps/web/src/components/layout/Navbar.tsx` — Desktop dropdown restructure
+- `apps/web/src/components/layout/Footer.tsx` — Vertical layout + legal links
+
 ## Phases overview
 - Phases 1-8: Completed (nav, events, RSVP, archive, clubs, members, bug fixes)
 - Phase 9: Completed — Create Event improvements + Event Detail page + Home redesign
@@ -303,7 +327,7 @@ Branches stack on each other (not merged to main yet):
 
 ### Group D: Business & Legal (branch: `feat/business`)
 - **FEAT-25: Paid Tiers Architecture** — Audit and propose paid-tier architecture. Free-tier limits: max 2 clubs/user, max 20 members + 5 guests/club, inter-club tournaments require ≥1 paying user/club. Suggest schema, enforcement, payment provider, additional paywalled features. No implementation.
-- **FEAT-26: Terms & Conditions Page** — Add `/terms` page with placeholder content, link from homepage footer + signup consent.
+- ~~**FEAT-26: Terms & Conditions Page**~~ — `/terms` and `/privacy` pages with real legal text (EN/ES/DE), signup consent checkbox, auth-aware rendering. Completed in `feat/terms-and-privacy`.
 
 ### Group F: Onboarding & UX (branch: `feat/onboarding-ux`)
 - ~~**FEAT-32: New User Home Onboarding**~~ — Guided action cards on HomeDashboard for users with no clubs. Auto-reverts once user joins a club.
