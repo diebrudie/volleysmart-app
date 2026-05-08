@@ -148,14 +148,14 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                 <MenuItem
                   icon={<FileText className="h-5 w-5" />}
                   label={t("menu.termsAndConditions")}
-                  disabled
-                  badge={t("menu.comingSoon")}
+                  onClick={() => go("/terms")}
+                  showChevron
                 />
                 <MenuItem
                   icon={<Shield className="h-5 w-5" />}
                   label={t("menu.privacyPolicy")}
-                  disabled
-                  badge={t("menu.comingSoon")}
+                  onClick={() => go("/privacy")}
+                  showChevron
                   border={false}
                 />
               </MenuGroup>

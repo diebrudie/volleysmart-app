@@ -36,6 +36,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   Drawer,
   DrawerContent,
   DrawerClose,
@@ -82,7 +89,7 @@ const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const { t } = useTranslation("profile");
+  const { t, i18n } = useTranslation("profile");
   const [loading, setLoading] = useState(true);
   const isCompact = useIsCompact();
   const [saving, setSaving] = useState(false);
@@ -99,6 +106,7 @@ const Profile = () => {
   const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isPositionsHelpOpen, setIsPositionsHelpOpen] = useState(false);
+  const [isPositionZoomed, setIsPositionZoomed] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -1239,15 +1247,18 @@ const Profile = () => {
         );
       })()}
 
-      {/* Positions helper drawer (mobile) / sheet (desktop) */}
+      {/* Positions helper drawer (mobile) / dialog (desktop) */}
       {(() => {
+        const diagramSrc = `/positions-volleyball-players-${["en", "es", "de"].includes(i18n.language?.slice(0, 2)) ? i18n.language.slice(0, 2) : "en"}.png`;
+
         const positionsContent = (
           <div className="px-4 pb-2">
             <div className="mx-auto w-full md:max-w-3xl">
               <img
-                src="/positions-volleyball-players-en.png"
+                src={diagramSrc}
                 alt={t("positions.drawerTitle")}
-                className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
+                className={`w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border ${isCompact ? "cursor-pointer active:opacity-80" : ""}`}
+                onClick={isCompact ? () => setIsPositionZoomed(true) : undefined}
               />
               <p className="mt-3 text-center text-sm text-muted-foreground">
                 {t("positions.diagramCaption")}
@@ -1257,33 +1268,58 @@ const Profile = () => {
         );
 
         return isCompact ? (
-          <Drawer open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen} shouldScaleBackground>
-            <DrawerContent className="pb-6">
-              <DrawerClose
-                aria-label="Close"
-                className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <X className="h-4 w-4" />
-              </DrawerClose>
-              <DrawerHeader className="pt-8">
-                <DrawerTitle>{t("positions.drawerTitle")}</DrawerTitle>
-                <DrawerDescription>{t("positions.drawerDescription")}</DrawerDescription>
-              </DrawerHeader>
-              {positionsContent}
-            </DrawerContent>
-          </Drawer>
+          <>
+            <Drawer open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen} shouldScaleBackground>
+              <DrawerContent className="pb-6">
+                <DrawerClose
+                  aria-label="Close"
+                  className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <X className="h-4 w-4" />
+                </DrawerClose>
+                <DrawerHeader className="pt-8">
+                  <DrawerTitle>{t("positions.drawerTitle")}</DrawerTitle>
+                  <DrawerDescription>{t("positions.drawerDescription")}</DrawerDescription>
+                </DrawerHeader>
+                {positionsContent}
+              </DrawerContent>
+            </Drawer>
+          </>
         ) : (
-          <Sheet open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen}>
-            <SheetContent side="right" className="overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>{t("positions.drawerTitle")}</SheetTitle>
-                <SheetDescription>{t("positions.drawerDescription")}</SheetDescription>
-              </SheetHeader>
+          <Dialog open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen}>
+            <DialogContent className="max-w-4xl w-[90vw]">
+              <DialogHeader>
+                <DialogTitle>{t("positions.drawerTitle")}</DialogTitle>
+                <DialogDescription>{t("positions.drawerDescription")}</DialogDescription>
+              </DialogHeader>
               {positionsContent}
-            </SheetContent>
-          </Sheet>
+            </DialogContent>
+          </Dialog>
         );
       })()}
+
+      {/* Position diagram fullscreen zoom (mobile) */}
+      {isPositionZoomed && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4"
+          onClick={(e) => { e.stopPropagation(); setIsPositionZoomed(false); }}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setIsPositionZoomed(false); }}
+            className="absolute top-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={`/positions-volleyball-players-${["en", "es", "de"].includes(i18n.language?.slice(0, 2)) ? i18n.language.slice(0, 2) : "en"}.png`}
+            alt={t("positions.drawerTitle")}
+            className="max-h-[90vh] w-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* Delete Account Confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

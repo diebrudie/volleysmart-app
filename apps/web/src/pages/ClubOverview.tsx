@@ -647,7 +647,7 @@ const ClubOverview: React.FC = () => {
                         <Trophy className="h-4 w-4 text-amber-500" />
                         <p className="text-sm font-semibold">{t("overview.statsSection.bestCombinations")}</p>
                       </div>
-                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
+                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory hide-scrollbar">
                         {clubStats.topCombinations.map((combo, i) => (
                           <div key={i} className="shrink-0 w-[75%] min-w-[200px] snap-start rounded-lg border bg-muted/30 p-3">
                             <div className="flex items-center justify-between mb-2">

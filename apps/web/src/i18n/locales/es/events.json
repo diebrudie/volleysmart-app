@@ -6,6 +6,8 @@
   "home.viewGame": "Ver partido",
   "home.startGame": "Iniciar partido",
   "home.noGameToday": "No hay partido programado hoy",
+  "home.nextEvent": "Próximo evento",
+  "home.viewEvent": "Ver evento",
   "home.createEvent": "Crear evento",
   "home.lastGame": "Último partido",
   "home.view": "Ver",

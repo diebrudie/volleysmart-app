@@ -12,6 +12,7 @@ import enClubs from "./locales/en/clubs.json";
 import enProfile from "./locales/en/profile.json";
 import enNotifications from "./locales/en/notifications.json";
 import enValidation from "./locales/en/validation.json";
+import enLegal from "./locales/en/legal.json";
 
 import esCommon from "./locales/es/common.json";
 import esHome from "./locales/es/home.json";
@@ -23,6 +24,7 @@ import esClubs from "./locales/es/clubs.json";
 import esProfile from "./locales/es/profile.json";
 import esNotifications from "./locales/es/notifications.json";
 import esValidation from "./locales/es/validation.json";
+import esLegal from "./locales/es/legal.json";
 
 import deCommon from "./locales/de/common.json";
 import deHome from "./locales/de/home.json";
@@ -34,6 +36,7 @@ import deClubs from "./locales/de/clubs.json";
 import deProfile from "./locales/de/profile.json";
 import deNotifications from "./locales/de/notifications.json";
 import deValidation from "./locales/de/validation.json";
+import deLegal from "./locales/de/legal.json";
 
 i18n
   .use(LanguageDetector)
@@ -51,6 +54,7 @@ i18n
         profile: enProfile,
         notifications: enNotifications,
         validation: enValidation,
+        legal: enLegal,
       },
       es: {
         common: esCommon,
@@ -63,6 +67,7 @@ i18n
         profile: esProfile,
         notifications: esNotifications,
         validation: esValidation,
+        legal: esLegal,
       },
       de: {
         common: deCommon,
@@ -75,6 +80,7 @@ i18n
         profile: deProfile,
         notifications: deNotifications,
         validation: deValidation,
+        legal: deLegal,
       },
     },
     fallbackLng: "en",
