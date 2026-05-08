@@ -28,6 +28,7 @@
   "menu.privacyPolicy": "Datenschutz",
   "menu.comingSoon": "Demnächst",
   "menu.notifications": "Benachrichtigungen",
+  "menu.notificationSettings": "Benachrichtigungscenter",
   "menu.consultFaq": "FAQs ansehen",
   "button.save": "Speichern",
   "button.cancel": "Abbrechen",
@@ -49,7 +50,7 @@
   "language.en": "English",
   "language.es": "Español",
   "language.de": "Deutsch",
-  "footer.copyright": "© 2025 VolleySmart. Alle Rechte vorbehalten.",
+  "footer.copyright": "© 2026 VolleySmart. Alle Rechte vorbehalten.",
   "loading": "Laden...",
   "checkingProfile": "Profil wird überprüft...",
   "notFound": {

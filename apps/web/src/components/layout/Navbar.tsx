@@ -7,10 +7,10 @@ import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Moon, Sun } from "lucide-react";
 import {
   Menu,
   ChevronDown,
-  Settings,
   User,
   HelpCircle,
   Bell,
@@ -86,6 +86,8 @@ const PUBLIC_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/players/onboarding",
+  "/terms",
+  "/privacy",
 ];
 
 function isPublic(pathname: string) {
@@ -159,9 +161,11 @@ const Navbar = () => {
   const isCompact = useIsCompact();
   const { pathname } = useLocation();
   const isFaqRoute = pathname === "/faqs";
+  const isLegalRoute = pathname === "/terms" || pathname === "/privacy";
+  const isSolidBg = isFaqRoute || isLegalRoute;
   const shouldHideOnScroll = pathname === "/";
 
-  const { isDark } = useTheme();
+  const { isDark, setTheme } = useTheme();
 
   /**
    * Always follow the actual DOM theme (<html>.dark) as the single source
@@ -219,6 +223,8 @@ const Navbar = () => {
     /^\/join-club\/?$/,
     /^\/new-club\/?$/,
     /^\/events\/new\/?$/,
+    /^\/notifications\/?$/,
+    /^\/settings\/notifications\/?$/,
   ];
   const suppressChrome = HIDE_NAV_ROUTES.some((rx) => rx.test(pathname));
 
@@ -282,7 +288,7 @@ const Navbar = () => {
     { label: t("nav.profile"), path: `/user/${user?.id}`, icon: User },
     { label: t("nav.faqs"), path: "/faqs", icon: HelpCircle },
     { label: t("nav.contactUs"), icon: Mail, action: "contact" },
-    { label: t("menu.notifications"), path: "/settings/notifications", icon: Bell },
+    { label: t("menu.notificationSettings"), path: "/settings/notifications", icon: Bell },
   ];
 
   const handleLandingNavClick = (
@@ -313,7 +319,7 @@ const Navbar = () => {
           : "translate-y-0") +
         " " +
         // solid white on /faqs, translucent glass elsewhere
-        (isFaqRoute ? "bg-white" : "glass bg-white/70 border-glass-border")
+        (isSolidBg ? "bg-white" : "glass bg-white/70 border-glass-border")
       }
     >
       <div className="container mx-auto px-6 py-4">
@@ -410,6 +416,8 @@ const Navbar = () => {
         ? `${playerProfile.first_name} ${playerProfile.last_name?.[0] ?? ""}`.trim()
         : user?.email?.split("@")[0] ?? "User";
 
+    const menuItemStyle = "text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900 dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700";
+
     return (
       <aside className="fixed left-0 top-0 bottom-0 w-60 border-r border-border bg-background z-40 flex flex-col">
         {/* Logo */}
@@ -438,7 +446,7 @@ const Navbar = () => {
           })}
         </nav>
 
-        {/* Bottom section: notifications, chat, theme */}
+        {/* Bottom section: notifications, chat */}
         <div className="px-3 space-y-1 pb-2">
           <button
             type="button"
@@ -465,17 +473,6 @@ const Navbar = () => {
           >
             <MessageSquare className="h-5 w-5 shrink-0" />
             {t("nav.chat")}
-          </button>
-
-          <ThemeToggle className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors justify-start h-auto bg-transparent border-0 shadow-none font-normal" showLabel />
-
-          <button
-            type="button"
-            onClick={() => setLanguageOpen(true)}
-            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-          >
-            <Globe className="h-5 w-5 shrink-0" />
-            {t("language.title")}
           </button>
         </div>
 
@@ -513,73 +510,67 @@ const Navbar = () => {
               className="w-56 bg-white border border-gray-200 shadow-md
                 dark:bg-gray-800 dark:border-gray-700"
             >
-              {accountItems.map((item: AccountMenuItem, index) => {
-                const base =
-                  "text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900 dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700";
+              {/* Profile */}
+              <DropdownMenuItem asChild className={menuItemStyle}>
+                <Link to={`/user/${user?.id}`} className="flex items-center cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>{t("nav.profile")}</span>
+                </Link>
+              </DropdownMenuItem>
 
-                if (item.disabled) {
-                  return (
-                    <DropdownMenuItem
-                      key={index}
-                      disabled
-                      className={`${base} opacity-50 cursor-not-allowed hover:bg-transparent hover:text-gray-500`}
-                    >
-                      <div className="flex items-center w-full">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        <span>{item.label}</span>
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                }
+              <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
 
-                if (item.action === "contact") {
-                  return (
-                    <DropdownMenuItem
-                      key={index}
-                      className={`${base} cursor-pointer`}
-                      onClick={() => setContactOpen(true)}
-                    >
-                      <div className="flex items-center w-full">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        <span>{item.label}</span>
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                }
+              {/* Help group */}
+              <DropdownMenuItem asChild className={menuItemStyle}>
+                <Link to="/faqs" className="flex items-center cursor-pointer">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  <span>{t("nav.faqs")}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className={`${menuItemStyle} cursor-pointer`}
+                onClick={() => setContactOpen(true)}
+              >
+                <div className="flex items-center w-full">
+                  <Mail className="mr-2 h-4 w-4" />
+                  <span>{t("nav.contactUs")}</span>
+                </div>
+              </DropdownMenuItem>
 
-                if (item.path === "/faqs") {
-                  return (
-                    <DropdownMenuItem key={index} asChild className={base}>
-                      <Link
-                        to={item.path}
-                        className="flex items-center cursor-pointer"
-                      >
-                        <item.icon className="mr-2 h-4 w-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                }
+              <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
 
-                return (
-                  <DropdownMenuItem key={index} asChild className={base}>
-                    <Link
-                      to={item.path ?? "#"}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                );
-              })}
+              {/* Preferences group */}
+              <DropdownMenuItem asChild className={menuItemStyle}>
+                <Link to="/settings/notifications" className="flex items-center cursor-pointer">
+                  <Bell className="mr-2 h-4 w-4" />
+                  <span>{t("menu.notificationSettings")}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className={`${menuItemStyle} cursor-pointer`}
+              >
+                <div className="flex items-center w-full">
+                  {isDark ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+                  <span>{t("theme.title")}</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setLanguageOpen(true)}
+                className={`${menuItemStyle} cursor-pointer`}
+              >
+                <div className="flex items-center w-full">
+                  <Globe className="mr-2 h-4 w-4" />
+                  <span>{t("language.title")}</span>
+                </div>
+              </DropdownMenuItem>
 
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
+
+              {/* Logout */}
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="cursor-pointer text-gray-700 hover:bg-gray-100 hover:text-gray-900
-                  focus:bg-gray-100 focus:text-gray-900
-                  dark:text-gray-100 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+                className={`${menuItemStyle} cursor-pointer`}
               >
                 {t("nav.logOut")}
               </DropdownMenuItem>
@@ -728,7 +719,7 @@ const Navbar = () => {
           ? "-translate-y-full"
           : "translate-y-0") +
         " " +
-        (isFaqRoute ? "bg-white" : "backdrop-blur-md bg-white/70")
+        (isSolidBg ? "bg-white" : "backdrop-blur-md bg-white/70")
       }
     >
       <div className="container mx-auto px-4 py-3">

@@ -103,28 +103,53 @@ function useTodaysEvents(userId: string | undefined, playerId: string | null | u
         }
       }
 
-      if (!todayEvent) return null;
+      // 3. If no event today, fetch next upcoming event
+      let selectedEvent = todayEvent;
+      let isToday = true;
+
+      if (!selectedEvent && clubIds.length) {
+        const { data: nextEvents } = await supabase
+          .from("planned_events")
+          .select(selectFields)
+          .in("club_id", clubIds)
+          .in("status", ["open", "confirmed"])
+          .gt("date", todayStr)
+          .order("date", { ascending: true })
+          .order("start_time", { ascending: true })
+          .limit(5);
+
+        selectedEvent = (nextEvents ?? []).find((ev: any) => {
+          if (!playerId) return true;
+          const userRsvp = (ev.event_rsvp ?? []).find((r: any) => r.player_id === playerId);
+          return !userRsvp || userRsvp.status !== "declined";
+        }) ?? null;
+        isToday = false;
+      }
+
+      if (!selectedEvent) return null;
 
       // Check if a game already exists for this event
       const { data: matchDay } = await supabase
         .from("match_days")
         .select("id")
-        .eq("planned_event_id" as any, todayEvent.id)
+        .eq("planned_event_id" as any, selectedEvent.id)
         .maybeSingle();
 
-      const rsvps = (todayEvent.event_rsvp ?? []) as any[];
+      const rsvps = (selectedEvent.event_rsvp ?? []) as any[];
       const attendingCount = rsvps.filter((r) => r.status === "attending").length;
       const currentUserRsvp = playerId
         ? rsvps.find((r) => r.player_id === playerId)?.status ?? null
         : null;
 
       return {
-        eventId: todayEvent.id,
-        title: todayEvent.title,
-        clubName: (todayEvent.clubs as any)?.name ?? "",
+        eventId: selectedEvent.id,
+        title: selectedEvent.title,
+        clubName: (selectedEvent.clubs as any)?.name ?? "",
+        date: selectedEvent.date,
         attendingCount,
         matchDayId: (matchDay as any)?.id ?? null,
         currentUserRsvp,
+        isToday,
       };
     },
     enabled: !!userId,
@@ -481,13 +506,13 @@ const HomeDashboard: React.FC = () => {
                 {/* Slide order: Today's Game first when there IS a game today, Last Game first otherwise */}
                 {todaysEvent ? (
                   <>
-                    {/* Today's Game (primary) */}
+                    {/* Today's Game or Next Event (primary) */}
                     <div className="snap-start shrink-0 w-[85vw] sm:w-[340px] lg:w-auto border border-border rounded-xl bg-card p-5">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Volleyball className="h-5 w-5 text-primary" />
                           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                            {t("home.todaysGame")}
+                            {todaysEvent.isToday ? t("home.todaysGame") : t("home.nextEvent")}
                           </h3>
                         </div>
                         {todaysEvent.currentUserRsvp === "attending" && (
@@ -504,23 +529,36 @@ const HomeDashboard: React.FC = () => {
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {todaysEvent.clubName}
+                            {!todaysEvent.isToday && todaysEvent.date && (
+                              <> &middot; {format(parseISO(todaysEvent.date), "d MMM yyyy", { locale: getDateLocale() })}</>
+                            )}
                           </p>
                         </div>
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                           <Users className="h-4 w-4" />
                           {t("home.playersAttending", { count: todaysEvent.attendingCount })}
                         </div>
-                        <Button
-                          className="w-full"
-                          variant={todaysEvent.matchDayId ? "outline" : "default"}
-                          onClick={() =>
-                            todaysEvent.matchDayId
-                              ? navigate(`/game/${todaysEvent.matchDayId}`)
-                              : navigate(`/events/${todaysEvent.eventId}`)
-                          }
-                        >
-                          {todaysEvent.matchDayId ? t("home.viewGame") : t("home.startGame")}
-                        </Button>
+                        {todaysEvent.isToday ? (
+                          <Button
+                            className="w-full"
+                            variant={todaysEvent.matchDayId ? "outline" : "default"}
+                            onClick={() =>
+                              todaysEvent.matchDayId
+                                ? navigate(`/game/${todaysEvent.matchDayId}`)
+                                : navigate(`/events/${todaysEvent.eventId}`)
+                            }
+                          >
+                            {todaysEvent.matchDayId ? t("home.viewGame") : t("home.startGame")}
+                          </Button>
+                        ) : (
+                          <Button
+                            className="w-full"
+                            variant="outline"
+                            onClick={() => navigate(`/events/${todaysEvent.eventId}`)}
+                          >
+                            {t("home.viewEvent")}
+                          </Button>
+                        )}
                       </div>
                     </div>
 

@@ -43,6 +43,8 @@ import Notifications from "@/pages/Notifications";
 import DiscoverEvents from "@/pages/DiscoverEvents";
 import LiveScore from "@/pages/LiveScore";
 import NotificationPreferences from "@/pages/NotificationPreferences";
+import TermsPage from "@/pages/TermsPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -323,8 +325,10 @@ const AppRoutes = () => (
       }
     />
 
-    {/* Public FAQ page */}
+    {/* Public pages */}
     <Route path="/faqs" element={<FaqsPage />} />
+    <Route path="/terms" element={<TermsPage />} />
+    <Route path="/privacy" element={<PrivacyPage />} />
 
     {/* Catch-all route */}
     <Route path="*" element={<NotFound />} />

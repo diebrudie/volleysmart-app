@@ -6,6 +6,8 @@
   "home.viewGame": "View Game",
   "home.startGame": "Start Game",
   "home.noGameToday": "No game scheduled today",
+  "home.nextEvent": "Next Event",
+  "home.viewEvent": "View Event",
   "home.createEvent": "Create Event",
   "home.lastGame": "Last Game",
   "home.view": "View",

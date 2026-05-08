@@ -160,23 +160,25 @@ export async function fetchClubStats(
   // Group players by team per match day, create combination keys
   const teamGroups = new Map<string, { mdId: string; teamName: string; playerIds: string[] }[]>();
   for (const gp of gamePlayers ?? []) {
-    const key = `${gp.match_day_id}_${gp.team_name}`;
+    const key = `${gp.match_day_id}|${gp.team_name}`;
     if (!teamGroups.has(key)) teamGroups.set(key, []);
     teamGroups.get(key)!.push({ mdId: gp.match_day_id, teamName: gp.team_name, playerIds: [] });
   }
 
   // Rebuild: group by match_day + team → sorted player list
   const combos = new Map<string, { playerIds: string[]; played: number; wins: number }>();
-  const mdTeamPlayers = new Map<string, string[]>(); // "mdId_team" → player_id[]
+  const mdTeamPlayers = new Map<string, string[]>(); // "mdId|team" → player_id[]
   for (const gp of gamePlayers ?? []) {
-    const key = `${gp.match_day_id}_${gp.team_name}`;
+    const key = `${gp.match_day_id}|${gp.team_name}`;
     const list = mdTeamPlayers.get(key) ?? [];
     list.push(gp.player_id);
     mdTeamPlayers.set(key, list);
   }
 
   for (const [key, playerIds] of mdTeamPlayers) {
-    const [mdId, teamName] = key.split("_");
+    const sepIdx = key.indexOf("|");
+    const mdId = key.slice(0, sepIdx);
+    const teamName = key.slice(sepIdx + 1);
     const sorted = [...playerIds].sort();
     const comboKey = sorted.join(",");
     const entry = combos.get(comboKey) ?? { playerIds: sorted, played: 0, wins: 0 };

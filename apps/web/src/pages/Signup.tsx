@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
@@ -18,6 +19,7 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const { signup, signInWithOAuth, isAuthenticated } = useAuth();
   const { t } = useTranslation("auth");
 
@@ -113,6 +115,16 @@ const Signup = () => {
                   {t("signup.continueWithGoogle")}
                 </button>
 
+                <p className="text-xs text-slate-500 text-center mt-2">
+                  <Trans
+                    i18nKey="consent.oauthNotice"
+                    ns="legal"
+                    components={{
+                      termsLink: <Link to="/terms" target="_blank" className="text-blue-600 hover:underline" />,
+                      privacyLink: <Link to="/privacy" target="_blank" className="text-blue-600 hover:underline" />,
+                    }}
+                  />
+                </p>
               </div>
 
               <div className="relative mt-5">
@@ -220,10 +232,29 @@ const Signup = () => {
                   />
                 </div>
 
+                <div className="flex items-start gap-2 mt-3">
+                  <Checkbox
+                    id="consent"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="consent" className="text-sm text-slate-600 leading-snug">
+                    <Trans
+                      i18nKey="consent.checkbox"
+                      ns="legal"
+                      components={{
+                        termsLink: <Link to="/terms" target="_blank" className="text-blue-600 hover:underline" />,
+                        privacyLink: <Link to="/privacy" target="_blank" className="text-blue-600 hover:underline" />,
+                      }}
+                    />
+                  </label>
+                </div>
+
                 <Button
                   type="submit"
                   className="w-full mt-3"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !agreedToTerms}
                 >
                   {isSubmitting ? t("signup.creatingAccount") : t("signup.createAccount")}
                 </Button>

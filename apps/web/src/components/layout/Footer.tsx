@@ -11,9 +11,9 @@ const Footer = () => {
       role="contentinfo"
       aria-label="Site footer"
     >
-      <div className="container mx-auto px-6 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* Logo (light-mode asset, fixed) */}
+      <div className="container mx-auto px-6 pt-8 pb-12">
+        <div className="flex flex-col items-center gap-6">
+          {/* Logo */}
           <Link to="/" className="inline-block">
             <img
               src="/logo-lightmode.svg"
@@ -23,7 +23,22 @@ const Footer = () => {
             />
           </Link>
 
-          {/* Copyright (fixed neutral color) */}
+          {/* Legal links */}
+          <div className="flex items-center gap-4 text-sm text-gray-600 whitespace-nowrap">
+            <Link to="/terms" className="hover:underline">
+              {t("menu.termsAndConditions")}
+            </Link>
+            <span>·</span>
+            <Link to="/privacy" className="hover:underline">
+              {t("menu.privacyPolicy")}
+            </Link>
+            <span>·</span>
+            <Link to="/faqs" className="hover:underline">
+              {t("nav.faqs")}
+            </Link>
+          </div>
+
+          {/* Copyright */}
           <div className="text-sm text-gray-600">
             {t("footer.copyright")}
           </div>

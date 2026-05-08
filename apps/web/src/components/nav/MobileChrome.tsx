@@ -33,6 +33,8 @@ const HIDE_CHROME = [
   /^\/notifications\/?$/, // /notifications
   /^\/settings\/notifications\/?$/, // /settings/notifications (Notification Preferences)
   /^\/faqs\/?$/, // /faqs
+  /^\/terms\/?$/, // /terms (Terms & Conditions)
+  /^\/privacy\/?$/, // /privacy (Privacy Policy)
   /^\/start\/?$/, // redirects to /home
   /^\/invite-members(\/[^/]+)?\/?$/,
   /^\/invite\/[^/]+\/?$/, // /invite/:token (invite link)

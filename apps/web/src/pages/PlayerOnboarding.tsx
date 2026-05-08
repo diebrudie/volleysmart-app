@@ -36,12 +36,12 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useIsCompact } from "@/hooks/use-compact";
 
 interface Position {
@@ -133,7 +133,7 @@ const calculateSkillLevel = (answers: OnboardingAnswers): number => {
 };
 
 const PlayerOnboarding = () => {
-  const { t } = useTranslation("onboarding");
+  const { t, i18n } = useTranslation("onboarding");
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -147,6 +147,7 @@ const PlayerOnboarding = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isPositionsHelpOpen, setIsPositionsHelpOpen] =
     useState<boolean>(false);
+  const [isPositionZoomed, setIsPositionZoomed] = useState(false);
   const [cityLocation, setCityLocation] = useState<LocationValue | null>(null);
 
   // Name fields — pre-filled from OAuth/email metadata; editable in step 0 if missing.
@@ -1228,16 +1229,19 @@ const PlayerOnboarding = () => {
         </div>
       </div>
 
-      {/* Positions Help Drawer (mobile) / Sheet (desktop) */}
+      {/* Positions Help Drawer (mobile) / Dialog (desktop) */}
       <TooltipProvider>
         {(() => {
+          const diagramSrc = `/positions-volleyball-players-${["en", "es", "de"].includes(i18n.language?.slice(0, 2)) ? i18n.language.slice(0, 2) : "en"}.png`;
+
           const positionsContent = (
             <div className="px-4 pb-2">
               <div className="mx-auto w-full md:max-w-3xl">
                 <img
-                  src="/positions-volleyball-players-en.png"
+                  src={diagramSrc}
                   alt={t("positionsHelp.diagramAlt")}
-                  className="w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border"
+                  className={`w-full h-auto max-h-[70vh] md:max-h-[80vh] object-contain rounded-md border ${isCompact ? "cursor-pointer active:opacity-80" : ""}`}
+                  onClick={isCompact ? () => setIsPositionZoomed(true) : undefined}
                 />
                 <p className="mt-3 text-center text-sm text-muted-foreground">
                   {t("positionsHelp.diagramCaption")}
@@ -1247,43 +1251,68 @@ const PlayerOnboarding = () => {
           );
 
           return isCompact ? (
-            <Drawer
-              open={isPositionsHelpOpen}
-              onOpenChange={setIsPositionsHelpOpen}
-              shouldScaleBackground
-            >
-              <DrawerContent className="pb-6">
-                <DrawerClose
-                  className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
-                    border border-border bg-card/90 shadow hover:bg-card focus:outline-none focus:ring-2 focus:ring-ring"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </DrawerClose>
-                <DrawerHeader className="pt-8">
-                  <DrawerTitle>{t("positionsHelp.title")}</DrawerTitle>
-                  <DrawerDescription>
-                    {t("positionsHelp.description")}
-                  </DrawerDescription>
-                </DrawerHeader>
-                {positionsContent}
-              </DrawerContent>
-            </Drawer>
+            <>
+              <Drawer
+                open={isPositionsHelpOpen}
+                onOpenChange={setIsPositionsHelpOpen}
+                shouldScaleBackground
+              >
+                <DrawerContent className="pb-6">
+                  <DrawerClose
+                    className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full
+                      border border-border bg-card/90 shadow hover:bg-card focus:outline-none focus:ring-2 focus:ring-ring"
+                    aria-label="Close"
+                  >
+                    <X className="h-4 w-4" />
+                  </DrawerClose>
+                  <DrawerHeader className="pt-8">
+                    <DrawerTitle>{t("positionsHelp.title")}</DrawerTitle>
+                    <DrawerDescription>
+                      {t("positionsHelp.description")}
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  {positionsContent}
+                </DrawerContent>
+              </Drawer>
+            </>
           ) : (
-            <Sheet open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen}>
-              <SheetContent side="right" className="overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>{t("positionsHelp.title")}</SheetTitle>
-                  <SheetDescription>
+            <Dialog open={isPositionsHelpOpen} onOpenChange={setIsPositionsHelpOpen}>
+              <DialogContent className="max-w-4xl w-[90vw]">
+                <DialogHeader>
+                  <DialogTitle>{t("positionsHelp.title")}</DialogTitle>
+                  <DialogDescription>
                     {t("positionsHelp.description")}
-                  </SheetDescription>
-                </SheetHeader>
+                  </DialogDescription>
+                </DialogHeader>
                 {positionsContent}
-              </SheetContent>
-            </Sheet>
+              </DialogContent>
+            </Dialog>
           );
         })()}
       </TooltipProvider>
+
+      {/* Position diagram fullscreen zoom (mobile) */}
+      {isPositionZoomed && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4"
+          onClick={(e) => { e.stopPropagation(); setIsPositionZoomed(false); }}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setIsPositionZoomed(false); }}
+            className="absolute top-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={`/positions-volleyball-players-${["en", "es", "de"].includes(i18n.language?.slice(0, 2)) ? i18n.language.slice(0, 2) : "en"}.png`}
+            alt={t("positionsHelp.diagramAlt")}
+            className="max-h-[90vh] w-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };

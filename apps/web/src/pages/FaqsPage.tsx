@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search } from "lucide-react";
@@ -11,6 +11,9 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import ReactMarkdown from "react-markdown";
+import { useAuth } from "@/contexts/AuthContext";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 type FaqPageDisplayed = "faqs" | "homepage_faqs";
 
@@ -52,10 +55,31 @@ function localizeFaq(row: FaqRow, lang: string): Faq {
 const FaqsPage = () => {
   const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const lastScrollYRef = useRef(0);
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollYRef.current;
+      if (Math.abs(delta) < 4) return;
+      if (delta > 0 && currentY > 80) {
+        setIsHeaderHidden(true);
+      } else {
+        setIsHeaderHidden(false);
+      }
+      lastScrollYRef.current = currentY;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const loadFaqs = async () => {
@@ -102,10 +126,96 @@ const FaqsPage = () => {
     return Array.from(grouped.entries());
   }, [filteredFaqs]);
 
+  const faqContent = (
+    <main className="flex-1">
+      <div className="px-4 py-6 pb-24 max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold mb-1">{t("faqs.title")}</h1>
+        <p className="text-sm text-muted-foreground mb-4">
+          {t("faqs.subtitle")}
+        </p>
+
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("faqs.searchPlaceholder")}
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="pl-10 h-9"
+          />
+        </div>
+
+        {isLoading && (
+          <p className="py-8 text-center text-muted-foreground text-sm">
+            {t("faqs.loading")}
+          </p>
+        )}
+
+        {!isLoading && error && (
+          <p className="py-8 text-center text-red-600 text-sm">{error}</p>
+        )}
+
+        {!isLoading && !error && faqsByCategory.length === 0 && (
+          <p className="py-8 text-center text-muted-foreground text-sm">
+            {t("faqs.noResults")}
+          </p>
+        )}
+
+        {!isLoading &&
+          !error &&
+          faqsByCategory.map(([category, categoryFaqs]) => (
+            <section key={category} className="mb-6">
+              <h3 className="text-base font-semibold mb-2 text-primary">
+                {category}
+              </h3>
+
+              <div className="border-t border-border">
+                <Accordion type="single" collapsible>
+                  {categoryFaqs.map((faq) => (
+                    <AccordionItem
+                      key={faq.id}
+                      value={faq.id}
+                      className="border-b border-border"
+                    >
+                      <AccordionTrigger
+                        className="py-3 text-left text-sm font-medium text-foreground
+                          hover:bg-muted/60 data-[state=open]:bg-muted transition-colors"
+                      >
+                        {faq.question}
+                      </AccordionTrigger>
+
+                      <AccordionContent className="text-sm text-muted-foreground">
+                        <div className="prose prose-sm max-w-none prose-a:underline">
+                          <ReactMarkdown>{faq.answer}</ReactMarkdown>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            </section>
+          ))}
+      </div>
+    </main>
+  );
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="pt-16">{faqContent}</div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Fixed header */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-background border-b border-border">
+      <div
+        className={
+          "fixed top-0 left-0 right-0 z-20 bg-background border-b border-border transition-transform duration-500 ease-out " +
+          (isHeaderHidden ? "-translate-y-full" : "translate-y-0")
+        }
+      >
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
             onClick={() => navigate(-1)}
@@ -117,77 +227,7 @@ const FaqsPage = () => {
         </div>
       </div>
       <div className="h-14" />
-
-      <main className="flex-1">
-        <div className="px-4 py-4 pb-24 max-w-4xl mx-auto">
-          {/* Subtitle */}
-          <p className="text-sm text-muted-foreground mb-3">
-            {t("faqs.subtitle")}
-          </p>
-
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t("faqs.searchPlaceholder")}
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="pl-10 h-9"
-            />
-          </div>
-
-          {isLoading && (
-            <p className="py-8 text-center text-muted-foreground text-sm">
-              {t("faqs.loading")}
-            </p>
-          )}
-
-          {!isLoading && error && (
-            <p className="py-8 text-center text-red-600 text-sm">{error}</p>
-          )}
-
-          {!isLoading && !error && faqsByCategory.length === 0 && (
-            <p className="py-8 text-center text-muted-foreground text-sm">
-              {t("faqs.noResults")}
-            </p>
-          )}
-
-          {!isLoading &&
-            !error &&
-            faqsByCategory.map(([category, categoryFaqs]) => (
-              <section key={category} className="mb-6">
-                <h3 className="text-base font-semibold mb-2 text-primary">
-                  {category}
-                </h3>
-
-                <div className="border-t border-border">
-                  <Accordion type="single" collapsible>
-                    {categoryFaqs.map((faq) => (
-                      <AccordionItem
-                        key={faq.id}
-                        value={faq.id}
-                        className="border-b border-border"
-                      >
-                        <AccordionTrigger
-                          className="py-3 text-left text-sm font-medium text-foreground
-                            hover:bg-muted/60 data-[state=open]:bg-muted transition-colors"
-                        >
-                          {faq.question}
-                        </AccordionTrigger>
-
-                        <AccordionContent className="text-sm text-muted-foreground">
-                          <div className="prose prose-sm max-w-none prose-a:underline">
-                            <ReactMarkdown>{faq.answer}</ReactMarkdown>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </div>
-              </section>
-            ))}
-        </div>
-      </main>
+      {faqContent}
     </div>
   );
 };
