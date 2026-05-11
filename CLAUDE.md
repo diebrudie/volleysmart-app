@@ -1,11 +1,12 @@
 # VolleySmart App
 
 ## Current status
-- Last change: `feat/terms-and-privacy` merged to main
+- Last change: `feat/premium-gating` merged to main
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused — frontend uses link-based invite flow. Can be deleted or repurposed.
 - Deploy status: `notify-join-request` edge function needs deploying
 - Phase 16 migrations applied: `20260506000001` through `20260506000004`
+- Premium gating migrations applied: `20260511000001` through `20260511000002`
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -23,6 +24,8 @@ Branches stack on each other (not merged to main yet):
 - `feat/join-request-email-and-fixes` branched from `main` (merged to main)
 - `feat/phase-16-settings` branched from `main` (merged to main)
 - `feat/terms-and-privacy` branched from `main` (merged to main)
+- `feat/premium-gating` branched from `main` (merged to main)
+- `feat/club-locations-management` branched from `main`
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
@@ -286,6 +289,21 @@ Branches stack on each other (not merged to main yet):
 - `apps/web/src/pages/Signup.tsx` — Consent checkbox + OAuth notice
 - `apps/web/src/components/layout/Navbar.tsx` — Desktop dropdown restructure
 - `apps/web/src/components/layout/Footer.tsx` — Vertical layout + legal links
+
+## Premium Gating + Pricing + Club Defaults (feat/premium-gating)
+1. ~~**Premium gating system**~~: `usePremium` hook (checks `is_early_adopter` column + super-admin overrides), `PremiumGate` component (blur + lock + upgrade CTA). Analytics gated on Profile + ClubOverview. Skill rating kept above paywall.
+2. ~~**First-100-users early adopter**~~: `is_early_adopter` boolean on players table. First 100 by `created_at` marked permanently. Trigger auto-flags new signups until cap reached. Survives account deletion.
+3. ~~**Homepage Pricing section**~~: Free vs Premium cards with early adopter banner. 6 premium features listed (analytics, city switching, team pairings, data export). "Pricing" nav link in desktop + mobile landing nav.
+4. ~~**Navbar hide-on-scroll**~~: Extended to Terms, Privacy, FAQs pages (was homepage only).
+5. ~~**Club default image picker**~~: 5 random volleyball images (3 indoor, 2 beach) on NewClub + ClubSettings. Shuffle/refresh button. "or upload your own" divider.
+6. ~~**FAQ update**~~: "Is VolleySmart free?" updated with pricing info (EN/ES/DE).
+
+### Premium gating key files
+- `apps/web/src/hooks/usePremium.ts` — Premium status hook (early adopter + super-admin)
+- `apps/web/src/components/common/PremiumGate.tsx` — Blur overlay wrapper
+- `apps/web/src/components/home/PricingSection.tsx` — Homepage pricing cards
+- `supabase/migrations/20260511000001_update_pricing_faq.sql` — FAQ text update
+- `supabase/migrations/20260511000002_early_adopter_column.sql` — is_early_adopter + trigger
 
 ## Phases overview
 - Phases 1-8: Completed (nav, events, RSVP, archive, clubs, members, bug fixes)

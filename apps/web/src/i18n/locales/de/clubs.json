@@ -35,6 +35,7 @@
       "invite": "Einladen",
       "members": "Mitglieder",
       "guests": "Gäste",
+      "locations": "Orte",
       "stats": "Statistiken",
       "leave": "Verlassen",
       "pending": "Ausstehend",
@@ -74,6 +75,11 @@
       "noGuestsTitle": "Noch keine Gäste hinzugefügt.",
       "noGuestsDescription": "Gäste werden beim Starten eines Spiels hinzugefügt."
     },
+    "locationsSheet": {
+      "title": "Gespeicherte Orte",
+      "noLocationsTitle": "Keine gespeicherten Orte.",
+      "noLocationsDescription": "Orte werden beim Erstellen von Events gespeichert."
+    },
     "removeDialog": {
       "title": "Mitglieder entfernen?",
       "descriptionOne": "Dieses Mitglied wird aus dem Club entfernt.",
@@ -101,6 +107,8 @@
       "joinError": "Beitrittsanfrage konnte nicht gesendet werden.",
       "guestRemoved": "Gast entfernt",
       "guestRemoveError": "Gast konnte nicht entfernt werden",
+      "locationRemoved": "Ort entfernt",
+      "locationRemoveError": "Ort konnte nicht entfernt werden",
       "removed": "Entfernt",
       "removedDescription": "{{count}} Mitglied entfernt.",
       "removedDescription_other": "{{count}} Mitglieder entfernt.",

@@ -120,6 +120,7 @@ const ClubOverview: React.FC = () => {
   const [leaveOpen, setLeaveOpen] = React.useState(false);
   const [leaving, setLeaving] = React.useState(false);
   const [guestsOpen, setGuestsOpen] = React.useState(false);
+  const [locationsOpen, setLocationsOpen] = React.useState(false);
 
   // Club details
   const { data: club, isLoading: clubLoading } = useQuery({
@@ -280,6 +281,18 @@ const ClubOverview: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: locations = [] } = useQuery({
+    queryKey: ["club-locations", clubId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("locations")
+        .select("id, name, address")
+        .eq("club_id", clubId!)
+        .order("name");
+      return data ?? [];
+    },
+    enabled: !!clubId && isAdmin,
+  });
 
   if (clubLoading || !club) {
     return (
@@ -382,6 +395,13 @@ const ClubOverview: React.FC = () => {
                   icon={<UserCheck className="h-5 w-5" />}
                   label={t("overview.actions.guests")}
                   onClick={() => setGuestsOpen(true)}
+                />
+              )}
+              {isAdmin && (
+                <ActionButton
+                  icon={<MapPin className="h-5 w-5" />}
+                  label={t("overview.actions.locations")}
+                  onClick={() => setLocationsOpen(true)}
                 />
               )}
               <ActionButton
@@ -728,6 +748,52 @@ const ClubOverview: React.FC = () => {
               <div className="py-8 text-center">
                 <p className="text-sm text-muted-foreground">{t("overview.guestsSheet.noGuestsTitle")}</p>
                 <p className="text-xs text-muted-foreground mt-1">{t("overview.guestsSheet.noGuestsDescription")}</p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Locations sheet (admin only) */}
+      <Sheet open={locationsOpen} onOpenChange={setLocationsOpen}>
+        <SheetContent side={isCompact ? "bottom" : "right"} className={cn(isCompact && "max-h-[75vh] rounded-t-2xl", "overflow-y-auto")}>
+          <SheetHeader>
+            <SheetTitle>{t("overview.locationsSheet.title")}</SheetTitle>
+          </SheetHeader>
+          <div className="py-4 space-y-1">
+            {locations.length > 0 ? (
+              locations.map((loc) => (
+                <div key={loc.id} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
+                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{loc.name}</p>
+                    {loc.address && (
+                      <p className="text-xs text-muted-foreground truncate">{loc.address}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="text-xs text-destructive hover:text-destructive/80 shrink-0"
+                    onClick={async () => {
+                      const { error } = await supabase.from("locations").delete().eq("id", loc.id);
+                      if (!error) {
+                        queryClient.invalidateQueries({ queryKey: ["club-locations", clubId] });
+                        toast({ title: t("overview.toasts.locationRemoved"), duration: 1500 });
+                      } else {
+                        toast({ title: t("overview.toasts.error"), description: t("overview.toasts.locationRemoveError"), variant: "destructive", duration: 2000 });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">{t("overview.locationsSheet.noLocationsTitle")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("overview.locationsSheet.noLocationsDescription")}</p>
               </div>
             )}
           </div>

@@ -35,6 +35,7 @@
       "invite": "Invitar",
       "members": "Miembros",
       "guests": "Invitados",
+      "locations": "Ubicaciones",
       "stats": "Estadísticas",
       "leave": "Salir",
       "pending": "Pendiente",
@@ -74,6 +75,11 @@
       "noGuestsTitle": "Aún no se han agregado invitados.",
       "noGuestsDescription": "Los invitados se agregan al iniciar un partido."
     },
+    "locationsSheet": {
+      "title": "Ubicaciones guardadas",
+      "noLocationsTitle": "Sin ubicaciones guardadas.",
+      "noLocationsDescription": "Las ubicaciones se guardan al crear eventos."
+    },
     "removeDialog": {
       "title": "¿Eliminar miembros?",
       "descriptionOne": "Este miembro será eliminado del club.",
@@ -101,6 +107,8 @@
       "joinError": "Error al enviar la solicitud de unión.",
       "guestRemoved": "Invitado eliminado",
       "guestRemoveError": "Error al eliminar el invitado",
+      "locationRemoved": "Ubicación eliminada",
+      "locationRemoveError": "Error al eliminar la ubicación",
       "removed": "Eliminado",
       "removedDescription": "{{count}} miembro eliminado.",
       "removedDescription_other": "{{count}} miembros eliminados.",
