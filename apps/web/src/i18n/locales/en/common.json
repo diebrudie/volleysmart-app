@@ -17,6 +17,7 @@
   "nav.signUp": "Sign Up",
   "nav.features": "Features",
   "nav.howItWorks": "How it works",
+  "nav.pricing": "Pricing",
   "nav.navigationMenu": "Navigation Menu",
   "nav.menu": "Menu",
   "nav.close": "Close",
@@ -93,5 +94,10 @@
     "addImage": "Add a screenshot",
     "invalidImage": "Please select an image file.",
     "imageTooLarge": "Image must be smaller than 5 MB."
-  }
+  },
+  "premium.personalAnalytics": "Personal Analytics",
+  "premium.personalAnalyticsDesc": "Upgrade to see your detailed stats, win rate, and performance trends",
+  "premium.clubAnalytics": "Club Analytics",
+  "premium.clubAnalyticsDesc": "Upgrade to see club stats, attendance trends, and best team combinations",
+  "premium.upgrade": "Upgrade"
 }

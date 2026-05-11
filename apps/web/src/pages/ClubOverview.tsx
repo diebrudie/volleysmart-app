@@ -48,6 +48,7 @@ import { useIsCompact } from "@/hooks/use-compact";
 import { EventCard } from "@/components/events/EventCard";
 import { ClubInviteSharePanel } from "@/components/clubs/ClubInviteSharePanel";
 import ClubSettingsDialog from "@/components/clubs/ClubSettingsDialog";
+import PremiumGate from "@/components/common/PremiumGate";
 import type { PlannedEvent } from "@/integrations/supabase/plannedEvents";
 import {
   Sheet,
@@ -603,6 +604,7 @@ const ClubOverview: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="stats" className="mt-4">
+              <PremiumGate titleKey="premium.clubAnalytics" descriptionKey="premium.clubAnalyticsDesc">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-bold">{t("overview.statsSection.title")}</h2>
                 <select
@@ -680,6 +682,7 @@ const ClubOverview: React.FC = () => {
                   <p className="text-sm text-muted-foreground">{t("overview.statsSection.noGames", { year: statsYear })}</p>
                 </div>
               )}
+              </PremiumGate>
             </TabsContent>
           </Tabs>
         </div>

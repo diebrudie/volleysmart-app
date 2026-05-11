@@ -328,6 +328,13 @@ Branches stack on each other (not merged to main yet):
 ### Group D: Business & Legal (branch: `feat/business`)
 - **FEAT-25: Paid Tiers Architecture** — Audit and propose paid-tier architecture. Free-tier limits: max 2 clubs/user, max 20 members + 5 guests/club, inter-club tournaments require ≥1 paying user/club. Suggest schema, enforcement, payment provider, additional paywalled features. No implementation.
 - ~~**FEAT-26: Terms & Conditions Page**~~ — `/terms` and `/privacy` pages with real legal text (EN/ES/DE), signup consent checkbox, auth-aware rendering. Completed in `feat/terms-and-privacy`.
+- **FEAT-37: Per-Club Subscription** — Allow club admins to purchase a club-level premium subscription that unlocks analytics for all club members (only within that club). Requires `club_subscriptions` table, per-club premium check in `usePremium`, and admin-facing subscription management. Deferred — per-user subscription is simpler to start.
+- **FEAT-38: Premium — City Switching for Public Events** — Free users see public events in their home city only. Premium users can browse and join public events in any city. Requires city selector UI on DiscoverEvents page + premium gate on the city filter.
+- **FEAT-39: Premium — Advanced Analytics** — Win streaks, head-to-head records, performance by position, monthly trend charts, player comparison (side-by-side stats with a teammate).
+- **FEAT-40: Premium — Data Export** — Export game history and personal/club stats as CSV or PDF.
+- **FEAT-41: Premium — Custom Team Pairings** — Premium version of FEAT-35. Lock specific player pairings/groups that stay together during team generation. Overlaps with FEAT-35 but gated behind premium.
+- **FEAT-42: Premium — Extended Game History** — Free users see last 10 games; premium users see full history.
+- **FEAT-43: Premium — Priority Support** — Premium users get faster response times on contact form submissions.
 
 ### Group F: Onboarding & UX (branch: `feat/onboarding-ux`)
 - ~~**FEAT-32: New User Home Onboarding**~~ — Guided action cards on HomeDashboard for users with no clubs. Auto-reverts once user joins a club.
