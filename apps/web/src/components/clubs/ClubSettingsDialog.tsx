@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useIsCompact } from "@/hooks/use-compact";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,12 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import CityLocationSelector, {
   LocationValue,
 } from "@/components/forms/CityLocationSelector";
 import { Switch } from "@/components/ui/switch";
-import { HelpCircle, Upload } from "lucide-react";
+import { HelpCircle, Upload, Check, RefreshCw } from "lucide-react";
+import { getPublicUrl } from "@/integrations/supabase/storage";
 import {
   Popover,
   PopoverContent,
@@ -123,6 +123,41 @@ const ClubSettingsDialog = ({
 
   const [loadingClub, setLoadingClub] = useState<boolean>(false);
 
+  const [selectedDefaultUrl, setSelectedDefaultUrl] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const INDOOR_IMAGES = Array.from({ length: 10 }, (_, i) =>
+    `defaults/img-volleyball-indoor-${String(i + 1).padStart(2, "0")}.jpg`
+  );
+  const BEACH_IMAGES = Array.from({ length: 10 }, (_, i) =>
+    `defaults/img-volleyball-beach-${String(i + 1).padStart(2, "0")}.jpg`
+  );
+
+  const defaultImages = useMemo(() => {
+    const shuffle = <T,>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
+    const indoor = shuffle(INDOOR_IMAGES).slice(0, 3);
+    const beach = shuffle(BEACH_IMAGES).slice(0, 2);
+    return shuffle([...indoor, ...beach]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
+  const getDefaultPublicUrl = (path: string) =>
+    getPublicUrl("club-images", path);
+
+  const handleSelectDefault = (path: string) => {
+    const url = getDefaultPublicUrl(path);
+    if (selectedDefaultUrl === url) {
+      setSelectedDefaultUrl(null);
+    } else {
+      setSelectedDefaultUrl(url);
+      setImageFile(null);
+      setImagePreview(url);
+      setFileName(null);
+      setExistingImageRemoved(false);
+      setFileInputKey((k) => k + 1);
+    }
+  };
+
   const [showManual, setShowManual] = useState(false);
   const hasMapbox = Boolean(
     import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
@@ -168,6 +203,7 @@ const ClubSettingsDialog = ({
         setImageFile(null);
         setFileName(null);
         setExistingImageRemoved(false);
+        setSelectedDefaultUrl(null);
         setImagePreview(effective.image_url ?? null);
         setFileInputKey((k) => k + 1);
 
@@ -216,6 +252,7 @@ const ClubSettingsDialog = ({
     setImageFile(file);
     setFileName(file?.name ?? null);
     setExistingImageRemoved(false);
+    setSelectedDefaultUrl(null);
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -229,12 +266,14 @@ const ClubSettingsDialog = ({
     setImageFile(null);
     setFileName(null);
     setImagePreview(null);
+    setSelectedDefaultUrl(null);
     setFileInputKey((k) => k + 1);
   };
 
   const handleClearSelectedImage = () => {
     setImageFile(null);
     setFileName(null);
+    setSelectedDefaultUrl(null);
     setImagePreview(existingImageRemoved ? null : club.image_url ?? null);
     setFileInputKey((k) => k + 1);
   };
@@ -244,6 +283,7 @@ const ClubSettingsDialog = ({
     description.trim() !== initial.description ||
     imageFile !== null ||
     existingImageRemoved === true ||
+    (selectedDefaultUrl !== null && selectedDefaultUrl !== initial.image_url) ||
     (location?.city ?? manualCity) !== initial.city ||
     (location?.country ?? manualCountry) !== initial.country ||
     (location?.countryCode ?? manualCountryCode.toUpperCase()) !==
@@ -266,7 +306,9 @@ const ClubSettingsDialog = ({
     try {
       let imageUrl: string | null = club.image_url;
 
-      if (existingImageRemoved && !imageFile) {
+      if (selectedDefaultUrl && !imageFile) {
+        imageUrl = selectedDefaultUrl;
+      } else if (existingImageRemoved && !imageFile) {
         imageUrl = null;
       }
 
@@ -423,75 +465,117 @@ const ClubSettingsDialog = ({
           </div>
 
           {/* Club Image */}
-          <div className="space-y-1.5">
-            <Label htmlFor="club-image">{t("settings.clubImage")}</Label>
+          <div className="space-y-3">
+            <Label>{t("settings.clubImage")}</Label>
 
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage
-                    src={imagePreview || ""}
-                    alt="Club preview"
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="bg-muted" />
-                </Avatar>
-
-                {imagePreview && (
-                  <button
-                    type="button"
-                    onClick={
-                      imageFile
-                        ? handleClearSelectedImage
-                        : handleRemoveExistingImage
-                    }
-                    className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-background border border-border text-destructive hover:text-destructive/80 text-xs leading-none flex items-center justify-center"
-                    aria-label="Remove image"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-
-              <div className="flex-1">
-                <label
-                  htmlFor="club-image-upload"
-                  className="cursor-pointer inline-block"
-                >
-                  <div className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-muted-foreground/30 rounded-lg hover:border-muted-foreground/50 transition-colors w-fit">
-                    <Upload className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      {imagePreview ? t("settings.changePhoto") : t("settings.uploadPhoto")}
-                    </span>
-                  </div>
-                </label>
-                <input
-                  id="club-image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageChange(file);
+            {/* Default image grid */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.pickDefault")}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRefreshKey((k) => k + 1);
+                    setSelectedDefaultUrl(null);
                   }}
-                />
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  aria-label="Shuffle images"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {defaultImages.map((path) => {
+                  const url = getDefaultPublicUrl(path);
+                  const isSelected = selectedDefaultUrl === url && !imageFile;
+                  return (
+                    <button
+                      key={path}
+                      type="button"
+                      onClick={() => handleSelectDefault(path)}
+                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                        isSelected
+                          ? "border-primary ring-2 ring-primary/30"
+                          : "border-border hover:border-muted-foreground"
+                      }`}
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="h-3.5 w-3.5 text-white" />
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                {fileName && (
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <span className="text-xs text-green-600 dark:text-green-400">
-                      {fileName}
-                    </span>
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 border-t border-border" />
+              <span className="text-xs text-muted-foreground">{t("settings.orUpload")}</span>
+              <div className="flex-1 border-t border-border" />
+            </div>
+
+            {/* Custom upload */}
+            <div>
+              <label
+                htmlFor="club-image-upload-settings"
+                className="cursor-pointer inline-block"
+              >
+                <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-border rounded-lg hover:border-muted-foreground transition-colors bg-muted/30 w-fit">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">
+                    {imagePreview && !selectedDefaultUrl ? t("settings.changePhoto") : t("settings.uploadPhoto")}
+                  </span>
+                </div>
+              </label>
+              <input
+                key={fileInputKey}
+                id="club-image-upload-settings"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageChange(file);
+                }}
+              />
+
+              {imagePreview && !selectedDefaultUrl && (
+                <div className="mt-2 flex items-center gap-3">
+                  <img
+                    src={imagePreview}
+                    alt="Upload preview"
+                    className="h-14 w-14 rounded-lg object-cover border border-border"
+                  />
+                  <div className="flex flex-col">
+                    {fileName && (
+                      <span className="text-sm text-green-600 dark:text-green-400 truncate max-w-[200px]">
+                        {fileName}
+                      </span>
+                    )}
                     <button
                       type="button"
-                      onClick={handleClearSelectedImage}
-                      className="text-destructive hover:text-destructive/80 text-xs"
-                      aria-label="Remove selected image"
+                      onClick={imageFile ? handleClearSelectedImage : handleRemoveExistingImage}
+                      className="text-red-500 hover:text-red-600 text-xs font-medium text-left"
+                      aria-label="Remove image"
                     >
-                      ×
+                      {t("newClub.removeImage")}
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 

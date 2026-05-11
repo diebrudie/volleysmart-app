@@ -163,7 +163,7 @@ const Navbar = () => {
   const isFaqRoute = pathname === "/faqs";
   const isLegalRoute = pathname === "/terms" || pathname === "/privacy";
   const isSolidBg = isFaqRoute || isLegalRoute;
-  const shouldHideOnScroll = pathname === "/";
+  const shouldHideOnScroll = pathname === "/" || isFaqRoute || isLegalRoute;
 
   const { isDark, setTheme } = useTheme();
 
@@ -292,7 +292,7 @@ const Navbar = () => {
   ];
 
   const handleLandingNavClick = (
-    sectionId: "features" | "how-it-works" | "faqs"
+    sectionId: "features" | "how-it-works" | "pricing" | "faqs"
   ) => {
     // If we're not on the homepage, navigate there with the hash.
     if (pathname !== "/") {
@@ -349,6 +349,13 @@ const Navbar = () => {
               className="text-lg font-normal text-gray-700 hover:text-gray-900"
             >
               {t("nav.howItWorks")}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLandingNavClick("pricing")}
+              className="text-lg font-normal text-gray-700 hover:text-gray-900"
+            >
+              {t("nav.pricing")}
             </button>
             <button
               type="button"
@@ -789,6 +796,18 @@ const Navbar = () => {
                           className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
                         >
                           {t("nav.howItWorks")}
+                        </button>
+                      </DrawerClose>
+                      <DrawerClose asChild>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleLandingNavClick("pricing");
+                            setIsOpen(false);
+                          }}
+                          className="block w-full text-center rounded-md bg-white px-4 py-3 text-lg font-normal text-gray-900 hover:bg-gray-50"
+                        >
+                          {t("nav.pricing")}
                         </button>
                       </DrawerClose>
                       <DrawerClose asChild>

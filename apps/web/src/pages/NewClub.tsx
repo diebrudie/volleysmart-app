@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Upload, ArrowLeft, HelpCircle } from "lucide-react";
+import { Upload, ArrowLeft, HelpCircle, Check, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,8 +55,40 @@ const NewClub = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [location, setLocation] = useState<LocationValue | null>(null);
+  const [selectedDefaultUrl, setSelectedDefaultUrl] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { setClubId } = useClub();
 
+  const INDOOR_IMAGES = Array.from({ length: 10 }, (_, i) =>
+    `defaults/img-volleyball-indoor-${String(i + 1).padStart(2, "0")}.jpg`
+  );
+  const BEACH_IMAGES = Array.from({ length: 10 }, (_, i) =>
+    `defaults/img-volleyball-beach-${String(i + 1).padStart(2, "0")}.jpg`
+  );
+
+  const defaultImages = useMemo(() => {
+    const shuffle = <T,>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
+    const indoor = shuffle(INDOOR_IMAGES).slice(0, 3);
+    const beach = shuffle(BEACH_IMAGES).slice(0, 2);
+    return shuffle([...indoor, ...beach]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
+  const getDefaultPublicUrl = (path: string) =>
+    getPublicUrl("club-images", path);
+
+  const handleSelectDefault = (path: string) => {
+    const url = getDefaultPublicUrl(path);
+    if (selectedDefaultUrl === url) {
+      setSelectedDefaultUrl(null);
+    } else {
+      setSelectedDefaultUrl(url);
+      setImageFile(null);
+      setImagePreview(null);
+      setFileName(null);
+      setFileInputKey((k) => k + 1);
+    }
+  };
 
   const generateClubIdentifier = () => {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -74,6 +105,7 @@ const NewClub = () => {
     setImageFile(file);
     setFileName(file?.name ?? null);
     setUploadError(null);
+    setSelectedDefaultUrl(null);
     const reader = new FileReader();
     reader.onloadend = () => setImagePreview(reader.result as string);
     reader.readAsDataURL(file);
@@ -83,6 +115,7 @@ const NewClub = () => {
     setImageFile(null);
     setImagePreview(null);
     setFileName(null);
+    setSelectedDefaultUrl(null);
     setFileInputKey((k) => k + 1);
   };
 
@@ -134,7 +167,7 @@ const NewClub = () => {
 
     try {
       const clubIdentifier = generateClubIdentifier();
-      let imageUrl = null;
+      let imageUrl: string | null = selectedDefaultUrl;
 
       if (imageFile) {
         try {
@@ -280,65 +313,121 @@ const NewClub = () => {
           </div>
 
           {/* Club Image */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="text-sm font-medium text-foreground">
               {t("newClub.clubImage")}
             </Label>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20 shrink-0">
-                <AvatarImage
-                  src={imagePreview || ""}
-                  alt="Club preview"
-                  className="object-cover"
-                />
-                <AvatarFallback className="bg-muted text-2xl">
-                  {"\uD83D\uDCF7"}
-                </AvatarFallback>
-              </Avatar>
 
-              <div className="flex-1">
-                <label
-                  htmlFor="club-image-upload"
-                  className="cursor-pointer inline-block"
-                >
-                  <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-border rounded-lg hover:border-muted-foreground transition-colors bg-muted/30 w-fit">
-                    <Upload className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground">
-                      {imagePreview ? t("newClub.changePhoto") : t("newClub.uploadPhoto")}
-                    </span>
-                  </div>
-                </label>
-                <input
-                  id="club-image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageChange(file);
+            {/* Default image grid */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-muted-foreground">
+                  {t("newClub.pickDefault")}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRefreshKey((k) => k + 1);
+                    setSelectedDefaultUrl(null);
                   }}
-                />
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  aria-label="Shuffle images"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {defaultImages.map((path) => {
+                  const url = getDefaultPublicUrl(path);
+                  const isSelected = selectedDefaultUrl === url && !imageFile;
+                  return (
+                    <button
+                      key={path}
+                      type="button"
+                      onClick={() => handleSelectDefault(path)}
+                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                        isSelected
+                          ? "border-primary ring-2 ring-primary/30"
+                          : "border-border hover:border-muted-foreground"
+                      }`}
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="h-3.5 w-3.5 text-white" />
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                {fileName && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-sm text-green-600 dark:text-green-400">
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 border-t border-border" />
+              <span className="text-xs text-muted-foreground">{t("newClub.orUpload")}</span>
+              <div className="flex-1 border-t border-border" />
+            </div>
+
+            {/* Custom upload */}
+            <div>
+              <label
+                htmlFor="club-image-upload"
+                className="cursor-pointer inline-block"
+              >
+                <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-border rounded-lg hover:border-muted-foreground transition-colors bg-muted/30 w-fit">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">
+                    {imagePreview ? t("newClub.changePhoto") : t("newClub.uploadPhoto")}
+                  </span>
+                </div>
+              </label>
+              <input
+                key={fileInputKey}
+                id="club-image-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageChange(file);
+                }}
+              />
+
+              {imagePreview && (
+                <div className="mt-2 flex items-center gap-3">
+                  <img
+                    src={imagePreview}
+                    alt="Upload preview"
+                    className="h-14 w-14 rounded-lg object-cover border border-border"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-sm text-green-600 dark:text-green-400 truncate max-w-[200px]">
                       {fileName}
                     </span>
                     <button
                       type="button"
                       onClick={handleClearSelectedImage}
-                      className="text-red-500 hover:text-red-600 text-sm font-medium"
+                      className="text-red-500 hover:text-red-600 text-xs font-medium text-left"
                       aria-label={t("newClub.removeImage")}
                     >
                       {t("newClub.removeImage")}
                     </button>
                   </div>
-                )}
+                </div>
+              )}
 
-                {uploadError && (
-                  <p className="mt-1 text-sm text-destructive">{uploadError}</p>
-                )}
-              </div>
+              {uploadError && (
+                <p className="mt-1 text-sm text-destructive">{uploadError}</p>
+              )}
             </div>
           </div>
 
