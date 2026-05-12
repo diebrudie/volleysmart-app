@@ -1,0 +1,6 @@
+{
+  "email.invalid": "Por favor, introduce una dirección de correo válida",
+  "password.tooShort": "La contraseña debe tener al menos {{min}} caracteres",
+  "password.required": "La contraseña es obligatoria",
+  "required": "Este campo es obligatorio"
+}
