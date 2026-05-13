@@ -1,12 +1,13 @@
 # VolleySmart App
 
 ## Current status
-- Last change: `feat/premium-gating` merged to main
+- Last change: `feat/native-app-phase-0` merged to main (shared core + opponent mode + club locations)
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused — frontend uses link-based invite flow. Can be deleted or repurposed.
 - Deploy status: `notify-join-request` edge function needs deploying
 - Phase 16 migrations applied: `20260506000001` through `20260506000004`
 - Premium gating migrations applied: `20260511000001` through `20260511000002`
+- Opponent team mode migration applied: `20260514000001`
 
 ## Branching strategy
 Branches stack on each other (not merged to main yet):
@@ -25,7 +26,8 @@ Branches stack on each other (not merged to main yet):
 - `feat/phase-16-settings` branched from `main` (merged to main)
 - `feat/terms-and-privacy` branched from `main` (merged to main)
 - `feat/premium-gating` branched from `main` (merged to main)
-- `feat/club-locations-management` branched from `main`
+- `feat/club-locations-management` branched from `main` (merged to main)
+- `feat/native-app-phase-0` branched from `main` (merged to main)
 
 ## i18n (Internationalization) — EN/ES/DE
 **Branch:** `feat/i18n` | **Library:** react-i18next + i18next + i18next-browser-languagedetector
@@ -305,6 +307,61 @@ Branches stack on each other (not merged to main yet):
 - `supabase/migrations/20260511000001_update_pricing_faq.sql` — FAQ text update
 - `supabase/migrations/20260511000002_early_adopter_column.sql` — is_early_adopter + trigger
 
+## Native App Phase 0 — Shared Core Extraction (completed)
+**Branch:** `feat/native-app-phase-0` (merged to main)
+
+### What was done
+1. ~~**`@volleysmart/core` package**~~: Extracted 17 Supabase data modules, i18n translations (33 JSON files × 11 namespaces × 3 languages), and utility functions into `packages/core/`
+2. ~~**Client injection pattern**~~: `setSupabaseClient`/`getSupabaseClient` — each platform provides its own Supabase client with appropriate storage (localStorage vs AsyncStorage)
+3. ~~**Web re-export shims**~~: All `apps/web/src/integrations/supabase/*.ts` files replaced with thin re-exports from `@volleysmart/core`. React Query hooks remain web-only.
+4. ~~**i18n sharing**~~: `packages/core/src/i18n/` exports structured `translations` object consumed by both web and mobile
+5. ~~**dateLocale platform-agnostic**~~: Changed to `getDateLocale(lang: string)` — no dependency on `i18n.language` in core
+6. ~~**Metro config**~~: `watchFolders` + `nodeModulesPaths` for monorepo resolution in Expo
+
+### Architecture
+- `packages/core/` — shared async data functions, types, i18n, utils (no React hooks, no platform-specific code)
+- `apps/web/` — React + Vite, React Query hooks, web UI components
+- `apps/mobile/` — Expo 54 + React Native 0.81.5, separate UI (Phase 1+)
+- Both apps call `setSupabaseClient()` at boot with platform-appropriate storage
+
+### Core key files
+- `packages/core/src/index.ts` — barrel export
+- `packages/core/src/supabase/clientHolder.ts` — client injection bridge
+- `packages/core/src/supabase/*.ts` — 17 data modules (profiles, players, club, clubMembers, plannedEvents, matchDays, notifications, etc.)
+- `packages/core/src/i18n/index.ts` — translations aggregator
+- `packages/core/src/utils/dateLocale.ts` — `getDateLocale(lang)`
+- `packages/core/src/utils/formatName.ts` — name formatting
+
+## Opponent Team Mode (completed)
+**Branch:** `feat/native-app-phase-0` (merged to main)
+
+### What was done
+1. ~~**DB migration**~~: `20260514000001` — added `is_opponent_mode` (boolean) and `opponent_team_name` (text) to `planned_events` and `match_days`
+2. ~~**CreateEvent toggle**~~: "Play against another club" switch, opponent team name input field
+3. ~~**EventDetail display**~~: Shield icon + opponent name in details section, edit support
+4. ~~**Game page**~~: Team B shows shield icon + opponent team name when in opponent mode
+5. ~~**i18n**~~: Full EN/ES/DE translations for opponent mode keys in events + games namespaces
+
+### Key files
+- `supabase/migrations/20260514000001_opponent_team_mode.sql`
+- `packages/core/src/supabase/plannedEvents.ts` — opponent mode fields in types + CRUD
+- `apps/web/src/pages/CreateEvent.tsx` — toggle + input
+- `apps/web/src/pages/EventDetail.tsx` — display + edit
+- `apps/web/src/pages/Game.tsx` — opponent team display
+
+## Club Locations Management (completed)
+**Branch:** `feat/club-locations-management` (merged to main)
+
+### What was done
+1. ~~**Locations tab**~~: Admin-only view of saved locations per club on ClubOverview
+2. ~~**Delete locations**~~: Admin can delete saved locations with confirmation dialog
+3. ~~**FK cascade fix**~~: `planned_events.location_id` changed to `ON DELETE SET NULL` (was RESTRICT, caused 409)
+4. ~~**Delete RLS policy**~~: Only club admins can delete locations
+
+### Key files
+- `supabase/migrations/20260511000003_location_delete_rls.sql` — DELETE policy
+- `supabase/migrations/20260511000004_fix_location_fk_cascade.sql` — FK ON DELETE SET NULL
+
 ## Phases overview
 - Phases 1-8: Completed (nav, events, RSVP, archive, clubs, members, bug fixes)
 - Phase 9: Completed — Create Event improvements + Event Detail page + Home redesign
@@ -315,6 +372,7 @@ Branches stack on each other (not merged to main yet):
 - Phase 14: Completed — Notifications system + bug fixes
 - Discovery: In Progress — Public events, discoverable clubs, attendee privacy, location sharing
 - Phase 16: Completed — Grouped menu drawer, notification preferences (grouped rows), engagement notifications, position translations, skill score privacy + FAQs
+- Native App Phase 0: Completed — Shared core extraction (`@volleysmart/core`), opponent team mode, club locations management
 
 ## Feature backlog
 
@@ -359,7 +417,7 @@ Branches stack on each other (not merged to main yet):
 - ~~**FEAT-33: Contact Form Image Attachments**~~ — Add image upload to ContactSheet so users can attach screenshots for bug reports. Store in Supabase Storage or send as email attachments.
 
 ### Group E: Platform (branch: `feat/platform`)
-- **Backlog: Native iOS/Android app** — Build native app using monorepo
+- **Backlog: Native iOS/Android app** — Phase 0 (shared core) done. Phase 1 next: auth + onboarding in Expo
 - **Backlog: Tournament event type** — Complex, deferred
 - ~~**Backlog: Skill Score progression**~~ — Onboarding capped at 75, gameplay bonus (max 25) via logarithmic formula (participation + win rate + hours). Recalculates on Profile load, score never decreases. `skillProgression.ts`, `rating_history` stored in DB.
 - ~~**Phase 16: Settings page & Notification preferences**~~ — Completed
