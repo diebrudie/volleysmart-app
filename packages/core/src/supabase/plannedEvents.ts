@@ -39,6 +39,8 @@ export interface PlannedEvent {
   recurrence_parent_id?: string | null;
   recurrence_cancelled_at?: string | null;
   event_rsvp?: Array<{ status: RsvpStatus; player_id: string; responded_at?: string | null }>;
+  is_opponent_mode?: boolean;
+  opponent_team_name?: string | null;
 }
 
 /** Fetch all upcoming events across every club the user is an active member of,
@@ -435,6 +437,8 @@ export interface CreateEventInput {
   rsvp_deadline?: string; // ISO timestamp
   extra_club_ids?: string[]; // for tournament multi-club
   recurrence_rule?: "weekly" | "monthly";
+  is_opponent_mode?: boolean;
+  opponent_team_name?: string;
 }
 
 /** Create a planned event with an optional location_id and optional club. */
@@ -462,6 +466,8 @@ export async function createPlannedEvent(
       recurrence_rule: input.recurrence_rule ?? null,
       event_gender: input.event_gender ?? "mixed",
       activity_type: input.activity_type ?? "indoor",
+      is_opponent_mode: input.is_opponent_mode ?? false,
+      opponent_team_name: input.opponent_team_name ?? null,
     })
     .select("id")
     .single();
@@ -494,6 +500,8 @@ export interface UpdateEventInput {
   max_players?: number | null;
   notes?: string | null;
   rsvp_deadline?: string | null;
+  is_opponent_mode?: boolean;
+  opponent_team_name?: string | null;
 }
 
 /** Update an existing planned event. */
@@ -516,6 +524,8 @@ export async function updatePlannedEvent(
   if (input.event_gender !== undefined) updates.event_gender = input.event_gender;
   if (input.activity_type !== undefined) updates.activity_type = input.activity_type;
   if (input.rsvp_deadline !== undefined) updates.rsvp_deadline = input.rsvp_deadline;
+  if (input.is_opponent_mode !== undefined) updates.is_opponent_mode = input.is_opponent_mode;
+  if (input.opponent_team_name !== undefined) updates.opponent_team_name = input.opponent_team_name;
 
   const { error } = await supabase
     .from("planned_events")
@@ -574,6 +584,8 @@ export async function updateRecurringSeries(
   if (input.is_public !== undefined) updates.is_public = input.is_public;
   if (input.max_players !== undefined) updates.max_players = input.max_players;
   if (input.notes !== undefined) updates.notes = input.notes;
+  if (input.is_opponent_mode !== undefined) updates.is_opponent_mode = input.is_opponent_mode;
+  if (input.opponent_team_name !== undefined) updates.opponent_team_name = input.opponent_team_name;
 
   if (Object.keys(updates).length > 0) {
     const today = new Date().toISOString().split("T")[0];

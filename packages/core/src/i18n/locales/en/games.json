@@ -70,6 +70,9 @@
     "notEnoughPlayersDesc": "Please select at least 4 players to create teams",
     "missingInfo": "Missing information",
     "missingInfoDesc": "Club or user information is missing",
+    "opponentTeam": "Opponent Team",
+    "inviteOpponentTeam": "Want the other team to track their stats too?",
+    "inviteOpponentButton": "Invite them to VolleySmart",
     "position": {
       "Setter": "Setter",
       "Outside Hitter": "Outside Hitter",

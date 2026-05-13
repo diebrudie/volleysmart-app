@@ -70,6 +70,9 @@
     "notEnoughPlayersDesc": "Por favor selecciona al menos 4 jugadores para crear equipos",
     "missingInfo": "Información faltante",
     "missingInfoDesc": "Falta información del club o usuario",
+    "opponentTeam": "Equipo rival",
+    "inviteOpponentTeam": "¿Quieres que el otro equipo también registre sus estadísticas?",
+    "inviteOpponentButton": "Invítalos a VolleySmart",
     "position": {
       "Setter": "Colocador",
       "Outside Hitter": "Atacante",
