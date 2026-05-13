@@ -17,6 +17,7 @@ import {
   MoreHorizontal,
   Users,
   Radio,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,6 +96,8 @@ interface MatchDayData {
   club_id: string;
   location_id: string | null;
   planned_event_id: string | null;
+  is_opponent_mode: boolean;
+  opponent_team_name: string | null;
   matches: MatchData[];
   game_players: GamePlayerData[];
   clubs: { name: string };
@@ -186,7 +189,7 @@ const Game = () => {
         .select(
           `
           id, date, notes, club_id, location_id,
-          planned_event_id,
+          planned_event_id, is_opponent_mode, opponent_team_name,
           matches ( id, game_number, team_a_score, team_b_score ),
           clubs ( name ),
           locations ( id, name )
@@ -270,6 +273,8 @@ const Game = () => {
         club_id: md.club_id,
         location_id: md.location_id,
         planned_event_id: md.planned_event_id ?? null,
+        is_opponent_mode: md.is_opponent_mode ?? false,
+        opponent_team_name: md.opponent_team_name ?? null,
         matches: md.matches ?? [],
         game_players: gamePlayers,
         clubs: md.clubs,
@@ -464,6 +469,8 @@ const Game = () => {
           club_id: matchData.club_id,
           team_generated: true,
           location_id: matchData.location_id,
+          is_opponent_mode: matchData.is_opponent_mode,
+          opponent_team_name: matchData.opponent_team_name,
         })
         .select()
         .single();
@@ -559,19 +566,27 @@ const Game = () => {
   const hasPlayedAnySet = scores.some(
     (g) => g.teamA !== null && g.teamB !== null && (g.teamA > 0 || g.teamB > 0)
   );
+
+  const teamALabel = matchData.is_opponent_mode && matchData.clubs?.name
+    ? matchData.clubs.name
+    : t("game.teamA");
+  const teamBLabel = matchData.is_opponent_mode
+    ? (matchData.opponent_team_name || t("game.newGame.opponentTeam"))
+    : t("game.teamB");
+
   const winner = hasPlayedAnySet
     ? teamAWins > teamBWins
-      ? t("game.teamA")
+      ? teamALabel
       : teamBWins > teamAWins
-      ? t("game.teamB")
+      ? teamBLabel
       : t("game.tie")
     : t("game.tbd");
 
   const matchWinner =
     teamAWins > teamBWins
-      ? t("game.teamA")
+      ? teamALabel
       : teamBWins > teamAWins
-      ? t("game.teamB")
+      ? teamBLabel
       : t("game.draw");
 
   // ── Date formatting ────────────────────────────────────────────────────────
@@ -609,7 +624,7 @@ const Game = () => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              {isEditingAllowed && canEdit && (
+              {isEditingAllowed && canEdit && !matchData.is_opponent_mode && (
                 <DropdownMenuItem
                   onClick={() =>
                     navigate(`/edit-game/${matchData.club_id}/${matchData.id}`)
@@ -667,6 +682,12 @@ const Game = () => {
               <Users className="h-3.5 w-3.5" />
               {t("game.playerCount", { count: teamAPlayers.length + teamBPlayers.length })}
             </span>
+            {matchData.is_opponent_mode && (
+              <span className="flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5" />
+                {matchData.opponent_team_name || t("game.newGame.opponentTeam")}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -710,9 +731,9 @@ const Game = () => {
         {/* Teams (side-by-side) */}
         <div className="rounded-lg overflow-hidden border border-border">
           <div className="flex">
-            <div className="w-1/2 bg-card">
+            <div className={matchData.is_opponent_mode ? "w-1/2 bg-card" : "w-1/2 bg-card"}>
               <h3 className="bg-red-500 dark:bg-red-600 text-white py-2 px-3 text-center text-sm font-semibold">
-                {t("game.teamA")}
+                {matchData.is_opponent_mode && matchData.clubs?.name ? matchData.clubs.name : t("game.teamA")}
               </h3>
               <ul className="space-y-1 p-3">
                 {teamAPlayers.map((player, index) => (
@@ -734,25 +755,36 @@ const Game = () => {
             </div>
             <div className="w-1/2 bg-card border-l border-border">
               <h3 className="bg-emerald-500 dark:bg-emerald-600 text-white py-2 px-3 text-center text-sm font-semibold">
-                {t("game.teamB")}
+                {matchData.is_opponent_mode
+                  ? (matchData.opponent_team_name || t("game.newGame.opponentTeam"))
+                  : t("game.teamB")}
               </h3>
-              <ul className="space-y-1 p-3">
-                {teamBPlayers.map((player, index) => (
-                  <li key={player.id} className="flex items-center text-sm min-w-0">
-                    <span className="font-medium shrink-0">
-                      {index + 1}.&nbsp;
-                    </span>
-                    <span className="font-medium truncate">
-                      {player.name}
-                    </span>
-                    {player.position && player.position !== t("game.noPosition") && (
-                      <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
-                        — {shortenPosition(player.position, tProfile)}
+              {matchData.is_opponent_mode ? (
+                <div className="flex flex-col items-center justify-center p-6 text-center">
+                  <Shield className="h-8 w-8 text-muted-foreground mb-2" />
+                  <p className="text-sm font-medium">
+                    {matchData.opponent_team_name || t("game.newGame.opponentTeam")}
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-1 p-3">
+                  {teamBPlayers.map((player, index) => (
+                    <li key={player.id} className="flex items-center text-sm min-w-0">
+                      <span className="font-medium shrink-0">
+                        {index + 1}.&nbsp;
                       </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                      <span className="font-medium truncate">
+                        {player.name}
+                      </span>
+                      {player.position && player.position !== t("game.noPosition") && (
+                        <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
+                          — {shortenPosition(player.position, tProfile)}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>
@@ -920,9 +952,9 @@ const Game = () => {
                               }`}
                             >
                               {game.team_a_score > game.team_b_score
-                                ? t("game.teamA")
+                                ? teamALabel
                                 : game.team_b_score > game.team_a_score
-                                ? t("game.teamB")
+                                ? teamBLabel
                                 : t("game.tie")}
                             </span>
                           ) : (
@@ -946,9 +978,9 @@ const Game = () => {
                     <td className="pl-6 pr-2 sm:px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          matchWinner === t("game.teamA")
+                          matchWinner === teamALabel
                             ? "bg-red-500/10 text-red-600 dark:bg-red-900/20 dark:text-red-400"
-                            : matchWinner === t("game.teamB")
+                            : matchWinner === teamBLabel
                             ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
                             : "bg-muted text-muted-foreground"
                         }`}

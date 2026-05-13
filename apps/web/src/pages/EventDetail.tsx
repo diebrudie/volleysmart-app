@@ -26,6 +26,7 @@ import {
   Globe,
   Building,
   Palmtree,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { Linkify } from "@/lib/linkify";
 import { useIsCompact } from "@/hooks/use-compact";
@@ -152,6 +154,8 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
   const [notes, setNotes] = React.useState(event.notes ?? "");
   const [eventGender, setEventGender] = React.useState(event.event_gender ?? "mixed");
   const [activityType, setActivityType] = React.useState(event.activity_type ?? "indoor");
+  const [isOpponentMode, setIsOpponentMode] = React.useState(event.is_opponent_mode ?? false);
+  const [opponentTeamName, setOpponentTeamName] = React.useState(event.opponent_team_name ?? "");
   const RSVP_PRESETS = [
     { labelKey: "create.rsvpSameDay", days: 0 },
     { labelKey: "create.rsvp1DayBefore", days: 1 },
@@ -190,6 +194,8 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
       setNotes(event.notes ?? "");
       setEventGender(event.event_gender ?? "mixed");
       setActivityType(event.activity_type ?? "indoor");
+      setIsOpponentMode(event.is_opponent_mode ?? false);
+      setOpponentTeamName(event.opponent_team_name ?? "");
       setRsvpPreset(detectPreset(event.date, event.rsvp_deadline));
       setRsvpCustomDate(event.rsvp_deadline ? event.rsvp_deadline.slice(0, 10) : "");
     }
@@ -212,6 +218,8 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
       notes: notes.trim() || null,
       event_gender: eventGender,
       activity_type: activityType,
+      is_opponent_mode: isOpponentMode,
+      opponent_team_name: opponentTeamName.trim() || null,
       rsvp_deadline: (() => {
         if (rsvpPreset !== null && rsvpPreset < RSVP_PRESETS.length - 1) {
           const days = RSVP_PRESETS[rsvpPreset].days;
@@ -417,6 +425,30 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Opponent Mode — only for game-type events with a club */}
+          {eventType !== "training" && event.club_id && (
+            <div className="space-y-2 rounded-xl border border-border p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">{t("create.opponentMode")}</p>
+                    <p className="text-xs text-muted-foreground">{t("create.opponentModeDesc")}</p>
+                  </div>
+                </div>
+                <Switch checked={isOpponentMode} onCheckedChange={setIsOpponentMode} />
+              </div>
+              {isOpponentMode && (
+                <Input
+                  placeholder={t("create.opponentTeamNamePlaceholder")}
+                  value={opponentTeamName}
+                  onChange={(e) => setOpponentTeamName(e.target.value)}
+                  className="mt-2"
+                />
+              )}
+            </div>
+          )}
 
           {/* Description / Notes */}
           <div className="space-y-1.5">
@@ -723,14 +755,14 @@ const EventDetail: React.FC = () => {
     if (!event || !user?.id || !eventId) return;
 
     const attending = attendees.filter((a) => a.status === "attending");
-    if (attending.length < 4) {
+    const minPlayers = event.is_opponent_mode ? 2 : 4;
+    if (attending.length < minPlayers) {
       toast.error(t("detail.minPlayersNeeded"));
       return;
     }
 
     setIsStartingGame(true);
     try {
-      // Fetch full player data for team assignment (skill_rating + positions)
       const playerIds = attending.map((a) => a.player_id);
       const { data: playersData } = await supabase
         .from("players")
@@ -740,81 +772,120 @@ const EventDetail: React.FC = () => {
         )
         .in("id", playerIds);
 
-      // Build PlayerForTeams array
-      const playersForTeams: PlayerForTeams[] = (playersData ?? []).map(
-        (p: any) => {
-          const positions = p.player_positions ?? [];
-          const primary = positions.find((pp: any) => pp.is_primary);
-          const secondary = positions.find((pp: any) => !pp.is_primary);
+      if (event.is_opponent_mode) {
+        // Opponent mode: all attending players → team_a, no team assignment
+        const { data: matchDay, error: mdError } = await supabase
+          .from("match_days")
+          .insert({
+            date: event.date,
+            created_by: user.id,
+            club_id: event.club_id,
+            team_generated: true,
+            location_id: event.location_id,
+            planned_event_id: eventId,
+            is_opponent_mode: true,
+            opponent_team_name: event.opponent_team_name ?? null,
+          } as any)
+          .select()
+          .single();
+
+        if (mdError) throw mdError;
+
+        const matches = Array.from({ length: 5 }, (_, i) => ({
+          match_day_id: matchDay.id,
+          game_number: i + 1,
+          team_a_score: 0,
+          team_b_score: 0,
+          added_by_user_id: user.id,
+        }));
+        const { error: mError } = await supabase.from("matches").insert(matches).select();
+        if (mError) throw mError;
+
+        const gamePlayers = (playersData ?? []).map((p: any) => {
+          const primary = (p.player_positions ?? []).find((pp: any) => pp.is_primary);
           return {
-            id: p.id,
-            score: p.skill_rating ?? 50,
-            mainPosition: normalizeRole(primary?.positions?.name),
-            secondaryPosition: secondary?.positions?.name
-              ? normalizeRole(secondary.positions.name)
-              : null,
+            match_day_id: matchDay.id,
+            player_id: p.id,
+            team_name: "team_a",
+            original_team_name: "team_a",
+            manually_adjusted: false,
+            position_played: normalizeRole(primary?.positions?.name),
           };
-        }
-      );
+        });
 
-      // Generate teams
-      const teamAssignment = assignTeams(playersForTeams);
+        const { error: gpError } = await supabase.from("game_players").insert(gamePlayers);
+        if (gpError) throw gpError;
 
-      // Create match_day linked to this event
-      const { data: matchDay, error: mdError } = await supabase
-        .from("match_days")
-        .insert({
-          date: event.date,
-          created_by: user.id,
-          club_id: event.club_id,
-          team_generated: true,
-          location_id: event.location_id,
-          planned_event_id: eventId,
-        } as any)
-        .select()
-        .single();
-
-      if (mdError) throw mdError;
-
-      // Create 5 matches (sets)
-      const matches = Array.from({ length: 5 }, (_, i) => ({
-        match_day_id: matchDay.id,
-        game_number: i + 1,
-        team_a_score: 0,
-        team_b_score: 0,
-        added_by_user_id: user.id,
-      }));
-      const { error: mError } = await supabase
-        .from("matches")
-        .insert(matches)
-        .select();
-      if (mError) throw mError;
-
-      // Create game_players from team assignment
-      const allGamePlayers = [
-        ...teamAssignment.teamA,
-        ...teamAssignment.teamB,
-      ].map((ap) => ({
-        match_day_id: matchDay.id,
-        player_id: ap.id,
-        team_name: ap.team,
-        original_team_name: ap.team,
-        manually_adjusted: false,
-        position_played: ap.assignedPosition,
-      }));
-
-      const { error: gpError } = await supabase
-        .from("game_players")
-        .insert(allGamePlayers);
-      if (gpError) throw gpError;
-
-      if (teamAssignment.compromises.length > 0) {
-        toast.success(t("detail.gameStartedWithNote", { note: teamAssignment.compromises.join("; ") }));
-      } else {
         toast.success(t("detail.gameStarted"));
-      }
+        navigate(`/game/${matchDay.id}`);
+      } else {
+        // Regular mode: assign teams
+        const playersForTeams: PlayerForTeams[] = (playersData ?? []).map(
+          (p: any) => {
+            const positions = p.player_positions ?? [];
+            const primary = positions.find((pp: any) => pp.is_primary);
+            const secondary = positions.find((pp: any) => !pp.is_primary);
+            return {
+              id: p.id,
+              score: p.skill_rating ?? 50,
+              mainPosition: normalizeRole(primary?.positions?.name),
+              secondaryPosition: secondary?.positions?.name
+                ? normalizeRole(secondary.positions.name)
+                : null,
+            };
+          }
+        );
 
-      navigate(`/game/${matchDay.id}`);
+        const teamAssignment = assignTeams(playersForTeams);
+
+        const { data: matchDay, error: mdError } = await supabase
+          .from("match_days")
+          .insert({
+            date: event.date,
+            created_by: user.id,
+            club_id: event.club_id,
+            team_generated: true,
+            location_id: event.location_id,
+            planned_event_id: eventId,
+          } as any)
+          .select()
+          .single();
+
+        if (mdError) throw mdError;
+
+        const matches = Array.from({ length: 5 }, (_, i) => ({
+          match_day_id: matchDay.id,
+          game_number: i + 1,
+          team_a_score: 0,
+          team_b_score: 0,
+          added_by_user_id: user.id,
+        }));
+        const { error: mError } = await supabase.from("matches").insert(matches).select();
+        if (mError) throw mError;
+
+        const allGamePlayers = [
+          ...teamAssignment.teamA,
+          ...teamAssignment.teamB,
+        ].map((ap) => ({
+          match_day_id: matchDay.id,
+          player_id: ap.id,
+          team_name: ap.team,
+          original_team_name: ap.team,
+          manually_adjusted: false,
+          position_played: ap.assignedPosition,
+        }));
+
+        const { error: gpError } = await supabase.from("game_players").insert(allGamePlayers);
+        if (gpError) throw gpError;
+
+        if (teamAssignment.compromises.length > 0) {
+          toast.success(t("detail.gameStartedWithNote", { note: teamAssignment.compromises.join("; ") }));
+        } else {
+          toast.success(t("detail.gameStarted"));
+        }
+
+        navigate(`/game/${matchDay.id}`);
+      }
     } catch (error) {
       console.error("Error starting game:", error);
       toast.error(t("detail.failedToStartGame"));
@@ -1067,6 +1138,12 @@ const EventDetail: React.FC = () => {
               <span className="inline-flex items-center gap-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
                 <Repeat className="h-3 w-3" />
                 {(event.recurrence_rule ?? "weekly") === "weekly" ? t("detail.weekly") : t("detail.monthly")}
+              </span>
+            )}
+            {event.is_opponent_mode && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded">
+                <Shield className="h-3 w-3" />
+                {event.opponent_team_name ? t("detail.vsOpponent", { name: event.opponent_team_name }) : t("detail.opponentMode")}
               </span>
             )}
           </div>
@@ -1407,7 +1484,7 @@ const EventDetail: React.FC = () => {
             <Button
               className="flex-1"
               onClick={handleStartGame}
-              disabled={!isEventToday || isStartingGame || event.status === "cancelled" || attendees.filter((a) => a.status === "attending").length < 4}
+              disabled={!isEventToday || isStartingGame || event.status === "cancelled" || attendees.filter((a) => a.status === "attending").length < (event.is_opponent_mode ? 2 : 4)}
             >
               {isStartingGame ? t("detail.starting") : t("detail.startGame")}
             </Button>

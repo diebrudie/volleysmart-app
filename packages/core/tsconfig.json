@@ -6,7 +6,10 @@
     "strict": true,
     "declaration": true,
     "outDir": "dist",
-    "jsx": "react-jsx"
+    "composite": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "include": ["src"]
 }

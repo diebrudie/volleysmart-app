@@ -13,6 +13,7 @@ import {
   Lock,
   Building,
   Palmtree,
+  Shield,
   CalendarIcon,
   Check,
   Bookmark,
@@ -149,6 +150,8 @@ interface FormState {
   save_template: boolean;
   template_name: string;
   recurrence_rule: "weekly" | "monthly" | null;
+  is_opponent_mode: boolean;
+  opponent_team_name: string;
 }
 
 const NO_CLUB = "__none__";
@@ -172,6 +175,8 @@ const INITIAL_STATE: FormState = {
   save_template: false,
   template_name: "",
   recurrence_rule: null,
+  is_opponent_mode: false,
+  opponent_team_name: "",
 };
 
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -382,6 +387,8 @@ const CreateEvent: React.FC = () => {
           ? form.extra_club_ids
           : undefined,
       recurrence_rule: form.recurrence_rule ?? undefined,
+      is_opponent_mode: form.is_opponent_mode,
+      opponent_team_name: form.opponent_team_name.trim() || undefined,
     };
 
     createMutation.mutate(input);
@@ -995,6 +1002,30 @@ const CreateEvent: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Opponent Mode — only for game-type events with a club */}
+            {form.event_type !== "training" && form.club_id && form.club_id !== NO_CLUB && (
+              <div className="space-y-2 rounded-xl border border-border p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{t("create.opponentMode")}</p>
+                      <p className="text-xs text-muted-foreground">{t("create.opponentModeDesc")}</p>
+                    </div>
+                  </div>
+                  <Switch checked={form.is_opponent_mode} onCheckedChange={(v) => set("is_opponent_mode", v)} />
+                </div>
+                {form.is_opponent_mode && (
+                  <Input
+                    placeholder={t("create.opponentTeamNamePlaceholder")}
+                    value={form.opponent_team_name}
+                    onChange={(e) => set("opponent_team_name", e.target.value)}
+                    className="mt-2"
+                  />
+                )}
+              </div>
+            )}
 
             {/* Description / Notes */}
             <div className="space-y-1.5">
