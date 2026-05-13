@@ -18,7 +18,6 @@ import {
   Users,
   Radio,
   Shield,
-  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -789,30 +788,6 @@ const Game = () => {
             </div>
           </div>
         </div>
-
-        {/* Growth banner for opponent mode */}
-        {matchData.is_opponent_mode && (
-          <div className="rounded-lg border border-border bg-muted/50 p-4 flex items-center gap-3">
-            <div className="flex-1">
-              <p className="text-sm font-medium">{t("game.newGame.inviteOpponentTeam")}</p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const text = `Join us on VolleySmart!`;
-                if (navigator.share) {
-                  navigator.share({ title: "VolleySmart", text });
-                } else {
-                  navigator.clipboard.writeText(text);
-                }
-              }}
-            >
-              <Share2 className="h-4 w-4 mr-1.5" />
-              {t("game.newGame.inviteOpponentButton")}
-            </Button>
-          </div>
-        )}
 
         {/* Score overview */}
         <div className="rounded-lg overflow-hidden border border-border">
