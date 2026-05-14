@@ -105,6 +105,10 @@
     "endSetDialogTitle": "Satz beenden",
     "endSetDialogDescription": "Aktuellen Satzstand speichern bestätigen",
     "exitDialogTitle": "Beenden",
-    "exitDialogDescription": "Beenden mit nicht gespeichertem Ergebnis bestätigen"
+    "exitDialogDescription": "Beenden mit nicht gespeichertem Ergebnis bestätigen",
+    "swapSides": "Seiten tauschen",
+    "setWonTitle": "Satzball!",
+    "setWonDescription": "Ein Team hat diesen Satz gewonnen",
+    "endSetNow": "Möchtest du diesen Satz beenden?"
   }
 }

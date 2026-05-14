@@ -586,6 +586,9 @@ export async function updateRecurringSeries(
   if (input.notes !== undefined) updates.notes = input.notes;
   if (input.is_opponent_mode !== undefined) updates.is_opponent_mode = input.is_opponent_mode;
   if (input.opponent_team_name !== undefined) updates.opponent_team_name = input.opponent_team_name;
+  if (input.rsvp_deadline !== undefined) updates.rsvp_deadline = input.rsvp_deadline;
+  if (input.event_gender !== undefined) updates.event_gender = input.event_gender;
+  if (input.activity_type !== undefined) updates.activity_type = input.activity_type;
 
   if (Object.keys(updates).length > 0) {
     const today = new Date().toISOString().split("T")[0];
@@ -597,4 +600,21 @@ export async function updateRecurringSeries(
       .in("status", ["open", "confirmed"]);
     if (error) throw error;
   }
+}
+
+/** Fetch distinct opponent team names previously used by a club. */
+export async function fetchOpponentTeamNames(
+  clubId: string
+): Promise<string[]> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("planned_events")
+    .select("opponent_team_name")
+    .eq("club_id", clubId)
+    .eq("is_opponent_mode", true)
+    .not("opponent_team_name", "is", null)
+    .order("date", { ascending: false });
+  if (error) throw error;
+  const unique = [...new Set((data ?? []).map((r: any) => r.opponent_team_name as string).filter(Boolean))];
+  return unique;
 }

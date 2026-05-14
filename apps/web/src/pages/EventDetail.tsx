@@ -73,6 +73,7 @@ import {
   deleteRsvp,
   updatePlannedEvent,
   updateRecurringSeries,
+  fetchOpponentTeamNames,
   type PlannedEvent,
   type RsvpStatus,
   type EventType,
@@ -156,6 +157,12 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
   const [activityType, setActivityType] = React.useState(event.activity_type ?? "indoor");
   const [isOpponentMode, setIsOpponentMode] = React.useState(event.is_opponent_mode ?? false);
   const [opponentTeamName, setOpponentTeamName] = React.useState(event.opponent_team_name ?? "");
+  const { data: opponentNameSuggestions = [] } = useQuery({
+    queryKey: ["opponent-names", event.club_id],
+    queryFn: () => fetchOpponentTeamNames(event.club_id!),
+    enabled: !!event.club_id && isOpponentMode,
+    staleTime: 5 * 60 * 1000,
+  });
   const RSVP_PRESETS = [
     { labelKey: "create.rsvpSameDay", days: 0 },
     { labelKey: "create.rsvp1DayBefore", days: 1 },
@@ -440,12 +447,22 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
                 <Switch checked={isOpponentMode} onCheckedChange={setIsOpponentMode} />
               </div>
               {isOpponentMode && (
-                <Input
-                  placeholder={t("create.opponentTeamNamePlaceholder")}
-                  value={opponentTeamName}
-                  onChange={(e) => setOpponentTeamName(e.target.value)}
-                  className="mt-2"
-                />
+                <>
+                  <Input
+                    placeholder={t("create.opponentTeamNamePlaceholder")}
+                    value={opponentTeamName}
+                    onChange={(e) => setOpponentTeamName(e.target.value)}
+                    list="edit-opponent-name-suggestions"
+                    className="mt-2"
+                  />
+                  {opponentNameSuggestions.length > 0 && (
+                    <datalist id="edit-opponent-name-suggestions">
+                      {opponentNameSuggestions.map((name) => (
+                        <option key={name} value={name} />
+                      ))}
+                    </datalist>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -750,6 +767,120 @@ const EventDetail: React.FC = () => {
   });
 
   const [isStartingGame, setIsStartingGame] = React.useState(false);
+  const [clubVsClubDialog, setClubVsClubDialog] = React.useState<{
+    clubAName: string;
+    clubBName: string;
+    clubAPlayerIds: string[];
+    clubBPlayerIds: string[];
+    allPlayersData: any[];
+  } | null>(null);
+
+  const createMatchDay = async (
+    gamePlayers: { player_id: string; team_name: string; position_played: string }[],
+    isClubVsClub?: boolean,
+  ) => {
+    const { data: matchDay, error: mdError } = await supabase
+      .from("match_days")
+      .insert({
+        date: event!.date,
+        created_by: user!.id,
+        club_id: event!.club_id,
+        team_generated: true,
+        location_id: event!.location_id,
+        planned_event_id: eventId,
+      } as any)
+      .select()
+      .single();
+
+    if (mdError) throw mdError;
+
+    const matches = Array.from({ length: 5 }, (_, i) => ({
+      match_day_id: matchDay.id,
+      game_number: i + 1,
+      team_a_score: 0,
+      team_b_score: 0,
+      added_by_user_id: user!.id,
+    }));
+    const { error: mError } = await supabase.from("matches").insert(matches).select();
+    if (mError) throw mError;
+
+    const allGamePlayers = gamePlayers.map((gp) => ({
+      match_day_id: matchDay.id,
+      player_id: gp.player_id,
+      team_name: gp.team_name,
+      original_team_name: gp.team_name,
+      manually_adjusted: false,
+      position_played: gp.position_played,
+    }));
+
+    const { error: gpError } = await supabase.from("game_players").insert(allGamePlayers);
+    if (gpError) throw gpError;
+
+    return matchDay;
+  };
+
+  const startClubVsClub = async () => {
+    if (!clubVsClubDialog || !event) return;
+    setIsStartingGame(true);
+    setClubVsClubDialog(null);
+    try {
+      const gamePlayers = clubVsClubDialog.allPlayersData.map((p: any) => {
+        const primary = (p.player_positions ?? []).find((pp: any) => pp.is_primary);
+        const team = clubVsClubDialog.clubAPlayerIds.includes(p.id) ? "team_a" : "team_b";
+        return {
+          player_id: p.id,
+          team_name: team,
+          position_played: normalizeRole(primary?.positions?.name),
+        };
+      });
+      const matchDay = await createMatchDay(gamePlayers, true);
+      toast.success(t("detail.gameStarted"));
+      navigate(`/game/${matchDay.id}`);
+    } catch (error) {
+      console.error("Error starting club vs club game:", error);
+      toast.error(t("detail.failedToStartGame"));
+    } finally {
+      setIsStartingGame(false);
+    }
+  };
+
+  const startNormalGame = async (playersData: any[]) => {
+    if (!event || !user?.id || !eventId) return;
+    const playersForTeams: PlayerForTeams[] = playersData.map(
+      (p: any) => {
+        const positions = p.player_positions ?? [];
+        const primary = positions.find((pp: any) => pp.is_primary);
+        const secondary = positions.find((pp: any) => !pp.is_primary);
+        return {
+          id: p.id,
+          score: p.skill_rating ?? 50,
+          mainPosition: normalizeRole(primary?.positions?.name),
+          secondaryPosition: secondary?.positions?.name
+            ? normalizeRole(secondary.positions.name)
+            : null,
+        };
+      }
+    );
+
+    const teamAssignment = assignTeams(playersForTeams);
+    const gamePlayers = [
+      ...teamAssignment.teamA,
+      ...teamAssignment.teamB,
+    ].map((ap) => ({
+      player_id: ap.id,
+      team_name: ap.team,
+      position_played: ap.assignedPosition,
+    }));
+
+    const matchDay = await createMatchDay(gamePlayers);
+
+    if (teamAssignment.compromises.length > 0) {
+      toast.success(t("detail.gameStartedWithNote", { note: teamAssignment.compromises.join("; ") }));
+    } else {
+      toast.success(t("detail.gameStarted"));
+    }
+    navigate(`/game/${matchDay.id}`);
+  };
 
   const handleStartGame = async () => {
     if (!event || !user?.id || !eventId) return;
@@ -767,13 +898,13 @@ const EventDetail: React.FC = () => {
       const { data: playersData } = await supabase
         .from("players")
         .select(
-          `id, skill_rating,
+          `id, skill_rating, user_id,
            player_positions(is_primary, positions(name))`
         )
         .in("id", playerIds);
 
       if (event.is_opponent_mode) {
-        // Opponent mode: all attending players → team_a, no team assignment
+        // Opponent mode: all attending players → team_a
         const { data: matchDay, error: mdError } = await supabase
           .from("match_days")
           .insert({
@@ -819,72 +950,55 @@ const EventDetail: React.FC = () => {
         toast.success(t("detail.gameStarted"));
         navigate(`/game/${matchDay.id}`);
       } else {
-        // Regular mode: assign teams
-        const playersForTeams: PlayerForTeams[] = (playersData ?? []).map(
-          (p: any) => {
-            const positions = p.player_positions ?? [];
-            const primary = positions.find((pp: any) => pp.is_primary);
-            const secondary = positions.find((pp: any) => !pp.is_primary);
-            return {
-              id: p.id,
-              score: p.skill_rating ?? 50,
-              mainPosition: normalizeRole(primary?.positions?.name),
-              secondaryPosition: secondary?.positions?.name
-                ? normalizeRole(secondary.positions.name)
-                : null,
-            };
+        // Check for Club vs Club eligibility
+        const userIds = (playersData ?? []).map((p: any) => p.user_id).filter(Boolean);
+        if (userIds.length >= 8 && event.club_id) {
+          const { data: memberships } = await supabase
+            .from("club_members")
+            .select("user_id, club_id, clubs:club_id(name)")
+            .in("user_id", userIds)
+            .eq("is_active", true)
+            .eq("status", "active");
+
+          if (memberships) {
+            const playerUserMap = new Map((playersData ?? []).map((p: any) => [p.user_id, p.id]));
+            const clubPlayerMap = new Map<string, { name: string; playerIds: string[] }>();
+
+            for (const m of memberships as any[]) {
+              if (m.club_id === event.club_id) continue;
+              if (!clubPlayerMap.has(m.club_id)) {
+                clubPlayerMap.set(m.club_id, { name: (m.clubs as any)?.name ?? m.club_id, playerIds: [] });
+              }
+              const playerId = playerUserMap.get(m.user_id);
+              if (playerId && !clubPlayerMap.get(m.club_id)!.playerIds.includes(playerId)) {
+                clubPlayerMap.get(m.club_id)!.playerIds.push(playerId);
+              }
+            }
+
+            const eligibleClubs = [...clubPlayerMap.entries()].filter(([, v]) => v.playerIds.length >= 4);
+            if (eligibleClubs.length === 1) {
+              // Exactly one other club with 4+ players: host club vs visiting club
+              const hostPlayerIds = (playersData ?? [])
+                .map((p: any) => p.id)
+                .filter((id: string) => !eligibleClubs[0][1].playerIds.includes(id));
+
+              if (hostPlayerIds.length >= 4) {
+                setIsStartingGame(false);
+                setClubVsClubDialog({
+                  clubAName: event.clubs?.name ?? t("detail.hostClub"),
+                  clubBName: eligibleClubs[0][1].name,
+                  clubAPlayerIds: hostPlayerIds,
+                  clubBPlayerIds: eligibleClubs[0][1].playerIds,
+                  allPlayersData: playersData ?? [],
+                });
+                return;
+              }
+            }
           }
-        );
-
-        const teamAssignment = assignTeams(playersForTeams);
-
-        const { data: matchDay, error: mdError } = await supabase
-          .from("match_days")
-          .insert({
-            date: event.date,
-            created_by: user.id,
-            club_id: event.club_id,
-            team_generated: true,
-            location_id: event.location_id,
-            planned_event_id: eventId,
-          } as any)
-          .select()
-          .single();
-
-        if (mdError) throw mdError;
-
-        const matches = Array.from({ length: 5 }, (_, i) => ({
-          match_day_id: matchDay.id,
-          game_number: i + 1,
-          team_a_score: 0,
-          team_b_score: 0,
-          added_by_user_id: user.id,
-        }));
-        const { error: mError } = await supabase.from("matches").insert(matches).select();
-        if (mError) throw mError;
-
-        const allGamePlayers = [
-          ...teamAssignment.teamA,
-          ...teamAssignment.teamB,
-        ].map((ap) => ({
-          match_day_id: matchDay.id,
-          player_id: ap.id,
-          team_name: ap.team,
-          original_team_name: ap.team,
-          manually_adjusted: false,
-          position_played: ap.assignedPosition,
-        }));
-
-        const { error: gpError } = await supabase.from("game_players").insert(allGamePlayers);
-        if (gpError) throw gpError;
-
-        if (teamAssignment.compromises.length > 0) {
-          toast.success(t("detail.gameStartedWithNote", { note: teamAssignment.compromises.join("; ") }));
-        } else {
-          toast.success(t("detail.gameStarted"));
         }
 
-        navigate(`/game/${matchDay.id}`);
+        // Normal team assignment
+        await startNormalGame(playersData ?? []);
       }
     } catch (error) {
       console.error("Error starting game:", error);
@@ -1027,20 +1141,32 @@ const EventDetail: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80">
-                <MoreHorizontal className="h-5 w-5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                className="gap-2"
+          <div className="flex items-center gap-2">
+            {!isPastEvent && (
+              <button
                 onClick={handleShare}
+                className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
+                title={t("detail.shareEventButton")}
               >
-                <Share2 className="h-4 w-4" />
-                {t("detail.shareEventButton")}
-              </DropdownMenuItem>
+                <Share2 className="h-5 w-5" />
+              </button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80">
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isPastEvent && (
+                  <DropdownMenuItem
+                    className="gap-2"
+                    onClick={handleShare}
+                  >
+                    <Share2 className="h-4 w-4" />
+                    {t("detail.shareEventButton")}
+                  </DropdownMenuItem>
+                )}
               {isCreator && (
                 <>
                   {!isPastEvent && (
@@ -1084,6 +1210,7 @@ const EventDetail: React.FC = () => {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -1504,6 +1631,50 @@ const EventDetail: React.FC = () => {
           saving={updateMutation.isPending}
         />
       )}
+
+      {/* Club vs Club dialog */}
+      <Dialog open={!!clubVsClubDialog} onOpenChange={(open) => { if (!open) setClubVsClubDialog(null); }}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>{t("detail.clubVsClubTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("detail.clubVsClubDescription", {
+                clubA: clubVsClubDialog?.clubAName ?? "",
+                countA: clubVsClubDialog?.clubAPlayerIds.length ?? 0,
+                clubB: clubVsClubDialog?.clubBName ?? "",
+                countB: clubVsClubDialog?.clubBPlayerIds.length ?? 0,
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 mt-2">
+            <Button onClick={startClubVsClub}>
+              {t("detail.clubVsClubYes", {
+                clubA: clubVsClubDialog?.clubAName ?? "",
+                clubB: clubVsClubDialog?.clubBName ?? "",
+              })}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const data = clubVsClubDialog?.allPlayersData;
+                setClubVsClubDialog(null);
+                if (data) {
+                  setIsStartingGame(true);
+                  try {
+                    await startNormalGame(data);
+                  } catch {
+                    toast.error(t("detail.failedToStartGame"));
+                  } finally {
+                    setIsStartingGame(false);
+                  }
+                }
+              }}
+            >
+              {t("detail.clubVsClubNo")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Cancel event dialog */}
       <Dialog open={cancelDialogOpen} onOpenChange={(open) => {

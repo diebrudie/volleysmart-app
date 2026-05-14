@@ -56,6 +56,8 @@
       "done": "Listo",
       "manage": "Gestionar",
       "admin": "Admin",
+      "coach": "Entrenador",
+      "setCoach": "Entrenador",
       "associationMember": "Miembro de asociación",
       "removeCount": "Eliminar {{count}} miembro",
       "removeCount_other": "Eliminar {{count}} miembros"

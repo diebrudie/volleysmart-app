@@ -54,6 +54,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
   createPlannedEvent,
+  fetchOpponentTeamNames,
   type EventType,
   type CreateEventInput,
 } from "@/integrations/supabase/plannedEvents";
@@ -314,6 +315,13 @@ const CreateEvent: React.FC = () => {
       set("club_id", NO_CLUB);
     }
   }, [userClubs, form.club_id, preselectedClubId]);
+
+  const { data: opponentNameSuggestions = [] } = useQuery({
+    queryKey: ["opponent-names", form.club_id],
+    queryFn: () => fetchOpponentTeamNames(form.club_id),
+    enabled: !!form.club_id && form.club_id !== NO_CLUB && form.is_opponent_mode,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const createMutation = useMutation({
     mutationFn: async (input: CreateEventInput) => {
@@ -1017,12 +1025,22 @@ const CreateEvent: React.FC = () => {
                   <Switch checked={form.is_opponent_mode} onCheckedChange={(v) => set("is_opponent_mode", v)} />
                 </div>
                 {form.is_opponent_mode && (
-                  <Input
-                    placeholder={t("create.opponentTeamNamePlaceholder")}
-                    value={form.opponent_team_name}
-                    onChange={(e) => set("opponent_team_name", e.target.value)}
-                    className="mt-2"
-                  />
+                  <>
+                    <Input
+                      placeholder={t("create.opponentTeamNamePlaceholder")}
+                      value={form.opponent_team_name}
+                      onChange={(e) => set("opponent_team_name", e.target.value)}
+                      list="opponent-name-suggestions"
+                      className="mt-2"
+                    />
+                    {opponentNameSuggestions.length > 0 && (
+                      <datalist id="opponent-name-suggestions">
+                        {opponentNameSuggestions.map((name) => (
+                          <option key={name} value={name} />
+                        ))}
+                      </datalist>
+                    )}
+                  </>
                 )}
               </div>
             )}
