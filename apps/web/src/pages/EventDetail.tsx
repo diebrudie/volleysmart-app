@@ -1469,10 +1469,9 @@ const EventDetail: React.FC = () => {
                           <User className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
-                      <div>
-                        <p className="text-sm font-medium flex items-center gap-1.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
                           {currentPlayer.first_name} {currentPlayer.last_name?.charAt(0)}.
-                          <span className="text-xs text-muted-foreground">{t("detail.you")}</span>
                         </p>
                         {currentPlayer.primary_position && (
                           <p className="text-xs text-muted-foreground">
@@ -1480,6 +1479,7 @@ const EventDetail: React.FC = () => {
                           </p>
                         )}
                       </div>
+                      <span className="text-xs text-muted-foreground shrink-0">{t("detail.you")}</span>
                     </div>
                   )}
                   {/* Anonymized rows for other attendees */}
@@ -1517,12 +1517,9 @@ const EventDetail: React.FC = () => {
                           <User className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
-                      <div>
-                        <p className="text-sm font-medium flex items-center gap-1.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
                           {a.first_name} {a.last_name?.charAt(0)}.
-                          {a.player_id === currentPlayer?.id && (
-                            <span className="text-xs text-muted-foreground">{t("detail.you")}</span>
-                          )}
                         </p>
                         {a.primary_position && (
                           <p className="text-xs text-muted-foreground">
@@ -1530,6 +1527,9 @@ const EventDetail: React.FC = () => {
                           </p>
                         )}
                       </div>
+                      {a.player_id === currentPlayer?.id && (
+                        <span className="text-xs text-muted-foreground shrink-0">{t("detail.you")}</span>
+                      )}
                     </div>
                   ))}
                   {/* Placeholder rows for attendees not visible via RLS */}
