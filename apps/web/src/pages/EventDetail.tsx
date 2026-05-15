@@ -413,6 +413,8 @@ const EditEventSheet: React.FC<EditEventSheetProps> = ({
                   <SelectItem value="mixed">{t("detail.eventGenderMixed")}</SelectItem>
                   <SelectItem value="women_only">{t("detail.eventGenderWomenOnly")}</SelectItem>
                   <SelectItem value="men_only">{t("detail.eventGenderMenOnly")}</SelectItem>
+                  <SelectItem value="queer">{t("detail.eventGenderQueer")}</SelectItem>
+                  <SelectItem value="flinta">{t("detail.eventGenderFlinta")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -973,13 +975,13 @@ const EventDetail: React.FC = () => {
                 if (!hostClubPlayerIds.includes(playerId)) {
                   hostClubPlayerIds.push(playerId);
                 }
-                continue;
-              }
-              if (!clubPlayerMap.has(m.club_id)) {
-                clubPlayerMap.set(m.club_id, { name: (m.clubs as any)?.name ?? m.club_id, playerIds: [] });
-              }
-              if (!clubPlayerMap.get(m.club_id)!.playerIds.includes(playerId)) {
-                clubPlayerMap.get(m.club_id)!.playerIds.push(playerId);
+              } else {
+                if (!clubPlayerMap.has(m.club_id)) {
+                  clubPlayerMap.set(m.club_id, { name: (m.clubs as any)?.name ?? m.club_id, playerIds: [] });
+                }
+                if (!clubPlayerMap.get(m.club_id)!.playerIds.includes(playerId)) {
+                  clubPlayerMap.get(m.club_id)!.playerIds.push(playerId);
+                }
               }
             }
 
@@ -1327,7 +1329,12 @@ const EventDetail: React.FC = () => {
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm">
-                {t(`detail.eventGender${event.event_gender === "women_only" ? "WomenOnly" : "MenOnly"}`)}
+                {t(`detail.eventGender${
+                  event.event_gender === "women_only" ? "WomenOnly"
+                  : event.event_gender === "queer" ? "Queer"
+                  : event.event_gender === "flinta" ? "Flinta"
+                  : "MenOnly"
+                }`)}
               </p>
             </div>
           )}
@@ -1463,8 +1470,9 @@ const EventDetail: React.FC = () => {
                         </div>
                       )}
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium flex items-center gap-1.5">
                           {currentPlayer.first_name} {currentPlayer.last_name?.charAt(0)}.
+                          <span className="text-xs text-muted-foreground">{t("detail.you")}</span>
                         </p>
                         {currentPlayer.primary_position && (
                           <p className="text-xs text-muted-foreground">
@@ -1510,8 +1518,11 @@ const EventDetail: React.FC = () => {
                         </div>
                       )}
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium flex items-center gap-1.5">
                           {a.first_name} {a.last_name?.charAt(0)}.
+                          {a.player_id === currentPlayer?.id && (
+                            <span className="text-xs text-muted-foreground">{t("detail.you")}</span>
+                          )}
                         </p>
                         {a.primary_position && (
                           <p className="text-xs text-muted-foreground">

@@ -88,6 +88,8 @@
   "create.eventGenderMixed": "Mixto",
   "create.eventGenderWomenOnly": "Solo mujeres",
   "create.eventGenderMenOnly": "Solo hombres",
+  "create.eventGenderQueer": "Queer",
+  "create.eventGenderFlinta": "Flinta",
   "create.activityType": "Actividad",
   "create.activityTypeIndoor": "Interior",
   "create.activityTypeBeach": "Playa",
@@ -152,6 +154,8 @@
   "card.rsvpBy": "RSVP antes del {{date}}",
   "card.genderWomenOnly": "Solo mujeres",
   "card.genderMenOnly": "Solo hombres",
+  "card.genderQueer": "Queer",
+  "card.genderFlinta": "Flinta",
 
   "location": {
     "nameLabel": "Nombre del lugar *",
@@ -172,6 +176,8 @@
   "detail.eventGenderMixed": "Mixto",
   "detail.eventGenderWomenOnly": "Solo mujeres",
   "detail.eventGenderMenOnly": "Solo hombres",
+  "detail.eventGenderQueer": "Queer",
+  "detail.eventGenderFlinta": "Flinta",
   "detail.activityType": "Actividad",
   "detail.activityTypeIndoor": "Interior",
   "detail.activityTypeBeach": "Playa",
@@ -278,5 +284,6 @@
   "detail.cancel": "Cancelar",
   "detail.deleting": "Eliminando...",
   "detail.delete": "Eliminar",
-  "detail.unknown": "Desconocido"
+  "detail.unknown": "Desconocido",
+  "detail.you": "Tú"
 }

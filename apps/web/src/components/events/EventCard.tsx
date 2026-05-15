@@ -116,7 +116,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick, currentPla
             )}
             {event.event_gender && event.event_gender !== "mixed" && (
               <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                {t(`card.gender${event.event_gender === "women_only" ? "WomenOnly" : "MenOnly"}`)}
+                {t(`card.gender${
+                  event.event_gender === "women_only" ? "WomenOnly"
+                  : event.event_gender === "queer" ? "Queer"
+                  : event.event_gender === "flinta" ? "Flinta"
+                  : "MenOnly"
+                }`)}
               </span>
             )}
           </div>

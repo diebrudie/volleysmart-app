@@ -145,7 +145,7 @@ interface FormState {
   extra_club_ids: string[];
   max_players: string;
   is_public: boolean;
-  event_gender: "mixed" | "women_only" | "men_only";
+  event_gender: "mixed" | "women_only" | "men_only" | "queer" | "flinta";
   activity_type: "indoor" | "beach";
   notes: string;
   save_template: boolean;
@@ -974,6 +974,8 @@ const CreateEvent: React.FC = () => {
                     <SelectItem value="mixed">{t("create.eventGenderMixed")}</SelectItem>
                     <SelectItem value="women_only">{t("create.eventGenderWomenOnly")}</SelectItem>
                     <SelectItem value="men_only">{t("create.eventGenderMenOnly")}</SelectItem>
+                    <SelectItem value="queer">{t("create.eventGenderQueer")}</SelectItem>
+                    <SelectItem value="flinta">{t("create.eventGenderFlinta")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
