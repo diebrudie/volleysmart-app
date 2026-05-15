@@ -564,7 +564,7 @@ const LiveScore = () => {
             {/* Left tap target */}
             <button
               onClick={handleTapLeft}
-              className={`w-[30%] flex flex-col items-center justify-center transition-transform active:scale-[0.97] ${
+              className={`w-[22%] flex flex-col items-center justify-center transition-transform active:scale-[0.97] ${
                 leftHasSetPoint
                   ? "bg-red-200 dark:bg-red-900 ring-2 ring-red-400 ring-inset animate-pulse"
                   : leftTeam === "a"
@@ -586,7 +586,7 @@ const LiveScore = () => {
             <div className="flex-1 flex flex-col items-center justify-center">
               <div className="flex items-baseline gap-3">
                 <div className="text-center">
-                  <span className={`text-8xl sm:text-9xl font-black tabular-nums leading-none ${leftTeam === "a" ? "text-red-500" : "text-emerald-500"}`}>
+                  <span className={`text-9xl sm:text-[11rem] font-black tabular-nums leading-none ${leftTeam === "a" ? "text-red-500" : "text-emerald-500"}`}>
                     {leftPoints}
                   </span>
                   <p className={`text-xs font-medium mt-1 ${leftTeam === "a" ? "text-red-400" : "text-emerald-400"}`}>
@@ -604,7 +604,7 @@ const LiveScore = () => {
                   </button>
                 </div>
                 <div className="text-center">
-                  <span className={`text-8xl sm:text-9xl font-black tabular-nums leading-none ${rightTeam === "b" ? "text-emerald-500" : "text-red-500"}`}>
+                  <span className={`text-9xl sm:text-[11rem] font-black tabular-nums leading-none ${rightTeam === "b" ? "text-emerald-500" : "text-red-500"}`}>
                     {rightPoints}
                   </span>
                   <p className={`text-xs font-medium mt-1 ${rightTeam === "b" ? "text-emerald-400" : "text-red-400"}`}>
@@ -617,7 +617,7 @@ const LiveScore = () => {
             {/* Right tap target */}
             <button
               onClick={handleTapRight}
-              className={`w-[30%] flex flex-col items-center justify-center transition-transform active:scale-[0.97] ${
+              className={`w-[22%] flex flex-col items-center justify-center transition-transform active:scale-[0.97] ${
                 rightHasSetPoint
                   ? "bg-emerald-200 dark:bg-emerald-900 ring-2 ring-emerald-400 ring-inset animate-pulse"
                   : rightTeam === "b"

@@ -1026,7 +1026,7 @@ const PlayerOnboarding = () => {
                 {t("city.subtitle")}
               </p>
             </div>
-            <div className="max-w-sm mx-auto">
+            <div className="max-w-sm">
               <CityLocationSelector
                 label={t("city.label")}
                 placeholder={t("city.placeholder")}

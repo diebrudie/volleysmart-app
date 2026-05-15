@@ -952,7 +952,7 @@ const EventDetail: React.FC = () => {
       } else {
         // Check for Club vs Club eligibility
         const userIds = (playersData ?? []).map((p: any) => p.user_id).filter(Boolean);
-        if (userIds.length >= 8 && event.club_id) {
+        if (event.club_id) {
           const { data: memberships } = await supabase
             .from("club_members")
             .select("user_id, club_id, clubs:club_id(name)")
@@ -960,39 +960,40 @@ const EventDetail: React.FC = () => {
             .eq("is_active", true)
             .eq("status", "active");
 
-          if (memberships) {
+          if (memberships && memberships.length > 0) {
             const playerUserMap = new Map((playersData ?? []).map((p: any) => [p.user_id, p.id]));
+            const hostClubPlayerIds: string[] = [];
             const clubPlayerMap = new Map<string, { name: string; playerIds: string[] }>();
 
             for (const m of memberships as any[]) {
-              if (m.club_id === event.club_id) continue;
+              const playerId = playerUserMap.get(m.user_id);
+              if (!playerId) continue;
+
+              if (m.club_id === event.club_id) {
+                if (!hostClubPlayerIds.includes(playerId)) {
+                  hostClubPlayerIds.push(playerId);
+                }
+                continue;
+              }
               if (!clubPlayerMap.has(m.club_id)) {
                 clubPlayerMap.set(m.club_id, { name: (m.clubs as any)?.name ?? m.club_id, playerIds: [] });
               }
-              const playerId = playerUserMap.get(m.user_id);
-              if (playerId && !clubPlayerMap.get(m.club_id)!.playerIds.includes(playerId)) {
+              if (!clubPlayerMap.get(m.club_id)!.playerIds.includes(playerId)) {
                 clubPlayerMap.get(m.club_id)!.playerIds.push(playerId);
               }
             }
 
             const eligibleClubs = [...clubPlayerMap.entries()].filter(([, v]) => v.playerIds.length >= 4);
-            if (eligibleClubs.length === 1) {
-              // Exactly one other club with 4+ players: host club vs visiting club
-              const hostPlayerIds = (playersData ?? [])
-                .map((p: any) => p.id)
-                .filter((id: string) => !eligibleClubs[0][1].playerIds.includes(id));
-
-              if (hostPlayerIds.length >= 4) {
-                setIsStartingGame(false);
-                setClubVsClubDialog({
-                  clubAName: event.clubs?.name ?? t("detail.hostClub"),
-                  clubBName: eligibleClubs[0][1].name,
-                  clubAPlayerIds: hostPlayerIds,
-                  clubBPlayerIds: eligibleClubs[0][1].playerIds,
-                  allPlayersData: playersData ?? [],
-                });
-                return;
-              }
+            if (eligibleClubs.length === 1 && hostClubPlayerIds.length >= 4) {
+              setIsStartingGame(false);
+              setClubVsClubDialog({
+                clubAName: event.clubs?.name ?? t("detail.hostClub"),
+                clubBName: eligibleClubs[0][1].name,
+                clubAPlayerIds: hostClubPlayerIds,
+                clubBPlayerIds: eligibleClubs[0][1].playerIds,
+                allPlayersData: playersData ?? [],
+              });
+              return;
             }
           }
         }
@@ -1142,15 +1143,14 @@ const EventDetail: React.FC = () => {
           </button>
 
           <div className="flex items-center gap-2">
-            {!isPastEvent && (
-              <button
-                onClick={handleShare}
-                className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
-                title={t("detail.shareEventButton")}
-              >
-                <Share2 className="h-5 w-5" />
-              </button>
-            )}
+            <button
+              onClick={handleShare}
+              className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
+              title={t("detail.shareEventButton")}
+            >
+              <Share2 className="h-5 w-5" />
+            </button>
+            {isCreator && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80">
@@ -1158,17 +1158,6 @@ const EventDetail: React.FC = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {isPastEvent && (
-                  <DropdownMenuItem
-                    className="gap-2"
-                    onClick={handleShare}
-                  >
-                    <Share2 className="h-4 w-4" />
-                    {t("detail.shareEventButton")}
-                  </DropdownMenuItem>
-                )}
-              {isCreator && (
-                <>
                   {!isPastEvent && (
                     <DropdownMenuItem
                       className="gap-2"
@@ -1206,10 +1195,9 @@ const EventDetail: React.FC = () => {
                     <Trash2 className="h-4 w-4" />
                     {t("detail.deleteEvent")}
                   </DropdownMenuItem>
-                </>
-              )}
             </DropdownMenuContent>
           </DropdownMenu>
+            )}
           </div>
         </div>
       </div>
