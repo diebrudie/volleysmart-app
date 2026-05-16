@@ -779,7 +779,7 @@ const EventDetail: React.FC = () => {
 
   const createMatchDay = async (
     gamePlayers: { player_id: string; team_name: string; position_played: string }[],
-    isClubVsClub?: boolean,
+    opponentClubName?: string,
   ) => {
     const { data: matchDay, error: mdError } = await supabase
       .from("match_days")
@@ -790,6 +790,7 @@ const EventDetail: React.FC = () => {
         team_generated: true,
         location_id: event!.location_id,
         planned_event_id: eventId,
+        ...(opponentClubName ? { is_opponent_mode: true, opponent_team_name: opponentClubName } : {}),
       } as any)
       .select()
       .single();
@@ -835,7 +836,7 @@ const EventDetail: React.FC = () => {
           position_played: normalizeRole(primary?.positions?.name),
         };
       });
-      const matchDay = await createMatchDay(gamePlayers, true);
+      const matchDay = await createMatchDay(gamePlayers, clubVsClubDialog.clubBName);
       toast.success(t("detail.gameStarted"));
       navigate(`/game/${matchDay.id}`);
     } catch (error) {
@@ -896,14 +897,18 @@ const EventDetail: React.FC = () => {
 
     setIsStartingGame(true);
     try {
-      const playerIds = attending.map((a) => a.player_id);
-      const { data: playersData } = await supabase
-        .from("players")
-        .select(
-          `id, skill_rating, user_id,
-           player_positions(is_primary, positions(name))`
-        )
-        .in("id", playerIds);
+      const { data: rpcData } = await supabase.rpc("get_game_start_players", { p_event_id: eventId });
+
+      const playersData = (rpcData ?? []).map((p: any) => ({
+        id: p.player_id,
+        skill_rating: p.skill_rating,
+        user_id: p.user_id,
+        player_positions: [
+          ...(p.primary_position ? [{ is_primary: true, positions: { name: p.primary_position } }] : []),
+          ...(p.secondary_position ? [{ is_primary: false, positions: { name: p.secondary_position } }] : []),
+        ],
+        club_memberships: p.club_memberships ?? [],
+      }));
 
       if (event.is_opponent_mode) {
         // Opponent mode: all attending players → team_a
@@ -934,7 +939,7 @@ const EventDetail: React.FC = () => {
         const { error: mError } = await supabase.from("matches").insert(matches).select();
         if (mError) throw mError;
 
-        const gamePlayers = (playersData ?? []).map((p: any) => {
+        const gamePlayers = playersData.map((p: any) => {
           const primary = (p.player_positions ?? []).find((pp: any) => pp.is_primary);
           return {
             match_day_id: matchDay.id,
@@ -953,55 +958,55 @@ const EventDetail: React.FC = () => {
         navigate(`/game/${matchDay.id}`);
       } else {
         // Check for Club vs Club eligibility
-        const userIds = (playersData ?? []).map((p: any) => p.user_id).filter(Boolean);
         if (event.club_id) {
-          const { data: memberships } = await supabase
-            .from("club_members")
-            .select("user_id, club_id, clubs:club_id(name)")
-            .in("user_id", userIds)
-            .eq("is_active", true)
-            .eq("status", "active");
+          const hostClubPlayerIds: string[] = [];
+          const clubPlayerMap = new Map<string, { name: string; playerIds: string[] }>();
 
-          if (memberships && memberships.length > 0) {
-            const playerUserMap = new Map((playersData ?? []).map((p: any) => [p.user_id, p.id]));
-            const hostClubPlayerIds: string[] = [];
-            const clubPlayerMap = new Map<string, { name: string; playerIds: string[] }>();
-
-            for (const m of memberships as any[]) {
-              const playerId = playerUserMap.get(m.user_id);
-              if (!playerId) continue;
-
+          for (const p of playersData) {
+            for (const m of p.club_memberships as any[]) {
               if (m.club_id === event.club_id) {
-                if (!hostClubPlayerIds.includes(playerId)) {
-                  hostClubPlayerIds.push(playerId);
+                if (!hostClubPlayerIds.includes(p.id)) {
+                  hostClubPlayerIds.push(p.id);
                 }
               } else {
                 if (!clubPlayerMap.has(m.club_id)) {
-                  clubPlayerMap.set(m.club_id, { name: (m.clubs as any)?.name ?? m.club_id, playerIds: [] });
+                  clubPlayerMap.set(m.club_id, { name: m.club_name ?? m.club_id, playerIds: [] });
                 }
-                if (!clubPlayerMap.get(m.club_id)!.playerIds.includes(playerId)) {
-                  clubPlayerMap.get(m.club_id)!.playerIds.push(playerId);
+                if (!clubPlayerMap.get(m.club_id)!.playerIds.includes(p.id)) {
+                  clubPlayerMap.get(m.club_id)!.playerIds.push(p.id);
                 }
               }
             }
+          }
 
-            const eligibleClubs = [...clubPlayerMap.entries()].filter(([, v]) => v.playerIds.length >= 4);
-            if (eligibleClubs.length === 1 && hostClubPlayerIds.length >= 4) {
-              setIsStartingGame(false);
-              setClubVsClubDialog({
-                clubAName: event.clubs?.name ?? t("detail.hostClub"),
-                clubBName: eligibleClubs[0][1].name,
-                clubAPlayerIds: hostClubPlayerIds,
-                clubBPlayerIds: eligibleClubs[0][1].playerIds,
-                allPlayersData: playersData ?? [],
-              });
-              return;
+          const eligibleClubs = [...clubPlayerMap.entries()].filter(([, v]) => v.playerIds.length >= 4);
+          if (eligibleClubs.length === 1 && hostClubPlayerIds.length >= 4) {
+            const opponentPlayerIds = [...eligibleClubs[0][1].playerIds];
+
+            // Balance dual-member players: move from larger team to smaller
+            const dualMembers = hostClubPlayerIds.filter(id => opponentPlayerIds.includes(id));
+            for (const dualId of dualMembers) {
+              if (hostClubPlayerIds.length <= opponentPlayerIds.length) break;
+              const idx = hostClubPlayerIds.indexOf(dualId);
+              if (idx !== -1) hostClubPlayerIds.splice(idx, 1);
             }
+            const hostSet = new Set(hostClubPlayerIds);
+            const finalOpponentIds = opponentPlayerIds.filter(id => !hostSet.has(id));
+
+            setIsStartingGame(false);
+            setClubVsClubDialog({
+              clubAName: event.clubs?.name ?? t("detail.hostClub"),
+              clubBName: eligibleClubs[0][1].name,
+              clubAPlayerIds: hostClubPlayerIds,
+              clubBPlayerIds: finalOpponentIds,
+              allPlayersData: playersData,
+            });
+            return;
           }
         }
 
         // Normal team assignment
-        await startNormalGame(playersData ?? []);
+        await startNormalGame(playersData);
       }
     } catch (error) {
       console.error("Error starting game:", error);

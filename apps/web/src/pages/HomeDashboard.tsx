@@ -82,7 +82,7 @@ function useTodaysEvents(userId: string | undefined, playerId: string | null | u
         }) ?? null;
       }
 
-      // 2. If no club event, check RSVPed public events today
+      // 2. If no club event, check RSVPed events today
       if (!todayEvent && playerId) {
         const { data: rsvps } = await supabase
           .from("event_rsvp")
@@ -94,7 +94,6 @@ function useTodaysEvents(userId: string | undefined, playerId: string | null | u
           const { data } = await supabase
             .from("planned_events")
             .select(selectFields)
-            .eq("is_public", true)
             .eq("date", todayStr)
             .in("status", ["open", "confirmed"])
             .in("id", rsvpedIds)

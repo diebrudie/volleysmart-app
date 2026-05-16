@@ -93,7 +93,7 @@ export async function fetchUpcomingEvents(
     .order("date", { ascending: true })
     .order("start_time", { ascending: true });
 
-  // Public events the user RSVPed to (so they appear in "my events")
+  // Events the user RSVPed to (visible via RLS even if switched to private)
   const { data: playerRow } = await supabase
     .from("players")
     .select("id")
@@ -109,12 +109,11 @@ export async function fetchUpcomingEvents(
     rsvpedEventIds = (rsvps ?? []).map((r) => r.event_id);
   }
 
-  const rsvpedPublicPromise =
+  const rsvpedEventsPromise =
     rsvpedEventIds.length > 0
       ? supabase
           .from("planned_events")
           .select(selectFields)
-          .eq("is_public", true)
           .in("status", ["open", "confirmed", "cancelled"])
           .gte("date", today)
           .in("id", rsvpedEventIds)
@@ -122,20 +121,20 @@ export async function fetchUpcomingEvents(
           .order("start_time", { ascending: true })
       : Promise.resolve({ data: [] as any[], error: null });
 
-  const [clubResult, personalResult, rsvpedPublicResult] = await Promise.all([
+  const [clubResult, personalResult, rsvpedEventsResult] = await Promise.all([
     clubEventsPromise,
     personalEventsPromise,
-    rsvpedPublicPromise,
+    rsvpedEventsPromise,
   ]);
 
   if (clubResult.error) throw clubResult.error;
   if (personalResult.error) throw personalResult.error;
-  if (rsvpedPublicResult.error) throw rsvpedPublicResult.error;
+  if (rsvpedEventsResult.error) throw rsvpedEventsResult.error;
 
   const all = [
     ...((clubResult.data ?? []) as PlannedEvent[]),
     ...((personalResult.data ?? []) as PlannedEvent[]),
-    ...((rsvpedPublicResult.data ?? []) as PlannedEvent[]),
+    ...((rsvpedEventsResult.data ?? []) as PlannedEvent[]),
   ];
 
   // Deduplicate (in case a clubless event was also returned) and sort
@@ -268,17 +267,39 @@ export async function fetchPastEvents(
     .lt("date", today)
     .order("date", { ascending: false });
 
-  const [clubResult, personalResult] = await Promise.all([
+  let rsvpedEventIds: string[] = [];
+  if (playerId) {
+    const { data: rsvps } = await supabase
+      .from("event_rsvp")
+      .select("event_id")
+      .eq("player_id", playerId);
+    rsvpedEventIds = (rsvps ?? []).map((r) => r.event_id);
+  }
+
+  const rsvpedEventsPromise =
+    rsvpedEventIds.length > 0
+      ? supabase
+          .from("planned_events")
+          .select(selectFields)
+          .in("id", rsvpedEventIds)
+          .lt("date", today)
+          .order("date", { ascending: false })
+      : Promise.resolve({ data: [] as any[], error: null });
+
+  const [clubResult, personalResult, rsvpedEventsResult] = await Promise.all([
     clubEventsPromise,
     personalEventsPromise,
+    rsvpedEventsPromise,
   ]);
 
   if (clubResult.error) throw clubResult.error;
   if (personalResult.error) throw personalResult.error;
+  if (rsvpedEventsResult.error) throw rsvpedEventsResult.error;
 
   const allEvents = [
     ...((clubResult.data ?? []) as any[]),
     ...((personalResult.data ?? []) as any[]),
+    ...((rsvpedEventsResult.data ?? []) as any[]),
   ];
 
   const seen = new Set<string>();
