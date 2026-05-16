@@ -70,7 +70,8 @@ async function fetchCrossClubArchive(userId: string): Promise<ArchiveRow[]> {
     .select("club_id, clubs(id, name)")
     .eq("user_id", userId)
     .eq("is_active", true)
-    .eq("status", "active");
+    .eq("status", "active")
+    .eq("clubs.status", "active");
 
   if (membErr) throw membErr;
   if (!memberships?.length) return [];
