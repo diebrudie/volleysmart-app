@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { getDateLocale } from "@/lib/dateLocale";
 import {
@@ -85,6 +85,7 @@ interface MemberRow {
   image_url: string | null;
   primary_position: string | null;
   member_association: boolean;
+  is_coach: boolean;
 }
 
 /**
@@ -211,7 +212,7 @@ const ClubOverview: React.FC = () => {
       // 1. Get active club members
       const { data: rows, error } = await supabase
         .from("club_members")
-        .select("user_id, role, member_association")
+        .select("user_id, role, member_association, is_coach")
         .eq("club_id", clubId!)
         .eq("is_active", true)
         .eq("status", "active")
@@ -243,6 +244,7 @@ const ClubOverview: React.FC = () => {
           image_url: p?.image_url ?? null,
           primary_position: primaryPos?.positions?.name ?? null,
           member_association: m.member_association ?? false,
+          is_coach: m.is_coach ?? false,
         };
       }) as MemberRow[];
       merged.sort((a, b) => a.first_name.localeCompare(b.first_name));
@@ -279,6 +281,20 @@ const ClubOverview: React.FC = () => {
     },
     enabled: !!clubId && isAdmin,
     staleTime: 5 * 60 * 1000,
+  });
+
+  const toggleCoachMutation = useMutation({
+    mutationFn: async ({ userId, isCoach }: { userId: string; isCoach: boolean }) => {
+      const { error } = await supabase
+        .from("club_members")
+        .update({ is_coach: isCoach })
+        .eq("club_id", clubId!)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["club-members-list", clubId] });
+    },
   });
 
   const { data: locations = [] } = useQuery({
@@ -601,9 +617,30 @@ const ClubOverview: React.FC = () => {
                           <p className="text-xs text-muted-foreground">{tProfile(`positions.name.${m.primary_position}`, { defaultValue: m.primary_position })}</p>
                         )}
                       </div>
-                      {m.role === "admin" && (
-                        <span className="text-xs text-muted-foreground shrink-0">{t("overview.membersSection.admin")}</span>
-                      )}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isAdmin && manageMode ? (
+                          <button
+                            type="button"
+                            className={cn(
+                              "text-xs font-medium shrink-0 px-2 py-0.5 rounded-full border transition-colors",
+                              m.is_coach
+                                ? "bg-primary/10 text-primary border-primary/30"
+                                : "text-muted-foreground/50 border-dashed border-muted-foreground/30 hover:border-primary/30 hover:text-primary/70"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCoachMutation.mutate({ userId: m.user_id, isCoach: !m.is_coach });
+                            }}
+                          >
+                            {m.is_coach ? t("overview.membersSection.coach") : t("overview.membersSection.setCoach")}
+                          </button>
+                        ) : m.is_coach ? (
+                          <span className="text-xs font-medium text-primary shrink-0">{t("overview.membersSection.coach")}</span>
+                        ) : null}
+                        {m.role === "admin" && (
+                          <span className="text-xs text-muted-foreground shrink-0">{t("overview.membersSection.admin")}</span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

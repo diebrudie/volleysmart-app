@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Undo2 } from "lucide-react";
+import { ArrowLeft, Undo2, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchUserRole } from "@/integrations/supabase/clubMembers";
 
 const MAX_SETS = 9;
+const STORAGE_KEY_PREFIX = "vs-live-score-";
 
 const canEditGame = (gameDate: string | Date): boolean => {
   const game = new Date(gameDate);
@@ -40,6 +41,49 @@ interface MatchDayData {
   game_players: { player_id: string; players: { user_id: string | null } }[];
 }
 
+interface PersistedScore {
+  teamAPoints: number;
+  teamBPoints: number;
+  undoStack: ("a" | "b")[];
+  currentSetNumber: number;
+  timestamp: number;
+}
+
+function getStorageKey(matchDayId: string) {
+  return `${STORAGE_KEY_PREFIX}${matchDayId}`;
+}
+
+function loadPersistedScore(matchDayId: string): PersistedScore | null {
+  try {
+    const raw = localStorage.getItem(getStorageKey(matchDayId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PersistedScore;
+    const ageMs = Date.now() - parsed.timestamp;
+    if (ageMs > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(getStorageKey(matchDayId));
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function persistScore(matchDayId: string, score: Omit<PersistedScore, "timestamp">) {
+  try {
+    localStorage.setItem(
+      getStorageKey(matchDayId),
+      JSON.stringify({ ...score, timestamp: Date.now() })
+    );
+  } catch {}
+}
+
+function clearPersistedScore(matchDayId: string) {
+  try {
+    localStorage.removeItem(getStorageKey(matchDayId));
+  } catch {}
+}
+
 const LiveScore = () => {
   const { matchDayId } = useParams<{ matchDayId: string }>();
   const navigate = useNavigate();
@@ -55,11 +99,14 @@ const LiveScore = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showEndSetConfirm, setShowEndSetConfirm] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showSetPointSuggestion, setShowSetPointSuggestion] = useState(false);
   const [allSetsComplete, setAllSetsComplete] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
+  const [swapped, setSwapped] = useState(false);
 
   const isTrackingRef = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const setPointShownForScore = useRef<string | null>(null);
 
   // ── Forced landscape orientation ────────────────────────────────────────────
 
@@ -88,9 +135,7 @@ const LiveScore = () => {
         if ("wakeLock" in navigator) {
           wakeLockRef.current = await navigator.wakeLock.request("screen");
         }
-      } catch {
-        // Wake lock not supported or denied
-      }
+      } catch {}
     };
     requestWakeLock();
     return () => {
@@ -164,7 +209,7 @@ const LiveScore = () => {
     }
   }, [isLoading, matchData, isEditingAllowed, canEdit, isMatchToday, matchDayId, navigate]);
 
-  // ── Initialize current set from match data ──────────────────────────────────
+  // ── Initialize current set from match data + restore persisted score ────────
 
   useEffect(() => {
     if (!matchData || isTrackingRef.current) return;
@@ -174,20 +219,44 @@ const LiveScore = () => {
       (m) => m.team_a_score === 0 && m.team_b_score === 0
     );
 
+    let setNum: number;
     if (firstUnplayed) {
-      setCurrentSetNumber(firstUnplayed.game_number);
+      setNum = firstUnplayed.game_number;
       setAllSetsComplete(false);
     } else if (sorted.length > 0) {
       const maxSetNumber = Math.max(...sorted.map((m) => m.game_number));
       if (maxSetNumber >= MAX_SETS) {
         setAllSetsComplete(true);
+        setNum = maxSetNumber;
         setCurrentSetNumber(maxSetNumber);
+        return;
       } else {
-        setCurrentSetNumber(maxSetNumber + 1);
+        setNum = maxSetNumber + 1;
         setAllSetsComplete(false);
       }
+    } else {
+      setNum = 1;
     }
-  }, [matchData]);
+
+    setCurrentSetNumber(setNum);
+
+    if (matchDayId) {
+      const persisted = loadPersistedScore(matchDayId);
+      if (persisted && persisted.currentSetNumber === setNum && (persisted.teamAPoints > 0 || persisted.teamBPoints > 0)) {
+        setTeamAPoints(persisted.teamAPoints);
+        setTeamBPoints(persisted.teamBPoints);
+        setUndoStack(persisted.undoStack);
+        isTrackingRef.current = true;
+      }
+    }
+  }, [matchData, matchDayId]);
+
+  // ── Persist score on every change ───────────────────────────────────────────
+
+  useEffect(() => {
+    if (!matchDayId || !isTrackingRef.current) return;
+    persistScore(matchDayId, { teamAPoints, teamBPoints, undoStack, currentSetNumber });
+  }, [teamAPoints, teamBPoints, undoStack, currentSetNumber, matchDayId]);
 
   // ── Completed sets ──────────────────────────────────────────────────────────
 
@@ -195,13 +264,31 @@ const LiveScore = () => {
     .filter((m) => m.team_a_score > 0 || m.team_b_score > 0)
     .sort((a, b) => a.game_number - b.game_number);
 
-  // ── Set point hint ──────────────────────────────────────────────────────────
+  // ── Set point / auto-finish logic ──────────────────────────────────────────
 
   const setTarget = currentSetNumber >= 5 ? 15 : 25;
+
+  const isSetWon = (scoreA: number, scoreB: number): boolean => {
+    const target = currentSetNumber >= 5 ? 15 : 25;
+    if (scoreA >= target && scoreA - scoreB >= 2) return true;
+    if (scoreB >= target && scoreB - scoreA >= 2) return true;
+    return false;
+  };
+
   const teamAHasSetPoint =
-    teamAPoints >= setTarget - 1 && teamAPoints > teamBPoints;
+    teamAPoints >= setTarget - 1 && teamAPoints > teamBPoints && !isSetWon(teamAPoints, teamBPoints);
   const teamBHasSetPoint =
-    teamBPoints >= setTarget - 1 && teamBPoints > teamAPoints;
+    teamBPoints >= setTarget - 1 && teamBPoints > teamAPoints && !isSetWon(teamAPoints, teamBPoints);
+
+  // Show set point suggestion when a team wins the set
+  useEffect(() => {
+    if (!isTrackingRef.current) return;
+    const scoreKey = `${teamAPoints}-${teamBPoints}`;
+    if (isSetWon(teamAPoints, teamBPoints) && setPointShownForScore.current !== scoreKey) {
+      setPointShownForScore.current = scoreKey;
+      setShowSetPointSuggestion(true);
+    }
+  }, [teamAPoints, teamBPoints]);
 
   // ── Tap handlers ────────────────────────────────────────────────────────────
 
@@ -229,6 +316,7 @@ const LiveScore = () => {
       else setTeamBPoints((p) => Math.max(0, p - 1));
       return prev.slice(0, -1);
     });
+    setPointShownForScore.current = null;
   }, []);
 
   // ── End Set ─────────────────────────────────────────────────────────────────
@@ -273,7 +361,11 @@ const LiveScore = () => {
       setTeamBPoints(0);
       setUndoStack([]);
       setShowEndSetConfirm(false);
+      setShowSetPointSuggestion(false);
+      setPointShownForScore.current = null;
       isTrackingRef.current = false;
+
+      if (matchDayId) clearPersistedScore(matchDayId);
 
       const nextSet = currentSetNumber + 1;
       if (nextSet > MAX_SETS) {
@@ -308,6 +400,22 @@ const LiveScore = () => {
     setShowExitConfirm(false);
     navigate(`/game/${matchDayId}`);
   };
+
+  // ── Swap helper — which team displays on which side ─────────────────────────
+
+  const leftTeam = swapped ? "b" : "a";
+  const rightTeam = swapped ? "a" : "b";
+  const leftPoints = swapped ? teamBPoints : teamAPoints;
+  const rightPoints = swapped ? teamAPoints : teamBPoints;
+  const leftLabel = swapped ? t("liveScore.teamB") : t("liveScore.teamA");
+  const rightLabel = swapped ? t("liveScore.teamA") : t("liveScore.teamB");
+  const leftHasSetPoint = swapped ? teamBHasSetPoint : teamAHasSetPoint;
+  const rightHasSetPoint = swapped ? teamAHasSetPoint : teamBHasSetPoint;
+  const leftWon = isSetWon(teamAPoints, teamBPoints) && (swapped ? teamBPoints > teamAPoints : teamAPoints > teamBPoints);
+  const rightWon = isSetWon(teamAPoints, teamBPoints) && (swapped ? teamAPoints > teamBPoints : teamBPoints > teamAPoints);
+
+  const handleTapLeft = swapped ? handleTapB : handleTapA;
+  const handleTapRight = swapped ? handleTapA : handleTapB;
 
   // ── Loading ─────────────────────────────────────────────────────────────────
 
@@ -443,23 +551,8 @@ const LiveScore = () => {
         </div>
       )}
 
-      {/* Score display */}
-      <div className="flex items-center justify-center py-6 shrink-0">
-        <div className="text-center">
-          <div className="text-7xl sm:text-8xl font-bold tabular-nums">
-            <span className="text-red-500">{teamAPoints}</span>
-            <span className="mx-3 text-muted-foreground text-5xl">-</span>
-            <span className="text-emerald-500">{teamBPoints}</span>
-          </div>
-          <div className="flex justify-between px-4 mt-1">
-            <span className="text-sm text-muted-foreground">{t("liveScore.teamA")}</span>
-            <span className="text-sm text-muted-foreground">{t("liveScore.teamB")}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Tap targets */}
-      <div className="flex-1 flex gap-3 px-3 min-h-0">
+      {/* Main scoring area: left tap + scores + right tap */}
+      <div className="flex-1 flex min-h-0">
         {allSetsComplete ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-lg text-muted-foreground font-medium">
@@ -468,38 +561,75 @@ const LiveScore = () => {
           </div>
         ) : (
           <>
+            {/* Left tap target */}
             <button
-              onClick={handleTapA}
-              className={`flex-1 rounded-2xl flex flex-col items-center justify-center transition-transform active:scale-[0.97] ${
-                teamAHasSetPoint
-                  ? "bg-red-200 dark:bg-red-900 ring-2 ring-red-400 animate-pulse"
-                  : "bg-red-100 dark:bg-red-950"
+              onClick={handleTapLeft}
+              className={`w-[22%] flex flex-col items-center justify-center transition-transform active:scale-[0.97] ${
+                leftHasSetPoint
+                  ? "bg-red-200 dark:bg-red-900 ring-2 ring-red-400 ring-inset animate-pulse"
+                  : leftTeam === "a"
+                    ? "bg-red-50 dark:bg-red-950/50"
+                    : "bg-emerald-50 dark:bg-emerald-950/50"
               }`}
             >
-              <span className="text-red-600 dark:text-red-400 text-2xl font-bold">
-                {t("liveScore.teamA")}
+              <span className={`text-lg font-bold ${leftTeam === "a" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                +1
               </span>
-              <span className="text-red-500/60 text-lg mt-1">+1</span>
-              {teamAHasSetPoint && (
-                <span className="text-xs font-semibold text-red-600 dark:text-red-400 mt-2 uppercase tracking-wider">
+              {leftHasSetPoint && (
+                <span className={`text-[10px] font-semibold mt-1 uppercase tracking-wider ${leftTeam === "a" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                   {t("liveScore.setPoint")}
                 </span>
               )}
             </button>
+
+            {/* Center score display */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex items-baseline gap-3">
+                <div className="text-center">
+                  <span className={`text-9xl sm:text-[11rem] font-black tabular-nums leading-none ${leftTeam === "a" ? "text-red-500" : "text-emerald-500"}`}>
+                    {leftPoints}
+                  </span>
+                  <p className={`text-xs font-medium mt-1 ${leftTeam === "a" ? "text-red-400" : "text-emerald-400"}`}>
+                    {leftLabel}
+                  </p>
+                </div>
+                <div className="flex flex-col items-center gap-1 pb-5">
+                  <span className="text-3xl text-muted-foreground/40 font-light">:</span>
+                  <button
+                    onClick={() => setSwapped((s) => !s)}
+                    className="h-8 w-8 rounded-full border border-border flex items-center justify-center hover:bg-muted text-muted-foreground"
+                    title={t("liveScore.swapSides")}
+                  >
+                    <ArrowLeftRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="text-center">
+                  <span className={`text-9xl sm:text-[11rem] font-black tabular-nums leading-none ${rightTeam === "b" ? "text-emerald-500" : "text-red-500"}`}>
+                    {rightPoints}
+                  </span>
+                  <p className={`text-xs font-medium mt-1 ${rightTeam === "b" ? "text-emerald-400" : "text-red-400"}`}>
+                    {rightLabel}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right tap target */}
             <button
-              onClick={handleTapB}
-              className={`flex-1 rounded-2xl flex flex-col items-center justify-center transition-transform active:scale-[0.97] ${
-                teamBHasSetPoint
-                  ? "bg-emerald-200 dark:bg-emerald-900 ring-2 ring-emerald-400 animate-pulse"
-                  : "bg-emerald-100 dark:bg-emerald-950"
+              onClick={handleTapRight}
+              className={`w-[22%] flex flex-col items-center justify-center transition-transform active:scale-[0.97] ${
+                rightHasSetPoint
+                  ? "bg-emerald-200 dark:bg-emerald-900 ring-2 ring-emerald-400 ring-inset animate-pulse"
+                  : rightTeam === "b"
+                    ? "bg-emerald-50 dark:bg-emerald-950/50"
+                    : "bg-red-50 dark:bg-red-950/50"
               }`}
             >
-              <span className="text-emerald-600 dark:text-emerald-400 text-2xl font-bold">
-                {t("liveScore.teamB")}
+              <span className={`text-lg font-bold ${rightTeam === "b" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                +1
               </span>
-              <span className="text-emerald-500/60 text-lg mt-1">+1</span>
-              {teamBHasSetPoint && (
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-2 uppercase tracking-wider">
+              {rightHasSetPoint && (
+                <span className={`text-[10px] font-semibold mt-1 uppercase tracking-wider ${rightTeam === "b" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                   {t("liveScore.setPoint")}
                 </span>
               )}
@@ -509,9 +639,9 @@ const LiveScore = () => {
       </div>
 
       {/* Bottom bar */}
-      <div className="px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] shrink-0">
+      <div className="px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shrink-0">
         <Button
-          className="w-full h-12 text-base font-semibold"
+          className="w-full h-11 text-base font-semibold"
           onClick={() => setShowEndSetConfirm(true)}
           disabled={allSetsComplete}
         >
@@ -527,6 +657,43 @@ const LiveScore = () => {
             <DialogDescription>{t("liveScore.endSetDialogDescription")}</DialogDescription>
           </DialogHeader>
           {endSetContent}
+        </DialogContent>
+      </Dialog>
+
+      {/* Set point suggestion — auto-shows when a team wins */}
+      <Dialog open={showSetPointSuggestion} onOpenChange={setShowSetPointSuggestion}>
+        <DialogContent>
+          <DialogHeader className="sr-only">
+            <DialogTitle>{t("liveScore.setWonTitle")}</DialogTitle>
+            <DialogDescription>{t("liveScore.setWonDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="text-center py-4">
+            <p className="text-lg font-semibold mb-2">{t("liveScore.setWonTitle")}</p>
+            <p className="text-4xl font-bold">
+              <span className="text-red-500">{teamAPoints}</span>
+              <span className="mx-2 text-muted-foreground">-</span>
+              <span className="text-emerald-500">{teamBPoints}</span>
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">{t("liveScore.endSetNow")}</p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowSetPointSuggestion(false)}
+            >
+              {t("liveScore.keepScoring")}
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={() => {
+                setShowSetPointSuggestion(false);
+                setShowEndSetConfirm(true);
+              }}
+            >
+              {t("liveScore.endSet")}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

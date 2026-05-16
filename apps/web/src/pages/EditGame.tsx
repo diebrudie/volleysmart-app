@@ -225,7 +225,7 @@ const EditGame = () => {
       // Get game players with player details
       const { data: gamePlayersRaw, error: gamePlayersError } = await supabase
         .from("game_players")
-        .select("player_id, team_name, position_played")
+        .select("player_id, team_name, position_played, snapshot_name")
         .eq("match_day_id", gameId);
 
       if (gamePlayersError) {
@@ -248,21 +248,20 @@ const EditGame = () => {
           throw playersError;
         }
 
-        if (playersData) {
-          gamePlayers = gamePlayersRaw.map((gp) => {
-            const player = playersData.find((p) => p.id === gp.player_id);
-            return {
-              player_id: gp.player_id,
-              team_name: gp.team_name,
-              position_played: gp.position_played,
-              players: player || {
-                id: gp.player_id,
-                first_name: "Unknown",
-                last_name: "Player",
-              },
-            };
-          });
-        }
+        gamePlayers = gamePlayersRaw.map((gp) => {
+          const player = playersData?.find((p) => p.id === gp.player_id);
+          const snapshotParts = (gp as any).snapshot_name?.trim().split(/\s+/).filter(Boolean) ?? [];
+          return {
+            player_id: gp.player_id,
+            team_name: gp.team_name,
+            position_played: gp.position_played,
+            players: player || {
+              id: gp.player_id,
+              first_name: snapshotParts[0] ?? "Player",
+              last_name: snapshotParts.length > 1 ? snapshotParts[snapshotParts.length - 1] : "",
+            },
+          };
+        });
       }
 
       return {

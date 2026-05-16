@@ -88,6 +88,8 @@
   "create.eventGenderMixed": "Mixto",
   "create.eventGenderWomenOnly": "Solo mujeres",
   "create.eventGenderMenOnly": "Solo hombres",
+  "create.eventGenderQueer": "Queer",
+  "create.eventGenderFlinta": "Flinta",
   "create.activityType": "Actividad",
   "create.activityTypeIndoor": "Interior",
   "create.activityTypeBeach": "Playa",
@@ -158,6 +160,8 @@
   "card.rsvpBy": "RSVP antes del {{date}}",
   "card.genderWomenOnly": "Solo mujeres",
   "card.genderMenOnly": "Solo hombres",
+  "card.genderQueer": "Queer",
+  "card.genderFlinta": "Flinta",
 
   "location": {
     "nameLabel": "Nombre del lugar *",
@@ -178,6 +182,8 @@
   "detail.eventGenderMixed": "Mixto",
   "detail.eventGenderWomenOnly": "Solo mujeres",
   "detail.eventGenderMenOnly": "Solo hombres",
+  "detail.eventGenderQueer": "Queer",
+  "detail.eventGenderFlinta": "Flinta",
   "detail.activityType": "Actividad",
   "detail.activityTypeIndoor": "Interior",
   "detail.activityTypeBeach": "Playa",
@@ -215,6 +221,11 @@
   "detail.gameStarted": "¡Partido iniciado!",
   "detail.gameStartedWithNote": "¡Partido iniciado! Nota: {{note}}",
   "detail.failedToStartGame": "Error al iniciar el partido. Por favor, inténtalo de nuevo.",
+  "detail.hostClub": "Club anfitrión",
+  "detail.clubVsClubTitle": "¿Partido club contra club?",
+  "detail.clubVsClubDescription": "{{clubA}} ({{countA}} jugadores) vs {{clubB}} ({{countB}} jugadores). ¿Dividir equipos por club?",
+  "detail.clubVsClubYes": "Sí, {{clubA}} vs {{clubB}}",
+  "detail.clubVsClubNo": "No, mezclar los equipos",
   "detail.sharePastGame": "¡Mira cómo terminó el último partido de voleibol. ¡Súper interesante!\n{{url}}",
   "detail.shareActiveGame": "¡Nuestro partido de voleibol está listo! Mira los equipos y sigue los puntos\n{{url}}",
   "detail.shareEvent": "Mira este evento de voleibol y dime si puedes asistir\n{{url}}",
@@ -279,5 +290,6 @@
   "detail.cancel": "Cancelar",
   "detail.deleting": "Eliminando...",
   "detail.delete": "Eliminar",
-  "detail.unknown": "Desconocido"
+  "detail.unknown": "Desconocido",
+  "detail.you": "Tú"
 }

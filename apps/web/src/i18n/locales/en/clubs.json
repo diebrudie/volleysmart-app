@@ -56,6 +56,8 @@
       "done": "Done",
       "manage": "Manage",
       "admin": "Admin",
+      "coach": "Coach",
+      "setCoach": "Coach",
       "associationMember": "Association member",
       "removeCount": "Remove {{count}} member",
       "removeCount_other": "Remove {{count}} members"

@@ -56,6 +56,8 @@
       "done": "Fertig",
       "manage": "Verwalten",
       "admin": "Admin",
+      "coach": "Trainer",
+      "setCoach": "Trainer",
       "associationMember": "Vereinsmitglied",
       "removeCount": "{{count}} Mitglied entfernen",
       "removeCount_other": "{{count}} Mitglieder entfernen"

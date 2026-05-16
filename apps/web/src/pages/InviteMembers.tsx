@@ -105,8 +105,8 @@ const InviteMembers = () => {
             </Button>
             <Button
               type="button"
-              variant="ghost"
-              className="w-full text-muted-foreground"
+              variant="outline"
+              className="w-full text-muted-foreground hover:text-foreground"
               onClick={handleGoToClub}
             >
               {t("invite.skipForNow")}

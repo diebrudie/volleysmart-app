@@ -13,6 +13,7 @@ export {
   updatePlannedEvent,
   cancelRecurringSeries,
   updateRecurringSeries,
+  fetchOpponentTeamNames,
 } from "@volleysmart/core";
 export type {
   EventType,

@@ -88,6 +88,8 @@
   "create.eventGenderMixed": "Mixed",
   "create.eventGenderWomenOnly": "Women Only",
   "create.eventGenderMenOnly": "Men Only",
+  "create.eventGenderQueer": "Queer",
+  "create.eventGenderFlinta": "Flinta",
   "create.activityType": "Activity",
   "create.activityTypeIndoor": "Indoor",
   "create.activityTypeBeach": "Beach",
@@ -152,6 +154,8 @@
   "card.rsvpBy": "RSVP by {{date}}",
   "card.genderWomenOnly": "Women Only",
   "card.genderMenOnly": "Men Only",
+  "card.genderQueer": "Queer",
+  "card.genderFlinta": "Flinta",
 
   "location": {
     "nameLabel": "Location Name *",
@@ -172,6 +176,8 @@
   "detail.eventGenderMixed": "Mixed",
   "detail.eventGenderWomenOnly": "Women Only",
   "detail.eventGenderMenOnly": "Men Only",
+  "detail.eventGenderQueer": "Queer",
+  "detail.eventGenderFlinta": "Flinta",
   "detail.activityType": "Activity",
   "detail.activityTypeIndoor": "Indoor",
   "detail.activityTypeBeach": "Beach",
@@ -209,6 +215,11 @@
   "detail.gameStarted": "Game started!",
   "detail.gameStartedWithNote": "Game started! Note: {{note}}",
   "detail.failedToStartGame": "Failed to start game. Please try again.",
+  "detail.hostClub": "Host club",
+  "detail.clubVsClubTitle": "Club vs Club game?",
+  "detail.clubVsClubDescription": "{{clubA}} ({{countA}} players) vs {{clubB}} ({{countB}} players). Split teams by club?",
+  "detail.clubVsClubYes": "Yes, {{clubA}} vs {{clubB}}",
+  "detail.clubVsClubNo": "No, mix the teams",
   "detail.sharePastGame": "Look how the last Volleyball Game finished. Super interesting!\n{{url}}",
   "detail.shareActiveGame": "Our Volleyball game is ready! Check the teams, and track points\n{{url}}",
   "detail.shareEvent": "Check this Volleyball Event, and let me know if you can make it\n{{url}}",
@@ -273,5 +284,6 @@
   "detail.cancel": "Cancel",
   "detail.deleting": "Deleting...",
   "detail.delete": "Delete",
-  "detail.unknown": "Unknown"
+  "detail.unknown": "Unknown",
+  "detail.you": "You"
 }

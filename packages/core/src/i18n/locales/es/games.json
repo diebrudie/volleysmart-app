@@ -105,6 +105,10 @@
     "endSetDialogTitle": "Terminar set",
     "endSetDialogDescription": "Confirmar guardado de la puntuación actual del set",
     "exitDialogTitle": "Salir",
-    "exitDialogDescription": "Confirmar salida con puntuación sin guardar"
+    "exitDialogDescription": "Confirmar salida con puntuación sin guardar",
+    "swapSides": "Cambiar lados",
+    "setWonTitle": "Punto de set!",
+    "setWonDescription": "Un equipo ha ganado este set",
+    "endSetNow": "¿Quieres terminar este set?"
   }
 }

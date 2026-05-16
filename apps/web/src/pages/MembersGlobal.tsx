@@ -63,17 +63,20 @@ async function fetchGlobalMembers(userId: string): Promise<GlobalMember[]> {
   const { data: clubRows } = await supabase
     .from("clubs")
     .select("id, name, slug")
-    .in("id", clubIds);
+    .in("id", clubIds)
+    .eq("status", "active");
 
   const clubById: Record<string, { name: string; slug: string }> = {};
   clubRows?.forEach((c) => {
     clubById[c.id] = { name: c.name, slug: c.slug };
   });
 
+  const activeClubIds = clubIds.filter((id) => id in clubById);
+
   const byPlayerId = new Map<string, GlobalMember>();
 
   await Promise.all(
-    clubIds.map(async (clubId) => {
+    activeClubIds.map(async (clubId) => {
       const { data: members } = await supabase
         .from("club_members")
         .select("user_id, role, member_association")

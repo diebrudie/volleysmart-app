@@ -105,6 +105,10 @@
     "endSetDialogTitle": "End Set",
     "endSetDialogDescription": "Confirm saving the current set score",
     "exitDialogTitle": "Exit",
-    "exitDialogDescription": "Confirm exiting with unsaved score"
+    "exitDialogDescription": "Confirm exiting with unsaved score",
+    "swapSides": "Swap sides",
+    "setWonTitle": "Set point!",
+    "setWonDescription": "A team has won this set",
+    "endSetNow": "Would you like to end this set?"
   }
 }
