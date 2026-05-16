@@ -156,32 +156,33 @@ function useTodaysEvents(userId: string | undefined, playerId: string | null | u
   });
 }
 
-function useLastGame(clubIds: string[]) {
+function useLastGame(playerId: string | null | undefined) {
   return useQuery({
-    queryKey: ["home-last-game", clubIds],
+    queryKey: ["home-last-game", playerId],
     queryFn: async () => {
-      if (!clubIds.length) return null;
+      if (!playerId) return null;
       const { data, error } = await supabase
-        .from("match_days")
+        .from("game_players")
         .select(
-          `id, date, club_id, clubs(name),
-           matches(team_a_score, team_b_score),
-           planned_events!planned_event_id(title)`
+          `match_day_id,
+           match_days!inner(id, date, club_id, clubs(name),
+             matches(team_a_score, team_b_score),
+             planned_events!planned_event_id(title))`
         )
-        .in("club_id", clubIds)
-        .order("date", { ascending: false })
+        .eq("player_id", playerId)
+        .order("match_days(date)", { ascending: false })
         .limit(10);
       if (error) throw error;
 
-      // Find first match_day that has played matches
-      for (const md of data ?? []) {
-        if (!md.matches?.length) continue;
+      for (const gp of data ?? []) {
+        const md = gp.match_days as any;
+        if (!md?.matches?.length) continue;
         let teamAWins = 0;
         let teamBWins = 0;
         let played = 0;
         for (const m of md.matches) {
-          const a = (m as any).team_a_score ?? 0;
-          const b = (m as any).team_b_score ?? 0;
+          const a = m.team_a_score ?? 0;
+          const b = m.team_b_score ?? 0;
           if (a + b === 0) continue;
           played++;
           if (a > b) teamAWins++;
@@ -198,7 +199,7 @@ function useLastGame(clubIds: string[]) {
         return {
           matchDayId: md.id,
           title,
-          clubName: (md.clubs as any)?.name ?? "",
+          clubName: md.clubs?.name ?? "",
           date: md.date,
           teamAWins,
           teamBWins,
@@ -212,7 +213,7 @@ function useLastGame(clubIds: string[]) {
       }
       return null;
     },
-    enabled: clubIds.length > 0,
+    enabled: !!playerId,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -312,7 +313,7 @@ const HomeDashboard: React.FC = () => {
   const clubIds = clubs.map((c) => c.id).filter(Boolean) as string[];
 
   const { data: todaysEvent } = useTodaysEvents(user?.id, playerId);
-  const { data: lastGame } = useLastGame(clubIds);
+  const { data: lastGame } = useLastGame(playerId);
   const { data: monthlyStats } = useMonthlyStats(user?.id, playerId, clubIds);
 
   // Discover events: public events from clubs user is NOT a member of
