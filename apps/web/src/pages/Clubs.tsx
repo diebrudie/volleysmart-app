@@ -202,17 +202,36 @@ const Clubs = () => {
     enabled: !!user?.id,
   });
 
-  // Query discoverable clubs (exclude user's own clubs)
+  // Player city for filtering discoverable clubs
+  const { data: playerCity } = useQuery({
+    queryKey: ["player-city", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("players")
+        .select("city")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data?.city || undefined;
+    },
+    enabled: !!user?.id,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Query discoverable clubs (exclude user's own clubs, filter by city)
   const userClubIds = (userClubs ?? []).map((c) => c.id);
   const { data: discoverableClubs = [] } = useQuery({
-    queryKey: ["discoverableClubs", user?.id, userClubIds.join(",")],
+    queryKey: ["discoverableClubs", user?.id, userClubIds.join(","), playerCity],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("clubs")
         .select("id, name, image_url, city, created_at")
         .eq("is_club_discoverable", true)
         .eq("status", "active")
         .limit(20);
+      if (playerCity) {
+        query = query.eq("city", playerCity);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       // Filter out clubs user is already in or has pending request for
       const pendingIds = pendingRequests.map((r) => r.club_id);

@@ -74,7 +74,7 @@ export default function CityLocationSelector({
           query
         )}.json`
       );
-      url.searchParams.set("types", "place,locality");
+      url.searchParams.set("types", "place");
       url.searchParams.set("language", navigator.language || "en");
       url.searchParams.set("limit", "5");
       url.searchParams.set("proximity", "ip");
