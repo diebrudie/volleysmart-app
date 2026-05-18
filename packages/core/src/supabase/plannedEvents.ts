@@ -154,18 +154,24 @@ export async function fetchUpcomingEvents(
 }
 
 /** Fetch all upcoming public events (for Discover or direct link access). */
-export async function fetchPublicEvents(): Promise<PlannedEvent[]> {
+export async function fetchPublicEvents(
+  city?: string
+): Promise<PlannedEvent[]> {
   const supabase = getSupabaseClient();
   const today = new Date().toISOString().split("T")[0];
 
+  const clubJoin = city
+    ? "clubs!inner!planned_events_club_id_fkey(id, name, image_url)"
+    : "clubs!planned_events_club_id_fkey(id, name, image_url)";
+
   const selectFields = `
     *,
-    clubs!planned_events_club_id_fkey(id, name, image_url),
+    ${clubJoin},
     locations!planned_events_location_id_fkey(name, address),
     event_rsvp(status, player_id)
   `;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("planned_events")
     .select(selectFields)
     .eq("is_public", true)
@@ -174,6 +180,12 @@ export async function fetchPublicEvents(): Promise<PlannedEvent[]> {
     .order("date", { ascending: true })
     .order("start_time", { ascending: true })
     .limit(50);
+
+  if (city) {
+    query = query.eq("clubs.city", city);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return (data ?? []) as PlannedEvent[];

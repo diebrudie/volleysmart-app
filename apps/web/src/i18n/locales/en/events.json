@@ -70,6 +70,8 @@
   "upcoming.rsvpGoing": "Going",
   "upcoming.rsvpNotGoing": "Not going",
   "upcoming.rsvpNotResponded": "Not responded",
+  "upcoming.rsvpAttended": "Attended",
+  "upcoming.rsvpNotAttended": "Not attended",
   "upcoming.eventTypeFriendly": "Friendly Game",
   "upcoming.eventTypeSocial": "Social Game",
   "upcoming.eventTypeTraining": "Training",

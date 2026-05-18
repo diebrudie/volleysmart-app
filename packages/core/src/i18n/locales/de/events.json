@@ -70,6 +70,8 @@
   "upcoming.rsvpGoing": "Zusage",
   "upcoming.rsvpNotGoing": "Absage",
   "upcoming.rsvpNotResponded": "Keine Antwort",
+  "upcoming.rsvpAttended": "Teilgenommen",
+  "upcoming.rsvpNotAttended": "Nicht teilgenommen",
   "upcoming.eventTypeFriendly": "Freundschaftsspiel",
   "upcoming.eventTypeSocial": "Freizeitspiel",
   "upcoming.eventTypeTraining": "Training",

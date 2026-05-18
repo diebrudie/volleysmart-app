@@ -62,10 +62,17 @@ type EventTypeValue =
   | "training"
   | "tournament";
 
-const RSVP_OPTIONS: { value: RsvpFilterValue; labelKey: string }[] = [
+const RSVP_OPTIONS_UPCOMING: { value: RsvpFilterValue; labelKey: string }[] = [
   { value: "all", labelKey: "upcoming.rsvpAll" },
   { value: "attending", labelKey: "upcoming.rsvpGoing" },
   { value: "declined", labelKey: "upcoming.rsvpNotGoing" },
+  { value: "none", labelKey: "upcoming.rsvpNotResponded" },
+];
+
+const RSVP_OPTIONS_PAST: { value: RsvpFilterValue; labelKey: string }[] = [
+  { value: "all", labelKey: "upcoming.rsvpAll" },
+  { value: "attending", labelKey: "upcoming.rsvpAttended" },
+  { value: "declined", labelKey: "upcoming.rsvpNotAttended" },
   { value: "none", labelKey: "upcoming.rsvpNotResponded" },
 ];
 
@@ -425,6 +432,7 @@ const UpcomingEvents: React.FC = () => {
     (newTab: "upcoming" | "past") => {
       setTab(newTab);
       setSortAsc(newTab === "upcoming");
+      setRsvpFilter("all");
     },
     []
   );
@@ -678,7 +686,7 @@ const UpcomingEvents: React.FC = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {RSVP_OPTIONS.map((opt) => (
+                {(tab === "past" ? RSVP_OPTIONS_PAST : RSVP_OPTIONS_UPCOMING).map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {t(opt.labelKey)}
                   </SelectItem>

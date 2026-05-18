@@ -324,16 +324,7 @@ const HomeDashboard: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: publicEvents = [] } = useQuery({
-    queryKey: ["public-events"],
-    queryFn: fetchPublicEvents,
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const isNewUser = clubs.length === 0;
-
-  // Player info for empty state message + onboarding cards
+  // Player info for empty state message + onboarding cards + city filtering
   const { data: playerInfo } = useQuery({
     queryKey: ["player-info", user?.id],
     queryFn: async () => {
@@ -347,6 +338,17 @@ const HomeDashboard: React.FC = () => {
     enabled: !!user?.id,
     staleTime: 10 * 60 * 1000,
   });
+
+  const playerCity = playerInfo?.city || undefined;
+
+  const { data: publicEvents = [] } = useQuery({
+    queryKey: ["public-events", playerCity],
+    queryFn: () => fetchPublicEvents(playerCity),
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isNewUser = clubs.length === 0;
 
   const discoverEvents = React.useMemo(() => {
     const clubIdSet = new Set(userClubIds);

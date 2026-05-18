@@ -70,6 +70,8 @@
   "upcoming.rsvpGoing": "Asistiendo",
   "upcoming.rsvpNotGoing": "No asistiendo",
   "upcoming.rsvpNotResponded": "Sin respuesta",
+  "upcoming.rsvpAttended": "Asistido",
+  "upcoming.rsvpNotAttended": "No asistido",
   "upcoming.eventTypeFriendly": "Partido amistoso",
   "upcoming.eventTypeSocial": "Partido social",
   "upcoming.eventTypeTraining": "Entrenamiento",
