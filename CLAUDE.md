@@ -3,7 +3,9 @@
 For completed work history, see [HISTORY.md](./HISTORY.md).
 
 ## Current status
-- Last change: `feat/native-app-phase-0` merged to main (shared core + opponent mode + club locations)
+- In progress: `feat/club-member-access-team-algorithm` — club member access to games/scores/teams, team algorithm improvements, queer/flinta event gender, live score popup removal
+- Last merged: `feat/event-filters-city-discovery-location` (PR #104): contextual RSVP filters (Going/Attended per tab), city-based filtering for public events and discoverable clubs, Mapbox city-only selector fix
+- Previously merged: `feat/ui-fixes-and-improvements` (PR #103): RLS recursion fixes, cross-club game start, opponent mode labels, deleted club filtering, Last Game per-player, event visibility after public-to-private
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused. Frontend uses link-based invite flow. Can be deleted or repurposed.
 - Deploy status: `notify-join-request` edge function needs deploying
@@ -20,14 +22,22 @@ For completed work history, see [HISTORY.md](./HISTORY.md).
 - **Notification body text**: Dynamic server-generated strings like "Isabel is attending XXX Event"
 - **Position data values**: DB stores English names; only display is translated client-side
 
-## Pending DB migrations
-- `20260422000010_repair_notification_triggers.sql` — idempotent repair of triggers
-- `20260426000008_discoverable_club_member_count.sql` — RPC get_club_member_count for non-member visibility
-- `20260505000001_fix_delete_own_account.sql` — NULLs FK references before auth user deletion, makes clubs.created_by nullable
+## Recent DB migrations (applied)
+- `20260514000001` — opponent team mode (is_opponent_mode, opponent_team_name on match_days)
+- `20260514000002` — coach badge (is_coach on club_members)
+- `20260515000001` — public event game and attendee visibility RLS
+- `20260515000002` — event co-attendee visibility (broken, dropped in 20260516000001)
+- `20260515000003` — RSVP'd attendees can view events after public-to-private
+- `20260516000001` — drop co-attendee RLS policies, add SECURITY DEFINER helpers
+- `20260516000002` — get_game_start_players RPC (replaces direct cross-table queries)
+- `20260516000003` — fix game start and attendee visibility
+- `20260516000004` — fix EditGame cross-club player access
+- `20260516000005` — event location and club visibility
+- `20260521000001` — add queer and flinta to event_gender enum
+- `20260521000002` — fix get_game_start_players: club member access, positions JSONB with all positions
 
 ## Pending deploy items
-- Phase 14 item: Repair migration 000010 (idempotent re-apply of all notification triggers)
-- Discovery migrations: 20260426000004 (fix request_join_club), 20260426000005 (location created_by)
+- `notify-join-request` edge function needs deploying
 
 ## Key files
 - `apps/web/src/pages/ClubOverview.tsx` — Club overview page
@@ -83,8 +93,10 @@ For completed work history, see [HISTORY.md](./HISTORY.md).
 - **Tournament event type** — Complex, deferred.
 - **Push notifications (native app)** — Requires native app build. notification_preferences table already has `push` column ready.
 
-### Group F: Discovery extensions
+### Group F: Discovery & Social
 - Distance filter (PostGIS), country filter, category/sport filter.
+- **FEAT-44: Club Friends** — Bidirectional club friendships (`club_friendships` table). New "friends" event visibility between private and public. Friend clubs see public profile only (image, name, description, location, join date), not members. Requires `is_public` boolean to become `visibility` enum ('private', 'friends', 'public') across 6 TS files + 10 SQL files. Detailed spec in memory file `project_club_friends_and_tournaments.md`. Premium feature candidate.
+- **FEAT-45: Follow Clubs** — Unidirectional, no approval. `club_follows` table (user_id, club_id). Followers get notified on public event creation. No access to private data. Independent of Club Friends. Start with notifications only, add "Following" section on Clubs page later. Premium candidate.
 
 ### Group G: Team Management
 - **FEAT-35: Admin Team Pairing** — New "Teams" button on ClubOverview. Admin can create persistent player pairings/groups. Needs DB model + integration with `assignTeams()`.

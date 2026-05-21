@@ -1250,7 +1250,7 @@ export type Database = {
     Enums: {
       club_status: "active" | "deleted"
       activity_type: "indoor" | "beach"
-      event_gender: "mixed" | "women_only" | "men_only"
+      event_gender: "mixed" | "women_only" | "men_only" | "queer" | "flinta"
       event_status: "open" | "confirmed" | "cancelled" | "completed"
       event_type: "friendly_game" | "social_game" | "training" | "tournament"
       faq_page_display: "faqs" | "homepage_faqs"
@@ -1388,7 +1388,7 @@ export const Constants = {
     Enums: {
       club_status: ["active", "deleted"],
       activity_type: ["indoor", "beach"],
-      event_gender: ["mixed", "women_only", "men_only"],
+      event_gender: ["mixed", "women_only", "men_only", "queer", "flinta"],
       event_status: ["open", "confirmed", "cancelled", "completed"],
       event_type: ["friendly_game", "social_game", "training", "tournament"],
       faq_page_display: ["faqs", "homepage_faqs"],

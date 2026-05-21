@@ -853,14 +853,16 @@ const EventDetail: React.FC = () => {
       (p: any) => {
         const positions = p.player_positions ?? [];
         const primary = positions.find((pp: any) => pp.is_primary);
-        const secondary = positions.find((pp: any) => !pp.is_primary);
+        const secondaries = positions
+          .filter((pp: any) => !pp.is_primary && pp.positions?.name)
+          .map((pp: any) => normalizeRole(pp.positions.name));
         return {
           id: p.id,
           score: p.skill_rating ?? 50,
           mainPosition: normalizeRole(primary?.positions?.name),
-          secondaryPosition: secondary?.positions?.name
-            ? normalizeRole(secondary.positions.name)
-            : null,
+          secondaryPositions: secondaries,
+          gender: p.gender ?? null,
+          name: p.first_name ?? null,
         };
       }
     );
@@ -877,11 +879,7 @@ const EventDetail: React.FC = () => {
 
     const matchDay = await createMatchDay(gamePlayers);
 
-    if (teamAssignment.compromises.length > 0) {
-      toast.success(t("detail.gameStartedWithNote", { note: teamAssignment.compromises.join("; ") }));
-    } else {
-      toast.success(t("detail.gameStarted"));
-    }
+    toast.success(t("detail.gameStarted"));
     navigate(`/game/${matchDay.id}`);
   };
 
@@ -901,12 +899,14 @@ const EventDetail: React.FC = () => {
 
       const playersData = (rpcData ?? []).map((p: any) => ({
         id: p.player_id,
+        first_name: p.first_name ?? null,
         skill_rating: p.skill_rating,
         user_id: p.user_id,
-        player_positions: [
-          ...(p.primary_position ? [{ is_primary: true, positions: { name: p.primary_position } }] : []),
-          ...(p.secondary_position ? [{ is_primary: false, positions: { name: p.secondary_position } }] : []),
-        ],
+        gender: p.gender ?? null,
+        player_positions: ((p.positions ?? []) as any[]).map((pos: any) => ({
+          is_primary: pos.is_primary,
+          positions: { name: pos.name },
+        })),
         club_memberships: p.club_memberships ?? [],
       }));
 
@@ -1601,8 +1601,8 @@ const EventDetail: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Start Game / View Game — visible to attending players only */}
-          {isAttending && linkedMatchDay ? (
+          {/* Start Game / View Game — visible to all club members */}
+          {(isMember || isCreator) && linkedMatchDay ? (
             <Button
               className="flex-1"
               variant="outline"
@@ -1611,7 +1611,7 @@ const EventDetail: React.FC = () => {
             >
               {t("detail.viewGame")}
             </Button>
-          ) : isAttending ? (
+          ) : (isMember || isCreator) ? (
             <Button
               className="flex-1"
               onClick={handleStartGame}

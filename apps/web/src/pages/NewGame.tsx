@@ -52,6 +52,7 @@ interface ClubMember {
   primary_position_id?: string | null;
   primary_position_name?: string;
   secondary_position_name?: string | null;
+  secondary_position_names?: string[];
   skill_rating?: number;
   gender?: string;
   height_cm?: number;
@@ -158,9 +159,9 @@ const NewGame = () => {
         const primaryPosition = player.player_positions?.find(
           (pp) => pp.is_primary
         );
-        const secondaryPosition = player.player_positions?.find(
+        const secondaryPositions = player.player_positions?.filter(
           (pp) => !pp.is_primary
-        );
+        ) ?? [];
         return {
           id: player.id,
           first_name: player.first_name,
@@ -170,7 +171,9 @@ const NewGame = () => {
           primary_position_name:
             primaryPosition?.positions?.name || "No Position",
           secondary_position_name:
-            secondaryPosition?.positions?.name || null,
+            secondaryPositions[0]?.positions?.name || null,
+          secondary_position_names:
+            secondaryPositions.map((pp) => pp.positions?.name).filter(Boolean),
           skill_rating: player.skill_rating || 50,
           gender: player.gender || "other",
           height_cm: player.height_cm,
@@ -501,9 +504,9 @@ const NewGame = () => {
             id: player.id,
             score: player.skill_rating ?? 50,
             mainPosition: normalizeRole(player.primary_position_name),
-            secondaryPosition: player.secondary_position_name
-              ? normalizeRole(player.secondary_position_name)
-              : null,
+            secondaryPositions: (player.secondary_position_names ?? []).map(normalizeRole),
+            gender: player.gender || null,
+            name: player.first_name ?? null,
           }];
         }),
         // Extra / guest players (using temp player IDs)
@@ -516,7 +519,8 @@ const NewGame = () => {
             id: record.tempPlayerId,
             score: extraPlayer.skill_rating,
             mainPosition: normalizeRole(record.position),
-            secondaryPosition: null,
+            secondaryPositions: [],
+            name: extraPlayer.name ?? null,
           }];
         }),
       ];
@@ -559,16 +563,9 @@ const NewGame = () => {
       // Invalidate the latest game query so Dashboard refetches
       queryClient.invalidateQueries({ queryKey: ["latestGame", clubId] });
 
-      const baseDesc = `Your game has been created${
-        extraPlayersCount > 0 ? ` with ${extraPlayersCount} extra players` : ""
-      }`;
-      const compromiseNote =
-        teamAssignment.compromises.length > 0
-          ? ` Note: ${teamAssignment.compromises.join("; ")}`
-          : "";
       toast({
-        title: "Game created!",
-        description: baseDesc + compromiseNote,
+        title: "Game started!",
+        description: "Log your points. Have fun!",
         duration: 2000,
       });
 
