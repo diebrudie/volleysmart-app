@@ -99,14 +99,13 @@ const LiveScore = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showEndSetConfirm, setShowEndSetConfirm] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [showSetPointSuggestion, setShowSetPointSuggestion] = useState(false);
   const [allSetsComplete, setAllSetsComplete] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
   const [swapped, setSwapped] = useState(false);
 
   const isTrackingRef = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-  const setPointShownForScore = useRef<string | null>(null);
+
 
   // ── Forced landscape orientation ────────────────────────────────────────────
 
@@ -192,11 +191,12 @@ const LiveScore = () => {
   });
 
   const isAdminOrEditor = userRole === "admin" || userRole === "editor";
+  const isMember = !!userRole;
   const isEditingAllowed = matchData?.date ? canEditGame(matchData.date) : false;
   const isTeamPlayer = Boolean(
     user?.id && matchData?.game_players?.some((gp) => (gp.players as any)?.user_id === user.id)
   );
-  const canEdit = isAdminOrEditor || isTeamPlayer;
+  const canEdit = isMember || isTeamPlayer;
   const isMatchToday = matchData?.date
     ? new Date(matchData.date).toDateString() === new Date().toDateString()
     : false;
@@ -280,16 +280,6 @@ const LiveScore = () => {
   const teamBHasSetPoint =
     teamBPoints >= setTarget - 1 && teamBPoints > teamAPoints && !isSetWon(teamAPoints, teamBPoints);
 
-  // Show set point suggestion when a team wins the set
-  useEffect(() => {
-    if (!isTrackingRef.current) return;
-    const scoreKey = `${teamAPoints}-${teamBPoints}`;
-    if (isSetWon(teamAPoints, teamBPoints) && setPointShownForScore.current !== scoreKey) {
-      setPointShownForScore.current = scoreKey;
-      setShowSetPointSuggestion(true);
-    }
-  }, [teamAPoints, teamBPoints]);
-
   // ── Tap handlers ────────────────────────────────────────────────────────────
 
   const handleTapA = useCallback(() => {
@@ -316,7 +306,6 @@ const LiveScore = () => {
       else setTeamBPoints((p) => Math.max(0, p - 1));
       return prev.slice(0, -1);
     });
-    setPointShownForScore.current = null;
   }, []);
 
   // ── End Set ─────────────────────────────────────────────────────────────────
@@ -361,8 +350,6 @@ const LiveScore = () => {
       setTeamBPoints(0);
       setUndoStack([]);
       setShowEndSetConfirm(false);
-      setShowSetPointSuggestion(false);
-      setPointShownForScore.current = null;
       isTrackingRef.current = false;
 
       if (matchDayId) clearPersistedScore(matchDayId);
@@ -657,43 +644,6 @@ const LiveScore = () => {
             <DialogDescription>{t("liveScore.endSetDialogDescription")}</DialogDescription>
           </DialogHeader>
           {endSetContent}
-        </DialogContent>
-      </Dialog>
-
-      {/* Set point suggestion — auto-shows when a team wins */}
-      <Dialog open={showSetPointSuggestion} onOpenChange={setShowSetPointSuggestion}>
-        <DialogContent>
-          <DialogHeader className="sr-only">
-            <DialogTitle>{t("liveScore.setWonTitle")}</DialogTitle>
-            <DialogDescription>{t("liveScore.setWonDescription")}</DialogDescription>
-          </DialogHeader>
-          <div className="text-center py-4">
-            <p className="text-lg font-semibold mb-2">{t("liveScore.setWonTitle")}</p>
-            <p className="text-4xl font-bold">
-              <span className="text-red-500">{teamAPoints}</span>
-              <span className="mx-2 text-muted-foreground">-</span>
-              <span className="text-emerald-500">{teamBPoints}</span>
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">{t("liveScore.endSetNow")}</p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => setShowSetPointSuggestion(false)}
-            >
-              {t("liveScore.keepScoring")}
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={() => {
-                setShowSetPointSuggestion(false);
-                setShowEndSetConfirm(true);
-              }}
-            >
-              {t("liveScore.endSet")}
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
 

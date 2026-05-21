@@ -7,7 +7,7 @@ export type EventType =
   | "tournament";
 
 export type EventStatus = "open" | "confirmed" | "cancelled" | "completed";
-export type EventGender = "mixed" | "women_only" | "men_only";
+export type EventGender = "mixed" | "women_only" | "men_only" | "queer" | "flinta";
 export type ActivityType = "indoor" | "beach";
 export type RsvpStatus = "attending" | "declined";
 

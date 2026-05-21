@@ -310,16 +310,16 @@ const Game = () => {
   });
 
   const isAdminOrEditor = userRole === "admin" || userRole === "editor";
+  const isMember = !!userRole;
   const isEditingAllowed = matchData?.date ? canEditGame(matchData.date) : false;
 
-  // Any player on a team can edit scores, sets, teams, and location
   const isTeamPlayer = Boolean(
     user?.id &&
     matchData?.game_players?.some(
       (gp) => gp.players?.user_id === user.id
     )
   );
-  const canEdit = isAdminOrEditor || isTeamPlayer;
+  const canEdit = isMember || isTeamPlayer;
 
   // ── Score editing (table mode from GameDetail) ─────────────────────────────
 

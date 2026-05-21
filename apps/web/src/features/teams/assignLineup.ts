@@ -95,7 +95,9 @@ export type PlayerForTeams = {
   /** Skill rating 1–100 */
   score: number;
   mainPosition: CanonicalRole;
-  secondaryPosition?: CanonicalRole | null;
+  secondaryPositions?: CanonicalRole[];
+  gender?: string | null;
+  name?: string | null;
 };
 
 export type AssignedPlayer = {
@@ -117,6 +119,8 @@ export type TeamAssignmentResult = {
     setterScoreDiff: number | null;
     mbScoreDiff: number | null;
     ohScoreDiff: number | null;
+    genderA: { male: number; female: number; other: number };
+    genderB: { male: number; female: number; other: number };
   };
   /** Hard rule breaks — surface to user before saving */
   violations: string[];
@@ -186,6 +190,8 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
         setterScoreDiff: null,
         mbScoreDiff: null,
         ohScoreDiff: null,
+        genderA: { male: 0, female: 0, other: 0 },
+        genderB: { male: 0, female: 0, other: 0 },
       },
       violations: ["Need at least 2 players to form teams"],
       compromises: [],
@@ -320,7 +326,7 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
       fillPosition(
         position,
         "secondary",
-        players.filter((p) => p.secondaryPosition === position)
+        players.filter((p) => p.secondaryPositions?.includes(position))
       );
       continue;
     }
@@ -334,7 +340,7 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
     fillPosition(
       position,
       "secondary",
-      players.filter((p) => p.secondaryPosition === position)
+      players.filter((p) => p.secondaryPositions?.includes(position))
     );
   }
 
@@ -353,12 +359,9 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
       const canB = usedB < needB;
       const team: "team_a" | "team_b" =
         canA && (!canB || scoreA <= scoreB) ? "team_a" : "team_b";
-      place(candidate, team, position, "fallback");
+      place(candidate, team, candidate.mainPosition, "fallback");
       if (team === "team_a") usedA++;
       else usedB++;
-      compromises.push(
-        `Player assigned to ${position} as fallback (primary: ${candidate.mainPosition})`
-      );
     }
   }
 
@@ -398,9 +401,56 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
     }
   }
 
+  // ── Phase 6: Gender balance swap ───────────────────────────────────────────
+  // Swap same-position players between teams to reduce gender imbalance,
+  // but only if it doesn't worsen the score diff by more than 15 points.
+  const countGender = (team: AssignedPlayer[], g: string) =>
+    team.filter((p) => (playerById.get(p.id)?.gender ?? "other") === g).length;
+
+  const genderImbalance = () => {
+    const femA = countGender(teamA, "female");
+    const femB = countGender(teamB, "female");
+    return Math.abs(femA - femB);
+  };
+
+  let genderImproved = true;
+  while (genderImproved && genderImbalance() > 1) {
+    genderImproved = false;
+    const currentScoreDiff = Math.abs(scoreA - scoreB);
+    genderOuter: for (let i = 0; i < teamA.length; i++) {
+      for (let j = 0; j < teamB.length; j++) {
+        const pa = teamA[i];
+        const pb = teamB[j];
+        if (pa.assignedPosition !== pb.assignedPosition) continue;
+        const pdA = playerById.get(pa.id);
+        const pdB = playerById.get(pb.id);
+        if (!pdA || !pdB) continue;
+        if ((pdA.gender ?? "other") === (pdB.gender ?? "other")) continue;
+
+        const newScoreA = scoreA - pdA.score + pdB.score;
+        const newScoreB = scoreB - pdB.score + pdA.score;
+        const newScoreDiff = Math.abs(newScoreA - newScoreB);
+        if (newScoreDiff > currentScoreDiff + 15) continue;
+
+        const femABefore = countGender(teamA, "female");
+        const femBBefore = countGender(teamB, "female");
+        const gA = pdA.gender ?? "other";
+        const gB = pdB.gender ?? "other";
+        const femAAfter = femABefore + (gB === "female" ? 1 : 0) - (gA === "female" ? 1 : 0);
+        const femBAfter = femBBefore + (gA === "female" ? 1 : 0) - (gB === "female" ? 1 : 0);
+        if (Math.abs(femAAfter - femBAfter) < Math.abs(femABefore - femBBefore)) {
+          scoreA = newScoreA;
+          scoreB = newScoreB;
+          teamA[i] = { ...pb, team: "team_a" };
+          teamB[j] = { ...pa, team: "team_b" };
+          genderImproved = true;
+          break genderOuter;
+        }
+      }
+    }
+  }
+
   // ── Position quality checks (all soft — never block team creation) ────────
-  // A required slot counts as "qualified" only when filled by a primary or
-  // secondary player. Filling via fallback is noted as a compromise.
   const uniqueRequiredPositions = new Map<CanonicalRole, number>();
   for (const pos of req.required) {
     uniqueRequiredPositions.set(pos, (uniqueRequiredPositions.get(pos) ?? 0) + 1);
@@ -433,6 +483,13 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
     );
   }
 
+  const genderDiff = genderImbalance();
+  if (genderDiff > 1) {
+    compromises.push(
+      `Gender imbalance: ${countGender(teamA, "female")}F/${countGender(teamA, "male")}M vs ${countGender(teamB, "female")}F/${countGender(teamB, "male")}M`
+    );
+  }
+
   // ── Analysis ──────────────────────────────────────────────────────────────
   const posScore = (team: AssignedPlayer[], pos: CanonicalRole): number =>
     team
@@ -441,6 +498,27 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
 
   const hasRole = (team: AssignedPlayer[], pos: CanonicalRole) =>
     team.some((p) => p.assignedPosition === pos);
+
+  const tallyGender = (team: AssignedPlayer[]) => ({
+    male: countGender(team, "male"),
+    female: countGender(team, "female"),
+    other: team.length - countGender(team, "male") - countGender(team, "female"),
+  });
+
+  // ── Debug log ────────────────────────────────────────────────────────────
+  const LOG_ORDER: CanonicalRole[] = ["Setter", "Middle Blocker", "Outside Hitter", "Opposite", "Libero"];
+  const logTeam = (label: string, team: AssignedPlayer[], total: number) => {
+    const sorted = [...team].sort(
+      (a, b) => LOG_ORDER.indexOf(a.assignedPosition) - LOG_ORDER.indexOf(b.assignedPosition)
+    );
+    const lines = sorted.map((ap) => {
+      const p = playerById.get(ap.id);
+      return `  ${p?.name ?? ap.id} - ${ap.assignedPosition} - ${p?.score ?? "?"}`;
+    });
+    console.log(`\n${label} - Total Score ${total}\n${lines.join("\n")}`);
+  };
+  logTeam("Team A", teamA, scoreA);
+  logTeam("Team B", teamB, scoreB);
 
   return {
     teamA,
@@ -467,6 +545,8 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
                 posScore(teamB, "Outside Hitter")
             )
           : null,
+      genderA: tallyGender(teamA),
+      genderB: tallyGender(teamB),
     },
     violations,
     compromises,
