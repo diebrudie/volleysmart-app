@@ -118,13 +118,32 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const path = url.pathname;
 
   if (path === "/__og-debug") {
-    return new Response(JSON.stringify({
-      fn: "catchall-v2",
+    const debugInfo: Record<string, unknown> = {
+      fn: "catchall-v3",
       hasSupabaseUrl: !!context.env.VITE_SUPABASE_URL,
       hasAnonKey: !!context.env.VITE_SUPABASE_ANON_KEY,
       ua,
       isBot: isBot(ua),
-    }), {
+    };
+
+    const testId = url.searchParams.get("testId");
+    if (testId && context.env.VITE_SUPABASE_URL && context.env.VITE_SUPABASE_ANON_KEY) {
+      try {
+        const apiUrl = `${context.env.VITE_SUPABASE_URL}/rest/v1/planned_events?id=eq.${testId}&select=title,event_type,activity_type,date,start_time,locations(name,address)`;
+        const resp = await fetch(apiUrl, {
+          headers: {
+            apikey: context.env.VITE_SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${context.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+        });
+        debugInfo.fetchStatus = resp.status;
+        debugInfo.fetchBody = await resp.text();
+      } catch (e) {
+        debugInfo.fetchError = e instanceof Error ? e.message : String(e);
+      }
+    }
+
+    return new Response(JSON.stringify(debugInfo, null, 2), {
       headers: { "Content-Type": "application/json" },
     });
   }
