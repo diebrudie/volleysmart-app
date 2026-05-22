@@ -52,10 +52,14 @@ async function ensureWasm(): Promise<void> {
       "https://esm.sh/@resvg/resvg-wasm@2.6.2/index_bg.wasm",
     );
     await initWasm(wasmModule);
-  } catch {
-    // Already initialized from a previous invocation
+    wasmInitialized = true;
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("Already initialized")) {
+      wasmInitialized = true;
+      return;
+    }
+    throw e;
   }
-  wasmInitialized = true;
 }
 
 function contentHash(updatedAt: string): string {

@@ -114,12 +114,24 @@ function formatDateForMeta(dateStr: string, lang: string): string {
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   const ua = context.request.headers.get("user-agent") ?? "";
+  const url = new URL(context.request.url);
+  const path = url.pathname;
+
+  if (path === "/__og-debug") {
+    return new Response(JSON.stringify({
+      fn: "catchall-v2",
+      hasSupabaseUrl: !!context.env.VITE_SUPABASE_URL,
+      hasAnonKey: !!context.env.VITE_SUPABASE_ANON_KEY,
+      ua,
+      isBot: isBot(ua),
+    }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   if (!isBot(ua)) {
     return context.next();
   }
-
-  const url = new URL(context.request.url);
-  const path = url.pathname;
   const rawLang = url.searchParams.get("lang") ?? "en";
   const baseLang = rawLang.split("-")[0];
   const validLang = ["en", "es", "de"].includes(baseLang) ? baseLang : "en";
