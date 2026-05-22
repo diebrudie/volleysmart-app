@@ -137,32 +137,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const url = new URL(context.request.url);
   const path = url.pathname;
 
-  if (path === "/__og-debug") {
-    const supabaseUrl = context.env.VITE_SUPABASE_URL;
-    const anonKey = context.env.VITE_SUPABASE_ANON_KEY;
-    const debugInfo: Record<string, unknown> = {
-      fn: "catchall-v5-rpc",
-      hasSupabaseUrl: !!supabaseUrl,
-      hasAnonKey: !!anonKey,
-      ua,
-      isBot: isBot(ua),
-    };
-
-    const testId = url.searchParams.get("testId");
-    if (testId && supabaseUrl && anonKey) {
-      try {
-        const result = await callRpc(supabaseUrl, anonKey, "get_event_og_metadata", { event_id: testId });
-        debugInfo.rpcResult = result;
-      } catch (e) {
-        debugInfo.rpcError = e instanceof Error ? e.message : String(e);
-      }
-    }
-
-    return new Response(JSON.stringify(debugInfo, null, 2), {
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
   if (!isBot(ua)) {
     return context.next();
   }
