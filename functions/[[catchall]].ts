@@ -1,6 +1,7 @@
 interface Env {
   VITE_SUPABASE_URL: string;
   VITE_SUPABASE_ANON_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
 }
 
 interface EventContext {
@@ -118,22 +119,23 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const path = url.pathname;
 
   if (path === "/__og-debug") {
+    const serviceKey = context.env.SUPABASE_SERVICE_ROLE_KEY;
     const debugInfo: Record<string, unknown> = {
-      fn: "catchall-v3",
+      fn: "catchall-v4",
       hasSupabaseUrl: !!context.env.VITE_SUPABASE_URL,
-      hasAnonKey: !!context.env.VITE_SUPABASE_ANON_KEY,
+      hasServiceKey: !!serviceKey,
       ua,
       isBot: isBot(ua),
     };
 
     const testId = url.searchParams.get("testId");
-    if (testId && context.env.VITE_SUPABASE_URL && context.env.VITE_SUPABASE_ANON_KEY) {
+    if (testId && context.env.VITE_SUPABASE_URL && serviceKey) {
       try {
         const apiUrl = `${context.env.VITE_SUPABASE_URL}/rest/v1/planned_events?id=eq.${testId}&select=title,event_type,activity_type,date,start_time,locations(name,address)`;
         const resp = await fetch(apiUrl, {
           headers: {
-            apikey: context.env.VITE_SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${context.env.VITE_SUPABASE_ANON_KEY}`,
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
           },
         });
         debugInfo.fetchStatus = resp.status;
@@ -163,7 +165,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   }
 
   const supabaseUrl = context.env.VITE_SUPABASE_URL;
-  const supabaseKey = context.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseKey = context.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     return context.next();
