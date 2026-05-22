@@ -1,6 +1,6 @@
 interface Env {
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
+  VITE_SUPABASE_URL: string;
+  VITE_SUPABASE_ANON_KEY: string;
 }
 
 interface EventContext {
@@ -130,8 +130,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return context.next();
   }
 
-  const supabaseUrl = context.env.SUPABASE_URL;
-  const supabaseKey = context.env.SUPABASE_ANON_KEY;
+  const supabaseUrl = context.env.VITE_SUPABASE_URL;
+  const supabaseKey = context.env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     return context.next();

@@ -11,7 +11,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import satori from "https://esm.sh/satori@0.12.1";
-import { initWasm, Resvg } from "https://esm.sh/@aspect-build/resvg-wasm@0.0.1";
+import { initWasm, Resvg } from "https://esm.sh/@resvg/resvg-wasm@2.6.2";
 import { t, tPlural, type OgLang } from "../_shared/ogTranslations.ts";
 
 const WIDTH = 1200;
@@ -49,7 +49,7 @@ async function ensureWasm(): Promise<void> {
   if (wasmInitialized) return;
   try {
     const wasmModule = await fetch(
-      "https://esm.sh/@aspect-build/resvg-wasm@0.0.1/resvg_wasm_bg.wasm",
+      "https://esm.sh/@resvg/resvg-wasm@2.6.2/index_bg.wasm",
     );
     await initWasm(wasmModule);
   } catch {
