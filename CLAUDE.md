@@ -4,6 +4,7 @@ For completed work history, see [HISTORY.md](./HISTORY.md).
 
 ## Current status
 - In progress: `feat/club-member-access-team-algorithm` — club member access to games/scores/teams, team algorithm improvements, queer/flinta event gender, live score popup removal
+- Ready for PR: `feat/mobile-phase1-foundation-auth` — native app Phase 1: providers, UI library, auth screens, tab layout, i18n, navy theme, logo. Google OAuth and onboarding deferred to Phase 3 (requires dev build).
 - Last merged: `feat/event-filters-city-discovery-location` (PR #104): contextual RSVP filters (Going/Attended per tab), city-based filtering for public events and discoverable clubs, Mapbox city-only selector fix
 - Previously merged: `feat/ui-fixes-and-improvements` (PR #103): RLS recursion fixes, cross-club game start, opponent mode labels, deleted club filtering, Last Game per-player, event visibility after public-to-private
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted

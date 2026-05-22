@@ -22,6 +22,7 @@ This file documents all completed features, phases, and fixes. For active work a
 - `feat/premium-gating` branched from `main` (merged to main)
 - `feat/club-locations-management` branched from `main` (merged to main)
 - `feat/native-app-phase-0` branched from `main` (merged to main)
+- `feat/mobile-phase1-foundation-auth` branched from `main` (ready for PR)
 
 ---
 
@@ -36,6 +37,7 @@ This file documents all completed features, phases, and fixes. For active work a
 - Discovery: Completed. Public events, discoverable clubs, attendee privacy, location sharing
 - Phase 16: Completed. Grouped menu drawer, notification preferences (grouped rows), engagement notifications, position translations, skill score privacy + FAQs
 - Native App Phase 0: Completed. Shared core extraction (`@volleysmart/core`), opponent team mode, club locations management
+- Native App Phase 1: Complete (ready for PR). Foundation & Auth: providers (CoreBootstrap, QueryProvider, AuthProvider), UI component library (Button, Input, Card, Avatar, Badge, Spinner, Screen, EmptyState, Toast), 5 auth screens (login, signup, forgot-password, reset-password, verify-email), 4-tab layout, i18n with device locale, navy theme, VolleySmart logo, Google icon on OAuth buttons
 
 ---
 
