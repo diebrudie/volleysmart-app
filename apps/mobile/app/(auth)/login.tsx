@@ -61,6 +61,9 @@ export default function LoginScreen() {
           <Text style={[styles.title, { color: theme.text }]}>
             {t("login.title")}
           </Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            {t("login.subtitle")}
+          </Text>
 
           <View style={styles.form}>
             <Pressable
@@ -152,7 +155,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, justifyContent: "center" },
   logo: { width: 220, height: 44, alignSelf: "center", marginBottom: 32 },
-  title: { fontSize: 22, fontWeight: "600", textAlign: "center", marginBottom: 28 },
+  title: { fontSize: 22, fontWeight: "600", textAlign: "center" },
+  subtitle: { fontSize: 15, textAlign: "center", marginTop: 8, marginBottom: 28 },
   form: { gap: 16 },
   googleBtn: {
     flexDirection: "row",
