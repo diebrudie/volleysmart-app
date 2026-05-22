@@ -120,8 +120,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
   const url = new URL(context.request.url);
   const path = url.pathname;
-  const lang = url.searchParams.get("lang") ?? "en";
-  const validLang = ["en", "es", "de"].includes(lang) ? lang : "en";
+  const rawLang = url.searchParams.get("lang") ?? "en";
+  const baseLang = rawLang.split("-")[0];
+  const validLang = ["en", "es", "de"].includes(baseLang) ? baseLang : "en";
 
   const eventMatch = path.match(EVENT_RE);
   const clubMatch = path.match(CLUB_RE);

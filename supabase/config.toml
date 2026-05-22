@@ -1,3 +1,6 @@
 project_id = "hdorkmnfwpegvlxygfwv"
 [db]
 major_version = 15
+
+[functions.generate-og-image]
+verify_jwt = false

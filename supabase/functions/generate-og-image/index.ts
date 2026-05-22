@@ -405,8 +405,9 @@ serve(async (req: Request) => {
     const url = new URL(req.url);
     const type = url.searchParams.get("type") as typeof VALID_TYPES[number] | null;
     const id = url.searchParams.get("id");
-    const langParam = (url.searchParams.get("lang") ?? "en") as OgLang;
-    const lang = VALID_LANGS.includes(langParam) ? langParam : "en";
+    const rawLang = url.searchParams.get("lang") ?? "en";
+    const baseLang = rawLang.split("-")[0] as OgLang;
+    const lang = VALID_LANGS.includes(baseLang) ? baseLang : "en";
 
     if (!type || !VALID_TYPES.includes(type)) {
       return new Response(JSON.stringify({ error: "type must be 'event' or 'club'" }), {
