@@ -39,7 +39,7 @@ let wasmInitialized = false;
 async function loadFont(): Promise<ArrayBuffer> {
   if (fontData) return fontData;
   const resp = await fetch(
-    "https://fonts.gstatic.com/s/inter/v18/UcCo3FwrK3iLTcviYwYZ90I.woff",
+    "https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf",
   );
   fontData = await resp.arrayBuffer();
   return fontData;
