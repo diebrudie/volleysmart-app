@@ -37,6 +37,7 @@
       "guests": "Guests",
       "locations": "Locations",
       "stats": "Stats",
+      "share": "Share",
       "leave": "Leave",
       "pending": "Pending",
       "join": "Join",
@@ -119,7 +120,8 @@
       "cannotLeaveDescription": "You're the only admin. Transfer the admin role first.",
       "leftClub": "Left club",
       "leftClubDescription": "You left {{name}}.",
-      "leaveError": "Failed to leave the club."
+      "leaveError": "Failed to leave the club.",
+      "linkCopied": "Link copied"
     }
   },
   "members": {

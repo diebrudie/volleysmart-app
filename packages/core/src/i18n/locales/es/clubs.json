@@ -37,6 +37,7 @@
       "guests": "Invitados",
       "locations": "Ubicaciones",
       "stats": "Estadísticas",
+      "share": "Compartir",
       "leave": "Salir",
       "pending": "Pendiente",
       "join": "Unirse",
@@ -119,7 +120,8 @@
       "cannotLeaveDescription": "Eres el único administrador. Transfiere el rol de administrador primero.",
       "leftClub": "Club abandonado",
       "leftClubDescription": "Abandonaste {{name}}.",
-      "leaveError": "Error al abandonar el club."
+      "leaveError": "Error al abandonar el club.",
+      "linkCopied": "Enlace copiado"
     }
   },
   "members": {
