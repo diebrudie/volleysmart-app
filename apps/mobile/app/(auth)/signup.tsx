@@ -7,6 +7,7 @@ import { supabase } from "@/constants/supabase";
 import { Screen } from "@/components/ui/Screen";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { GoogleIcon } from "@/components/ui/GoogleIcon";
 import { toast } from "@/components/ui/Toast";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -96,11 +97,21 @@ export default function SignupScreen() {
           <View style={styles.form}>
             {step === "email" ? (
               <>
-                <Button
-                  title={t("signup.continueWithGoogle")}
-                  variant="outline"
+                <Pressable
                   onPress={handleGoogleOAuth}
-                />
+                  style={({ pressed }) => [
+                    styles.googleBtn,
+                    {
+                      borderColor: theme.inputBorder,
+                      backgroundColor: pressed ? theme.surface : theme.background,
+                    },
+                  ]}
+                >
+                  <GoogleIcon size={20} />
+                  <Text style={[styles.googleText, { color: theme.text }]}>
+                    {t("signup.continueWithGoogle")}
+                  </Text>
+                </Pressable>
                 <View style={styles.divider}>
                   <View style={[styles.line, { backgroundColor: theme.border }]} />
                   <Text style={[styles.dividerText, { color: theme.textSecondary }]}>
@@ -198,6 +209,16 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: "700", textAlign: "center" },
   subtitle: { fontSize: 15, textAlign: "center", marginTop: 8, marginBottom: 32 },
   form: { gap: 16 },
+  googleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 10,
+  },
+  googleText: { fontSize: 16, fontWeight: "500" },
   divider: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 4 },
   line: { flex: 1, height: 1 },
   dividerText: { fontSize: 13 },
