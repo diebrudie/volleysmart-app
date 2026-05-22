@@ -1,7 +1,6 @@
 interface Env {
   VITE_SUPABASE_URL: string;
   VITE_SUPABASE_ANON_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
 }
 
 interface EventContext {
@@ -75,16 +74,17 @@ function buildMetaHtml(opts: {
 </html>`;
 }
 
-type EventRow = {
+type EventMeta = {
   title: string;
   event_type: string;
   activity_type: string;
   date: string;
   start_time: string;
-  locations: { name: string; address: string } | null;
+  location_name: string | null;
+  location_address: string | null;
 };
 
-type ClubRow = {
+type ClubMeta = {
   name: string;
   description: string | null;
   city: string | null;
@@ -113,35 +113,48 @@ function formatDateForMeta(dateStr: string, lang: string): string {
   });
 }
 
+async function callRpc(
+  supabaseUrl: string,
+  anonKey: string,
+  fnName: string,
+  params: Record<string, string>,
+): Promise<unknown | null> {
+  const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/${fnName}`, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(params),
+  });
+  if (!resp.ok) return null;
+  return resp.json();
+}
+
 export const onRequest: PagesFunction<Env> = async (context) => {
   const ua = context.request.headers.get("user-agent") ?? "";
   const url = new URL(context.request.url);
   const path = url.pathname;
 
   if (path === "/__og-debug") {
-    const serviceKey = context.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = context.env.VITE_SUPABASE_URL;
+    const anonKey = context.env.VITE_SUPABASE_ANON_KEY;
     const debugInfo: Record<string, unknown> = {
-      fn: "catchall-v4",
-      hasSupabaseUrl: !!context.env.VITE_SUPABASE_URL,
-      hasServiceKey: !!serviceKey,
+      fn: "catchall-v5-rpc",
+      hasSupabaseUrl: !!supabaseUrl,
+      hasAnonKey: !!anonKey,
       ua,
       isBot: isBot(ua),
     };
 
     const testId = url.searchParams.get("testId");
-    if (testId && context.env.VITE_SUPABASE_URL && serviceKey) {
+    if (testId && supabaseUrl && anonKey) {
       try {
-        const apiUrl = `${context.env.VITE_SUPABASE_URL}/rest/v1/planned_events?id=eq.${testId}&select=title,event_type,activity_type,date,start_time,locations(name,address)`;
-        const resp = await fetch(apiUrl, {
-          headers: {
-            apikey: serviceKey,
-            Authorization: `Bearer ${serviceKey}`,
-          },
-        });
-        debugInfo.fetchStatus = resp.status;
-        debugInfo.fetchBody = await resp.text();
+        const result = await callRpc(supabaseUrl, anonKey, "get_event_og_metadata", { event_id: testId });
+        debugInfo.rpcResult = result;
       } catch (e) {
-        debugInfo.fetchError = e instanceof Error ? e.message : String(e);
+        debugInfo.rpcError = e instanceof Error ? e.message : String(e);
       }
     }
 
@@ -153,6 +166,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   if (!isBot(ua)) {
     return context.next();
   }
+
   const rawLang = url.searchParams.get("lang") ?? "en";
   const baseLang = rawLang.split("-")[0];
   const validLang = ["en", "es", "de"].includes(baseLang) ? baseLang : "en";
@@ -165,35 +179,23 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   }
 
   const supabaseUrl = context.env.VITE_SUPABASE_URL;
-  const supabaseKey = context.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseKey = context.env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     return context.next();
   }
 
-  const headers = {
-    apikey: supabaseKey,
-    Authorization: `Bearer ${supabaseKey}`,
-  };
-
   try {
     if (eventMatch) {
       const eventId = eventMatch[1];
-      const resp = await fetch(
-        `${supabaseUrl}/rest/v1/planned_events?id=eq.${eventId}&select=title,event_type,activity_type,date,start_time,locations(name,address)`,
-        { headers },
-      );
+      const event = (await callRpc(supabaseUrl, supabaseKey, "get_event_og_metadata", { event_id: eventId })) as EventMeta | null;
 
-      if (!resp.ok) return context.next();
+      if (!event || !event.title) return context.next();
 
-      const rows = (await resp.json()) as EventRow[];
-      if (!rows.length) return context.next();
-
-      const event = rows[0];
       const typeLabel = EVENT_TYPE_LABELS[validLang]?.[event.event_type] ?? event.event_type;
       const activityLabel = ACTIVITY_LABELS[validLang]?.[event.activity_type] ?? event.activity_type;
       const dateFormatted = formatDateForMeta(event.date, validLang);
-      const locationName = event.locations?.name ?? "";
+      const locationName = event.location_name ?? "";
 
       const descParts = [typeLabel, activityLabel, dateFormatted];
       if (locationName) descParts.push(locationName);
@@ -217,17 +219,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     if (clubMatch) {
       const clubId = clubMatch[1];
-      const resp = await fetch(
-        `${supabaseUrl}/rest/v1/clubs?id=eq.${clubId}&select=name,description,city,country`,
-        { headers },
-      );
+      const club = (await callRpc(supabaseUrl, supabaseKey, "get_club_og_metadata", { club_id: clubId })) as ClubMeta | null;
 
-      if (!resp.ok) return context.next();
+      if (!club || !club.name) return context.next();
 
-      const rows = (await resp.json()) as ClubRow[];
-      if (!rows.length) return context.next();
-
-      const club = rows[0];
       const descParts: string[] = [];
       if (club.description) {
         descParts.push(club.description.length > 150 ? club.description.slice(0, 147) + "..." : club.description);
