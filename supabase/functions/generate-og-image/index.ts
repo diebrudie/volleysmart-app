@@ -102,9 +102,9 @@ function badge(text: string, bg = BADGE_BG, color = BRAND_BLUE) {
       style: {
         backgroundColor: bg,
         color,
-        padding: "6px 16px",
-        borderRadius: "20px",
-        fontSize: "22px",
+        padding: "8px 20px",
+        borderRadius: "24px",
+        fontSize: "28px",
         fontWeight: 600,
       },
       children: text,
@@ -116,10 +116,10 @@ function infoRow(icon: string, text: string) {
   return {
     type: "div",
     props: {
-      style: { display: "flex", alignItems: "center", gap: "10px" },
+      style: { display: "flex", alignItems: "center", gap: "12px" },
       children: [
-        { type: "div", props: { style: { fontSize: "22px", minWidth: "28px" }, children: icon } },
-        { type: "div", props: { style: { fontSize: "22px", color: TEXT_SECONDARY }, children: text } },
+        { type: "div", props: { style: { fontSize: "30px", minWidth: "36px" }, children: icon } },
+        { type: "div", props: { style: { fontSize: "30px", color: TEXT_SECONDARY }, children: text } },
       ],
     },
   };
@@ -168,25 +168,14 @@ function buildEventImage(event: any, lang: OgLang) {
         fontFamily: "Inter",
       },
       children: [
-        // Header: logo area + club name
+        // Header: volleyball icon + club name (or VolleySmart fallback)
         {
           type: "div",
           props: {
-            style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" },
+            style: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" },
             children: [
-              {
-                type: "div",
-                props: {
-                  style: { display: "flex", alignItems: "center", gap: "12px" },
-                  children: [
-                    { type: "div", props: { style: { fontSize: "32px" }, children: "🏐" } },
-                    { type: "div", props: { style: { fontSize: "24px", fontWeight: 700, color: BRAND_BLUE }, children: "VolleySmart" } },
-                  ],
-                },
-              },
-              clubName
-                ? { type: "div", props: { style: { fontSize: "20px", color: TEXT_SECONDARY }, children: clubName } }
-                : { type: "div", props: { children: "" } },
+              { type: "div", props: { style: { fontSize: "32px" }, children: "🏐" } },
+              { type: "div", props: { style: { fontSize: "26px", fontWeight: 700, color: BRAND_BLUE }, children: clubName || "VolleySmart" } },
             ],
           },
         },
@@ -213,7 +202,7 @@ function buildEventImage(event: any, lang: OgLang) {
         {
           type: "div",
           props: {
-            style: { display: "flex", gap: "12px", marginBottom: "28px", flexWrap: "wrap" },
+            style: { display: "flex", gap: "14px", marginBottom: "32px", flexWrap: "wrap" },
             children: badges,
           },
         },
@@ -221,7 +210,7 @@ function buildEventImage(event: any, lang: OgLang) {
         {
           type: "div",
           props: {
-            style: { display: "flex", flexDirection: "column", gap: "12px" },
+            style: { display: "flex", flexDirection: "column", gap: "16px" },
             children: infoRows,
           },
         },

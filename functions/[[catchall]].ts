@@ -82,6 +82,7 @@ type EventMeta = {
   start_time: string;
   location_name: string | null;
   location_address: string | null;
+  club_name: string | null;
 };
 
 type ClubMeta = {
@@ -110,6 +111,7 @@ function formatDateForMeta(dateStr: string, lang: string): string {
     weekday: "short",
     month: "short",
     day: "numeric",
+    year: "numeric",
   });
 }
 
@@ -171,7 +173,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       const dateFormatted = formatDateForMeta(event.date, validLang);
       const locationName = event.location_name ?? "";
 
-      const descParts = [typeLabel, activityLabel, dateFormatted];
+      const descParts: string[] = [];
+      if (event.club_name) descParts.push(event.club_name);
+      descParts.push(`${activityLabel} ${typeLabel}`, dateFormatted);
       if (locationName) descParts.push(locationName);
       const description = descParts.join(" · ");
 
