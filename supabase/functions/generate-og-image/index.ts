@@ -215,7 +215,7 @@ function buildEventImage(event: any, lang: OgLang) {
         {
           type: "div",
           props: {
-            style: { display: "flex", gap: "14px", marginBottom: "36px", flexWrap: "wrap" },
+            style: { display: "flex", gap: "14px", marginBottom: "48px", flexWrap: "wrap" },
             children: badges,
           },
         },
@@ -430,7 +430,7 @@ serve(async (req: Request) => {
     if (type === "event") {
       const { data: event, error } = await supabase
         .from("planned_events")
-        .select("id, title, event_type, event_gender, activity_type, date, start_time, end_time, rsvp_deadline, updated_at, location_id, clubs:event_clubs(clubs(name)), locations(name, address)")
+        .select("id, title, event_type, event_gender, activity_type, date, start_time, end_time, rsvp_deadline, updated_at, location_id, clubs!club_id(name), locations(name, address)")
         .eq("id", id)
         .single();
 
@@ -441,14 +441,8 @@ serve(async (req: Request) => {
         });
       }
 
-      // Flatten the nested clubs join
-      const clubRow = Array.isArray(event.clubs) && event.clubs.length > 0
-        ? (event.clubs[0] as any)?.clubs
-        : null;
-      const flatEvent = { ...event, clubs: clubRow };
-
       cacheKey = `event-${id}-${lang}-${contentHash(event.updated_at)}`;
-      vdom = buildEventImage(flatEvent, lang);
+      vdom = buildEventImage(event, lang);
     } else {
       const { data: club, error } = await supabase
         .from("clubs")
