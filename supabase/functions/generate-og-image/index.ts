@@ -102,9 +102,9 @@ function badge(text: string, bg = BADGE_BG, color = BRAND_BLUE) {
       style: {
         backgroundColor: bg,
         color,
-        padding: "6px 16px",
-        borderRadius: "20px",
-        fontSize: "22px",
+        padding: "10px 24px",
+        borderRadius: "24px",
+        fontSize: "32px",
         fontWeight: 600,
       },
       children: text,
@@ -116,13 +116,26 @@ function infoRow(icon: string, text: string) {
   return {
     type: "div",
     props: {
-      style: { display: "flex", alignItems: "center", gap: "10px" },
+      style: { display: "flex", alignItems: "center", gap: "16px" },
       children: [
-        { type: "div", props: { style: { fontSize: "22px", minWidth: "28px" }, children: icon } },
-        { type: "div", props: { style: { fontSize: "22px", color: TEXT_SECONDARY }, children: text } },
+        { type: "div", props: { style: { fontSize: "36px", minWidth: "40px" }, children: icon } },
+        { type: "div", props: { style: { fontSize: "36px", color: TEXT_SECONDARY }, children: text } },
       ],
     },
   };
+}
+
+async function loadEmojiSvg(emoji: string): Promise<string> {
+  const codePoints = [...emoji]
+    .map((c) => c.codePointAt(0)!.toString(16))
+    .filter((cp) => cp !== "fe0f")
+    .join("-");
+  const resp = await fetch(
+    `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${codePoints}.svg`,
+  );
+  if (!resp.ok) return "";
+  const svgText = await resp.text();
+  return `data:image/svg+xml;base64,${btoa(svgText)}`;
 }
 
 function buildEventImage(event: any, lang: OgLang) {
@@ -150,10 +163,10 @@ function buildEventImage(event: any, lang: OgLang) {
   }
 
   const infoRows = [
-    infoRow("📅", timeStr),
+    infoRow("\u{1F4C5}", timeStr),
   ];
-  if (locationName) infoRows.push(infoRow("📍", locationName));
-  if (event.rsvp_deadline) infoRows.push(infoRow("⏰", formatDeadline(event.rsvp_deadline, lang)));
+  if (locationName) infoRows.push(infoRow("\u{1F4CD}", locationName));
+  if (event.rsvp_deadline) infoRows.push(infoRow("\u{23F0}", formatDeadline(event.rsvp_deadline, lang)));
 
   return {
     type: "div",
@@ -164,47 +177,36 @@ function buildEventImage(event: any, lang: OgLang) {
         display: "flex",
         flexDirection: "column",
         backgroundColor: BRAND_LIGHT_BG,
-        padding: "48px 56px",
+        padding: "40px 56px",
         fontFamily: "Inter",
       },
       children: [
-        // Header: logo area + club name
+        // Header: volleyball icon + club name (or VolleySmart fallback)
         {
           type: "div",
           props: {
-            style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" },
+            style: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },
             children: [
-              {
-                type: "div",
-                props: {
-                  style: { display: "flex", alignItems: "center", gap: "12px" },
-                  children: [
-                    { type: "div", props: { style: { fontSize: "32px" }, children: "🏐" } },
-                    { type: "div", props: { style: { fontSize: "24px", fontWeight: 700, color: BRAND_BLUE }, children: "VolleySmart" } },
-                  ],
-                },
-              },
-              clubName
-                ? { type: "div", props: { style: { fontSize: "20px", color: TEXT_SECONDARY }, children: clubName } }
-                : { type: "div", props: { children: "" } },
+              { type: "div", props: { style: { fontSize: "36px" }, children: "\u{1F3D0}" } },
+              { type: "div", props: { style: { fontSize: "32px", fontWeight: 700, color: BRAND_BLUE }, children: clubName || "VolleySmart" } },
             ],
           },
         },
         // Divider
-        { type: "div", props: { style: { height: "2px", backgroundColor: "#CBD5E1", marginBottom: "32px", width: "100%" }, children: "" } },
+        { type: "div", props: { style: { height: "2px", backgroundColor: "#CBD5E1", marginBottom: "24px", width: "100%" }, children: "" } },
         // Title
         {
           type: "div",
           props: {
             style: {
-              fontSize: "48px",
+              fontSize: "56px",
               fontWeight: 700,
               color: TEXT_PRIMARY,
-              marginBottom: "20px",
+              marginBottom: "24px",
               lineHeight: 1.2,
               overflow: "hidden",
               textOverflow: "ellipsis",
-              maxHeight: "120px",
+              maxHeight: "140px",
             },
             children: event.title,
           },
@@ -213,15 +215,15 @@ function buildEventImage(event: any, lang: OgLang) {
         {
           type: "div",
           props: {
-            style: { display: "flex", gap: "12px", marginBottom: "28px", flexWrap: "wrap" },
+            style: { display: "flex", gap: "14px", marginBottom: "48px", flexWrap: "wrap" },
             children: badges,
           },
         },
-        // Info rows
+        // Info lines
         {
           type: "div",
           props: {
-            style: { display: "flex", flexDirection: "column", gap: "12px" },
+            style: { display: "flex", flexDirection: "column", gap: "24px" },
             children: infoRows,
           },
         },
@@ -260,24 +262,15 @@ function buildClubImage(club: any, memberCount: number, lang: OgLang) {
     {
       type: "div",
       props: {
-        style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" },
+        style: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" },
         children: [
-          {
-            type: "div",
-            props: {
-              style: { display: "flex", alignItems: "center", gap: "12px" },
-              children: [
-                { type: "div", props: { style: { fontSize: "32px" }, children: "🏐" } },
-                { type: "div", props: { style: { fontSize: "24px", fontWeight: 700, color: BRAND_BLUE }, children: "VolleySmart" } },
-              ],
-            },
-          },
-          { type: "div", props: { children: "" } },
+          { type: "div", props: { style: { fontSize: "36px" }, children: "\u{1F3D0}" } },
+          { type: "div", props: { style: { fontSize: "32px", fontWeight: 700, color: BRAND_BLUE }, children: "VolleySmart" } },
         ],
       },
     },
     // Divider
-    { type: "div", props: { style: { height: "2px", backgroundColor: "#CBD5E1", marginBottom: "36px", width: "100%" }, children: "" } },
+    { type: "div", props: { style: { height: "2px", backgroundColor: "#CBD5E1", marginBottom: "28px", width: "100%" }, children: "" } },
   ];
 
   // Club content area
@@ -336,8 +329,8 @@ function buildClubImage(club: any, memberCount: number, lang: OgLang) {
 
   // Badges: location + members
   const clubBadges: any[] = [];
-  if (locationStr) clubBadges.push(badge(`📍 ${locationStr}`));
-  clubBadges.push(badge(`👥 ${membersStr}`));
+  if (locationStr) clubBadges.push(badge(`\u{1F4CD} ${locationStr}`));
+  clubBadges.push(badge(`\u{1F465} ${membersStr}`));
 
   contentChildren.push({
     type: "div",
@@ -437,7 +430,7 @@ serve(async (req: Request) => {
     if (type === "event") {
       const { data: event, error } = await supabase
         .from("planned_events")
-        .select("id, title, event_type, event_gender, activity_type, date, start_time, end_time, rsvp_deadline, updated_at, location_id, clubs:event_clubs(clubs(name)), locations(name, address)")
+        .select("id, title, event_type, event_gender, activity_type, date, start_time, end_time, rsvp_deadline, updated_at, location_id, clubs!club_id(name), locations(name, address)")
         .eq("id", id)
         .single();
 
@@ -448,14 +441,8 @@ serve(async (req: Request) => {
         });
       }
 
-      // Flatten the nested clubs join
-      const clubRow = Array.isArray(event.clubs) && event.clubs.length > 0
-        ? (event.clubs[0] as any)?.clubs
-        : null;
-      const flatEvent = { ...event, clubs: clubRow };
-
       cacheKey = `event-${id}-${lang}-${contentHash(event.updated_at)}`;
-      vdom = buildEventImage(flatEvent, lang);
+      vdom = buildEventImage(event, lang);
     } else {
       const { data: club, error } = await supabase
         .from("clubs")
@@ -518,6 +505,12 @@ serve(async (req: Request) => {
           style: "normal" as const,
         },
       ],
+      loadAdditionalAsset: async (code: string, segment: string) => {
+        if (code === "emoji") {
+          return loadEmojiSvg(segment);
+        }
+        return "";
+      },
     });
 
     const resvg = new Resvg(svg, {
