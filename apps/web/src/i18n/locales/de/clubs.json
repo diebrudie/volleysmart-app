@@ -37,6 +37,7 @@
       "guests": "Gäste",
       "locations": "Orte",
       "stats": "Statistiken",
+      "share": "Teilen",
       "leave": "Verlassen",
       "pending": "Ausstehend",
       "join": "Beitreten",
@@ -119,7 +120,8 @@
       "cannotLeaveDescription": "Du bist der einzige Admin. Übertrage zuerst die Admin-Rolle.",
       "leftClub": "Club verlassen",
       "leftClubDescription": "Du hast {{name}} verlassen.",
-      "leaveError": "Club konnte nicht verlassen werden."
+      "leaveError": "Club konnte nicht verlassen werden.",
+      "linkCopied": "Link kopiert"
     }
   },
   "members": {

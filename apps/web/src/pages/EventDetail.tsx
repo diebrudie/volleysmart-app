@@ -512,7 +512,7 @@ const CANCELLATION_REASON_KEYS: Record<string, string> = {
 };
 
 const EventDetail: React.FC = () => {
-  const { t } = useTranslation("events");
+  const { t, i18n } = useTranslation("events");
   const { t: tProfile } = useTranslation("profile");
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
@@ -1016,7 +1016,7 @@ const EventDetail: React.FC = () => {
     }
   };
 
-  const eventUrl = window.location.href.split("?")[0];
+  const eventUrl = `${window.location.href.split("?")[0]}?lang=${i18n.language}`;
   const eventDateParsed = event?.date ? parseISO(event.date) : null;
   const isEventPast = eventDateParsed ? isBefore(eventDateParsed, startOfDay(new Date())) : false;
   const shareMessage = linkedMatchDay

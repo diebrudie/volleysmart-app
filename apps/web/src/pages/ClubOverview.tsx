@@ -22,6 +22,7 @@ import {
   Clock,
   Swords,
   Ban,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -104,7 +105,7 @@ function formatDisplayName(firstName: string, lastName: string): string {
 const ClubOverview: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation("clubs");
+  const { t, i18n } = useTranslation("clubs");
   const { t: tProfile } = useTranslation("profile");
   const { user } = useAuth();
   const [inviteOpen, setInviteOpen] = React.useState(false);
@@ -320,6 +321,16 @@ const ClubOverview: React.FC = () => {
 
   const createdLabel = format(parseISO(club.created_at), "MMM. yyyy", { locale: getDateLocale() });
 
+  const handleShareClub = () => {
+    const clubUrl = `${window.location.origin}/clubs/${club.id}?lang=${i18n.language}`;
+    if (navigator.share) {
+      navigator.share({ title: club.name, url: clubUrl });
+    } else {
+      navigator.clipboard.writeText(clubUrl);
+      toast({ title: t("overview.toasts.linkCopied"), duration: 2000 });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
       {/* Hero */}
@@ -424,6 +435,11 @@ const ClubOverview: React.FC = () => {
                 icon={<BarChart3 className="h-5 w-5" />}
                 label={t("overview.actions.stats")}
                 onClick={() => setActiveTab("stats")}
+              />
+              <ActionButton
+                icon={<Share2 className="h-5 w-5" />}
+                label={t("overview.actions.share")}
+                onClick={handleShareClub}
               />
               {userRole && !isAdmin && (
                 <ActionButton
