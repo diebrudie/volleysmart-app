@@ -23,7 +23,7 @@ const canEditGame = (gameDate: string | Date): boolean => {
   const game = new Date(gameDate);
   const now = new Date();
   const daysDiff = (now.getTime() - game.getTime()) / (1000 * 60 * 60 * 24);
-  return daysDiff < 1;
+  return daysDiff < 3;
 };
 
 interface MatchData {
