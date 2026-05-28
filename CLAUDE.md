@@ -36,6 +36,7 @@ For completed work history, see [HISTORY.md](./HISTORY.md).
 - `20260516000005` — event location and club visibility
 - `20260521000001` — add queer and flinta to event_gender enum
 - `20260521000002` — fix get_game_start_players: club member access, positions JSONB with all positions
+- `20260528000001` — sync game_players to event_rsvp (trigger + backfill) so edited/guest players show as event attendees
 
 ## Pending deploy items
 - `notify-join-request` edge function needs deploying
