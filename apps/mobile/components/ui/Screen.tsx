@@ -15,6 +15,7 @@ type Props = PropsWithChildren<{
   style?: ViewStyle;
   contentStyle?: ViewStyle;
   padded?: boolean;
+  safeTop?: boolean;
 }>;
 
 export function Screen({
@@ -24,6 +25,7 @@ export function Screen({
   style,
   contentStyle,
   padded = true,
+  safeTop = true,
 }: Props) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -41,6 +43,8 @@ export function Screen({
 
   const padding = padded ? 16 : 0;
 
+  const topPad = safeTop ? insets.top : 0;
+
   if (!scroll) {
     return (
       <View
@@ -48,7 +52,7 @@ export function Screen({
           styles.base,
           {
             backgroundColor: t.background,
-            paddingTop: insets.top,
+            paddingTop: topPad,
             paddingBottom: insets.bottom,
             paddingHorizontal: padding,
           },
@@ -65,7 +69,7 @@ export function Screen({
       style={[styles.base, { backgroundColor: t.background }, style]}
       contentContainerStyle={[
         {
-          paddingTop: insets.top,
+          paddingTop: topPad,
           paddingBottom: insets.bottom + 20,
           paddingHorizontal: padding,
         },

@@ -18,6 +18,9 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="profile" />
+                <Stack.Screen name="events/[id]" />
+                <Stack.Screen name="clubs/[id]" />
               </Stack>
               <ToastHost />
             </AuthProvider>
