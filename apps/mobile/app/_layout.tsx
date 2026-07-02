@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { CoreBootstrap } from "@/providers/CoreBootstrap";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { RealtimeEffects } from "@/providers/RealtimeEffects";
 import { ToastHost } from "@/components/ui/Toast";
 import "@/constants/i18n";
 
@@ -19,9 +20,20 @@ export default function RootLayout() {
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="profile" />
+                <Stack.Screen name="onboarding" />
+                <Stack.Screen name="notifications" />
+                <Stack.Screen name="settings/notifications" />
+                <Stack.Screen name="faq" />
                 <Stack.Screen name="events/[id]" />
-                <Stack.Screen name="clubs/[id]" />
+                <Stack.Screen name="events/create" />
+                <Stack.Screen name="events/discover" />
+                <Stack.Screen name="clubs/[id]/index" />
+                <Stack.Screen name="clubs/[id]/manage-members" />
+                <Stack.Screen name="clubs/[id]/invite" />
+                <Stack.Screen name="clubs/create" />
+                <Stack.Screen name="invite/[token]" />
               </Stack>
+              <RealtimeEffects />
               <ToastHost />
             </AuthProvider>
           </QueryProvider>

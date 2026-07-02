@@ -7,6 +7,8 @@ import {
   Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/constants/supabase";
 import { Avatar } from "@/components/ui/Avatar";
@@ -23,12 +25,19 @@ type Props = {
 export function MenuDrawer({ visible, onClose }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { t } = useTranslation("common");
   const { user } = useAuth();
   const { data: player } = usePlayerProfile();
 
   const fullName = [player?.first_name, player?.last_name]
     .filter(Boolean)
-    .join(" ") || "Player";
+    .join(" ") || t("player", { defaultValue: "Player" });
+
+  const navigate = (path: string) => {
+    onClose();
+    router.push(path as never);
+  };
 
   return (
     <Modal
@@ -74,27 +83,29 @@ export function MenuDrawer({ visible, onClose }: Props) {
           <View style={styles.menuItems}>
             <MenuItem
               icon="settings-outline"
-              label="Settings"
+              label={t("menu.settings", { defaultValue: "Settings" })}
               theme={theme}
-              onPress={() => {}}
+              onPress={() => navigate("/profile")}
             />
             <MenuItem
               icon="notifications-outline"
-              label="Notification Settings"
+              label={t("menu.notificationSettings", {
+                defaultValue: "Notification Settings",
+              })}
               theme={theme}
-              onPress={() => {}}
+              onPress={() => navigate("/settings/notifications")}
             />
             <MenuItem
               icon="help-circle-outline"
-              label="FAQ"
+              label={t("menu.faq", { defaultValue: "FAQ" })}
               theme={theme}
-              onPress={() => {}}
+              onPress={() => navigate("/faq")}
             />
           </View>
 
           <View style={styles.signOutSection}>
             <Button
-              title="Sign out"
+              title={t("menu.signOut", { defaultValue: "Sign out" })}
               variant="danger"
               onPress={() => {
                 onClose();

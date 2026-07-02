@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "./clientHolder";
+import type { TablesUpdate } from "./types";
 
 export type EventType =
   | "friendly_game"
@@ -188,7 +189,7 @@ export async function fetchPublicEvents(
   const { data, error } = await query;
 
   if (error) throw error;
-  return (data ?? []) as PlannedEvent[];
+  return (data ?? []) as unknown as PlannedEvent[];
 }
 
 /** Fetch upcoming public events for a specific club. */
@@ -543,7 +544,7 @@ export async function updatePlannedEvent(
   input: UpdateEventInput
 ): Promise<void> {
   const supabase = getSupabaseClient();
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<"planned_events"> = {};
   if (input.title !== undefined) updates.title = input.title;
   if (input.event_type !== undefined) updates.event_type = input.event_type;
   if (input.date !== undefined) updates.date = input.date;
@@ -607,7 +608,7 @@ export async function updateRecurringSeries(
   await updatePlannedEvent(parentId, input);
 
   // Build updates for children
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<"planned_events"> = {};
   if (input.title !== undefined) updates.title = input.title;
   if (input.event_type !== undefined) updates.event_type = input.event_type;
   if (input.start_time !== undefined)

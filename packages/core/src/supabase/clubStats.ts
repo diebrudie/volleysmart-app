@@ -203,14 +203,16 @@ export async function fetchClubStats(
   const allPlayerIds = [...new Set((gamePlayers ?? []).map((gp) => gp.player_id))];
   const { data: playerRows } = await supabase
     .from("players")
-    .select("id, first_name, last_name, primary_position")
+    .select("id, first_name, last_name, player_positions(is_primary, positions(name))")
     .in("id", allPlayerIds);
 
   const playerMap = new Map<string, { name: string; position: string | null }>();
   for (const p of playerRows ?? []) {
+    const primaryPosition =
+      p.player_positions?.find((pp) => pp.is_primary)?.positions?.name ?? null;
     playerMap.set(p.id, {
       name: `${p.first_name} ${p.last_name?.charAt(0) ?? ""}.`,
-      position: p.primary_position ?? null,
+      position: primaryPosition,
     });
   }
   // Merge: prefer players table, fall back to snapshot

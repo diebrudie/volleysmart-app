@@ -83,6 +83,7 @@ export type Database = {
           club_id: string | null
           id: string
           is_active: boolean
+          is_coach: boolean
           joined_at: string | null
           member_association: boolean
           rejected_at: string | null
@@ -98,6 +99,7 @@ export type Database = {
           club_id?: string | null
           id?: string
           is_active?: boolean
+          is_coach?: boolean
           joined_at?: string | null
           member_association?: boolean
           rejected_at?: string | null
@@ -113,6 +115,7 @@ export type Database = {
           club_id?: string | null
           id?: string
           is_active?: boolean
+          is_coach?: boolean
           joined_at?: string | null
           member_association?: boolean
           rejected_at?: string | null
@@ -139,7 +142,7 @@ export type Database = {
           country: string | null
           country_code: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string | null
           id: string
           image_url: string | null
@@ -154,7 +157,7 @@ export type Database = {
           country?: string | null
           country_code?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -169,7 +172,7 @@ export type Database = {
           country?: string | null
           country_code?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -183,6 +186,7 @@ export type Database = {
       }
       contact_submissions: {
         Row: {
+          attachment_url: string | null
           created_at: string | null
           email: string
           id: string
@@ -192,6 +196,7 @@ export type Database = {
           source: string | null
         }
         Insert: {
+          attachment_url?: string | null
           created_at?: string | null
           email: string
           id?: string
@@ -201,6 +206,7 @@ export type Database = {
           source?: string | null
         }
         Update: {
+          attachment_url?: string | null
           created_at?: string | null
           email?: string
           id?: string
@@ -485,6 +491,7 @@ export type Database = {
           address: string | null
           club_id: string | null
           created_at: string | null
+          created_by: string | null
           id: string
           latitude: number | null
           longitude: number | null
@@ -495,6 +502,7 @@ export type Database = {
           address?: string | null
           club_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -505,6 +513,7 @@ export type Database = {
           address?: string | null
           club_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -528,10 +537,12 @@ export type Database = {
           created_by: string | null
           date: string
           id: string
+          is_opponent_mode: boolean
           last_modified_at: string | null
           last_modified_by: string | null
           location_id: string | null
           notes: string | null
+          opponent_team_name: string | null
           planned_event_id: string | null
           team_generated: boolean | null
         }
@@ -541,10 +552,12 @@ export type Database = {
           created_by?: string | null
           date: string
           id?: string
+          is_opponent_mode?: boolean
           last_modified_at?: string | null
           last_modified_by?: string | null
           location_id?: string | null
           notes?: string | null
+          opponent_team_name?: string | null
           planned_event_id?: string | null
           team_generated?: boolean | null
         }
@@ -554,10 +567,12 @@ export type Database = {
           created_by?: string | null
           date?: string
           id?: string
+          is_opponent_mode?: boolean
           last_modified_at?: string | null
           last_modified_by?: string | null
           location_id?: string | null
           notes?: string | null
+          opponent_team_name?: string | null
           planned_event_id?: string | null
           team_generated?: boolean | null
         }
@@ -662,6 +677,39 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          email: boolean
+          id: string
+          in_app: boolean
+          notification_type: string
+          push: boolean
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: boolean
+          id?: string
+          in_app?: boolean
+          notification_type: string
+          push?: boolean
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: boolean
+          id?: string
+          in_app?: boolean
+          notification_type?: string
+          push?: boolean
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -692,6 +740,8 @@ export type Database = {
       planned_events: {
         Row: {
           activity_type: Database["public"]["Enums"]["activity_type"]
+          cancellation_comment: string | null
+          cancellation_reason: string | null
           club_id: string | null
           created_at: string
           created_by: string
@@ -700,11 +750,16 @@ export type Database = {
           event_gender: Database["public"]["Enums"]["event_gender"]
           event_type: Database["public"]["Enums"]["event_type"]
           id: string
+          is_opponent_mode: boolean
           is_public: boolean
           location_id: string | null
           max_players: number | null
           min_players: number
           notes: string | null
+          opponent_team_name: string | null
+          recurrence_cancelled_at: string | null
+          recurrence_parent_id: string | null
+          recurrence_rule: string | null
           rsvp_deadline: string | null
           start_time: string
           status: Database["public"]["Enums"]["event_status"]
@@ -713,6 +768,8 @@ export type Database = {
         }
         Insert: {
           activity_type?: Database["public"]["Enums"]["activity_type"]
+          cancellation_comment?: string | null
+          cancellation_reason?: string | null
           club_id?: string | null
           created_at?: string
           created_by: string
@@ -721,11 +778,16 @@ export type Database = {
           event_gender?: Database["public"]["Enums"]["event_gender"]
           event_type: Database["public"]["Enums"]["event_type"]
           id?: string
+          is_opponent_mode?: boolean
           is_public?: boolean
           location_id?: string | null
           max_players?: number | null
           min_players?: number
           notes?: string | null
+          opponent_team_name?: string | null
+          recurrence_cancelled_at?: string | null
+          recurrence_parent_id?: string | null
+          recurrence_rule?: string | null
           rsvp_deadline?: string | null
           start_time: string
           status?: Database["public"]["Enums"]["event_status"]
@@ -734,6 +796,8 @@ export type Database = {
         }
         Update: {
           activity_type?: Database["public"]["Enums"]["activity_type"]
+          cancellation_comment?: string | null
+          cancellation_reason?: string | null
           club_id?: string | null
           created_at?: string
           created_by?: string
@@ -742,11 +806,16 @@ export type Database = {
           event_gender?: Database["public"]["Enums"]["event_gender"]
           event_type?: Database["public"]["Enums"]["event_type"]
           id?: string
+          is_opponent_mode?: boolean
           is_public?: boolean
           location_id?: string | null
           max_players?: number | null
           min_players?: number
           notes?: string | null
+          opponent_team_name?: string | null
+          recurrence_cancelled_at?: string | null
+          recurrence_parent_id?: string | null
+          recurrence_rule?: string | null
           rsvp_deadline?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["event_status"]
@@ -766,6 +835,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planned_events_recurrence_parent_id_fkey"
+            columns: ["recurrence_parent_id"]
+            isOneToOne: false
+            referencedRelation: "planned_events"
             referencedColumns: ["id"]
           },
         ]
@@ -825,6 +901,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          is_early_adopter: boolean
           is_temporary: boolean | null
           last_name: string
           last_name_ci: string | null
@@ -856,6 +933,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_early_adopter?: boolean
           is_temporary?: boolean | null
           last_name: string
           last_name_ci?: string | null
@@ -887,6 +965,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_early_adopter?: boolean
           is_temporary?: boolean | null
           last_name?: string
           last_name_ci?: string | null
@@ -1115,6 +1194,7 @@ export type Database = {
               id: string
               image_url: string | null
               is_active: boolean
+              is_early_adopter: boolean
               is_temporary: boolean | null
               last_name: string
               last_name_ci: string | null
@@ -1148,6 +1228,42 @@ export type Database = {
         }[]
       }
       generate_invite_token: { Args: never; Returns: string }
+      generate_recurring_event_instances: { Args: never; Returns: undefined }
+      get_accessible_event_ids: { Args: never; Returns: string[] }
+      get_club_member_count: { Args: { p_club_id: string }; Returns: number }
+      get_club_og_metadata: { Args: { club_id: string }; Returns: Json }
+      get_event_attendees: {
+        Args: { p_event_id: string }
+        Returns: {
+          first_name: string
+          image_url: string
+          last_name: string
+          player_id: string
+          primary_position: string
+          responded_at: string
+        }[]
+      }
+      get_event_host_club_ids: { Args: never; Returns: string[] }
+      get_event_location_ids: { Args: never; Returns: string[] }
+      get_event_og_metadata: { Args: { event_id: string }; Returns: Json }
+      get_game_start_players: {
+        Args: { p_event_id: string }
+        Returns: {
+          club_memberships: Json
+          first_name: string
+          gender: string
+          player_id: string
+          positions: Json
+          skill_rating: number
+          user_id: string
+        }[]
+      }
+      get_my_player_ids: { Args: never; Returns: string[] }
+      get_player_ids_for_user: {
+        Args: { p_user_id: string }
+        Returns: string[]
+      }
+      get_public_event_organizer_ids: { Args: never; Returns: string[] }
       is_active_member: {
         Args: { club_uuid: string; user_uuid?: string }
         Returns: boolean
@@ -1175,6 +1291,12 @@ export type Database = {
       is_club_member: {
         Args: { club_uuid: string; user_uuid: string }
         Returns: boolean
+      }
+      leave_club: {
+        Args: { p_club_id: string }
+        Returns: {
+          result_status: string
+        }[]
       }
       manage_members_list: {
         Args: { p_club_id: string }
@@ -1215,11 +1337,17 @@ export type Database = {
         Args: { p_membership_id: string }
         Returns: undefined
       }
+      remove_club_members: {
+        Args: { p_club_id: string; p_user_ids: string[] }
+        Returns: undefined
+      }
       remove_member: { Args: { p_membership_id: string }; Returns: undefined }
+      request_join_club: { Args: { p_club_id: string }; Returns: Json }
       revoke_invitation: {
         Args: { p_invitation_id: string }
         Returns: undefined
       }
+      send_engagement_notifications: { Args: never; Returns: undefined }
       send_rsvp_deadline_reminders: { Args: never; Returns: undefined }
       set_player_positions_replace: {
         Args: {
@@ -1248,8 +1376,8 @@ export type Database = {
       }
     }
     Enums: {
-      club_status: "active" | "deleted"
       activity_type: "indoor" | "beach"
+      club_status: "active" | "deleted"
       event_gender: "mixed" | "women_only" | "men_only" | "queer" | "flinta"
       event_status: "open" | "confirmed" | "cancelled" | "completed"
       event_type: "friendly_game" | "social_game" | "training" | "tournament"
@@ -1386,8 +1514,8 @@ export const Constants = {
   },
   public: {
     Enums: {
-      club_status: ["active", "deleted"],
       activity_type: ["indoor", "beach"],
+      club_status: ["active", "deleted"],
       event_gender: ["mixed", "women_only", "men_only", "queer", "flinta"],
       event_status: ["open", "confirmed", "cancelled", "completed"],
       event_type: ["friendly_game", "social_game", "training", "tournament"],

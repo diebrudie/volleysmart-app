@@ -9,9 +9,7 @@ export function CreateFAB() {
 
   return (
     <Pressable
-      onPress={() => {
-        // Create Event — placeholder route for now
-      }}
+      onPress={() => router.push("/events/create" as never)}
       style={({ pressed }) => [
         styles.fab,
         { backgroundColor: theme.primary },
