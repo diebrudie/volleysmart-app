@@ -19,13 +19,6 @@ export function buildInviteLink(token: string) {
 }
 
 /**
- * NOT in the frozen queryKeys registry (reported to the orchestrator):
- * invite-token validation, mirrors web ["validate-invitation", token].
- */
-export const inviteValidationKey = (token: string | undefined) =>
-  ["invite-validation", token] as const;
-
-/**
  * Fetch-or-create the club invite link (admin only).
  * Mirrors web ClubInviteSharePanel `generate_invitation` usage — the RPC
  * returns the existing active invitation when one exists.
@@ -62,7 +55,7 @@ export function useInviteValidation(token: string | undefined) {
   const { loading: authLoading } = useAuth();
 
   return useQuery<InvitationValidation>({
-    queryKey: inviteValidationKey(token),
+    queryKey: queryKeys.members.inviteValidation(token),
     enabled: !!token && !authLoading,
     queryFn: () => validateInvitationToken(token!),
   });
@@ -94,7 +87,9 @@ export function useAcceptInvitation() {
         queryClient.invalidateQueries({
           queryKey: queryKeys.clubs.mine(user?.id),
         }),
-        queryClient.invalidateQueries({ queryKey: inviteValidationKey(token) }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.members.inviteValidation(token),
+        }),
       ]);
     },
   });

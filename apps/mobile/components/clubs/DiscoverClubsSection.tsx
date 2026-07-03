@@ -11,11 +11,8 @@ import { spacing, radii, typography, palette } from "@/constants/theme";
 import { icons } from "@/constants/icons";
 import { toast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  useDiscoverClubs,
-  pendingClubRequestsKey,
-  discoverClubsPrefix,
-} from "@/hooks/useDiscoverClubs";
+import { useDiscoverClubs } from "@/hooks/useDiscoverClubs";
+import { queryKeys } from "@/constants/queryKeys";
 
 /**
  * "Discover" section, mirroring apps/web/src/pages/Clubs.tsx:
@@ -63,9 +60,9 @@ export function DiscoverClubsSection() {
       setRequestedIds((prev) => new Set(prev).add(clubId));
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: pendingClubRequestsKey(user?.id),
+          queryKey: queryKeys.clubs.pendingJoinRequests(user?.id),
         }),
-        queryClient.invalidateQueries({ queryKey: discoverClubsPrefix }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allDiscover }),
       ]);
     } catch (err) {
       console.error("Error requesting to join club:", err);
@@ -96,7 +93,7 @@ export function DiscoverClubsSection() {
           return (
             <Pressable
               key={club.id}
-              onPress={() => router.push(`/clubs/${club.id}` as never)}
+              onPress={() => router.push(`/clubs/${club.id}`)}
               style={({ pressed }) => [
                 styles.card,
                 { backgroundColor: t.card, borderColor: t.cardBorder },

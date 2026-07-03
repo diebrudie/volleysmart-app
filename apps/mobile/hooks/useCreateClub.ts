@@ -6,7 +6,6 @@ import {
 } from "@volleysmart/core";
 import { queryKeys } from "@/constants/queryKeys";
 import { useAuth } from "./useAuth";
-import { discoverClubsPrefix } from "./useDiscoverClubs";
 
 export type CreateClubInput = {
   name: string;
@@ -76,7 +75,7 @@ export function useCreateClub() {
         queryClient.invalidateQueries({
           queryKey: queryKeys.clubs.mine(user?.id),
         }),
-        queryClient.invalidateQueries({ queryKey: discoverClubsPrefix }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allDiscover }),
       ]);
     },
   });

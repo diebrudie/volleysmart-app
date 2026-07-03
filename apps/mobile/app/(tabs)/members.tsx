@@ -86,7 +86,7 @@ export default function MembersScreen() {
 
   const handleManageRequests = () => {
     if (adminClubs.length === 1) {
-      router.push(`/clubs/${adminClubs[0].id}/manage-members` as never);
+      router.push(`/clubs/${adminClubs[0].id}/manage-members`);
     } else if (adminClubs.length > 1) {
       setIsClubPickerOpen(true);
     }
@@ -221,8 +221,7 @@ export default function MembersScreen() {
             pressed && { backgroundColor: theme.surface },
           ]}
         >
-          {/* "swap-vertical" ~ lucide ArrowUpDown; not in the frozen icon registry */}
-          <Ionicons name="swap-vertical" size={15} color={theme.textSecondary} />
+          <Ionicons name={icons.arrowUpDown} size={15} color={theme.textSecondary} />
         </Pressable>
 
         {clubs.length > 1 && (
@@ -310,7 +309,7 @@ export default function MembersScreen() {
             key={club.id}
             onPress={() => {
               setIsClubPickerOpen(false);
-              router.push(`/clubs/${club.id}/manage-members` as never);
+              router.push(`/clubs/${club.id}/manage-members`);
             }}
             style={({ pressed }) => [
               styles.clubPickRow,

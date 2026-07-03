@@ -145,7 +145,7 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
         );
         return;
       }
-      queryClient.invalidateQueries({ queryKey: ["user-clubs"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allMine });
       queryClient.invalidateQueries({
         queryKey: queryKeys.clubs.detail(club.id),
       });
@@ -193,13 +193,13 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
         .update({ status: "deleted" })
         .eq("id", club.id);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["user-clubs"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allMine });
       toast(
         trProfile("leaveClub.clubDeleted", { defaultValue: "Club deleted" })
       );
       setDeleteOpen(false);
       onClose();
-      router.replace("/(tabs)/clubs" as never);
+      router.replace("/(tabs)/clubs");
     } catch {
       toast(
         tr("settings.toastErrorDescription", {

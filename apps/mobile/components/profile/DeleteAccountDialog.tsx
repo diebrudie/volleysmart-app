@@ -96,7 +96,7 @@ export function DeleteAccountDialog({
       );
 
       await supabase.auth.signOut();
-      router.replace("/(auth)/login" as never);
+      router.replace("/(auth)/login");
     } catch {
       toast(
         tr("toast.deleteAccountFailed", {

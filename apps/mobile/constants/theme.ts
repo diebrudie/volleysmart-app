@@ -8,10 +8,7 @@
  * Colors live in ./colors (palette + light/dark themes, consumed via useTheme()).
  */
 
-import { Platform } from "react-native";
 import type { TextStyle } from "react-native";
-
-import { colors, palette } from "./colors";
 
 export { colors, palette } from "./colors";
 export type { ThemeColors } from "./colors";
@@ -53,50 +50,3 @@ export const typography = {
 } as const satisfies Record<string, TextStyle>;
 
 export type TypographyKey = keyof typeof typography;
-
-/**
- * Backward-compatible export for leftover Expo-template files
- * (components/ui/collapsible.tsx, hooks/use-theme-color.ts).
- * New code should use useTheme() from @/hooks/useTheme instead.
- */
-export const Colors = {
-  light: {
-    text: colors.light.text,
-    background: colors.light.background,
-    tint: colors.light.primary,
-    icon: colors.light.icon,
-    tabIconDefault: colors.light.tabInactive,
-    tabIconSelected: colors.light.tabActive,
-  },
-  dark: {
-    text: colors.dark.text,
-    background: colors.dark.background,
-    tint: palette.white,
-    icon: colors.dark.icon,
-    tabIconDefault: colors.dark.tabInactive,
-    tabIconSelected: colors.dark.tabActive,
-  },
-} as const;
-
-/** Backward-compatible font families from the Expo template. */
-export const Fonts = Platform.select({
-  ios: {
-    sans: "system-ui",
-    serif: "ui-serif",
-    rounded: "ui-rounded",
-    mono: "ui-monospace",
-  },
-  default: {
-    sans: "normal",
-    serif: "serif",
-    rounded: "normal",
-    mono: "monospace",
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded:
-      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});

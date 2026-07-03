@@ -18,11 +18,9 @@ import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useUpdatePlayer } from "@/hooks/useUpdatePlayer";
 import { useTheme } from "@/hooks/useTheme";
 import { icons } from "@/constants/icons";
+import { queryKeys } from "@/constants/queryKeys";
 import { radii, spacing, typography } from "@/constants/theme";
 import { palette } from "@/constants/colors";
-
-/** NOTE: key not in constants/queryKeys (frozen) — reported to the gate agent. */
-const POSITIONS_KEY = ["positions"] as const;
 
 type PlayerPositionRow = {
   id: string;
@@ -76,7 +74,7 @@ export function ProfileEditForm({ player, userId, onSaved, onCancel }: Props) {
   const updateMutation = useUpdatePlayer();
 
   const { data: positionsData } = useQuery({
-    queryKey: POSITIONS_KEY,
+    queryKey: queryKeys.positions.all,
     queryFn: getAllPositions,
     staleTime: 10 * 60 * 1000,
   });

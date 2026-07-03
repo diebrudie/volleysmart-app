@@ -6,20 +6,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { getSupabaseClient } from "@volleysmart/core";
+import { queryKeys } from "@/constants/queryKeys";
 import { useAuth } from "./useAuth";
 import { useCurrentPlayerId } from "./useCurrentPlayerId";
 import { useUserClubs } from "./useUserClubs";
-
-/**
- * Local query-key prefixes (missing from the frozen constants/queryKeys.ts
- * registry — flagged for the integration pass). Kept aligned with the web
- * keys ("home-todays-events", "home-last-game", "home-monthly-stats").
- */
-export const homeQueryKeyPrefixes = {
-  todayNext: "home-todays-event",
-  lastGame: "home-last-game",
-  monthStats: "home-monthly-stats",
-} as const;
 
 export type TodayNextEvent = {
   eventId: string;
@@ -59,7 +49,7 @@ export function useTodayNextEvent() {
   const todayStr = format(new Date(), "yyyy-MM-dd");
 
   return useQuery<TodayNextEvent | null>({
-    queryKey: [homeQueryKeyPrefixes.todayNext, user?.id, playerId, todayStr],
+    queryKey: queryKeys.home.todaysEvent(user?.id, playerId, todayStr),
     enabled: !!user?.id,
     staleTime: 2 * 60 * 1000,
     queryFn: async () => {
@@ -173,7 +163,7 @@ export function useLastGame() {
   const { data: playerId } = useCurrentPlayerId();
 
   return useQuery<LastGame | null>({
-    queryKey: [homeQueryKeyPrefixes.lastGame, playerId],
+    queryKey: queryKeys.home.lastGame(playerId),
     enabled: !!playerId,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
@@ -242,7 +232,7 @@ export function useMonthStats() {
   const clubIds = (clubs ?? []).map((c) => c.club_id).filter(Boolean);
 
   return useQuery<MonthStats>({
-    queryKey: [homeQueryKeyPrefixes.monthStats, user?.id, playerId, clubIds],
+    queryKey: queryKeys.home.monthlyStats(user?.id, playerId, clubIds),
     enabled: !!user?.id && !!playerId && clubIds.length > 0,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {

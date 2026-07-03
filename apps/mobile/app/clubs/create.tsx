@@ -115,7 +115,7 @@ export default function CreateClubScreen() {
       toast(
         t("newClub.toastCreatedTitle", { defaultValue: "Club created!" })
       );
-      router.replace(`/clubs/${newClubId}` as never);
+      router.replace(`/clubs/${newClubId}`);
     } catch (err) {
       console.error("Error creating club:", err);
       toast(

@@ -15,11 +15,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
 import { useUserClubs } from "@/hooks/useUserClubs";
 import {
-  homeQueryKeyPrefixes,
   useTodayNextEvent,
   useLastGame,
   useMonthStats,
 } from "@/hooks/useHomeDashboard";
+import { queryKeys } from "@/constants/queryKeys";
 import { CardSlider } from "@/components/home/CardSlider";
 import { TodayNextCard } from "@/components/home/TodayNextCard";
 import { LastGameCard } from "@/components/home/LastGameCard";
@@ -49,18 +49,12 @@ export default function HomeScreen() {
 
   const handleRefresh = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["user-clubs"] }),
-      queryClient.invalidateQueries({ queryKey: ["upcoming-events"] }),
-      queryClient.invalidateQueries({ queryKey: ["discover-events"] }),
-      queryClient.invalidateQueries({
-        queryKey: [homeQueryKeyPrefixes.todayNext],
-      }),
-      queryClient.invalidateQueries({
-        queryKey: [homeQueryKeyPrefixes.lastGame],
-      }),
-      queryClient.invalidateQueries({
-        queryKey: [homeQueryKeyPrefixes.monthStats],
-      }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allMine }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.allUpcoming }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.allDiscover }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.home.allTodaysEvent }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.home.allLastGame }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.home.allMonthlyStats }),
     ]);
   };
 
@@ -87,7 +81,7 @@ export default function HomeScreen() {
           <View style={cardFrame}>
             <View style={styles.cardHeaderRow}>
               <Ionicons
-                name="football-outline"
+                name={icons.volleyball}
                 size={18}
                 color={theme.primary}
               />
@@ -137,7 +131,7 @@ export default function HomeScreen() {
                 defaultValue: "View Profile",
               })}
               variant="outline"
-              onPress={() => router.push("/profile" as never)}
+              onPress={() => router.push("/profile")}
               style={styles.onboardingButton}
             />
           </View>
@@ -175,7 +169,7 @@ export default function HomeScreen() {
                 title={tEvents("home.onboarding.createClub", {
                   defaultValue: "Create a Club",
                 })}
-                onPress={() => router.push("/clubs/create" as never)}
+                onPress={() => router.push("/clubs/create")}
                 style={styles.onboardingButton}
               />
               <Button
@@ -183,7 +177,7 @@ export default function HomeScreen() {
                   defaultValue: "Browse Clubs",
                 })}
                 variant="outline"
-                onPress={() => router.push("/(tabs)/clubs" as never)}
+                onPress={() => router.push("/(tabs)/clubs")}
                 style={styles.onboardingButton}
               />
             </View>
@@ -193,7 +187,7 @@ export default function HomeScreen() {
           <MonthStatsCard
             stats={undefined}
             placeholder
-            onPress={() => router.push("/profile" as never)}
+            onPress={() => router.push("/profile")}
           />
         </CardSlider>
       ) : (
@@ -211,7 +205,7 @@ export default function HomeScreen() {
           )}
           <MonthStatsCard
             stats={monthStats}
-            onPress={() => router.push("/profile" as never)}
+            onPress={() => router.push("/profile")}
           />
         </CardSlider>
       )}
@@ -233,7 +227,7 @@ export default function HomeScreen() {
                 <ClubCard
                   club={club}
                   onPress={() =>
-                    router.push(`/clubs/${club.club_id}` as never)
+                    router.push(`/clubs/${club.club_id}`)
                   }
                 />
               </View>

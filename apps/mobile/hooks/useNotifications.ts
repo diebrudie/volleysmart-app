@@ -8,14 +8,6 @@ import {
 import { queryKeys } from "@/constants/queryKeys";
 import { useAuth } from "./useAuth";
 
-/**
- * Prefix keys for invalidation. queryKeys.notifications only exposes
- * per-user key builders, no `all*` prefix arrays (see queryKeys.events.allUpcoming
- * for the pattern) — defined locally per workflow rules and reported.
- */
-const NOTIFICATIONS_LIST_PREFIX = ["notifications"] as const;
-const UNREAD_COUNT_PREFIX = ["unreadNotificationCount"] as const;
-
 /** Inbox list for the signed-in user (newest first). */
 export function useNotifications() {
   const { user } = useAuth();
@@ -33,8 +25,8 @@ export function useMarkNotificationRead() {
   return useMutation({
     mutationFn: (notificationId: string) => markAsRead(notificationId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_LIST_PREFIX });
-      queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_PREFIX });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.allUnread });
     },
   });
 }
@@ -46,8 +38,8 @@ export function useMarkAllNotificationsRead() {
   return useMutation({
     mutationFn: () => markAllAsRead(user!.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_LIST_PREFIX });
-      queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_PREFIX });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.allUnread });
     },
   });
 }

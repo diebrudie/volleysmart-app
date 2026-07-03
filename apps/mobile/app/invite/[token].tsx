@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -11,6 +12,10 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { useAcceptInvitation, useInviteValidation } from "@/hooks/useInvite";
 import { icons } from "@/constants/icons";
+import {
+  clearPendingInviteToken,
+  setPendingInviteToken,
+} from "@/constants/pendingInvite";
 import { palette, radii, spacing, typography } from "@/constants/theme";
 
 /**
@@ -32,8 +37,20 @@ export default function InviteTokenScreen() {
   } = useInviteValidation(trimmedToken || undefined);
   const acceptMut = useAcceptInvitation();
 
-  const goToClubs = () => router.replace("/(tabs)/clubs" as never);
-  const goHome = () => router.replace("/(tabs)" as never);
+  // Persist the token while unauthenticated so login/onboarding can route
+  // back here; clear it once the user views the invite signed in (web
+  // InvitePage.tsx pendingInviteToken behavior).
+  useEffect(() => {
+    if (authLoading || !trimmedToken) return;
+    if (!user) {
+      void setPendingInviteToken(trimmedToken);
+    } else {
+      void clearPendingInviteToken();
+    }
+  }, [authLoading, user, trimmedToken]);
+
+  const goToClubs = () => router.replace("/(tabs)/clubs");
+  const goHome = () => router.replace("/(tabs)");
 
   const handleAccept = () => {
     acceptMut.mutate(trimmedToken, {
@@ -211,13 +228,13 @@ export default function InviteTokenScreen() {
               <View style={styles.buttonRow}>
                 <Button
                   title={t("invitePage.signUp", { defaultValue: "Sign up" })}
-                  onPress={() => router.replace("/(auth)/signup" as never)}
+                  onPress={() => router.replace("/(auth)/signup")}
                   style={styles.flexButton}
                 />
                 <Button
                   title={t("invitePage.logIn", { defaultValue: "Log in" })}
                   variant="outline"
-                  onPress={() => router.replace("/(auth)/login" as never)}
+                  onPress={() => router.replace("/(auth)/login")}
                   style={styles.flexButton}
                 />
               </View>

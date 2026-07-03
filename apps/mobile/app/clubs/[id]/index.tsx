@@ -46,21 +46,10 @@ import {
 } from "@/hooks/useClubMembers";
 import { useClubEvents } from "@/hooks/useClubEvents";
 import { useJoinClub, type JoinRequestResult } from "@/hooks/useJoinClub";
-import { pendingRequestsCountPrefix } from "@/hooks/useManageMembers";
 import { queryKeys } from "@/constants/queryKeys";
 import { icons, type IoniconsName } from "@/constants/icons";
 import { palette } from "@/constants/colors";
 import { radii, spacing, typography } from "@/constants/theme";
-
-/** Missing from constants/queryKeys (frozen) — reported to integrator. */
-const clubPublicEventsKey = (clubId: string | undefined) =>
-  ["club-public-events", clubId] as const;
-/**
- * Shares the ["pending-requests-count", clubId] key with useManageMembers so
- * approve/reject prefix-invalidation also refreshes this admin banner.
- */
-const clubPendingRequestsKey = (clubId: string | undefined) =>
-  [...pendingRequestsCountPrefix, clubId] as const;
 
 type ClubDetails = {
   id: string;
@@ -144,13 +133,13 @@ export default function ClubDetailScreen() {
   const nextEvent = events?.[0] ?? null;
 
   const { data: publicEvents = [] } = useQuery({
-    queryKey: clubPublicEventsKey(id),
+    queryKey: queryKeys.clubs.publicEvents(id),
     enabled: !!id && !isMember,
     queryFn: () => fetchClubPublicEvents(id!),
   });
 
   const { data: pendingCount = 0 } = useQuery({
-    queryKey: clubPendingRequestsKey(id),
+    queryKey: queryKeys.clubs.pendingRequestsCount(id),
     enabled: !!id && isAdmin,
     queryFn: () => fetchPendingRequestCount(id!),
   });
@@ -167,8 +156,8 @@ export default function ClubDetailScreen() {
         queryKey: queryKeys.clubs.memberCount(id),
       }),
       queryClient.invalidateQueries({ queryKey: queryKeys.clubs.events(id) }),
-      queryClient.invalidateQueries({ queryKey: clubPendingRequestsKey(id) }),
-      queryClient.invalidateQueries({ queryKey: ["user-clubs"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.clubs.pendingRequestsCount(id) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allMine }),
     ]);
   };
 
@@ -226,14 +215,14 @@ export default function ClubDetailScreen() {
         queryClient.invalidateQueries({
           queryKey: queryKeys.clubs.memberCount(id),
         });
-        queryClient.invalidateQueries({ queryKey: ["user-clubs"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allMine });
         toast(
           t("overview.toasts.leftClubDescription", {
             defaultValue: "You left {{name}}.",
             name: club?.name,
           })
         );
-        router.replace("/(tabs)/clubs" as never);
+        router.replace("/(tabs)/clubs");
       }
     } catch {
       toast(
@@ -421,7 +410,7 @@ export default function ClubDetailScreen() {
               <ActionCircle
                 icon={icons.userPlus}
                 label={t("overview.actions.invite", { defaultValue: "Invite" })}
-                onPress={() => router.push(`/clubs/${id}/invite` as never)}
+                onPress={() => router.push(`/clubs/${id}/invite`)}
               />
               <ActionCircle
                 icon={icons.users}
@@ -487,7 +476,7 @@ export default function ClubDetailScreen() {
           <View style={styles.section}>
             <Pressable
               onPress={() =>
-                router.push(`/clubs/${id}/manage-members` as never)
+                router.push(`/clubs/${id}/manage-members`)
               }
               accessibilityRole="button"
               style={({ pressed }) => [
@@ -539,7 +528,7 @@ export default function ClubDetailScreen() {
             {isMember && canCreateEvent ? (
               <Pressable
                 onPress={() =>
-                  router.push(`/events/create?clubId=${id}` as never)
+                  router.push(`/events/create?clubId=${id}`)
                 }
                 accessibilityRole="button"
                 style={({ pressed }) => [
@@ -562,7 +551,7 @@ export default function ClubDetailScreen() {
               <EventCard
                 event={nextEvent}
                 currentPlayerId={playerId}
-                onPress={() => router.push(`/events/${nextEvent.id}` as never)}
+                onPress={() => router.push(`/events/${nextEvent.id}`)}
               />
             ) : (
               <View
@@ -589,7 +578,7 @@ export default function ClubDetailScreen() {
                       defaultValue: "Create Event",
                     })}
                     onPress={() =>
-                      router.push(`/events/create?clubId=${id}` as never)
+                      router.push(`/events/create?clubId=${id}`)
                     }
                     style={styles.emptyCardButton}
                   />
@@ -603,7 +592,7 @@ export default function ClubDetailScreen() {
                   key={ev.id}
                   event={ev}
                   currentPlayerId={playerId}
-                  onPress={() => router.push(`/events/${ev.id}` as never)}
+                  onPress={() => router.push(`/events/${ev.id}`)}
                 />
               ))}
             </View>

@@ -13,11 +13,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserClubs } from "@/hooks/useUserClubs";
-import {
-  usePendingClubRequests,
-  pendingClubRequestsKey,
-  discoverClubsPrefix,
-} from "@/hooks/useDiscoverClubs";
+import { usePendingClubRequests } from "@/hooks/useDiscoverClubs";
 import { ClubCard } from "@/components/ClubCard";
 import { DiscoverClubsSection } from "@/components/clubs/DiscoverClubsSection";
 import { queryKeys } from "@/constants/queryKeys";
@@ -50,12 +46,14 @@ export default function ClubsScreen() {
   const handleRefresh = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.clubs.mine(user?.id) }),
-      queryClient.invalidateQueries({ queryKey: pendingClubRequestsKey(user?.id) }),
-      queryClient.invalidateQueries({ queryKey: discoverClubsPrefix }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.clubs.pendingJoinRequests(user?.id),
+      }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allDiscover }),
     ]);
   }, [queryClient, user?.id]);
 
-  const handleCreateClub = () => router.push("/clubs/create" as never);
+  const handleCreateClub = () => router.push("/clubs/create");
 
   if (isLoading && !clubs) {
     return (
@@ -98,7 +96,7 @@ export default function ClubsScreen() {
               key={club.club_id}
               club={club}
               memberCount={memberCounts.get(club.club_id)}
-              onPress={() => router.push(`/clubs/${club.club_id}` as never)}
+              onPress={() => router.push(`/clubs/${club.club_id}`)}
             />
           ))}
         </View>

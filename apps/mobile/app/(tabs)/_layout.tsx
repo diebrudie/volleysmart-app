@@ -4,11 +4,11 @@ import { Tabs, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { HapticTab } from "@/components/haptic-tab";
 import { useTheme } from "@/hooks/useTheme";
 import { TopBar } from "@/components/TopBar";
 import { CreateFAB } from "@/components/CreateFAB";
 import { MenuDrawer } from "@/components/MenuDrawer";
+import { icons } from "@/constants/icons";
 
 const TAB_CONFIG = [
   { name: "index", label: "Home", icon: "home-outline", iconActive: "home" },
@@ -18,7 +18,7 @@ const TAB_CONFIG = [
     icon: "calendar-outline",
     iconActive: "calendar",
   },
-  { name: "__fab__", label: "", icon: "add", iconActive: "add" },
+  { name: "__fab__", label: "", icon: icons.plus, iconActive: icons.plus },
   {
     name: "clubs",
     label: "Clubs",

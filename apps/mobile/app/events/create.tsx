@@ -183,8 +183,9 @@ export default function CreateEventScreen() {
       },
       {
         onSuccess: (result) => {
-          toast(t("create.createdToast", { defaultValue: "Event created!" }));
-          router.replace(`/events/${result.id}` as never);
+          // ?created=true triggers the success dialog on the detail screen
+          // (mirrors web CreateEvent success dialog).
+          router.replace(`/events/${result.id}?created=true`);
         },
         onError: () => {
           toast(

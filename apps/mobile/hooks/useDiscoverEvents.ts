@@ -15,19 +15,13 @@ import { queryKeys } from "@/constants/queryKeys";
 import { useAuth } from "./useAuth";
 import { usePlayerProfile } from "./usePlayerProfile";
 
-/**
- * Local query-key prefix (missing from the frozen constants/queryKeys.ts
- * registry — flagged for the integration pass). Matches the web key.
- */
-export const USER_CLUB_IDS_KEY = "user-club-ids";
-
 export function useDiscoverEvents(limit?: number) {
   const { user } = useAuth();
   const { data: player, isLoading: playerLoading } = usePlayerProfile();
   const city: string | undefined = player?.city || undefined;
 
   const { data: userClubIds = [] } = useQuery({
-    queryKey: [USER_CLUB_IDS_KEY, user?.id],
+    queryKey: queryKeys.clubs.userClubIds(user?.id),
     queryFn: () => fetchUserClubIds(user!.id),
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,

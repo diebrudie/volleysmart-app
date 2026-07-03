@@ -162,16 +162,12 @@ export default function EventDetailScreen() {
     }
   };
 
-  // ── RSVP (also refresh the attendee list, which useRsvpMutation doesn't own) ──
+  // ── RSVP (useRsvpMutation also invalidates the attendee list) ──
   const handleRsvp = (status: RsvpStatus | null) => {
     if (!playerId || !event) return;
     rsvpMutation.mutate(
       { eventId: event.id, playerId, status },
       {
-        onSuccess: () =>
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.events.attendees(event.id),
-          }),
         onError: () =>
           toast(
             t("detail.failedToUpdateRsvp", { defaultValue: "Failed to update RSVP" }),
@@ -268,7 +264,7 @@ export default function EventDetailScreen() {
       onSuccess: () => {
         setDeleteOpen(false);
         toast(t("detail.eventDeleted", { defaultValue: "Event deleted" }));
-        router.replace("/(tabs)/events" as never);
+        router.replace("/(tabs)/events");
       },
       onError: () =>
         toast(

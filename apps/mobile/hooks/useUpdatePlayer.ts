@@ -6,13 +6,6 @@ import {
 } from "@volleysmart/core";
 import { queryKeys } from "@/constants/queryKeys";
 
-/**
- * Prefix for invalidating every ["player-profile", ...] query.
- * NOTE: not in constants/queryKeys (frozen for this work package) —
- * matches queryKeys.profile.player(userId) = ["player-profile", userId].
- */
-const PLAYER_PROFILE_PREFIX = ["player-profile"] as const;
-
 export type UpdatePlayerInput = {
   playerId: string;
   data: {
@@ -84,7 +77,7 @@ export function useUpdatePlayer() {
       }
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: PLAYER_PROFILE_PREFIX });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.allPlayer });
       queryClient.invalidateQueries({
         queryKey: queryKeys.profile.stats(variables.playerId),
       });

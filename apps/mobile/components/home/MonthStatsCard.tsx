@@ -30,13 +30,13 @@ export function MonthStatsCard({ stats, placeholder, onPress }: Props) {
     label: string;
   }[] = [
     {
-      icon: "football-outline",
+      icon: icons.volleyball,
       iconColor: theme.primary,
       value: placeholder ? "--" : String(stats?.gamesPlayed ?? 0),
       label: t("home.games", { defaultValue: "Games" }),
     },
     {
-      icon: "trending-up",
+      icon: icons.trendingUp,
       iconColor: theme.success,
       value: placeholder ? "--" : `${stats?.winRate ?? 0}%`,
       label: t("home.winRate", { defaultValue: "Win Rate" }),
@@ -62,7 +62,7 @@ export function MonthStatsCard({ stats, placeholder, onPress }: Props) {
       ]}
     >
       <View style={styles.headerRow}>
-        <Ionicons name="trending-up" size={18} color={theme.primary} />
+        <Ionicons name={icons.trendingUp} size={18} color={theme.primary} />
         <Text style={[styles.headerLabel, { color: theme.textSecondary }]}>
           {placeholder
             ? t("home.onboarding.yourStats", { defaultValue: "Your Stats" })

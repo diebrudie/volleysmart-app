@@ -59,5 +59,9 @@
   "cta.heading": "Ready to Get Started?",
   "cta.highlight": "Join Players Using VolleySmart",
   "cta.description": "Plan events, generate fair teams, track scores, and manage your volleyball community — all for free.",
-  "cta.button": "Get Started Free"
+  "cta.button": "Get Started Free",
+
+  "greeting": "Welcome back,",
+  "player": "Player",
+  "sections.myClubs": "My Clubs"
 }

@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/constants/supabase";
+import { icons } from "@/constants/icons";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/hooks/useTheme";
@@ -60,7 +61,7 @@ export function MenuDrawer({ visible, onClose }: Props) {
         >
           <View style={styles.header}>
             <Pressable onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={theme.text} />
+              <Ionicons name={icons.x} size={24} color={theme.text} />
             </Pressable>
           </View>
 
@@ -88,7 +89,7 @@ export function MenuDrawer({ visible, onClose }: Props) {
               onPress={() => navigate("/profile")}
             />
             <MenuItem
-              icon="notifications-outline"
+              icon={icons.bell}
               label={t("menu.notificationSettings", {
                 defaultValue: "Notification Settings",
               })}
@@ -142,7 +143,7 @@ function MenuItem({
       <Text style={[styles.menuItemLabel, { color: theme.text }]}>
         {label}
       </Text>
-      <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+      <Ionicons name={icons.chevronRight} size={18} color={theme.textSecondary} />
     </Pressable>
   );
 }

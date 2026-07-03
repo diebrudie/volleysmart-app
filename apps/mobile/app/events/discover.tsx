@@ -75,7 +75,7 @@ export default function DiscoverEventsScreen() {
                   defaultValue: "Edit Profile",
                 })}
                 variant="outline"
-                onPress={() => router.push("/profile" as never)}
+                onPress={() => router.push("/profile")}
                 style={styles.profileButton}
               />
             ) : null}
@@ -101,7 +101,7 @@ export default function DiscoverEventsScreen() {
               <EventCard
                 event={item}
                 currentPlayerId={playerId}
-                onPress={() => router.push(`/events/${item.id}` as never)}
+                onPress={() => router.push(`/events/${item.id}`)}
               />
             )}
           />

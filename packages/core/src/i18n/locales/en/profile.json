@@ -107,5 +107,8 @@
   "toast.leaveClubFailed": "Failed to leave club",
   "toast.updateAssociationFailed": "Failed to update",
   "toast.deleteAccountFailed": "Failed to delete account. Please try again.",
-  "toast.cancel": "Cancel"
+  "toast.cancel": "Cancel",
+
+  "tabs.profile": "Profile",
+  "account.sectionTitle": "Account"
 }

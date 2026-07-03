@@ -15,13 +15,6 @@ export function useEventDetail(eventId: string) {
 }
 
 /**
- * Missing from constants/queryKeys (frozen for this work package):
- * linked match day for a planned event (mirrors web ["event-match-day", id]).
- */
-export const eventMatchDayKey = (eventId: string | undefined) =>
-  ["event-match-day", eventId] as const;
-
-/**
  * The match day (game) linked to this event, if one was started.
  * Mirrors the web EventDetail `linkedMatchDay` query. The mobile app only
  * uses this to show a "game exists — view in web app" hint (game layer is
@@ -29,7 +22,7 @@ export const eventMatchDayKey = (eventId: string | undefined) =>
  */
 export function useEventMatchDay(eventId?: string) {
   return useQuery<{ id: string } | null>({
-    queryKey: eventMatchDayKey(eventId),
+    queryKey: queryKeys.events.matchDay(eventId),
     enabled: !!eventId,
     queryFn: async () => {
       const supabase = getSupabaseClient();

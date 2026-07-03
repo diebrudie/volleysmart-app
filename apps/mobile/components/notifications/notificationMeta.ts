@@ -118,9 +118,7 @@ export function getNotificationDisplay(
       };
     case "event_cancelled":
       return {
-        // Web uses lucide CalendarX; icon registry has no calendar-x glyph,
-        // so we use the calendar icon with the danger tint.
-        icon: icons.calendarDays,
+        icon: icons.calendarX,
         colorKey: "danger",
         title: t("type.eventCancelled.title", { defaultValue: "Event Cancelled" }),
         description: p.event_date
@@ -202,8 +200,7 @@ export function getNotificationDisplay(
       };
     case "engagement_welcome":
       return {
-        // Web uses lucide Sparkles; registry has no sparkles glyph -> star.
-        icon: icons.star,
+        icon: icons.sparkles,
         colorKey: "primary",
         title: t("type.engagementWelcome.title", {
           defaultValue: "Welcome to VolleySmart!",

@@ -96,7 +96,7 @@ export default function InviteMembersScreen() {
   };
 
   const handleGoToClub = () => {
-    router.replace(`/clubs/${id}` as never);
+    router.replace(`/clubs/${id}`);
   };
 
   return (

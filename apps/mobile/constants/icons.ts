@@ -95,6 +95,30 @@ export const icons = {
   fileText: "document-text-outline",
   sun: "sunny-outline",
   moon: "moon-outline",
+
+  // Sorting / data display
+  /** lucide ArrowUpDown (sort toggle). */
+  arrowUpDown: "swap-vertical",
+  /** Alias kept for readability at sort-control call sites. */
+  sortArrows: "swap-vertical",
+  trendingUp: "trending-up",
+  /** lucide LayoutGrid. */
+  layoutGrid: "grid-outline",
+
+  // Sport / events
+  /** lucide Volleyball — Ionicons has no volleyball glyph. */
+  volleyball: "football-outline",
+  compass: "compass-outline",
+  /** lucide Swords (match/versus) — no Ionicons equivalent. */
+  swords: "flash-outline",
+  /** lucide Dumbbell (training). */
+  dumbbell: "barbell-outline",
+  /** lucide Palmtree (casual/social) — no Ionicons equivalent. */
+  palmtree: "leaf-outline",
+  bookmark: "bookmark-outline",
+  /** lucide CalendarX (event cancelled) — no Ionicons equivalent. */
+  calendarX: "calendar-clear-outline",
+  sparkles: "sparkles-outline",
 } as const satisfies Record<string, IoniconsName>;
 
 /** Semantic key into the registry, e.g. "bell", "mapPin". */

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { icons } from "@/constants/icons";
 
 export function CreateFAB() {
   const theme = useTheme();
@@ -9,14 +10,14 @@ export function CreateFAB() {
 
   return (
     <Pressable
-      onPress={() => router.push("/events/create" as never)}
+      onPress={() => router.push("/events/create")}
       style={({ pressed }) => [
         styles.fab,
         { backgroundColor: theme.primary },
         pressed && { opacity: 0.85 },
       ]}
     >
-      <Ionicons name="add" size={28} color="#fff" />
+      <Ionicons name={icons.plus} size={28} color="#fff" />
     </Pressable>
   );
 }

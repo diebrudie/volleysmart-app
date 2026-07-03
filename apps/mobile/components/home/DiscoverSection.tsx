@@ -28,7 +28,7 @@ export function DiscoverSection() {
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <Ionicons
-            name="compass-outline"
+            name={icons.compass}
             size={20}
             color={theme.textSecondary}
           />
@@ -38,7 +38,7 @@ export function DiscoverSection() {
         </View>
         {events.length > 0 ? (
           <Pressable
-            onPress={() => router.push("/events/discover" as never)}
+            onPress={() => router.push("/events/discover")}
             hitSlop={8}
           >
             <Text style={[styles.seeMore, { color: theme.primary }]}>
@@ -60,7 +60,7 @@ export function DiscoverSection() {
               key={event.id}
               event={event}
               currentPlayerId={playerId}
-              onPress={() => router.push(`/events/${event.id}` as never)}
+              onPress={() => router.push(`/events/${event.id}`)}
             />
           ))}
         </View>
@@ -88,7 +88,7 @@ export function DiscoverSection() {
           </Text>
           <Button
             title={t("home.createEvent", { defaultValue: "Create Event" })}
-            onPress={() => router.push("/events/create" as never)}
+            onPress={() => router.push("/events/create")}
             style={styles.createButton}
           />
         </View>

@@ -23,13 +23,6 @@ type Props = {
   anonymizeCreator: boolean;
 };
 
-/**
- * Missing from constants/queryKeys (frozen for this work package):
- * creator profile for an event, keyed by the creator's user id.
- */
-const creatorProfileKey = (userId: string | undefined) =>
-  ["creator-profile", userId] as const;
-
 type CreatorProfile = {
   first_name: string | null;
   last_name: string | null;
@@ -47,7 +40,7 @@ export function HostedBy({ event, isCreator, anonymizeCreator }: Props) {
   const router = useRouter();
 
   const { data: creatorProfile } = useQuery<CreatorProfile>({
-    queryKey: creatorProfileKey(event.created_by),
+    queryKey: queryKeys.profile.creator(event.created_by),
     enabled: !!event.created_by,
     queryFn: async () => {
       const { data } = await getSupabaseClient()
@@ -83,7 +76,7 @@ export function HostedBy({ event, isCreator, anonymizeCreator }: Props) {
         {event.clubs ? (
           <>
             <Pressable
-              onPress={() => router.push(`/clubs/${event.clubs!.id}` as never)}
+              onPress={() => router.push(`/clubs/${event.clubs!.id}`)}
               accessibilityRole="button"
               style={({ pressed }) => [
                 styles.row,

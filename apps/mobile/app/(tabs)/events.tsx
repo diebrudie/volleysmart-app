@@ -38,12 +38,7 @@ import {
 import { PastEventsTable } from "@/components/events/PastEventsTable";
 import { type PlannedEvent } from "@volleysmart/core";
 
-// Not in the icons registry (report to gate agent): lucide ArrowUpDown
-const SORT_ICON: IoniconsName = "swap-vertical";
-
-// Missing from constants/queryKeys (report to gate agent): prefix for
-// invalidating all ["past-events", userId] queries.
-const PAST_EVENTS_PREFIX = ["past-events"] as const;
+const SORT_ICON: IoniconsName = icons.arrowUpDown;
 
 type TabValue = "upcoming" | "past";
 type ViewValue = "list" | "calendar";
@@ -232,7 +227,7 @@ export default function EventsScreen() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.events.allUpcoming,
       }),
-      queryClient.invalidateQueries({ queryKey: PAST_EVENTS_PREFIX }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.allPast }),
     ]);
     setRefreshing(false);
   }, [queryClient]);
@@ -257,7 +252,7 @@ export default function EventsScreen() {
   }, []);
 
   const handleEventPress = useCallback(
-    (eventId: string) => router.push(`/events/${eventId}` as never),
+    (eventId: string) => router.push(`/events/${eventId}`),
     [router]
   );
 

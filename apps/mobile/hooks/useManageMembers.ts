@@ -9,14 +9,6 @@ import {
 import { queryKeys } from "@/constants/queryKeys";
 
 /**
- * NOT in the frozen queryKeys registry (reported to the orchestrator):
- * per-club pending join-request count, mirrors web ["pendingRequestsCount", clubId].
- */
-export const pendingRequestsCountKey = (clubId: string) =>
-  ["pending-requests-count", clubId] as const;
-export const pendingRequestsCountPrefix = ["pending-requests-count"] as const;
-
-/**
  * Pending join requests for one club (admin only — the underlying
  * `manage_members_list` RPC enforces admin access).
  * Mirrors apps/web/src/pages/ManageMembers.tsx (listManageMembers + pending filter).
@@ -41,7 +33,7 @@ export function usePendingRequests(clubId: string | undefined) {
 /** Total pending join-request count for a set of admin clubs (red-dot badge). */
 export function usePendingRequestsTotal(clubIds: string[]) {
   return useQuery<number>({
-    queryKey: [...pendingRequestsCountPrefix, ...clubIds],
+    queryKey: [...queryKeys.members.pendingCountPrefix, ...clubIds],
     enabled: clubIds.length > 0,
     staleTime: 60_000,
     queryFn: async () => {
@@ -90,9 +82,9 @@ function useRequestDecision(
           queryKey: queryKeys.clubs.memberCount(clubId),
         }),
         queryClient.invalidateQueries({
-          queryKey: pendingRequestsCountPrefix,
+          queryKey: queryKeys.members.pendingCountPrefix,
         }),
-        queryClient.invalidateQueries({ queryKey: ["members-global"] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.members.allGlobal }),
       ]);
     },
   });

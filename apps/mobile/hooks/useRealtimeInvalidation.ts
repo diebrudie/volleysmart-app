@@ -18,6 +18,7 @@ import { useEffect, useMemo } from "react";
 import { AppState } from "react-native";
 import { useQueryClient, type Query } from "@tanstack/react-query";
 import { getSupabaseClient } from "@volleysmart/core";
+import { queryKeys } from "@/constants/queryKeys";
 import { useAuth } from "./useAuth";
 import { useUserClubs } from "./useUserClubs";
 
@@ -198,11 +199,11 @@ export function useRealtimeInvalidation() {
             filter: `user_id=eq.${userId}`,
           },
           () => {
-            qc.invalidateQueries({ queryKey: ["notifications", userId] }).catch(
+            qc.invalidateQueries({ queryKey: queryKeys.notifications.list(userId) }).catch(
               () => {}
             );
             qc.invalidateQueries({
-              queryKey: ["unreadNotificationCount", userId],
+              queryKey: queryKeys.notifications.unreadCount(userId),
             }).catch(() => {});
           }
         )

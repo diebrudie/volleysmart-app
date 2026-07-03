@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { queryKeys } from "@/constants/queryKeys";
+import { getPendingInviteToken } from "@/constants/pendingInvite";
 import { toast } from "@/components/ui/Toast";
 
 export type GenderType = "male" | "female" | "other" | "diverse";
@@ -108,9 +109,6 @@ export function calculateSkillLevel(answers: OnboardingAnswers): number {
   return Math.max(15, Math.min(75, totalScore));
 }
 
-// "positions" has no entry in constants/queryKeys (frozen for this WP) —
-// local key, flagged for the integration pass.
-const POSITIONS_QUERY_KEY = ["positions"] as const;
 
 function toDateString(d: Date): string {
   const m = `${d.getMonth() + 1}`.padStart(2, "0");
@@ -171,7 +169,7 @@ export function useOnboardingState() {
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const positionsQuery = useQuery({
-    queryKey: POSITIONS_QUERY_KEY,
+    queryKey: queryKeys.positions.all,
     queryFn: getAllPositions,
     staleTime: 30 * 60 * 1000,
   });
@@ -359,7 +357,14 @@ export function useOnboardingState() {
           queryKeys.profile.currentPlayerId(user.id),
           existing.id
         );
+        // Pending invite deep link takes precedence over the tabs
+      // (web PlayerOnboarding.tsx pendingInviteToken redirect).
+      const pendingToken = await getPendingInviteToken();
+      if (pendingToken) {
+        router.replace(`/invite/${encodeURIComponent(pendingToken)}`);
+      } else {
         router.replace("/(tabs)");
+      }
         return;
       }
 
@@ -423,7 +428,14 @@ export function useOnboardingState() {
           level: skill,
         })
       );
-      router.replace("/(tabs)");
+      // Pending invite deep link takes precedence over the tabs
+      // (web PlayerOnboarding.tsx pendingInviteToken redirect).
+      const pendingToken = await getPendingInviteToken();
+      if (pendingToken) {
+        router.replace(`/invite/${encodeURIComponent(pendingToken)}`);
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "An unexpected error occurred";

@@ -17,6 +17,7 @@ import { TimeField } from "@/components/ui/TimeField";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { icons, type IoniconsName } from "@/constants/icons";
+import { queryKeys } from "@/constants/queryKeys";
 import { radii, spacing, typography } from "@/constants/theme";
 
 /**
@@ -107,17 +108,6 @@ type LocationRecord = {
   club_id: string | null;
 };
 
-/**
- * Missing from constants/queryKeys (frozen for this work package):
- * saved event locations, keyed by club scope + user.
- */
-const eventLocationsKey = (clubId: string | null, userId: string | undefined) =>
-  ["event-locations", clubId ?? "none", userId] as const;
-
-/** Missing from constants/queryKeys: previously used opponent team names per club. */
-const opponentNamesKey = (clubId: string | null | undefined) =>
-  ["opponent-team-names", clubId] as const;
-
 async function fetchSavedLocations(
   clubId: string | null,
   userId: string
@@ -204,7 +194,7 @@ export function EventFormFields({
 
   // ── Saved locations (suggestions under the name field) ──
   const { data: savedLocations = [] } = useQuery({
-    queryKey: eventLocationsKey(clubId, user?.id),
+    queryKey: queryKeys.events.locations(clubId, user?.id),
     queryFn: () => fetchSavedLocations(clubId, user!.id),
     enabled: showDetails && !!user?.id,
   });
@@ -213,7 +203,7 @@ export function EventFormFields({
     showDetails && hasClub && values.eventType !== "training";
 
   const { data: opponentNames = [] } = useQuery({
-    queryKey: opponentNamesKey(clubId),
+    queryKey: queryKeys.events.opponentNames(clubId),
     queryFn: () => fetchOpponentTeamNames(clubId!),
     enabled: showOpponentBlock && !!clubId && values.isOpponentMode,
     staleTime: 5 * 60 * 1000,

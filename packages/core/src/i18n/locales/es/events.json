@@ -293,5 +293,25 @@
   "detail.deleting": "Eliminando...",
   "detail.delete": "Eliminar",
   "detail.unknown": "Desconocido",
-  "detail.you": "Tú"
+  "detail.you": "Tú",
+
+  "back": "Atrás",
+  "detail.viewGameWebOnly": "Ver el partido en la app web",
+  "detail.startGameWebOnly": "Iniciar partido (solo web)",
+  "create.stepBasics": "Tipo de evento y detalles",
+  "create.stepSchedule": "Horario",
+  "create.stepDetails": "Detalles",
+  "create.stepReview": "Revisar",
+  "create.reviewType": "Tipo de evento",
+  "create.reviewName": "Nombre",
+  "create.reviewDate": "Fecha",
+  "create.reviewTime": "Hora",
+  "create.reviewRecurrence": "Se repite",
+  "create.reviewLocation": "Ubicación",
+  "create.reviewMaxPlayers": "Máx. jugadores",
+  "discover.setCityHint": "Añade tu ciudad a tu perfil para encontrar eventos públicos cerca de ti",
+  "discover.editProfile": "Editar perfil",
+  "discover.nearCity": "Eventos públicos en {{city}}",
+  "detail.rsvpDeadlinePassed": "El plazo para confirmar asistencia ha terminado",
+  "detail.eventFull": "Este evento está completo"
 }

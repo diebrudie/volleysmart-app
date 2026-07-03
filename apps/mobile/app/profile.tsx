@@ -14,7 +14,7 @@ import { Chip } from "@/components/ui/Chip";
 import { Spinner } from "@/components/ui/Spinner";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
-import { MyClubsTab, profileClubsKey } from "@/components/profile/MyClubsTab";
+import { MyClubsTab } from "@/components/profile/MyClubsTab";
 import { DeleteAccountDialog } from "@/components/profile/DeleteAccountDialog";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.profile.player(user?.id),
       }),
-      queryClient.invalidateQueries({ queryKey: profileClubsKey(user?.id) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.clubs(user?.id) }),
     ]);
   };
 

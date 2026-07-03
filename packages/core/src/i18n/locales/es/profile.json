@@ -107,5 +107,8 @@
   "toast.leaveClubFailed": "Error al abandonar el club",
   "toast.updateAssociationFailed": "Error al actualizar",
   "toast.deleteAccountFailed": "Error al eliminar la cuenta. Por favor, inténtalo de nuevo.",
-  "toast.cancel": "Cancelar"
+  "toast.cancel": "Cancelar",
+
+  "tabs.profile": "Perfil",
+  "account.sectionTitle": "Cuenta"
 }

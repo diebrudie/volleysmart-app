@@ -59,5 +59,9 @@
   "cta.heading": "¿Listo para empezar?",
   "cta.highlight": "Únete a jugadores que usan VolleySmart",
   "cta.description": "Planifica eventos, genera equipos justos, registra puntajes y gestiona tu comunidad de voleibol — todo gratis.",
-  "cta.button": "Empezar gratis"
+  "cta.button": "Empezar gratis",
+
+  "greeting": "Hola de nuevo,",
+  "player": "Jugador",
+  "sections.myClubs": "Mis clubes"
 }

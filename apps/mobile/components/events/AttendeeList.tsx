@@ -92,7 +92,7 @@ export function AttendeeList({ event, currentPlayerId, isCreator, isMember }: Pr
     const showOwnRow = isAttending && !!ownProfile;
     const othersCount = attendingCount - (showOwnRow ? 1 : 0);
     const primaryPos = showOwnRow
-      ? (ownProfile as { player_positions?: Array<{ is_primary: boolean; positions?: { name?: string } | null }> })
+      ? (ownProfile as { player_positions?: { is_primary: boolean; positions?: { name?: string } | null }[] })
           .player_positions?.find((pp) => pp.is_primary)?.positions?.name ?? null
       : null;
 

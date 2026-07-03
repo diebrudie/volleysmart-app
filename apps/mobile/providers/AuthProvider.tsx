@@ -5,6 +5,7 @@ import { getSupabaseClient } from "@volleysmart/core";
 import { supabase } from "@/constants/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { queryKeys } from "@/constants/queryKeys";
+import { getPendingInviteToken } from "@/constants/pendingInvite";
 
 /**
  * Route guard:
@@ -74,9 +75,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     const hasPlayer = !!playerIdQuery.data;
     if (!hasPlayer && !inOnboarding) {
-      router.replace("/onboarding" as never);
+      router.replace("/onboarding");
     } else if (hasPlayer && (inAuthGroup || inOnboarding)) {
-      router.replace("/(tabs)");
+      // A pending invite deep link takes precedence over the tabs
+      // (web Login.tsx pendingInviteToken redirect).
+      void getPendingInviteToken().then((pendingToken) => {
+        if (pendingToken) {
+          router.replace(`/invite/${encodeURIComponent(pendingToken)}`);
+        } else {
+          router.replace("/(tabs)");
+        }
+      });
     }
   }, [
     session,

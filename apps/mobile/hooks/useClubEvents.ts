@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSupabaseClient, type PlannedEvent } from "@volleysmart/core";
+import { queryKeys } from "@/constants/queryKeys";
 
 export function useClubEvents(clubId: string) {
   return useQuery<PlannedEvent[]>({
-    queryKey: ["club-events", clubId],
+    queryKey: queryKeys.clubs.events(clubId),
     queryFn: async () => {
       const supabase = getSupabaseClient();
       const today = new Date().toISOString().split("T")[0];

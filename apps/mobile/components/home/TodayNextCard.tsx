@@ -12,10 +12,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/hooks/useTheme";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { useRsvpMutation } from "@/hooks/useRsvpMutation";
-import {
-  homeQueryKeyPrefixes,
-  type TodayNextEvent,
-} from "@/hooks/useHomeDashboard";
+import { type TodayNextEvent } from "@/hooks/useHomeDashboard";
+import { queryKeys } from "@/constants/queryKeys";
 import { icons } from "@/constants/icons";
 import { radii, spacing, typography } from "@/constants/theme";
 import { Button } from "@/components/ui/Button";
@@ -51,7 +49,7 @@ export function TodayNextCard({ event, loading }: Props) {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({
-            queryKey: [homeQueryKeyPrefixes.todayNext],
+            queryKey: queryKeys.home.allTodaysEvent,
           });
           toast(
             t("home.youreGoing", { defaultValue: "You're going" }),
@@ -93,7 +91,7 @@ export function TodayNextCard({ event, loading }: Props) {
       <View style={frame}>
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <Ionicons name="football-outline" size={18} color={theme.primary} />
+            <Ionicons name={icons.volleyball} size={18} color={theme.primary} />
             <Text style={[styles.headerLabel, { color: theme.textSecondary }]}>
               {t("home.todaysGame", { defaultValue: "Today's Game" })}
             </Text>
@@ -105,7 +103,7 @@ export function TodayNextCard({ event, loading }: Props) {
           </Text>
           <Button
             title={t("home.createEvent", { defaultValue: "Create Event" })}
-            onPress={() => router.push("/events/create" as never)}
+            onPress={() => router.push("/events/create")}
             style={styles.smallButton}
           />
         </View>
@@ -119,7 +117,7 @@ export function TodayNextCard({ event, loading }: Props) {
     <View style={frame}>
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <Ionicons name="football-outline" size={18} color={theme.primary} />
+          <Ionicons name={icons.volleyball} size={18} color={theme.primary} />
           <Text style={[styles.headerLabel, { color: theme.textSecondary }]}>
             {event.isToday
               ? t("home.todaysGame", { defaultValue: "Today's Game" })
@@ -189,7 +187,7 @@ export function TodayNextCard({ event, loading }: Props) {
               onPress={() =>
                 event.matchDayId
                   ? router.push(`/game/${event.matchDayId}` as never)
-                  : router.push(`/events/${event.eventId}` as never)
+                  : router.push(`/events/${event.eventId}`)
               }
               style={styles.actionButton}
             />
@@ -197,7 +195,7 @@ export function TodayNextCard({ event, loading }: Props) {
             <Button
               title={t("home.viewEvent", { defaultValue: "View Event" })}
               variant={!isAttending && playerId ? "outline" : "primary"}
-              onPress={() => router.push(`/events/${event.eventId}` as never)}
+              onPress={() => router.push(`/events/${event.eventId}`)}
               style={styles.actionButton}
             />
           )}

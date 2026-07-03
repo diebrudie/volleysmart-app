@@ -10,16 +10,6 @@ import { useAuth } from "./useAuth";
 import { usePlayerProfile } from "./usePlayerProfile";
 import { useUserClubs } from "./useUserClubs";
 
-/**
- * Local key: pending club membership requests are not in the (frozen)
- * constants/queryKeys registry. Reported to the gate agent for promotion.
- */
-export const pendingClubRequestsKey = (userId: string | undefined) =>
-  ["pending-club-requests", userId] as const;
-
-/** Prefix for invalidating all discover-clubs queries (registry only has the parameterized form). */
-export const discoverClubsPrefix = ["discover-clubs"] as const;
-
 export type DiscoverClub = {
   id: string;
   name: string;
@@ -33,7 +23,7 @@ export type DiscoverClub = {
 export function usePendingClubRequests() {
   const { user } = useAuth();
   return useQuery<PendingClubRequest[]>({
-    queryKey: pendingClubRequestsKey(user?.id),
+    queryKey: queryKeys.clubs.pendingJoinRequests(user?.id),
     queryFn: () => fetchPendingMembershipRequests(user!.id),
     enabled: !!user?.id,
   });

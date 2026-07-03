@@ -25,13 +25,6 @@ import { queryKeys } from "@/constants/queryKeys";
 import { spacing, typography } from "@/constants/theme";
 import { palette } from "@/constants/colors";
 
-/**
- * Local query key — not in constants/queryKeys (frozen for this work
- * package). Reported to the gate agent.
- */
-export const profileClubsKey = (userId: string | undefined) =>
-  ["profile-clubs", userId] as const;
-
 type ProfileClub = {
   membership_id: string;
   club_id: string;
@@ -77,13 +70,13 @@ export function MyClubsTab() {
   const [isLeaving, setIsLeaving] = useState(false);
 
   const { data: clubs, isLoading } = useQuery({
-    queryKey: profileClubsKey(user?.id),
+    queryKey: queryKeys.profile.clubs(user?.id),
     queryFn: () => fetchProfileClubs(user!.id),
     enabled: !!user?.id,
   });
 
   const invalidateClubs = () => {
-    queryClient.invalidateQueries({ queryKey: profileClubsKey(user?.id) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.profile.clubs(user?.id) });
     queryClient.invalidateQueries({ queryKey: queryKeys.clubs.mine(user?.id) });
   };
 
@@ -93,7 +86,7 @@ export function MyClubsTab() {
   ) => {
     // Optimistic UI: update cache immediately, roll back on failure.
     queryClient.setQueryData<ProfileClub[]>(
-      profileClubsKey(user?.id),
+      queryKeys.profile.clubs(user?.id),
       (prev) =>
         prev?.map((c) =>
           c.membership_id === club.membership_id
@@ -230,7 +223,7 @@ export function MyClubsTab() {
               style={styles.clubInfo}
               accessibilityRole="button"
               onPress={() =>
-                router.push(`/clubs/${club.club_id}` as never)
+                router.push(`/clubs/${club.club_id}`)
               }
             >
               <Text style={[styles.clubName, { color: t.text }]}>

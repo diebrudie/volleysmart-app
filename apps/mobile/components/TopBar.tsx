@@ -7,6 +7,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { icons } from "@/constants/icons";
 
 type Props = {
   title: string;
@@ -61,16 +62,16 @@ export function TopBar({ title, onMenuPress }: Props) {
 
         <Pressable
           style={styles.iconButton}
-          onPress={() => router.push("/notifications" as any)}
+          onPress={() => router.push("/notifications")}
         >
           <View>
-            <Ionicons name="notifications-outline" size={22} color={theme.text} />
+            <Ionicons name={icons.bell} size={22} color={theme.text} />
             {unreadCount > 0 && <View style={styles.badge} />}
           </View>
         </Pressable>
 
         <Pressable style={styles.iconButton} onPress={onMenuPress}>
-          <Ionicons name="menu" size={24} color={theme.text} />
+          <Ionicons name={icons.menu} size={24} color={theme.text} />
         </Pressable>
       </View>
     </View>
