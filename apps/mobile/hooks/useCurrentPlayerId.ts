@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSupabaseClient } from "@volleysmart/core";
+import { queryKeys } from "@/constants/queryKeys";
 import { useAuth } from "./useAuth";
 
 export function useCurrentPlayerId() {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["current-player-id", user?.id],
+    // Registry key is byte-identical to the previous ["current-player-id", id]
+    queryKey: queryKeys.profile.currentPlayerId(user?.id),
     queryFn: async () => {
       if (!user?.id) return null;
       const { data } = await getSupabaseClient()

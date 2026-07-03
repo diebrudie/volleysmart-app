@@ -29,8 +29,9 @@ function toDateString(d: Date): string {
  * reuse a saved location with the same name in the same scope, updating its
  * address if it changed; otherwise insert a new location row.
  * Mirrors the web EventLocationSelector commit logic (without Mapbox).
+ * Shared with useEventMutations (edit flow).
  */
-async function resolveLocationId(
+export async function resolveLocationId(
   userId: string,
   clubId: string | null,
   name: string,

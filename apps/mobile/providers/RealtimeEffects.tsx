@@ -1,10 +1,14 @@
 /**
- * RealtimeEffects — placeholder mounted in the authenticated tree (app/_layout.tsx).
+ * RealtimeEffects — mounted once in the authenticated tree (app/_layout.tsx).
  *
- * Wave-2 WP-J fills this component with Supabase Realtime channel subscriptions
- * (notifications badge invalidation, RSVP updates, etc.). It must stay a
- * render-null effect component so mounting it has no visual impact.
+ * Renders null; all work happens in useRealtimeInvalidation:
+ * Supabase Realtime channels (memberships, club game tables, notifications)
+ * plus an AppState foreground refetch, all funnelled into react-query
+ * invalidation. See hooks/useRealtimeInvalidation.ts.
  */
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+
 export function RealtimeEffects() {
+  useRealtimeInvalidation();
   return null;
 }
