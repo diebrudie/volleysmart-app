@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import { spacing, typography } from "@/constants/theme";
 import { Sheet } from "@/components/ui/Sheet";
-import { Select } from "@/components/ui/Select";
+import { Chip } from "@/components/ui/Chip";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 
@@ -142,26 +142,32 @@ export function EventFilterSheet({
           <Text style={[styles.sectionLabel, { color: t.mutedForeground }]}>
             {tr("upcoming.filterRsvpStatus", { defaultValue: "RSVP Status" })}
           </Text>
-          <Select
-            value={rsvpFilter}
-            onChange={onRsvpFilterChange}
-            options={rsvpOptions}
-            sheetTitle={tr("upcoming.filterRsvpStatus", {
-              defaultValue: "RSVP Status",
-            })}
-          />
+          <View style={styles.chipRow}>
+            {rsvpOptions.map((opt) => (
+              <Chip
+                key={opt.value}
+                label={opt.label}
+                selected={rsvpFilter === opt.value}
+                onPress={() => onRsvpFilterChange(opt.value)}
+              />
+            ))}
+          </View>
         </View>
 
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: t.mutedForeground }]}>
             {tr("upcoming.filterMonth", { defaultValue: "Month" })}
           </Text>
-          <Select
-            value={monthFilter}
-            onChange={onMonthFilterChange}
-            options={monthOptions}
-            sheetTitle={tr("upcoming.filterMonth", { defaultValue: "Month" })}
-          />
+          <View style={styles.chipRow}>
+            {monthOptions.map((opt) => (
+              <Chip
+                key={opt.value}
+                label={opt.label}
+                selected={monthFilter === opt.value}
+                onPress={() => onMonthFilterChange(opt.value)}
+              />
+            ))}
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -223,5 +229,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   checkboxList: { gap: spacing.md },
 });

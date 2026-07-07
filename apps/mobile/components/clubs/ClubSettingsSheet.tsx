@@ -215,7 +215,7 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
   return (
     <>
       <Sheet
-        visible={visible}
+        visible={visible && !deleteOpen}
         onClose={onClose}
         title={tr("settings.title", { defaultValue: "Club Settings" })}
         snapToContent={false}

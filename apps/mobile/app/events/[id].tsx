@@ -156,8 +156,13 @@ export default function EventDetailScreen() {
     } catch {
       // Expo web without navigator.share: copy to clipboard instead.
       if (Platform.OS === "web" && globalThis.navigator?.clipboard) {
-        await globalThis.navigator.clipboard.writeText(message);
-        toast(t("detail.linkCopied", { defaultValue: "Link copied to clipboard" }));
+        try {
+          await globalThis.navigator.clipboard.writeText(message);
+          toast(t("detail.linkCopied", { defaultValue: "Link copied to clipboard" }));
+        } catch {
+          // Clipboard permission denied: surface the link instead of crashing.
+          toast(eventUrl);
+        }
       }
     }
   };
