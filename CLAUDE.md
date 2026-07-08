@@ -3,13 +3,13 @@
 For completed work history, see [HISTORY.md](./HISTORY.md).
 
 ## Current status
-- In progress: `feat/club-member-access-team-algorithm` — club member access to games/scores/teams, team algorithm improvements, queer/flinta event gender, live score popup removal
-- Ready for PR: `feat/mobile-phase1-foundation-auth` — native app Phase 1: providers, UI library, auth screens, tab layout, i18n, navy theme, logo. Google OAuth and onboarding deferred to Phase 3 (requires dev build).
-- Last merged: `feat/event-filters-city-discovery-location` (PR #104): contextual RSVP filters (Going/Attended per tab), city-based filtering for public events and discoverable clubs, Mapbox city-only selector fix
-- Previously merged: `feat/ui-fixes-and-improvements` (PR #103): RLS recursion fixes, cross-club game start, opponent mode labels, deleted club filtering, Last Game per-player, event visibility after public-to-private
+- In progress: `feat/mobile-phase3-parity` (branched off phase 2, NOT main) — native app Phase 3: PWA feature parity for everything except the game layer. Committed + pushed, verified via Expo-web in Playwright. NOT merged yet — awaiting user's on-device test via Expo Go. Device checklist at `apps/mobile/DEVICE_TEST_CHECKLIST.md`. Game layer deliberately deferred to a follow-up run.
+- Committed, PR pending: `feat/mobile-phase2-screens-rsvp` — Phase 2 native app: data hooks, tab screens, detail screens (Event/Club), RSVP, TopBar, FAB, MenuDrawer. Phase 3 builds on top of this branch.
+- Merged: `feat/dynamic-og-images` + `fix/og-image-polish` (PRs #107, #109): dynamic OG share images (root `functions/[[catchall]].ts` Cloudflare Pages function + `supabase/functions/generate-og-image` edge function)
+- Previously merged: `feat/mobile-phase1-foundation-auth` (PR #106): native app Phase 1: providers, UI library, auth screens, tab layout, i18n, navy theme, logo
+- Previously merged: `feat/club-member-access-team-algorithm` (PR #105): club member access to games/scores/teams, team algorithm improvements, queer/flinta event gender
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused. Frontend uses link-based invite flow. Can be deleted or repurposed.
-- Deploy status: `notify-join-request` edge function needs deploying
 
 ## Architecture
 - `packages/core/` — shared async data functions, types, i18n, utils (no React hooks, no platform-specific code)
@@ -37,9 +37,6 @@ For completed work history, see [HISTORY.md](./HISTORY.md).
 - `20260521000001` — add queer and flinta to event_gender enum
 - `20260521000002` — fix get_game_start_players: club member access, positions JSONB with all positions
 - `20260528000001` — sync game_players to event_rsvp (trigger + backfill) so edited/guest players show as event attendees
-
-## Pending deploy items
-- `notify-join-request` edge function needs deploying
 
 ## Key files
 - `apps/web/src/pages/ClubOverview.tsx` — Club overview page
