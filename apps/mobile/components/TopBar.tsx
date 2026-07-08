@@ -48,7 +48,12 @@ export function TopBar({ title, onMenuPress }: Props) {
         />
       </Pressable>
 
-      <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+      <View
+        style={[styles.titleOverlay, { top: insets.top + 8, bottom: 10 }]}
+        pointerEvents="none"
+      >
+        <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+      </View>
 
       <View style={styles.actions}>
         <Pressable style={styles.iconButton} disabled>
@@ -91,10 +96,14 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
   },
-  title: {
+  titleOverlay: {
     position: "absolute",
     left: 0,
     right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
