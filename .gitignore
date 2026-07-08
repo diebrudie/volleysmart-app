@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+node_modules.pnpm-bak/
 dist
 dist-ssr
 *.local
@@ -30,5 +31,5 @@ dist-ssr
 .env
 .env.local
 .env.*.local
-supabase/.temp/package-lock.json
+supabase/.temp/
 apps/mobile/.env
