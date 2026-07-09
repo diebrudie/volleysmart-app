@@ -7,19 +7,19 @@ Each item gets a status: `open` / `fixed (commit)` / `wontfix (reason)`.
 
 | # | Area | Issue | Status |
 |---|------|-------|--------|
-| R3-1 | Contact form | "Type your message" placeholder overlaps the "Message" label / sits outside the input box (multiline field layout). | open |
-| R3-2 | Contact form | When a field is focused the keyboard covers the whole form; can't scroll, can't reach Reason / Message / Submit. Make the sheet keyboard-aware + scrollable. | open |
-| R3-3 | Event Overview | Gradient should extend further down — in the PWA it reaches ~half of the date-badge number. Extend the native gradient to match. | open |
-| R3-4 | Event Overview | Top buttons (share, menu) need the same slightly-translucent white rounded circular background as the back button (PWA uses bg-background/60). Currently only back has a ring; the others float bare. | open |
-| R3-5 | Event Overview | Details font is too big vs PWA — make slightly smaller with more vertical gap; location NAME slightly bolder, address lighter gray. | open |
-| R3-6 | Event Overview | "Friendly Game" uses the wrong icon (currently the trophy = tournament). Friendly should be crossed-swords, matching Create-event step 1. Map each event_type to its own icon. | open |
-| R3-7 | Event Overview | RSVP dropdown is clipped — only "Going" shows, "Not Going" is hidden behind the content above. Both Going + Not Going must show with no RSVP selected; once selected, offer "Cancel RSVP" to clear it (PWA img#21). | open |
-| R3-8 | Edit event | Location field lets you type anything; it should pull from the club's saved locations (a picker), not free text. | open |
-| R3-9 | Edit event | When a field is focused the keyboard covers content; add bottom padding so the last field is reachable above the keyboard. | open |
-| R3-10 | Profile | Secondary positions must be multi-select (1 to all); main position stays single. Currently secondary behaves like a radio (only one). | open |
-| R3-11 | Members | Change the page heading (next to Manage Requests) to "All Members" so it doesn't duplicate the navbar "Members" — mirrors "Your Clubs" on the Clubs tab (this is the global cross-club members view). | open |
-| R3-12 | Calendar badge | Increase the colored top strip (month / TODAY) height a bit — more top+bottom padding. On the Events list the badge should also have a subtle shadow. | open |
-| R3-13 | Create Event | Restructure steps: Step 1 = event type only (match PWA img#22 look); Step 2 = schedule (as is); Step 3 = Details incl. event NAME + club selection (moved out of step 1); keep a final Review step. | open |
+| R3-1 | Contact form | "Type your message" placeholder overlaps the "Message" label / sits outside the input box (multiline field layout). | fixed (d105a4a) |
+| R3-2 | Contact form | When a field is focused the keyboard covers the whole form; can't scroll, can't reach Reason / Message / Submit. Make the sheet keyboard-aware + scrollable. | fixed (d105a4a) |
+| R3-3 | Event Overview | Gradient should extend further down — in the PWA it reaches ~half of the date-badge number. Extend the native gradient to match. | fixed (f0f9bdf) — tuned blind, eyeball on device |
+| R3-4 | Event Overview | Top buttons (share, menu) need the same slightly-translucent white rounded circular background as the back button (PWA uses bg-background/60). Currently only back has a ring; the others float bare. | fixed (f0f9bdf) |
+| R3-5 | Event Overview | Details font is too big vs PWA — make slightly smaller with more vertical gap; location NAME slightly bolder, address lighter gray. | fixed (f0f9bdf) |
+| R3-6 | Event Overview | "Friendly Game" uses the wrong icon (currently the trophy = tournament). Friendly should be crossed-swords, matching Create-event step 1. Map each event_type to its own icon. | fixed (f0f9bdf) |
+| R3-7 | Event Overview | RSVP dropdown is clipped — only "Going" shows, "Not Going" is hidden behind the content above. Both Going + Not Going must show with no RSVP selected; once selected, offer "Cancel RSVP" to clear it (PWA img#21). | fixed (f0f9bdf) — z-index/elevation lift |
+| R3-8 | Edit event | Location field lets you type anything; it should pull from the club's saved locations (a picker), not free text. | fixed (3c20acf) |
+| R3-9 | Edit event | When a field is focused the keyboard covers content; add bottom padding so the last field is reachable above the keyboard. | fixed (3c20acf) |
+| R3-10 | Profile | Secondary positions must be multi-select (1 to all); main position stays single. Currently secondary behaves like a radio (only one). | fixed (9b94b0c) |
+| R3-11 | Members | Change the page heading (next to Manage Requests) to "All Members" so it doesn't duplicate the navbar "Members" — mirrors "Your Clubs" on the Clubs tab (this is the global cross-club members view). | fixed (021e0b8) |
+| R3-12 | Calendar badge | Increase the colored top strip (month / TODAY) height a bit — more top+bottom padding. On the Events list the badge should also have a subtle shadow. | fixed (5bce70d detail, 021e0b8 card) |
+| R3-13 | Create Event | Restructure steps: Step 1 = event type only (match PWA img#22 look); Step 2 = schedule (as is); Step 3 = Details incl. event NAME + club selection (moved out of step 1); keep a final Review step. | fixed (3c20acf) |
 
 ## Round 2 (2026-07-09) — after Round 1 fixes shipped
 
