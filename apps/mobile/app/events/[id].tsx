@@ -383,11 +383,11 @@ export default function EventDetailScreen() {
         {/* Hero: gradient + header scroll WITH the page (not fixed). */}
         <View style={styles.hero}>
           <LinearGradient
-            colors={[theme.primary + "4D", theme.primary + "1A", theme.background]}
-            locations={[0, 0.7, 1]}
+            colors={[theme.primary + "40", theme.primary + "12", theme.background]}
+            locations={[0, 0.6, 1]}
             start={{ x: 0, y: 0 }}
-            end={{ x: 0.6, y: 1 }}
-            style={[styles.heroGradient, { height: insets.top + 240 }]}
+            end={{ x: 0, y: 1 }}
+            style={[styles.heroGradient, { height: insets.top + 118 }]}
             pointerEvents="none"
           />
           <ScreenHeader title="" right={headerRight()} transparent borderless />
@@ -419,15 +419,15 @@ export default function EventDetailScreen() {
             </View>
           </View>
           </View>
-          {rsvpStatusLine ? (
-            <View style={styles.rsvpStatusRow}>
-              <Ionicons name={icons.user} size={16} color={theme.mutedForeground} />
-              <Text style={[styles.rsvpStatusText, { color: theme.mutedForeground }]}>
-                {rsvpStatusLine}
-              </Text>
-            </View>
-          ) : null}
         </View>
+        {rsvpStatusLine ? (
+          <View style={styles.rsvpStatusRow}>
+            <Ionicons name={icons.user} size={16} color={theme.mutedForeground} />
+            <Text style={[styles.rsvpStatusText, { color: theme.mutedForeground }]}>
+              {rsvpStatusLine}
+            </Text>
+          </View>
+        ) : null}
 
         {/* Title + chips */}
         <Text style={[styles.title, { color: theme.text }]}>{event.title}</Text>
@@ -994,8 +994,7 @@ const styles = StyleSheet.create({
 
   badgeRow: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginTop: spacing.sm,
   },
   // Shadow lives on the wrapper so the badge's overflow-hidden corners don't
@@ -1027,7 +1026,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingBottom: spacing.xs,
+    marginTop: spacing.sm,
   },
   rsvpStatusText: { ...typography.bodySm },
 
