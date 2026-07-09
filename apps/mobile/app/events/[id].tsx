@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: "hidden",
   },
-  dateBadgeTop: { paddingVertical: 3, alignItems: "center" },
+  dateBadgeTop: { paddingVertical: 6, alignItems: "center" },
   dateBadgeMonth: {
     ...typography.label,
     color: palette.white,
