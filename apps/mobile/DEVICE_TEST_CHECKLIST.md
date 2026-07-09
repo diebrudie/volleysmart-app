@@ -58,10 +58,58 @@ These passed automated web testing — just confirm they render/behave on device
 - [ ] **Delete account**: open the dialog (do not confirm unless on a throwaway account)
 
 ## Known deferred (not bugs — intentionally out of scope for this phase)
-- Game screen, Live Score, team generator, player analytics → show "web only" hints
+- ~~Game screen, Live Score, team generator, player analytics~~ → **now built in Phase 4** (branch `feat/mobile-phase4-game-layer`); see the Phase 4 section below
 - Discover events **map view** (list only on mobile)
 - Mapbox address autocomplete (plain text city/location inputs for now)
 - Push notifications (in-app only; `notification_preferences.push` column ready)
+
+---
+
+# Phase 4 — Game layer (branch `feat/mobile-phase4-game-layer`)
+
+Native game layer: Game detail, New Game (team generation), Live Score, Edit Teams.
+The team algorithm + all game queries live in `@volleysmart/core` (no duplicated
+queries on mobile). Verify on a **real device** — orientation, keep-awake, and
+score persistence across an app kill cannot be tested in a browser.
+
+### Start a game (New Game)
+- [ ] From an event with enough attendees (≥4, or ≥2 in opponent mode), tap **Start Game** → New Game screen opens with attendees pre-selected
+- [ ] Deselect/select members; the selected count and the min-players gate update
+- [ ] Add a **guest** by name + position; a location is required to submit (like web)
+- [ ] Submit → balanced teams are generated and you land on the **Game detail** screen; the event detail now shows **View Game** (no "web only" hint)
+- [ ] Start Game from a **club** (no event) also works
+
+### Game detail
+- [ ] Teams render sorted by position; guests show their name (snapshot_name)
+- [ ] Score overview counts only **played** sets (a 0–0 set is unplayed, never a tie)
+- [ ] **Admin/editor only** (hidden for plain members): edit a set score inline; add a 6th set (only after set 5 is scored); delete an extra set (base sets 1–5 are protected); delete the game (confirm dialog is tappable — no modal freeze)
+- [ ] **Create new game with same teams** → new game opens with the same roster
+- [ ] A non-admin member sees the game read-only (no edit/add/delete/live-score controls)
+
+### Live Score (native-only behaviors)
+- [ ] Portrait orientation, large tap zones; tapping each side adds a point
+- [ ] **Undo** reverts the last point
+- [ ] Swap sides works
+- [ ] Screen **stays awake** during scoring (keep-awake)
+- [ ] **Kill the app mid-set and relaunch** → the in-progress score + undo stack are restored
+- [ ] End Set writes the set's score to the game; it appears on Game detail; persistence is cleared
+- [ ] Exit with unsaved points prompts a confirm (single dialog, tappable)
+
+### Edit Teams
+- [ ] Admin/editor only; disabled for opponent-mode games
+- [ ] **Tap a player, then tap the other team** → the player moves; change a player's position
+- [ ] Add a **guest** to a team; remove a player
+- [ ] Save → reopen Game detail shows the persisted change; back with unsaved edits prompts a discard confirm
+- [ ] (Known follow-up: adding an **existing club member** to a team is not yet wired — only guests. No hook exposes a member's player id yet.)
+
+### Cross-cutting after a game changes
+- [ ] Finishing/editing a game updates the **Home** Last Game card, This-Month stats, **Profile** analytics, and **Club** stats (cache fan-out)
+- [ ] Home **Last Game** card opens the native Game detail screen (not the web hint)
+
+### Known follow-ups (not blockers)
+- Edit Teams: existing-member add deferred (guest add works)
+- `useCreateGame` runs the A/B team split even in opponent mode (web keeps everyone on team A); cosmetically fine since team B renders as an opponent placeholder — align later if desired
+- Web game pages still use inline Supabase queries (core functions exist; the web refactor to use them is a separate low-priority step)
 
 ## Bugs found & fixed during web testing (re-verify these specifically)
 1. Event **Share** crashed the screen when clipboard was blocked → now shows the link safely
