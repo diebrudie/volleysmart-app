@@ -3,6 +3,17 @@
 Running log of issues flagged during on-device testing of `feat/mobile-phase3-parity`.
 Each item gets a status: `open` / `fixed (commit)` / `wontfix (reason)`.
 
+## Round 4 (2026-07-09) — after Round 3 fixes shipped
+
+| # | Area | Issue | Status |
+|---|------|-------|--------|
+| R4-1 | Calendar badge | The badge shadow belongs on the event OVERVIEW (detail) page badge, NOT on the Events list card. Move it: remove from EventCard, add to the detail badge. | open |
+| R4-2a | Event Overview | Gradient still doesn't reach ~half of the date badge — extend further. | open |
+| R4-2b | Event Overview | The top navbar (back/share/menu) should NOT be sticky/fixed — it should scroll away with the page. Only the bottom button bar stays fixed to the bottom. | open |
+| R4-3a | Profile | The Skill Rating box is missing from the Analytics tab (PWA img#23: "Skill Rating 58/100 +7 from gameplay" card at the top of Analytics). Add it. | open |
+| R4-3b | Profile | Set Record should live in its OWN box below the 4 analytics stat cards (PWA), not inside the same card. | open |
+| R4-3c | Profile | Remove the email address shown under the location in the profile header — email belongs only in the menu. | open |
+
 ## Round 3 (2026-07-09) — after Round 2 fixes shipped
 
 | # | Area | Issue | Status |
