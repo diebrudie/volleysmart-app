@@ -99,9 +99,10 @@ export function ProfileEditForm({ player, userId, onSaved, onCancel }: Props) {
     primaryId:
       player.player_positions?.find((pp) => pp.is_primary)?.position_id ??
       null,
-    secondaryId:
-      player.player_positions?.find((pp) => !pp.is_primary)?.position_id ??
-      null,
+    secondaryIds:
+      player.player_positions
+        ?.filter((pp) => !pp.is_primary)
+        .map((pp) => pp.position_id) ?? [],
   }).current;
 
   const [firstName, setFirstName] = useState(initial.firstName);
@@ -115,10 +116,14 @@ export function ProfileEditForm({ player, userId, onSaved, onCancel }: Props) {
   const [bio, setBio] = useState(initial.bio);
   const [imageUrl, setImageUrl] = useState<string | null>(initial.imageUrl);
   const [primaryId, setPrimaryId] = useState<string | null>(initial.primaryId);
-  const [secondaryId, setSecondaryId] = useState<string | null>(
-    initial.secondaryId
+  const [secondaryIds, setSecondaryIds] = useState<string[]>(
+    initial.secondaryIds
   );
   const [showDelete, setShowDelete] = useState(false);
+
+  const secondariesChanged =
+    secondaryIds.length !== initial.secondaryIds.length ||
+    secondaryIds.some((id) => !initial.secondaryIds.includes(id));
 
   const hasChanges =
     firstName !== initial.firstName ||
@@ -130,7 +135,7 @@ export function ProfileEditForm({ player, userId, onSaved, onCancel }: Props) {
     bio !== initial.bio ||
     imageUrl !== initial.imageUrl ||
     primaryId !== initial.primaryId ||
-    secondaryId !== initial.secondaryId;
+    secondariesChanged;
 
   const fullName =
     [firstName, lastName].filter(Boolean).join(" ") || undefined;
@@ -166,7 +171,7 @@ export function ProfileEditForm({ player, userId, onSaved, onCancel }: Props) {
           city: city.trim() || null,
         },
         primaryPositionId: primaryId,
-        secondaryPositionIds: secondaryId ? [secondaryId] : [],
+        secondaryPositionIds: secondaryIds,
       },
       {
         onSuccess: () => {
@@ -321,10 +326,10 @@ export function ProfileEditForm({ player, userId, onSaved, onCancel }: Props) {
       {/* Positions */}
       <PositionSelector
         primaryPositionId={primaryId}
-        secondaryPositionId={secondaryId}
-        onChange={(nextPrimary, nextSecondary) => {
+        secondaryPositionIds={secondaryIds}
+        onChange={(nextPrimary, nextSecondaries) => {
           setPrimaryId(nextPrimary);
-          setSecondaryId(nextSecondary);
+          setSecondaryIds(nextSecondaries);
         }}
         positions={positions}
       />

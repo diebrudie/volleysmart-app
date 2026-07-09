@@ -11,10 +11,10 @@ export type Position = {
 
 type Props = {
   primaryPositionId: string | null;
-  secondaryPositionId: string | null;
+  secondaryPositionIds: string[];
   onChange: (
     primaryId: string | null,
-    secondaryId: string | null
+    secondaryIds: string[]
   ) => void;
   /** Fetched by the caller (core getAllPositions). */
   positions: Position[];
@@ -24,13 +24,14 @@ type Props = {
  * Primary + secondary volleyball position picker.
  *
  * Shared contract: also used by the onboarding wizard. Standalone — all
- * data comes in via props. Rules: secondary is optional and can never
- * equal the primary; picking a primary that is the current secondary
- * clears the secondary.
+ * data comes in via props. Rules: primary is single-select; secondary is
+ * multi-select (any number, including none) and can never include the
+ * primary. Picking a primary that is currently a secondary removes it from
+ * the secondaries.
  */
 export function PositionSelector({
   primaryPositionId,
-  secondaryPositionId,
+  secondaryPositionIds,
   onChange,
   positions,
 }: Props) {
@@ -42,17 +43,18 @@ export function PositionSelector({
 
   const handlePrimaryPress = (positionId: string) => {
     const nextPrimary = positionId;
-    const nextSecondary =
-      secondaryPositionId === positionId ? null : secondaryPositionId;
-    onChange(nextPrimary, nextSecondary);
+    const nextSecondaries = secondaryPositionIds.filter(
+      (id) => id !== positionId
+    );
+    onChange(nextPrimary, nextSecondaries);
   };
 
   const handleSecondaryPress = (positionId: string) => {
     if (positionId === primaryPositionId) return;
-    onChange(
-      primaryPositionId,
-      secondaryPositionId === positionId ? null : positionId
-    );
+    const nextSecondaries = secondaryPositionIds.includes(positionId)
+      ? secondaryPositionIds.filter((id) => id !== positionId)
+      : [...secondaryPositionIds, positionId];
+    onChange(primaryPositionId, nextSecondaries);
   };
 
   return (
@@ -119,7 +121,7 @@ export function PositionSelector({
               <Chip
                 key={position.id}
                 label={positionLabel(position.name)}
-                selected={position.id === secondaryPositionId}
+                selected={secondaryPositionIds.includes(position.id)}
                 onPress={() => handleSecondaryPress(position.id)}
               />
             ))}
