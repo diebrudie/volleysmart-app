@@ -54,9 +54,13 @@ export const icons = {
   pencil: "create-outline",
   trash2: "trash-outline",
   share2: "share-outline",
+  /** lucide Share2 (3-node share) — matches the PWA event/club share icon. */
+  shareSocial: "share-social-outline",
   copy: "copy-outline",
   link: "link-outline",
   refreshCw: "refresh",
+  /** lucide Repeat (recurring event) — the loop glyph, not the refresh spinner. */
+  repeat: "repeat",
   filter: "filter-outline",
   search: "search-outline",
   camera: "camera-outline",

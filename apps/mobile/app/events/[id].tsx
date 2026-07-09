@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -7,6 +7,8 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,7 +20,6 @@ import { EditEventSheet } from "@/components/events/EditEventSheet";
 import type { EventFormValues } from "@/components/events/form/EventFormFields";
 import { HostedBy } from "@/components/events/HostedBy";
 import { RecurringScopeDialog } from "@/components/events/RecurringScopeDialog";
-import { RsvpActions } from "@/components/RsvpActions";
 import { Dialog } from "@/components/ui/Dialog";
 import { Screen } from "@/components/ui/Screen";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
@@ -66,6 +67,7 @@ export default function EventDetailScreen() {
   const { id, created } = useLocalSearchParams<{ id: string; created?: string }>();
   const { t, i18n } = useTranslation("events");
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -85,9 +87,15 @@ export default function EventDetailScreen() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelScope, setCancelScope] = useState<EventEditScope>("single");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [rsvpMenuOpen, setRsvpMenuOpen] = useState(false);
   const [showCreatedDialog, setShowCreatedDialog] = useState(
     created === "true" || created === "1"
   );
+
+  // The creator menu is an RN Modal (Sheet); opening the edit sheet / scope
+  // dialog while it is still dismissing freezes iOS. So the menu rows only
+  // record the intent and it runs from Sheet.onClosed, once the menu is gone.
+  const pendingMenuActionRef = useRef<null | "edit" | "cancel" | "delete">(null);
 
   const locale = i18n.language;
 
@@ -183,28 +191,31 @@ export default function EventDetailScreen() {
     );
   };
 
-  // ── Creator menu actions ──
-  const openEdit = () => {
+  // ── Creator menu actions (deferred until the menu Sheet fully closes) ──
+  const requestMenuAction = (action: "edit" | "cancel" | "delete") => {
+    pendingMenuActionRef.current = action;
     setMenuOpen(false);
-    if (isRecurring) {
-      setScopeAction("edit");
-    } else {
-      setEditScope("single");
-      setEditOpen(true);
-    }
   };
-  const openCancel = () => {
-    setMenuOpen(false);
-    if (isRecurring) {
-      setScopeAction("cancel");
-    } else {
-      setCancelScope("single");
-      setCancelOpen(true);
+  const handleMenuClosed = () => {
+    const action = pendingMenuActionRef.current;
+    pendingMenuActionRef.current = null;
+    if (action === "edit") {
+      if (isRecurring) {
+        setScopeAction("edit");
+      } else {
+        setEditScope("single");
+        setEditOpen(true);
+      }
+    } else if (action === "cancel") {
+      if (isRecurring) {
+        setScopeAction("cancel");
+      } else {
+        setCancelScope("single");
+        setCancelOpen(true);
+      }
+    } else if (action === "delete") {
+      setDeleteOpen(true);
     }
-  };
-  const openDelete = () => {
-    setMenuOpen(false);
-    setDeleteOpen(true);
   };
 
   const handleScopeSelect = (scope: EventEditScope) => {
@@ -295,7 +306,7 @@ export default function EventDetailScreen() {
         hitSlop={8}
         style={styles.headerButton}
       >
-        <Ionicons name={icons.share2} size={22} color={theme.primary} />
+        <Ionicons name={icons.shareSocial} size={22} color={theme.primary} />
       </Pressable>
       {isCreator ? (
         <Pressable
@@ -359,11 +370,25 @@ export default function EventDetailScreen() {
       : t("detail.notGoing", { defaultValue: "Not Going" })
     : null;
 
+  const showBottomBar = !!playerId || isMember || isCreator;
+
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScreenHeader title="" right={headerRight()} />
-      <Screen safeTop={false} onRefresh={handleRefresh}>
+      {/* Gradient hero behind the header (matches web from-primary/30 → bg) */}
+      <LinearGradient
+        colors={[theme.primary + "4D", theme.primary + "1A", theme.background]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.heroGradient, { height: insets.top + 128 }]}
+        pointerEvents="none"
+      />
+      <ScreenHeader title="" right={headerRight()} transparent borderless />
+      <Screen
+        safeTop={false}
+        onRefresh={handleRefresh}
+        contentStyle={showBottomBar ? styles.scrollWithBar : undefined}
+      >
         {/* Date badge + own RSVP status row (matches web hero row) */}
         <View style={styles.badgeRow}>
           <View style={[styles.dateBadge, { borderColor: theme.cardBorder }]}>
@@ -425,7 +450,7 @@ export default function EventDetailScreen() {
           )}
           {isRecurring ? (
             <TintChip
-              icon={icons.refreshCw}
+              icon={icons.repeat}
               label={
                 (event.recurrence_rule ?? "weekly") === "weekly"
                   ? t("detail.weekly", { defaultValue: "Weekly" })
@@ -487,11 +512,6 @@ export default function EventDetailScreen() {
                     : event.event_gender === "queer"
                       ? t("detail.eventGenderQueer", { defaultValue: "Queer" })
                       : t("detail.eventGenderFlinta", { defaultValue: "Flinta" })}
-              </InfoRow>
-            ) : null}
-            {event.max_players ? (
-              <InfoRow icon={icons.user}>
-                {`${attendingCount} / ${event.max_players}`}
               </InfoRow>
             ) : null}
           </View>
@@ -557,49 +577,113 @@ export default function EventDetailScreen() {
           />
         </View>
 
-        {/* Game layer (deferred on native — web-only hint rows) */}
-        {(isMember || isCreator) && !isCancelled ? (
-          linkedMatchDay ? (
-            <DisabledGameRow
-              icon={icons.trophy}
-              label={t("detail.viewGameWebOnly", {
-                defaultValue: "View game in the web app",
-              })}
-            />
-          ) : !isPastEvent ? (
-            <DisabledGameRow
-              icon={icons.trophy}
-              label={t("detail.startGameWebOnly", {
-                defaultValue: "Start game (web only)",
-              })}
-            />
-          ) : null
-        ) : null}
-
-        {/* RSVP */}
-        {playerId ? (
-          <View style={styles.rsvpSection}>
-            <RsvpActions
-              currentStatus={(currentRsvp?.status as RsvpStatus) ?? null}
-              isPending={rsvpMutation.isPending}
-              onRsvp={handleRsvp}
-              disabled={isCancelled || isPastEvent}
-              deadlinePassed={deadlinePassed}
-              isFull={isFull}
-            />
-          </View>
-        ) : null}
       </Screen>
 
+      {/* Sticky bottom bar: RSVP dropdown + Start/View game (matches web) */}
+      {showBottomBar ? (
+        <>
+          {rsvpMenuOpen ? (
+            <Pressable
+              style={styles.rsvpMenuBackdrop}
+              onPress={() => setRsvpMenuOpen(false)}
+            />
+          ) : null}
+          <View
+            style={[
+              styles.bottomBar,
+              {
+                backgroundColor: theme.card,
+                borderTopColor: theme.border,
+                paddingBottom: insets.bottom + spacing.md,
+              },
+            ]}
+          >
+            {/* RSVP dropdown popup (opens upward) */}
+            {rsvpMenuOpen ? (
+              <View
+                style={[
+                  styles.rsvpMenu,
+                  { backgroundColor: theme.card, borderColor: theme.cardBorder },
+                ]}
+              >
+                <RsvpMenuItem
+                  label={t("detail.rsvpGoing", { defaultValue: "Going" })}
+                  onPress={() => {
+                    setRsvpMenuOpen(false);
+                    handleRsvp("attending");
+                  }}
+                />
+                <RsvpMenuItem
+                  label={t("detail.rsvpNotGoing", { defaultValue: "Not Going" })}
+                  onPress={() => {
+                    setRsvpMenuOpen(false);
+                    handleRsvp("declined");
+                  }}
+                />
+                {currentRsvp ? (
+                  <RsvpMenuItem
+                    label={t("detail.cancelRsvp", {
+                      defaultValue: "Cancel RSVP",
+                    })}
+                    muted
+                    onPress={() => {
+                      setRsvpMenuOpen(false);
+                      handleRsvp(null);
+                    }}
+                  />
+                ) : null}
+              </View>
+            ) : null}
+
+            <View style={styles.bottomRow}>
+              {playerId ? (
+                <RsvpButton
+                  status={(currentRsvp?.status as RsvpStatus) ?? null}
+                  disabled={
+                    isCancelled ||
+                    isPastEvent ||
+                    deadlinePassed ||
+                    rsvpMutation.isPending
+                  }
+                  showChevron={!isPastEvent}
+                  onPress={() => setRsvpMenuOpen((o) => !o)}
+                />
+              ) : null}
+
+              {(isMember || isCreator) && !isCancelled ? (
+                <View style={styles.gameButtonWrap}>
+                  <DisabledGameRow
+                    icon={icons.trophy}
+                    label={
+                      linkedMatchDay
+                        ? t("detail.viewGameWebOnly", {
+                            defaultValue: "View game (web only)",
+                          })
+                        : t("detail.startGameWebOnly", {
+                            defaultValue: "Start game (web only)",
+                          })
+                    }
+                  />
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </>
+      ) : null}
+
       {/* Creator action menu */}
-      <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)}>
+      <Sheet
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onClosed={handleMenuClosed}
+      >
         <View style={styles.menuList}>
           {!isPastEvent ? (
             <MenuRow
               icon={icons.pencil}
               label={t("detail.editEventDropdown", { defaultValue: "Edit event" })}
               color={theme.text}
-              onPress={openEdit}
+              onPress={() => requestMenuAction("edit")}
             />
           ) : null}
           {!isPastEvent && !isCancelled ? (
@@ -607,14 +691,14 @@ export default function EventDetailScreen() {
               icon={icons.xCircle}
               label={t("detail.cancelEvent", { defaultValue: "Cancel event" })}
               color={theme.warning}
-              onPress={openCancel}
+              onPress={() => requestMenuAction("cancel")}
             />
           ) : null}
           <MenuRow
             icon={icons.trash2}
             label={t("detail.deleteEvent", { defaultValue: "Delete event" })}
             color={theme.destructive}
-            onPress={openDelete}
+            onPress={() => requestMenuAction("delete")}
           />
         </View>
       </Sheet>
@@ -662,7 +746,89 @@ export default function EventDetailScreen() {
       />
 
       {createdDialog}
-    </>
+    </View>
+  );
+}
+
+const RSVP_GREEN = "#16a34a";
+const RSVP_RED = "#dc2626";
+
+function RsvpButton({
+  status,
+  disabled,
+  showChevron,
+  onPress,
+}: {
+  status: RsvpStatus | null;
+  disabled: boolean;
+  showChevron: boolean;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  const { t } = useTranslation("events");
+
+  const bg =
+    status === "attending"
+      ? RSVP_GREEN
+      : status === "declined"
+        ? RSVP_RED
+        : theme.secondary;
+  const fg = status ? "#ffffff" : theme.secondaryForeground;
+  const label =
+    status === "attending"
+      ? t("detail.rsvpGoing", { defaultValue: "Going" })
+      : status === "declined"
+        ? t("detail.rsvpNotGoing", { defaultValue: "Not Going" })
+        : t("detail.rsvp", { defaultValue: "RSVP" });
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        styles.rsvpButton,
+        { backgroundColor: bg },
+        disabled && { opacity: 0.5 },
+        pressed && !disabled && { opacity: 0.85 },
+      ]}
+    >
+      <Text style={[styles.rsvpButtonText, { color: fg }]}>{label}</Text>
+      {showChevron ? (
+        <Ionicons name={icons.chevronDown} size={16} color={fg} />
+      ) : null}
+    </Pressable>
+  );
+}
+
+function RsvpMenuItem({
+  label,
+  onPress,
+  muted,
+}: {
+  label: string;
+  onPress: () => void;
+  muted?: boolean;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        styles.rsvpMenuItem,
+        pressed && { backgroundColor: theme.surface },
+      ]}
+    >
+      <Text
+        style={[
+          styles.rsvpMenuItemText,
+          { color: muted ? theme.mutedForeground : theme.text },
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -750,6 +916,14 @@ function MenuRow({
 }
 
 const styles = StyleSheet.create({
+  heroGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  scrollWithBar: { paddingBottom: 120 },
+
   headerActions: { flexDirection: "row", gap: spacing.sm },
   headerButton: { padding: spacing.xs },
 
@@ -800,12 +974,12 @@ const styles = StyleSheet.create({
   },
   chipText: { ...typography.label },
 
-  section: { marginTop: spacing.xxl, gap: spacing.md },
-  sectionGap: { marginTop: spacing.xxl },
+  section: { marginTop: spacing.xxxl, gap: spacing.md },
+  sectionGap: { marginTop: spacing.xxxl },
   sectionHeader: { ...typography.h3 },
   infoList: { gap: spacing.md },
   infoRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  infoText: { ...typography.body, flex: 1 },
+  infoText: { ...typography.body, fontSize: 15, flex: 1 },
 
   cancelledCard: {
     marginTop: spacing.xxl,
@@ -825,7 +999,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
-    marginTop: spacing.xxl,
     borderWidth: 1,
     borderRadius: radii.lg,
     paddingVertical: spacing.md,
@@ -833,7 +1006,55 @@ const styles = StyleSheet.create({
   },
   gameRowText: { ...typography.bodySm, fontWeight: "600" },
 
-  rsvpSection: { marginTop: spacing.xxl },
+  bottomBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopWidth: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  bottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  rsvpButton: {
+    width: 140,
+    height: 46,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: radii.md,
+  },
+  rsvpButtonText: { fontSize: 15, fontWeight: "600" },
+  gameButtonWrap: { flex: 1 },
+  rsvpMenuBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  rsvpMenu: {
+    position: "absolute",
+    left: spacing.lg,
+    bottom: "100%",
+    marginBottom: spacing.sm,
+    minWidth: 160,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingVertical: spacing.xs,
+    // float above the bar
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  rsvpMenuItem: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  rsvpMenuItemText: { fontSize: 15, fontWeight: "500" },
 
   menuList: { paddingBottom: spacing.md },
   menuRow: {

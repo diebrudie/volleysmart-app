@@ -13,11 +13,11 @@ Priority legend: **P0** = crash/freeze/broken core, **P1** = missing feature / w
 | R2-1 | Menu | Theme picker does not trigger anything and freezes the app | fixed (df40b03) |
 | R2-2 | Menu | Language picker does not trigger anything and freezes the app | fixed (df40b03) |
 | R2-3 | Menu | Contact Us does not trigger anything and freezes the app | fixed (df40b03) |
-| R2-4 | Event Overview | Edit event button does nothing and freezes the app. If the event is recurrent, a popup must ask "edit only this event or all recurring?" (match PWA) | OPEN — deferred (see note below) |
+| R2-4 | Event Overview | Edit event button does nothing and freezes the app. If the event is recurrent, a popup must ask "edit only this event or all recurring?" (match PWA) | fixed — menu→edit now defers past the Sheet dismiss (onClosed); recurring scope dialog was already wired |
 | R2-5 | Clubs tab | "Edit Club" from the card three-dots menu does not trigger any drawer/action | fixed (989b11a) |
 | R2-6 | Club Page | "Edit Club" (club overview settings) — verify it opens the drawer (related to R2-5) | fixed (989b11a) |
 
-> **Event Overview cluster (R2-4, R2-15..R2-23) is DEFERRED.** The agent assigned to the event detail screen was cut off by the account spend limit after only laying down scaffolding, leaving the screen broken; those partial edits were reverted so the screen still works as it did in Round 1. The recurring-edit dialog + `repeat` icon it started were reverted with it. This whole cluster (top gradient + remove divider, share/weekly icons, block/row spacing, remove 0/12 row, RSVP yellow/green/red dropdown + Start Game sticky bottom bar, past-event View-event) needs a fresh pass next session.
+> **Event Overview cluster (R2-4, R2-15..R2-23) — DONE (2026-07-09).** Reworked directly: gradient hero behind a transparent/borderless header (R2-15), 3-node Share2 icon (R2-16), Repeat recurrence icon (R2-18), block spacing bumped to 32 + Details rows 15px (R2-19/21), removed the 0/12 row (R2-20), and a sticky bottom bar with a yellow/green/red RSVP dropdown (opens upward) + a Start/View game button (R2-22/23). Edit freeze fixed via the onClosed defer (R2-4). NOTE: starting/viewing a game stays web-only on native (game layer deferred), so the right-hand button is a disabled "…(web only)" affordance rather than a live Start Game / View. Needs an on-device eyeball.
 
 ### Profile (P1/P2)
 | # | Issue | Status |
@@ -38,15 +38,15 @@ Priority legend: **P0** = crash/freeze/broken core, **P1** = missing feature / w
 ### Event Overview (P0/P1/P2) — see screenshots img#8 PWA vs img#9 native
 | # | Issue | Status |
 |---|-------|--------|
-| R2-15 | Top gradient is missing; also remove the top divider line under the navbar. | open |
-| R2-16 | Share icon is different from PWA (PWA uses the iOS share/upload glyph, native uses the node-share glyph). Match PWA. | open |
-| R2-17 | (= R2-4) Edit event freezes; recurring events need the this/all popup. | open |
-| R2-18 | "Weekly" recurrence icon differs from PWA. Match PWA. | open |
-| R2-19 | Increase spacing BETWEEN blocks (title/tags block, Details block, Description, Hosted by, N Going) so they group visually — currently too tight. All blocks same larger spacing. | open |
-| R2-20 | In Details block, remove the "0/12" (players allowed) row. | open |
-| R2-21 | In Details block, increase per-row spacing (but less than the between-block spacing so it still reads as one group) and decrease the font size a bit (too big now). | open |
-| R2-22 | RSVP control must match PWA (img#10/#11): a bottom-stuck dropdown button that is YELLOW when no RSVP, GREEN when going, RED when not going; next to it a "Start Game" button disabled until enough players. Bottom bar always stuck to bottom. | open |
-| R2-23 | Bottom navbar (RSVP/Start Game bar) must always be stuck to the bottom. For a PAST event that had a Game, show "View event" leading to the event overview. | open |
+| R2-15 | Top gradient is missing; also remove the top divider line under the navbar. | fixed |
+| R2-16 | Share icon is different from PWA (PWA uses the iOS share/upload glyph, native uses the node-share glyph). Match PWA. | fixed (share-social-outline to match web Share2) |
+| R2-17 | (= R2-4) Edit event freezes; recurring events need the this/all popup. | fixed |
+| R2-18 | "Weekly" recurrence icon differs from PWA. Match PWA. | fixed (repeat glyph) |
+| R2-19 | Increase spacing BETWEEN blocks (title/tags block, Details block, Description, Hosted by, N Going) so they group visually — currently too tight. All blocks same larger spacing. | fixed (32px) |
+| R2-20 | In Details block, remove the "0/12" (players allowed) row. | fixed |
+| R2-21 | In Details block, increase per-row spacing (but less than the between-block spacing so it still reads as one group) and decrease the font size a bit (too big now). | fixed (rows 12px gap, 15px font) |
+| R2-22 | RSVP control must match PWA (img#10/#11): a bottom-stuck dropdown button that is YELLOW when no RSVP, GREEN when going, RED when not going; next to it a "Start Game" button disabled until enough players. Bottom bar always stuck to bottom. | fixed (Start Game is a web-only affordance on native) |
+| R2-23 | Bottom navbar (RSVP/Start Game bar) must always be stuck to the bottom. For a PAST event that had a Game, show "View event" leading to the event overview. | partial — bar is sticky; past+game shows "View game (web only)" since the native game layer is deferred |
 
 ### Clubs tab (P2/P0)
 | # | Issue | Status |
