@@ -216,7 +216,7 @@ export function EditableTeams({
                           )
                         }
                         options={optionsFor(p.position)}
-                        sheetTitle={t("game.position", { defaultValue: "Position" })}
+                        sheetTitle={t("game.positionLabel", { defaultValue: "Position" })}
                       />
                     </View>
                     <Pressable
