@@ -20,6 +20,7 @@ export * from './supabase/playerStats';
 export * from './supabase/clubStats';
 export * from './supabase/skillProgression';
 export * from './supabase/members';
+export * from './supabase/faqs';
 export * from './supabase/rpc';
 
 // Utilities

@@ -243,20 +243,18 @@ export function MyClubsTab() {
                 <Text style={styles.roleText}>{club.role}</Text>
               </Text>
             </Pressable>
-            <Button
-              title={
-                club.role === "admin"
-                  ? tr("leaveClub.deleteClubConfirm", {
-                      defaultValue: "Delete Club",
-                    })
-                  : tr("leaveClub.leaveClubConfirm", {
-                      defaultValue: "Leave Club",
-                    })
-              }
-              variant="ghost"
-              onPress={() => setLeaveTarget(club)}
-              style={styles.leaveButton}
-            />
+            {/* Club deletion lives only in the Clubs tab card menu; here
+                admins get no delete option, non-admins can leave. */}
+            {club.role !== "admin" ? (
+              <Button
+                title={tr("leaveClub.leaveClubConfirm", {
+                  defaultValue: "Leave Club",
+                })}
+                variant="ghost"
+                onPress={() => setLeaveTarget(club)}
+                style={styles.leaveButton}
+              />
+            ) : null}
           </View>
 
           <View

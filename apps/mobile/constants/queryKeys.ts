@@ -135,6 +135,11 @@ export const queryKeys = {
     all: ["positions"] as const,
   },
 
+  faqs: {
+    /** All FAQs for the FAQ page, keyed by language (localized server-side). */
+    list: (lang: string) => ["faqs", lang] as const,
+  },
+
   home: {
     dashboard: (userId: string | undefined) =>
       ["home-dashboard", userId] as const,

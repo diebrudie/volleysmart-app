@@ -4,19 +4,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { Stack } from "expo-router";
-import { supabase } from "@/constants/supabase";
 import { Screen } from "@/components/ui/Screen";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { KeyboardAwareScreen } from "@/components/ui/KeyboardAwareScreen";
 import { Avatar } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { Spinner } from "@/components/ui/Spinner";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { MyClubsTab } from "@/components/profile/MyClubsTab";
-import { DeleteAccountDialog } from "@/components/profile/DeleteAccountDialog";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
@@ -25,7 +22,7 @@ import { queryKeys } from "@/constants/queryKeys";
 import { icons, type IoniconsName } from "@/constants/icons";
 import { radii, spacing, typography } from "@/constants/theme";
 
-type TabKey = "profile" | "clubs";
+type TabKey = "analytics" | "positions" | "clubs";
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation("profile");
@@ -35,9 +32,8 @@ export default function ProfileScreen() {
   const { data: player, isLoading: playerLoading } = usePlayerProfile();
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats();
 
-  const [activeTab, setActiveTab] = useState<TabKey>("profile");
+  const [activeTab, setActiveTab] = useState<TabKey>("analytics");
   const [isEditing, setIsEditing] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const firstName = player?.first_name ?? user?.user_metadata?.first_name ?? "";
   const lastName = player?.last_name ?? user?.user_metadata?.last_name ?? "";
@@ -118,6 +114,173 @@ export default function ProfileScreen() {
       </>
     );
   }
+
+  // ── Positions tab content (mirrors the web Positions tab) ─────────────
+  const positionsContent =
+    primaryPosition || secondaryPositions.length > 0 ? (
+      <Card>
+        {primaryPosition ? (
+          <View style={styles.positionBlock}>
+            <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
+              {t("positions.mainPosition", { defaultValue: "Main Position" })}
+            </Text>
+            <View
+              style={[
+                styles.primaryPill,
+                { borderColor: theme.primary, backgroundColor: theme.muted },
+              ]}
+            >
+              <View style={[styles.dot, { backgroundColor: theme.primary }]} />
+              <Text style={[styles.primaryPillText, { color: theme.primary }]}>
+                {positionLabel(primaryPosition.positions?.name)}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+        {secondaryPositions.length > 0 ? (
+          <View style={styles.positionBlock}>
+            <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
+              {t("positions.secondaryPositions", {
+                defaultValue: "Secondary Positions",
+              })}
+            </Text>
+            <View style={styles.chipRow}>
+              {secondaryPositions.map((pp: any) => (
+                <Chip key={pp.id} label={positionLabel(pp.positions?.name)} />
+              ))}
+            </View>
+          </View>
+        ) : null}
+      </Card>
+    ) : (
+      <Card>
+        <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
+          {t("positions.mainPosition", { defaultValue: "Main Position" })}
+        </Text>
+        <Text style={[typography.body, { color: theme.textSecondary }]}>
+          {t("positions.noPositions", { defaultValue: "No positions set yet." })}
+        </Text>
+      </Card>
+    );
+
+  // ── Analytics tab content (mirrors the web Analytics tab) ─────────────
+  const analyticsContent = (
+    <Card>
+      <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
+        {t("analytics.allTime", { defaultValue: "All time" })}
+      </Text>
+      {statsLoading ? (
+        <View style={styles.statsLoading}>
+          <Spinner />
+        </View>
+      ) : playerStats && playerStats.gamesPlayed > 0 ? (
+        <>
+          <View style={styles.statsGrid}>
+            <StatTile
+              icon={icons.swords}
+              iconColor={theme.primary}
+              value={String(playerStats.gamesPlayed)}
+              label={t("analytics.gamesPlayed", {
+                defaultValue: "Games Played",
+              })}
+            />
+            <StatTile
+              icon={icons.trendingUp}
+              iconColor={theme.success}
+              value={`${playerStats.winRate}%`}
+              label={t("analytics.setWinRate", {
+                defaultValue: "Set Win Rate",
+              })}
+            />
+            <StatTile
+              icon={icons.trophy}
+              iconColor={theme.warning}
+              value={playerStats.matchDaysWon}
+              valueSuffix={`/${
+                playerStats.matchDaysWon +
+                playerStats.matchDaysLost +
+                playerStats.matchDaysTied
+              }`}
+              label={t("analytics.gamesWon", { defaultValue: "Games Won" })}
+            />
+            <StatTile
+              icon={icons.clock}
+              iconColor={theme.accent}
+              value={String(playerStats.totalHours)}
+              label={t("analytics.hoursPlayed", {
+                defaultValue: "Hours Played",
+              })}
+            />
+          </View>
+
+          {/* Set record W/L bar */}
+          {playerStats.setsWon + playerStats.setsLost + playerStats.setsTied >
+          0 ? (
+            <View style={styles.setRecordBlock}>
+              <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
+                {t("analytics.setRecord", { defaultValue: "Set Record" })}
+              </Text>
+              <View style={styles.setRecordLabels}>
+                <Text style={[styles.setRecordText, { color: theme.success }]}>
+                  {playerStats.setsWon}W
+                </Text>
+                <Text
+                  style={[styles.setRecordText, { color: theme.destructive }]}
+                >
+                  {playerStats.setsLost}L
+                </Text>
+                {playerStats.setsTied > 0 ? (
+                  <Text
+                    style={[
+                      styles.setRecordText,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    {playerStats.setsTied}T
+                  </Text>
+                ) : null}
+              </View>
+              <View
+                style={[styles.setRecordTrack, { backgroundColor: theme.muted }]}
+              >
+                <View
+                  style={{
+                    flex: playerStats.setsWon,
+                    backgroundColor: theme.success,
+                  }}
+                />
+                <View
+                  style={{
+                    flex: playerStats.setsLost,
+                    backgroundColor: theme.destructive,
+                  }}
+                />
+                {playerStats.setsTied > 0 ? (
+                  <View style={{ flex: playerStats.setsTied }} />
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+        </>
+      ) : (
+        <View style={styles.statsEmpty}>
+          <Ionicons
+            name={icons.swords}
+            size={28}
+            color={theme.mutedForeground}
+          />
+          <Text style={[styles.statsEmptyText, { color: theme.textSecondary }]}>
+            {t("analytics.noGames", { defaultValue: "No games played yet" })}
+          </Text>
+          <Text style={[styles.statsEmptyHint, { color: theme.textSecondary }]}>
+            {t("analytics.noGamesHint", {
+              defaultValue: "Stats will appear after your first game",
+            })}
+          </Text>
+        </View>
+      )}
+    </Card>
+  );
 
   // ── View mode ─────────────────────────────────────────────────────────
   return (
@@ -214,12 +377,16 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Tabs (web's Analytics tab content lives in the Profile tab below) */}
+        {/* Tabs — match the PWA: Analytics / Positions / Clubs */}
         <SegmentedTabs
           segments={[
             {
-              key: "profile",
-              label: t("tabs.profile", { defaultValue: "Profile" }),
+              key: "analytics",
+              label: t("tabs.analytics", { defaultValue: "Analytics" }),
+            },
+            {
+              key: "positions",
+              label: t("tabs.positions", { defaultValue: "Positions" }),
             },
             { key: "clubs", label: t("tabs.clubs", { defaultValue: "Clubs" }) },
           ]}
@@ -228,289 +395,14 @@ export default function ProfileScreen() {
           style={styles.tabs}
         />
 
-        {activeTab === "profile" ? (
-          <View style={styles.section}>
-            {player?.bio ? (
-              <Card>
-                <Text
-                  style={[styles.cardLabel, { color: theme.textSecondary }]}
-                >
-                  {t("edit.bio", { defaultValue: "Bio" })}
-                </Text>
-                <Text style={[styles.bioText, { color: theme.text }]}>
-                  {player.bio}
-                </Text>
-              </Card>
-            ) : null}
-
-            {/* Positions (mirrors the web Positions tab) */}
-            {primaryPosition || secondaryPositions.length > 0 ? (
-              <Card>
-                {primaryPosition ? (
-                  <View style={styles.positionBlock}>
-                    <Text
-                      style={[
-                        styles.cardLabel,
-                        { color: theme.textSecondary },
-                      ]}
-                    >
-                      {t("positions.mainPosition", {
-                        defaultValue: "Main Position",
-                      })}
-                    </Text>
-                    <View
-                      style={[
-                        styles.primaryPill,
-                        {
-                          borderColor: theme.primary,
-                          backgroundColor: theme.muted,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.dot,
-                          { backgroundColor: theme.primary },
-                        ]}
-                      />
-                      <Text
-                        style={[styles.primaryPillText, { color: theme.primary }]}
-                      >
-                        {positionLabel(primaryPosition.positions?.name)}
-                      </Text>
-                    </View>
-                  </View>
-                ) : null}
-                {secondaryPositions.length > 0 ? (
-                  <View style={styles.positionBlock}>
-                    <Text
-                      style={[
-                        styles.cardLabel,
-                        { color: theme.textSecondary },
-                      ]}
-                    >
-                      {t("positions.secondaryPositions", {
-                        defaultValue: "Secondary Positions",
-                      })}
-                    </Text>
-                    <View style={styles.chipRow}>
-                      {secondaryPositions.map((pp: any) => (
-                        <Chip
-                          key={pp.id}
-                          label={positionLabel(pp.positions?.name)}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                ) : null}
-              </Card>
-            ) : (
-              <Card>
-                <Text
-                  style={[styles.cardLabel, { color: theme.textSecondary }]}
-                >
-                  {t("positions.mainPosition", {
-                    defaultValue: "Main Position",
-                  })}
-                </Text>
-                <Text style={[typography.body, { color: theme.textSecondary }]}>
-                  {t("positions.noPositions", {
-                    defaultValue: "No positions set yet.",
-                  })}
-                </Text>
-              </Card>
-            )}
-
-            {/* Stats (mirrors the web Analytics tab, all-time, all clubs) */}
-            <Card>
-              <View style={styles.statsHeaderRow}>
-                <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
-                  {t("tabs.analytics", { defaultValue: "Analytics" })}
-                </Text>
-                <Text style={[styles.statsScope, { color: theme.textSecondary }]}>
-                  {t("analytics.allTime", { defaultValue: "All time" })}
-                </Text>
-              </View>
-              {statsLoading ? (
-                <View style={styles.statsLoading}>
-                  <Spinner />
-                </View>
-              ) : playerStats && playerStats.gamesPlayed > 0 ? (
-                <>
-                  <View style={styles.statsGrid}>
-                    <StatTile
-                      icon={icons.swords}
-                      iconColor={theme.primary}
-                      value={String(playerStats.gamesPlayed)}
-                      label={t("analytics.gamesPlayed", {
-                        defaultValue: "Games Played",
-                      })}
-                    />
-                    <StatTile
-                      icon={icons.trendingUp}
-                      iconColor={theme.success}
-                      value={`${playerStats.winRate}%`}
-                      label={t("analytics.setWinRate", {
-                        defaultValue: "Set Win Rate",
-                      })}
-                    />
-                    <StatTile
-                      icon={icons.trophy}
-                      iconColor={theme.warning}
-                      value={playerStats.matchDaysWon}
-                      valueSuffix={`/${
-                        playerStats.matchDaysWon +
-                        playerStats.matchDaysLost +
-                        playerStats.matchDaysTied
-                      }`}
-                      label={t("analytics.gamesWon", {
-                        defaultValue: "Games Won",
-                      })}
-                    />
-                    <StatTile
-                      icon={icons.clock}
-                      iconColor={theme.accent}
-                      value={String(playerStats.totalHours)}
-                      label={t("analytics.hoursPlayed", {
-                        defaultValue: "Hours Played",
-                      })}
-                    />
-                  </View>
-
-                  {/* Set record W/L bar */}
-                  {playerStats.setsWon +
-                    playerStats.setsLost +
-                    playerStats.setsTied >
-                  0 ? (
-                    <View style={styles.setRecordBlock}>
-                      <Text
-                        style={[
-                          styles.cardLabel,
-                          { color: theme.textSecondary },
-                        ]}
-                      >
-                        {t("analytics.setRecord", {
-                          defaultValue: "Set Record",
-                        })}
-                      </Text>
-                      <View style={styles.setRecordLabels}>
-                        <Text
-                          style={[styles.setRecordText, { color: theme.success }]}
-                        >
-                          {playerStats.setsWon}W
-                        </Text>
-                        <Text
-                          style={[
-                            styles.setRecordText,
-                            { color: theme.destructive },
-                          ]}
-                        >
-                          {playerStats.setsLost}L
-                        </Text>
-                        {playerStats.setsTied > 0 ? (
-                          <Text
-                            style={[
-                              styles.setRecordText,
-                              { color: theme.textSecondary },
-                            ]}
-                          >
-                            {playerStats.setsTied}T
-                          </Text>
-                        ) : null}
-                      </View>
-                      <View
-                        style={[
-                          styles.setRecordTrack,
-                          { backgroundColor: theme.muted },
-                        ]}
-                      >
-                        <View
-                          style={{
-                            flex: playerStats.setsWon,
-                            backgroundColor: theme.success,
-                          }}
-                        />
-                        <View
-                          style={{
-                            flex: playerStats.setsLost,
-                            backgroundColor: theme.destructive,
-                          }}
-                        />
-                        {playerStats.setsTied > 0 ? (
-                          <View style={{ flex: playerStats.setsTied }} />
-                        ) : null}
-                      </View>
-                    </View>
-                  ) : null}
-                </>
-              ) : (
-                <View style={styles.statsEmpty}>
-                  <Ionicons
-                    name={icons.swords}
-                    size={28}
-                    color={theme.mutedForeground}
-                  />
-                  <Text
-                    style={[styles.statsEmptyText, { color: theme.textSecondary }]}
-                  >
-                    {t("analytics.noGames", {
-                      defaultValue: "No games played yet",
-                    })}
-                  </Text>
-                  <Text
-                    style={[styles.statsEmptyHint, { color: theme.textSecondary }]}
-                  >
-                    {t("analytics.noGamesHint", {
-                      defaultValue: "Stats will appear after your first game",
-                    })}
-                  </Text>
-                </View>
-              )}
-            </Card>
-
-            {/* Account section */}
-            <View style={styles.accountSection}>
-              <Text
-                style={[styles.accountTitle, { color: theme.textSecondary }]}
-              >
-                {t("account.sectionTitle", { defaultValue: "Account" })}
-              </Text>
-              <Button
-                title={t("common:nav.logOut", { defaultValue: "Log Out" })}
-                variant="outline"
-                onPress={() => supabase.auth.signOut()}
-              />
-              <Pressable
-                onPress={() => setShowDeleteDialog(true)}
-                accessibilityRole="button"
-                style={styles.deleteRow}
-              >
-                <Ionicons
-                  name={icons.trash2}
-                  size={16}
-                  color={theme.destructive}
-                />
-                <Text
-                  style={[styles.deleteText, { color: theme.destructive }]}
-                >
-                  {t("account.deleteAccount", {
-                    defaultValue: "Delete my account",
-                  })}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
+        {activeTab === "analytics" ? (
+          <View style={styles.section}>{analyticsContent}</View>
+        ) : activeTab === "positions" ? (
+          <View style={styles.section}>{positionsContent}</View>
         ) : (
           <MyClubsTab />
         )}
       </Screen>
-
-      <DeleteAccountDialog
-        visible={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        userId={user?.id}
-        imageUrl={player?.image_url}
-      />
     </>
   );
 }
@@ -568,7 +460,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xl,
-    marginTop: spacing.sm,
+    marginTop: spacing.lg,
     marginBottom: spacing.lg,
   },
   headerText: { flex: 1, gap: 2 },
@@ -606,7 +498,6 @@ const styles = StyleSheet.create({
   tabs: { marginBottom: spacing.lg },
   section: { gap: spacing.lg },
   cardLabel: { ...typography.label, marginBottom: spacing.sm },
-  bioText: { ...typography.body, lineHeight: 22 },
   positionBlock: { marginBottom: spacing.md },
   primaryPill: {
     flexDirection: "row",
@@ -621,25 +512,7 @@ const styles = StyleSheet.create({
   primaryPillText: { ...typography.h3 },
   dot: { width: 8, height: 8, borderRadius: radii.full },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  accountSection: {
-    marginTop: spacing.xl,
-    gap: spacing.md,
-  },
-  accountTitle: { ...typography.label },
-  deleteRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-  deleteText: { ...typography.bodySm, fontWeight: "500" },
   // Stats section
-  statsHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  statsScope: { ...typography.caption },
   statsLoading: { paddingVertical: spacing.xl, alignItems: "center" },
   statsGrid: {
     flexDirection: "row",

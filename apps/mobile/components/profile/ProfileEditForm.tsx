@@ -14,6 +14,7 @@ import {
   PositionSelector,
   type Position,
 } from "@/components/profile/PositionSelector";
+import { DeleteAccountDialog } from "@/components/profile/DeleteAccountDialog";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useUpdatePlayer } from "@/hooks/useUpdatePlayer";
 import { useTheme } from "@/hooks/useTheme";
@@ -117,6 +118,7 @@ export function ProfileEditForm({ player, userId, onSaved, onCancel }: Props) {
   const [secondaryId, setSecondaryId] = useState<string | null>(
     initial.secondaryId
   );
+  const [showDelete, setShowDelete] = useState(false);
 
   const hasChanges =
     firstName !== initial.firstName ||
@@ -327,6 +329,29 @@ export function ProfileEditForm({ player, userId, onSaved, onCancel }: Props) {
         positions={positions}
       />
 
+      {/* Danger zone — delete account lives inside the edit drawer */}
+      <View style={[styles.dangerZone, { borderTopColor: t.cardBorder }]}>
+        <Pressable
+          onPress={() => setShowDelete(true)}
+          accessibilityRole="button"
+          style={styles.deleteRow}
+        >
+          <Ionicons name={icons.trash2} size={16} color={t.destructive} />
+          <Text style={[styles.deleteText, { color: t.destructive }]}>
+            {tr("account.deleteAccount", {
+              defaultValue: "Delete my account",
+            })}
+          </Text>
+        </Pressable>
+      </View>
+
+      <DeleteAccountDialog
+        visible={showDelete}
+        onClose={() => setShowDelete(false)}
+        userId={userId}
+        imageUrl={imageUrl}
+      />
+
       {/* Footer */}
       <View style={styles.footer}>
         <Button
@@ -385,4 +410,16 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   footerButton: { flex: 1 },
+  dangerZone: {
+    borderTopWidth: 1,
+    paddingTop: spacing.lg,
+    marginTop: spacing.sm,
+  },
+  deleteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  deleteText: { ...typography.bodySm, fontWeight: "500" },
 });
