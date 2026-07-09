@@ -140,3 +140,12 @@ Priority legend: **P0** = crash/freeze/broken core, **P1** = missing feature / w
 | 18 | Clubs page club card missing three-dots menu (edit/delete). | fixed — admin-only ellipsis menu: Edit reuses the settings sheet; Delete confirms then soft-deletes (same flow + RLS check as web). |
 
 Note for other dev machines: `apps/mobile/.env` (gitignored) now needs `EXPO_PUBLIC_MAPBOX_TOKEN` (same value as `VITE_MAPBOX_TOKEN` in `apps/web/.env`) for the city picker.
+
+## Round 5 (2026-07-09) — game layer (branch feat/mobile-phase4-game-layer)
+
+| # | Area | Issue | Status |
+|---|------|-------|--------|
+| R5-1 | Game detail | "Create new game with same teams" + "Delete game" don't belong as buttons at the bottom — move them into a three-dots menu at the top right (missing). | open |
+| R5-2 | Game detail | Not enough top margin. | open |
+| R5-3 | Game detail | Player positions + names are ellipsized/unreadable — make them fully visible; propose a better view showing both teams side by side. | open |
+| R5-4 | Test data | Create a game happening tomorrow with staging players so the user can Start Game and test detail/edit/live-score. | open |
