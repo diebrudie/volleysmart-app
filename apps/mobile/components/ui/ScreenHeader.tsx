@@ -60,11 +60,15 @@ export function ScreenHeader({
           accessibilityRole="button"
           style={({ pressed }) => [
             styles.backButton,
-            { borderColor: theme.border },
+            // Over a gradient, use a translucent white puck (PWA bg-background/60);
+            // on solid headers keep the bordered ring.
+            transparent
+              ? { backgroundColor: theme.background + "99", borderColor: "transparent" }
+              : { borderColor: theme.border },
             pressed && { backgroundColor: theme.muted },
           ]}
         >
-          <Ionicons name="arrow-back" size={16} color={theme.text} />
+          <Ionicons name="arrow-back" size={18} color={theme.text} />
         </Pressable>
         <Text
           numberOfLines={1}

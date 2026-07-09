@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { type RsvpStatus } from "@volleysmart/core";
 import { AttendeeList } from "@/components/events/AttendeeList";
 import { CancelEventDialog } from "@/components/events/CancelEventDialog";
@@ -304,18 +304,18 @@ export default function EventDetailScreen() {
         onPress={handleShare}
         accessibilityRole="button"
         hitSlop={8}
-        style={styles.headerButton}
+        style={[styles.headerButton, { backgroundColor: theme.background + "99" }]}
       >
-        <Ionicons name={icons.shareSocial} size={22} color={theme.primary} />
+        <Ionicons name={icons.shareSocial} size={20} color={theme.primary} />
       </Pressable>
       {isCreator ? (
         <Pressable
           onPress={() => setMenuOpen(true)}
           accessibilityRole="button"
           hitSlop={8}
-          style={styles.headerButton}
+          style={[styles.headerButton, { backgroundColor: theme.background + "99" }]}
         >
-          <Ionicons name={icons.moreHorizontal} size={22} color={theme.primary} />
+          <Ionicons name={icons.moreHorizontal} size={20} color={theme.primary} />
         </Pressable>
       ) : null}
     </View>
@@ -378,9 +378,10 @@ export default function EventDetailScreen() {
       {/* Gradient hero behind the header (matches web from-primary/30 → bg) */}
       <LinearGradient
         colors={[theme.primary + "4D", theme.primary + "1A", theme.background]}
+        locations={[0, 0.7, 1]}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.heroGradient, { height: insets.top + 128 }]}
+        end={{ x: 0.6, y: 1 }}
+        style={[styles.heroGradient, { height: insets.top + 210 }]}
         pointerEvents="none"
       />
       <ScreenHeader title="" right={headerRight()} transparent borderless />
@@ -490,12 +491,30 @@ export default function EventDetailScreen() {
                 : ""}
             </InfoRow>
             {event.locations ? (
-              <InfoRow icon={icons.mapPin}>
-                {event.locations.name}
-                {event.locations.address ? `\n${event.locations.address}` : ""}
-              </InfoRow>
+              <View style={styles.infoRow}>
+                <Ionicons
+                  name={icons.mapPin}
+                  size={17}
+                  color={theme.textSecondary}
+                />
+                <View style={styles.infoTextGroup}>
+                  <Text style={[styles.locationName, { color: theme.text }]}>
+                    {event.locations.name}
+                  </Text>
+                  {event.locations.address ? (
+                    <Text
+                      style={[
+                        styles.locationAddress,
+                        { color: theme.mutedForeground },
+                      ]}
+                    >
+                      {event.locations.address}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
             ) : null}
-            <InfoRow icon={icons.trophy}>{eventTypeLabel}</InfoRow>
+            <EventTypeRow eventType={event.event_type} label={eventTypeLabel} />
             <InfoRow
               icon={event.activity_type === "beach" ? icons.sun : icons.building2}
             >
@@ -842,8 +861,37 @@ function InfoRow({
   const theme = useTheme();
   return (
     <View style={styles.infoRow}>
-      <Ionicons name={icon} size={18} color={theme.textSecondary} />
+      <Ionicons name={icon} size={17} color={theme.textSecondary} />
       <Text style={[styles.infoText, { color: theme.text }]}>{children}</Text>
+    </View>
+  );
+}
+
+/** Event-type row with a per-type icon (crossed swords for friendly, to
+ *  match the PWA / Create-event step, instead of the tournament trophy). */
+function EventTypeRow({
+  eventType,
+  label,
+}: {
+  eventType: string;
+  label: string;
+}) {
+  const theme = useTheme();
+  const color = theme.textSecondary;
+  const iconEl =
+    eventType === "friendly_game" ? (
+      <MaterialCommunityIcons name="sword-cross" size={17} color={color} />
+    ) : eventType === "social_game" ? (
+      <Ionicons name={icons.users} size={17} color={color} />
+    ) : eventType === "training" ? (
+      <Ionicons name={icons.dumbbell} size={17} color={color} />
+    ) : (
+      <Ionicons name={icons.trophy} size={17} color={color} />
+    );
+  return (
+    <View style={styles.infoRow}>
+      {iconEl}
+      <Text style={[styles.infoText, { color: theme.text }]}>{label}</Text>
     </View>
   );
 }
@@ -925,7 +973,13 @@ const styles = StyleSheet.create({
   scrollWithBar: { paddingBottom: 120 },
 
   headerActions: { flexDirection: "row", gap: spacing.sm },
-  headerButton: { padding: spacing.xs },
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   badgeRow: {
     flexDirection: "row",
@@ -977,9 +1031,12 @@ const styles = StyleSheet.create({
   section: { marginTop: spacing.xxxl, gap: spacing.md },
   sectionGap: { marginTop: spacing.xxxl },
   sectionHeader: { ...typography.h3 },
-  infoList: { gap: spacing.md },
+  infoList: { gap: spacing.lg },
   infoRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  infoText: { ...typography.body, fontSize: 15, flex: 1 },
+  infoText: { ...typography.body, fontSize: 14, flex: 1, lineHeight: 20 },
+  infoTextGroup: { flex: 1, gap: 1 },
+  locationName: { fontSize: 14, fontWeight: "600", lineHeight: 20 },
+  locationAddress: { fontSize: 14, lineHeight: 19 },
 
   cancelledCard: {
     marginTop: spacing.xxl,
@@ -1014,6 +1071,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
+    zIndex: 50,
+    elevation: 24,
   },
   bottomRow: {
     flexDirection: "row",
@@ -1033,22 +1092,25 @@ const styles = StyleSheet.create({
   gameButtonWrap: { flex: 1 },
   rsvpMenuBackdrop: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 40,
+    elevation: 20,
   },
   rsvpMenu: {
     position: "absolute",
     left: spacing.lg,
     bottom: "100%",
     marginBottom: spacing.sm,
-    minWidth: 160,
+    minWidth: 180,
     borderWidth: 1,
     borderRadius: radii.md,
     paddingVertical: spacing.xs,
-    // float above the bar
+    // float above the bar and the scroll content
+    zIndex: 60,
     shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 32,
   },
   rsvpMenuItem: {
     paddingVertical: spacing.md,
