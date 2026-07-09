@@ -23,6 +23,10 @@ export * from './supabase/members';
 export * from './supabase/faqs';
 export * from './supabase/rpc';
 
+// Team assignment algorithm (pure TS)
+export * from './teams/positions';
+export * from './teams/assignLineup';
+
 // Utilities
 export * from './utils/formatName';
 export * from './utils/dateLocale';
