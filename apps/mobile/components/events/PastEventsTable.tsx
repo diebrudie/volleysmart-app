@@ -1,9 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
-import { icons } from "@/constants/icons";
-import { radii, spacing, typography } from "@/constants/theme";
+import { radii, spacing } from "@/constants/theme";
 import { type PastEventRow } from "@volleysmart/core";
 
 type Props = {
@@ -12,165 +10,175 @@ type Props = {
   onRowPress: (eventId: string) => void;
 };
 
+// Fixed result colors (readable on both light card and dark slate card).
+const WIN = "#16a34a"; // green-600
+const LOSE = "#dc2626"; // red-600
+
 /**
- * Compact past-events score table, mirroring the web PastEventsList
- * (UpcomingEvents.tsx): date + title | set score / cancelled badge | view.
+ * Past events as a stacked card list (redesign of the old score table):
+ * tinted month/day/year date pill · title + club · result (colored score
+ * with WON/LOST, or a Cancelled / No score pill).
  */
 export function PastEventsTable({ events, onRowPress }: Props) {
   const t = useTheme();
   const { t: tr, i18n } = useTranslation("events");
   const locale = i18n.language || "en";
 
-  const formatDate = (dateStr: string) =>
-    new Intl.DateTimeFormat(locale, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(dateStr + "T00:00:00"));
+  const parts = (dateStr: string) => {
+    const d = new Date(dateStr + "T00:00:00");
+    return {
+      month: new Intl.DateTimeFormat(locale, { month: "short" })
+        .format(d)
+        .toUpperCase(),
+      day: new Intl.DateTimeFormat(locale, { day: "numeric" }).format(d),
+      year: new Intl.DateTimeFormat(locale, { year: "numeric" }).format(d),
+    };
+  };
 
   return (
-    <View
-      style={[
-        styles.table,
-        { backgroundColor: t.card, borderColor: t.cardBorder },
-      ]}
-    >
-      {/* Header */}
-      <View style={[styles.row, styles.headerRow, { borderColor: t.border }]}>
-        <Text
-          style={[styles.headerLabel, styles.colMain, { color: t.mutedForeground }]}
-        >
-          {tr("upcoming.tableDate", { defaultValue: "Date" })}
-        </Text>
-        <Text
-          style={[
-            styles.headerLabel,
-            styles.colScore,
-            styles.centerText,
-            { color: t.mutedForeground },
-          ]}
-        >
-          {tr("upcoming.tableScore", { defaultValue: "Score" })}
-        </Text>
-        <Text
-          style={[
-            styles.headerLabel,
-            styles.colView,
-            styles.rightText,
-            { color: t.mutedForeground },
-          ]}
-        >
-          {tr("upcoming.tableDetails", { defaultValue: "Details" })}
-        </Text>
-      </View>
+    <View style={styles.list}>
+      {events.map((e) => {
+        const p = parts(e.date);
+        const isCancelled = e.status === "cancelled";
+        const aWon = e.team_a_wins > e.team_b_wins;
+        const bWon = e.team_b_wins > e.team_a_wins;
 
-      {events.map((e, idx) => (
-        <Pressable
-          key={e.id}
-          onPress={() => onRowPress(e.id)}
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            styles.row,
-            idx < events.length - 1 && [
-              styles.rowBorder,
-              { borderColor: t.border },
-            ],
-            pressed && { backgroundColor: t.surface },
-          ]}
-        >
-          {/* Date + title */}
-          <View style={styles.colMain}>
-            <Text style={[styles.dateText, { color: t.textSecondary }]}>
-              {formatDate(e.date)}
-            </Text>
-            <Text
-              style={[styles.titleText, { color: t.primary }]}
-              numberOfLines={1}
-            >
-              {e.title}
-            </Text>
-          </View>
-
-          {/* Score / cancelled / dash */}
-          <View style={[styles.colScore, styles.scoreCell]}>
-            {e.status === "cancelled" ? (
-              <View style={styles.cancelledPill}>
-                <Text style={styles.cancelledText} numberOfLines={1}>
-                  {tr("upcoming.cancelled", { defaultValue: "Cancelled" })}
-                </Text>
-              </View>
-            ) : e.has_score ? (
-              <Text style={[styles.scoreText, { color: t.text }]}>
-                {e.team_a_wins} – {e.team_b_wins}
+        return (
+          <Pressable
+            key={e.id}
+            onPress={() => onRowPress(e.id)}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.card,
+              { backgroundColor: t.card, borderColor: t.cardBorder },
+              pressed && { backgroundColor: t.surface },
+            ]}
+          >
+            {/* Date pill */}
+            <View style={[styles.datePill, { backgroundColor: t.muted }]}>
+              <Text style={[styles.month, { color: t.primary }]}>{p.month}</Text>
+              <Text style={[styles.day, { color: t.text }]}>{p.day}</Text>
+              <Text style={[styles.year, { color: t.mutedForeground }]}>
+                {p.year}
               </Text>
-            ) : (
-              <Text style={[styles.dash, { color: t.mutedForeground }]}>—</Text>
-            )}
-          </View>
+            </View>
 
-          {/* View */}
-          <View style={[styles.colView, styles.viewCell]}>
-            <Ionicons name={icons.eye} size={14} color={t.mutedForeground} />
-            <Text style={[styles.viewText, { color: t.mutedForeground }]}>
-              {tr("upcoming.view", { defaultValue: "View" })}
-            </Text>
-          </View>
-        </Pressable>
-      ))}
+            {/* Title + club */}
+            <View style={styles.info}>
+              <Text
+                style={[styles.title, { color: t.text }]}
+                numberOfLines={1}
+              >
+                {e.title}
+              </Text>
+              {e.club_name ? (
+                <Text
+                  style={[styles.club, { color: t.mutedForeground }]}
+                  numberOfLines={1}
+                >
+                  {e.club_name}
+                </Text>
+              ) : null}
+            </View>
+
+            {/* Result */}
+            <View style={styles.result}>
+              {isCancelled ? (
+                <View style={styles.cancelledPill}>
+                  <Text style={styles.cancelledText} numberOfLines={1}>
+                    {tr("upcoming.cancelled", { defaultValue: "Cancelled" })}
+                  </Text>
+                </View>
+              ) : e.has_score ? (
+                <>
+                  <Text style={styles.score} numberOfLines={1}>
+                    <Text style={{ color: aWon ? WIN : LOSE }}>
+                      {e.team_a_wins}
+                    </Text>
+                    <Text style={{ color: t.text }}> – </Text>
+                    <Text style={{ color: bWon ? WIN : LOSE }}>
+                      {e.team_b_wins}
+                    </Text>
+                  </Text>
+                  {aWon || bWon ? (
+                    <Text
+                      style={[
+                        styles.outcome,
+                        { color: aWon ? WIN : LOSE },
+                      ]}
+                    >
+                      {aWon
+                        ? tr("upcoming.won", { defaultValue: "WON" })
+                        : tr("upcoming.lost", { defaultValue: "LOST" })}
+                    </Text>
+                  ) : (
+                    <Text
+                      style={[styles.outcome, { color: t.mutedForeground }]}
+                    >
+                      {tr("upcoming.tie", { defaultValue: "TIE" })}
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <View style={[styles.noScorePill, { backgroundColor: t.muted }]}>
+                  <Text
+                    style={[styles.noScoreText, { color: t.mutedForeground }]}
+                    numberOfLines={1}
+                  >
+                    {tr("upcoming.noScore", { defaultValue: "No score" })}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  table: {
-    borderWidth: 1,
-    borderRadius: radii.xl,
-    overflow: "hidden",
-  },
-  row: {
+  list: { gap: spacing.md },
+  card: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderRadius: radii.xl,
     paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
   },
-  headerRow: {
+  datePill: {
+    width: 52,
+    borderRadius: radii.md,
     paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
+    alignItems: "center",
   },
-  rowBorder: { borderBottomWidth: 1 },
-  headerLabel: {
-    ...typography.label,
+  month: { fontSize: 10, fontWeight: "700", letterSpacing: 0.5 },
+  day: { fontSize: 20, fontWeight: "700", lineHeight: 24 },
+  year: { fontSize: 10, fontWeight: "500" },
+  info: { flex: 1, minWidth: 0, gap: 2 },
+  title: { fontSize: 15, fontWeight: "600" },
+  club: { fontSize: 13 },
+  result: { alignItems: "flex-end", minWidth: 68 },
+  score: { fontSize: 18, fontWeight: "700", letterSpacing: 0.5 },
+  outcome: {
     fontSize: 11,
-    textTransform: "uppercase",
+    fontWeight: "700",
     letterSpacing: 0.5,
+    marginTop: 2,
   },
-  colMain: { flex: 1, minWidth: 0 },
-  colScore: { width: 76 },
-  colView: { width: 56 },
-  scoreCell: { alignItems: "center" },
   cancelledPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radii.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.full,
     backgroundColor: "#fee2e2", // red-100
   },
-  cancelledText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#dc2626", // red-600
+  cancelledText: { fontSize: 12, fontWeight: "600", color: "#dc2626" },
+  noScorePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.full,
   },
-  viewCell: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: spacing.xs,
-  },
-  centerText: { textAlign: "center" },
-  rightText: { textAlign: "right" },
-  dateText: { ...typography.caption },
-  titleText: { ...typography.bodySm, fontWeight: "600" },
-  scoreText: { fontSize: 16, fontWeight: "600", letterSpacing: 1 },
-  dash: { ...typography.bodySm },
-  viewText: { ...typography.caption },
+  noScoreText: { fontSize: 12, fontWeight: "500" },
 });
