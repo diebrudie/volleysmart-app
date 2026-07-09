@@ -141,32 +141,35 @@ export function EventCard({ event, currentPlayerId, onPress }: Props) {
       ]}
     >
       {/* Calendar badge: colored month strip + white day/weekday body (PWA parity) */}
-      <View
-        style={[
-          styles.dateBadge,
-          { borderColor: isToday ? t.primary : t.cardBorder },
-        ]}
-      >
+      {/* Outer wrapper carries the shadow; inner view keeps overflow-hidden rounded corners */}
+      <View style={styles.dateBadgeShadow}>
         <View
           style={[
-            styles.dateBadgeHeader,
-            { backgroundColor: isToday ? t.primary : CALENDAR_RED },
+            styles.dateBadge,
+            { borderColor: isToday ? t.primary : t.cardBorder },
           ]}
         >
-          <Text style={styles.dateMonth} numberOfLines={1}>
-            {isToday ? todayLabel : month}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.dateBadgeBody,
-            { backgroundColor: isDark ? t.card : palette.white },
-          ]}
-        >
-          <Text style={[styles.dateDay, { color: t.text }]}>{day}</Text>
-          <Text style={[styles.dateWeekday, { color: t.mutedForeground }]}>
-            {weekday}
-          </Text>
+          <View
+            style={[
+              styles.dateBadgeHeader,
+              { backgroundColor: isToday ? t.primary : CALENDAR_RED },
+            ]}
+          >
+            <Text style={styles.dateMonth} numberOfLines={1}>
+              {isToday ? todayLabel : month}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.dateBadgeBody,
+              { backgroundColor: isDark ? t.card : palette.white },
+            ]}
+          >
+            <Text style={[styles.dateDay, { color: t.text }]}>{day}</Text>
+            <Text style={[styles.dateWeekday, { color: t.mutedForeground }]}>
+              {weekday}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -293,15 +296,26 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   cancelled: { opacity: 0.6 },
+  dateBadgeShadow: {
+    borderRadius: radii.md,
+    alignSelf: "stretch", // fill the card's full height
+    // Subtle drop shadow to match the PWA event-list card badge.
+    // Kept on the wrapper so the inner overflow-hidden view doesn't clip it (iOS).
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
   dateBadge: {
     width: 56, // w-14
+    flex: 1, // fill the wrapper's stretched height
     borderRadius: radii.md,
     borderWidth: 1,
     overflow: "hidden",
-    alignSelf: "stretch", // fill the card's full height
   },
   dateBadgeHeader: {
-    paddingVertical: 2, // py-0.5
+    paddingVertical: 5, // taller colored month / TODAY strip
     alignItems: "center",
   },
   dateMonth: {

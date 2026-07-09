@@ -125,6 +125,7 @@
   },
   "members": {
     "title": "Members",
+    "allMembers": "All Members",
     "manageRequests": "Manage Requests",
     "searchPlaceholder": "Search members...",
     "sortAtoZ": "Sort A to Z",

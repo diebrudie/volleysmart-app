@@ -217,7 +217,7 @@ export default function MembersScreen() {
       {/* Headline + Manage Requests (web MembersGlobal mobile header) */}
       <View style={styles.headerRow}>
         <Text style={[styles.headerTitle, { color: theme.text }]}>
-          {t("members.title", { defaultValue: "Members" })}
+          {t("members.allMembers", { defaultValue: "All Members" })}
         </Text>
         {adminClubs.length > 0 && (
           <Pressable
