@@ -419,15 +419,15 @@ export default function EventDetailScreen() {
             </View>
           </View>
           </View>
+          {rsvpStatusLine ? (
+            <View style={styles.rsvpStatusRow}>
+              <Ionicons name={icons.user} size={16} color={theme.mutedForeground} />
+              <Text style={[styles.rsvpStatusText, { color: theme.mutedForeground }]}>
+                {rsvpStatusLine}
+              </Text>
+            </View>
+          ) : null}
         </View>
-        {rsvpStatusLine ? (
-          <View style={styles.rsvpStatusRow}>
-            <Ionicons name={icons.user} size={16} color={theme.mutedForeground} />
-            <Text style={[styles.rsvpStatusText, { color: theme.mutedForeground }]}>
-              {rsvpStatusLine}
-            </Text>
-          </View>
-        ) : null}
 
         {/* Title + chips */}
         <Text style={[styles.title, { color: theme.text }]}>{event.title}</Text>
@@ -994,7 +994,8 @@ const styles = StyleSheet.create({
 
   badgeRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
     marginTop: spacing.sm,
   },
   // Shadow lives on the wrapper so the badge's overflow-hidden corners don't
@@ -1026,7 +1027,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   rsvpStatusText: { ...typography.bodySm },
 
