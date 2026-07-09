@@ -10,12 +10,14 @@ Priority legend: **P0** = crash/freeze/broken core, **P1** = missing feature / w
 ### CRITICAL — freezes / dead actions (P0)
 | # | Area | Issue | Status |
 |---|------|-------|--------|
-| R2-1 | Menu | Theme picker does not trigger anything and freezes the app | open |
-| R2-2 | Menu | Language picker does not trigger anything and freezes the app | open |
-| R2-3 | Menu | Contact Us does not trigger anything and freezes the app | open |
-| R2-4 | Event Overview | Edit event button does nothing and freezes the app. If the event is recurrent, a popup must ask "edit only this event or all recurring?" (match PWA) | open |
-| R2-5 | Clubs tab | "Edit Club" from the card three-dots menu does not trigger any drawer/action | open |
-| R2-6 | Club Page | "Edit Club" (club overview settings) — verify it opens the drawer (related to R2-5) | open |
+| R2-1 | Menu | Theme picker does not trigger anything and freezes the app | fixed (df40b03) |
+| R2-2 | Menu | Language picker does not trigger anything and freezes the app | fixed (df40b03) |
+| R2-3 | Menu | Contact Us does not trigger anything and freezes the app | fixed (df40b03) |
+| R2-4 | Event Overview | Edit event button does nothing and freezes the app. If the event is recurrent, a popup must ask "edit only this event or all recurring?" (match PWA) | OPEN — deferred (see note below) |
+| R2-5 | Clubs tab | "Edit Club" from the card three-dots menu does not trigger any drawer/action | fixed (989b11a) |
+| R2-6 | Club Page | "Edit Club" (club overview settings) — verify it opens the drawer (related to R2-5) | fixed (989b11a) |
+
+> **Event Overview cluster (R2-4, R2-15..R2-23) is DEFERRED.** The agent assigned to the event detail screen was cut off by the account spend limit after only laying down scaffolding, leaving the screen broken; those partial edits were reverted so the screen still works as it did in Round 1. The recurring-edit dialog + `repeat` icon it started were reverted with it. This whole cluster (top gradient + remove divider, share/weekly icons, block/row spacing, remove 0/12 row, RSVP yellow/green/red dropdown + Start Game sticky bottom bar, past-event View-event) needs a fresh pass next session.
 
 ### Profile (P1/P2)
 | # | Issue | Status |
@@ -83,7 +85,7 @@ Priority legend: **P0** = crash/freeze/broken core, **P1** = missing feature / w
 |---|-------|--------|
 | R2-36 | (= R2-1/2/3) Theme, Language, Contact Us freeze. | open |
 | R2-37 | FAQ page is not built yet — build it. | open |
-| R2-38 | (P3, DECISION NEEDED) T&C and Privacy currently open in the browser. Decide whether to build them natively/in-PWA or keep them external for legal reasons. | open |
+| R2-38 | T&C and Privacy open in the browser. | wontfix — user chose to keep opening in the device browser (one canonical legally-reviewed copy). Already implemented via Linking.openURL in MenuDrawer. |
 
 ## Round 1 (2026-07-08)
 
