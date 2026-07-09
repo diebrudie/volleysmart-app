@@ -3,22 +3,16 @@
  * Port of the primary card in apps/web/src/pages/HomeDashboard.tsx, with a
  * quick-RSVP button added for mobile.
  */
-import { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/hooks/useTheme";
-import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
-import { useRsvpMutation } from "@/hooks/useRsvpMutation";
 import { type TodayNextEvent } from "@/hooks/useHomeDashboard";
-import { queryKeys } from "@/constants/queryKeys";
 import { icons } from "@/constants/icons";
 import { radii, spacing, typography } from "@/constants/theme";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { toast } from "@/components/ui/Toast";
 
 type Props = {
   event: TodayNextEvent | null | undefined;
@@ -36,38 +30,6 @@ export function TodayNextCard({ event, loading }: Props) {
   const theme = useTheme();
   const router = useRouter();
   const { t, i18n } = useTranslation("events");
-  const queryClient = useQueryClient();
-  const { data: playerId } = useCurrentPlayerId();
-  const rsvpMutation = useRsvpMutation();
-  const [rsvpPending, setRsvpPending] = useState(false);
-
-  const handleQuickRsvp = () => {
-    if (!event || !playerId) return;
-    setRsvpPending(true);
-    rsvpMutation.mutate(
-      { eventId: event.eventId, playerId, status: "attending" },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.home.allTodaysEvent,
-          });
-          toast(
-            t("home.youreGoing", { defaultValue: "You're going" }),
-            "success"
-          );
-        },
-        onError: () => {
-          toast(
-            t("detail.failedToUpdateRsvp", {
-              defaultValue: "Failed to update RSVP",
-            }),
-            "error"
-          );
-        },
-        onSettled: () => setRsvpPending(false),
-      }
-    );
-  };
 
   const frame = [
     styles.card,
@@ -143,7 +105,7 @@ export function TodayNextCard({ event, loading }: Props) {
       </View>
 
       <View style={styles.body}>
-        <View>
+        <View style={styles.titleGroup}>
           <Text
             style={[styles.title, { color: theme.text }]}
             numberOfLines={1}
@@ -172,37 +134,11 @@ export function TodayNextCard({ event, loading }: Props) {
         </View>
 
         <View style={styles.actions}>
-          {!isAttending && playerId ? (
-            <Button
-              title={t("detail.going", { defaultValue: "Going" })}
-              onPress={handleQuickRsvp}
-              loading={rsvpPending}
-              style={styles.actionButton}
-            />
-          ) : null}
-          {event.isToday ? (
-            <Button
-              title={
-                event.matchDayId
-                  ? t("home.viewGame", { defaultValue: "View Game" })
-                  : t("home.startGame", { defaultValue: "Start Game" })
-              }
-              variant={
-                event.matchDayId || (!isAttending && playerId)
-                  ? "outline"
-                  : "primary"
-              }
-              onPress={openEvent}
-              style={styles.actionButton}
-            />
-          ) : (
-            <Button
-              title={t("home.viewEvent", { defaultValue: "View Event" })}
-              variant={!isAttending && playerId ? "outline" : "primary"}
-              onPress={openEvent}
-              style={styles.actionButton}
-            />
-          )}
+          <Button
+            title={t("home.viewEvent", { defaultValue: "View Event" })}
+            onPress={openEvent}
+            style={styles.actionButton}
+          />
         </View>
       </View>
     </Pressable>
@@ -231,8 +167,9 @@ const styles = StyleSheet.create({
   goingRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   goingText: { ...typography.bodySm, fontWeight: "600" },
   body: { gap: spacing.md, flex: 1 },
+  titleGroup: { gap: spacing.sm },
   title: { ...typography.h3 },
-  subtitle: { ...typography.bodySm, marginTop: 2 },
+  subtitle: { ...typography.bodySm },
   attendingRow: {
     flexDirection: "row",
     alignItems: "center",

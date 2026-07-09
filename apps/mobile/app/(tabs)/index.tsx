@@ -64,16 +64,11 @@ export default function HomeScreen() {
   ];
 
   return (
-    <Screen onRefresh={handleRefresh} safeTop={false}>
-      <View style={styles.header}>
-        <Text style={[styles.greeting, { color: theme.textSecondary }]}>
-          {t("greeting", { defaultValue: "Welcome back," })}{" "}
-          <Text style={[styles.greetingName, { color: theme.text }]}>
-            {firstName || t("player", { defaultValue: "Player" })}
-          </Text>
-        </Text>
-      </View>
-
+    <Screen
+      onRefresh={handleRefresh}
+      safeTop={false}
+      contentStyle={styles.content}
+    >
       {isNewUser ? (
         /* ── Onboarding slider for users without a club ─────────────── */
         <CardSlider>
@@ -243,9 +238,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { marginTop: spacing.md, marginBottom: spacing.xl },
-  greeting: { ...typography.body, fontSize: 16 },
-  greetingName: { fontWeight: "600" },
+  content: { paddingTop: spacing.lg },
   sectionTitle: {
     ...typography.h3,
     fontSize: 18,

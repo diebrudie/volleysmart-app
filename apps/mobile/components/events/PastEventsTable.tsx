@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import { icons } from "@/constants/icons";
 import { radii, spacing, typography } from "@/constants/theme";
-import { Badge } from "@/components/ui/Badge";
 import { type PastEventRow } from "@volleysmart/core";
 
 type Props = {
@@ -95,11 +94,11 @@ export function PastEventsTable({ events, onRowPress }: Props) {
           {/* Score / cancelled / dash */}
           <View style={[styles.colScore, styles.scoreCell]}>
             {e.status === "cancelled" ? (
-              <Badge
-                label={tr("upcoming.cancelled", { defaultValue: "Cancelled" })}
-                variant="danger"
-                style={styles.centerBadge}
-              />
+              <View style={styles.cancelledPill}>
+                <Text style={styles.cancelledText} numberOfLines={1}>
+                  {tr("upcoming.cancelled", { defaultValue: "Cancelled" })}
+                </Text>
+              </View>
             ) : e.has_score ? (
               <Text style={[styles.scoreText, { color: t.text }]}>
                 {e.team_a_wins} – {e.team_b_wins}
@@ -147,9 +146,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   colMain: { flex: 1, minWidth: 0 },
-  colScore: { width: 72 },
+  colScore: { width: 76 },
   colView: { width: 56 },
   scoreCell: { alignItems: "center" },
+  cancelledPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radii.sm,
+    backgroundColor: "#fee2e2", // red-100
+  },
+  cancelledText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#dc2626", // red-600
+  },
   viewCell: {
     flexDirection: "row",
     alignItems: "center",
@@ -158,7 +168,6 @@ const styles = StyleSheet.create({
   },
   centerText: { textAlign: "center" },
   rightText: { textAlign: "right" },
-  centerBadge: { alignSelf: "center" },
   dateText: { ...typography.caption },
   titleText: { ...typography.bodySm, fontWeight: "600" },
   scoreText: { fontSize: 16, fontWeight: "600", letterSpacing: 1 },

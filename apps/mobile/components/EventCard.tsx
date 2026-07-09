@@ -298,6 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     borderWidth: 1,
     overflow: "hidden",
+    alignSelf: "stretch", // fill the card's full height
   },
   dateBadgeHeader: {
     paddingVertical: 2, // py-0.5
@@ -310,8 +311,10 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   dateBadgeBody: {
+    flex: 1, // stretch the day/weekday body to fill remaining height
     paddingVertical: 4, // py-1
     alignItems: "center",
+    justifyContent: "center",
   },
   dateDay: { fontSize: 20, fontWeight: "700", lineHeight: 22 },
   dateWeekday: { fontSize: 10 },
