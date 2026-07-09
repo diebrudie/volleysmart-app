@@ -39,6 +39,10 @@ export default function RootLayout() {
                 <Stack.Screen name="clubs/[id]/invite" />
                 <Stack.Screen name="clubs/create" />
                 <Stack.Screen name="invite/[token]" />
+                <Stack.Screen name="games/[matchDayId]/index" />
+                <Stack.Screen name="games/[matchDayId]/live-score" />
+                <Stack.Screen name="games/[matchDayId]/edit" />
+                <Stack.Screen name="games/new" />
               </Stack>
               <RealtimeEffects />
               <ToastHost />
