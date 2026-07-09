@@ -48,13 +48,21 @@ export function LastGameCard({ game, loading }: Props) {
   const winnerColor =
     game?.winner === "A" ? theme.destructive : theme.success;
 
+  // Native has no game screen (web only). If the game is linked to an event,
+  // open the event detail (it shows the "view game in web app" hint row);
+  // otherwise the card is inert and shows the web-only hint instead.
+  const canOpenEvent = !!game?.eventId;
+
   return (
     <Pressable
       onPress={() =>
-        game && router.push(`/game/${game.matchDayId}` as never)
+        game?.eventId && router.push(`/events/${game.eventId}`)
       }
-      disabled={!game}
-      style={({ pressed }) => [frame, pressed && game && { opacity: 0.8 }]}
+      disabled={!canOpenEvent}
+      style={({ pressed }) => [
+        frame,
+        pressed && canOpenEvent && { opacity: 0.8 },
+      ]}
     >
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
@@ -63,7 +71,7 @@ export function LastGameCard({ game, loading }: Props) {
             {t("home.lastGame", { defaultValue: "Last Game" })}
           </Text>
         </View>
-        {game ? (
+        {canOpenEvent ? (
           <View style={styles.viewRow}>
             <Ionicons name={icons.eye} size={15} color={theme.textSecondary} />
             <Text style={[styles.viewText, { color: theme.textSecondary }]}>
@@ -108,6 +116,15 @@ export function LastGameCard({ game, loading }: Props) {
               {t("home.wins", { defaultValue: "wins" })}
             </Text>
           )}
+          {!canOpenEvent ? (
+            <Text
+              style={[styles.webOnlyHint, { color: theme.mutedForeground }]}
+            >
+              {t("detail.viewGameWebOnly", {
+                defaultValue: "View game in the web app",
+              })}
+            </Text>
+          ) : null}
         </View>
       ) : (
         <View style={styles.emptyBody}>
@@ -153,6 +170,7 @@ const styles = StyleSheet.create({
   score: { fontSize: 34, fontWeight: "700", lineHeight: 38 },
   scoreDash: { fontSize: 22, fontWeight: "700" },
   winnerText: { ...typography.bodySm, fontWeight: "600", marginTop: 2 },
+  webOnlyHint: { ...typography.caption, marginTop: spacing.xs },
   emptyBody: { flex: 1, alignItems: "center", justifyContent: "center" },
   emptyText: { ...typography.bodySm, textAlign: "center" },
 });

@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import type { NotificationType } from "@volleysmart/core";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "@/components/ui/Toast";
 import {
@@ -262,17 +263,11 @@ export default function NotificationSettingsScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: t("preferences.title", {
-            defaultValue: "Notification Preferences",
-          }),
-          headerBackTitle: t("common:button.back", { defaultValue: "Back" }),
-          headerTintColor: theme.primary,
-          headerStyle: { backgroundColor: theme.background },
-          headerTitleStyle: { color: theme.text },
-        }}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader
+        title={t("preferences.title", {
+          defaultValue: "Notification Preferences",
+        })}
       />
       <Screen safeTop={false}>
         {isLoading && !prefs ? (

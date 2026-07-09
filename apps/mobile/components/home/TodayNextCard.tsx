@@ -4,7 +4,7 @@
  * quick-RSVP button added for mobile.
  */
 import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
@@ -113,8 +113,16 @@ export function TodayNextCard({ event, loading }: Props) {
 
   const isAttending = event.currentUserRsvp === "attending";
 
+  // Native has no game screen (web only) — the card and its buttons all lead
+  // to the event detail screen, which shows the "view game in web app" hint.
+  const openEvent = () => router.push(`/events/${event.eventId}`);
+
   return (
-    <View style={frame}>
+    <Pressable
+      onPress={openEvent}
+      accessibilityRole="button"
+      style={({ pressed }) => [...frame, pressed && { opacity: 0.8 }]}
+    >
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <Ionicons name={icons.volleyball} size={18} color={theme.primary} />
@@ -184,24 +192,20 @@ export function TodayNextCard({ event, loading }: Props) {
                   ? "outline"
                   : "primary"
               }
-              onPress={() =>
-                event.matchDayId
-                  ? router.push(`/game/${event.matchDayId}` as never)
-                  : router.push(`/events/${event.eventId}`)
-              }
+              onPress={openEvent}
               style={styles.actionButton}
             />
           ) : (
             <Button
               title={t("home.viewEvent", { defaultValue: "View Event" })}
               variant={!isAttending && playerId ? "outline" : "primary"}
-              onPress={() => router.push(`/events/${event.eventId}`)}
+              onPress={openEvent}
               style={styles.actionButton}
             />
           )}
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

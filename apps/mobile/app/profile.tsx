@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { supabase } from "@/constants/supabase";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { KeyboardAwareScreen } from "@/components/ui/KeyboardAwareScreen";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -19,8 +20,9 @@ import { DeleteAccountDialog } from "@/components/profile/DeleteAccountDialog";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
+import { usePlayerStats } from "@/hooks/usePlayerStats";
 import { queryKeys } from "@/constants/queryKeys";
-import { icons } from "@/constants/icons";
+import { icons, type IoniconsName } from "@/constants/icons";
 import { radii, spacing, typography } from "@/constants/theme";
 
 type TabKey = "profile" | "clubs";
@@ -31,6 +33,7 @@ export default function ProfileScreen() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: player, isLoading: playerLoading } = usePlayerProfile();
+  const { data: playerStats, isLoading: statsLoading } = usePlayerStats();
 
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const [isEditing, setIsEditing] = useState(false);
@@ -55,6 +58,7 @@ export default function ProfileScreen() {
         queryKey: queryKeys.profile.player(user?.id),
       }),
       queryClient.invalidateQueries({ queryKey: queryKeys.profile.clubs(user?.id) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.allStats }),
     ]);
   };
 
@@ -71,15 +75,10 @@ export default function ProfileScreen() {
     });
 
   const screenOptions = (
-    <Stack.Screen
-      options={{
-        headerShown: true,
-        headerTitle: t("pageTitle", { defaultValue: "Profile" }),
-        headerBackTitle: t("common:button.back", { defaultValue: "Back" }),
-        headerTintColor: theme.primary,
-        headerStyle: { backgroundColor: theme.background },
-      }}
-    />
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title={t("pageTitle", { defaultValue: "Profile" })} />
+    </>
   );
 
   if (playerLoading) {
@@ -215,7 +214,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Tabs (web also has Analytics — deferred on mobile) */}
+        {/* Tabs (web's Analytics tab content lives in the Profile tab below) */}
         <SegmentedTabs
           segments={[
             {
@@ -322,6 +321,153 @@ export default function ProfileScreen() {
               </Card>
             )}
 
+            {/* Stats (mirrors the web Analytics tab, all-time, all clubs) */}
+            <Card>
+              <View style={styles.statsHeaderRow}>
+                <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
+                  {t("tabs.analytics", { defaultValue: "Analytics" })}
+                </Text>
+                <Text style={[styles.statsScope, { color: theme.textSecondary }]}>
+                  {t("analytics.allTime", { defaultValue: "All time" })}
+                </Text>
+              </View>
+              {statsLoading ? (
+                <View style={styles.statsLoading}>
+                  <Spinner />
+                </View>
+              ) : playerStats && playerStats.gamesPlayed > 0 ? (
+                <>
+                  <View style={styles.statsGrid}>
+                    <StatTile
+                      icon={icons.swords}
+                      iconColor={theme.primary}
+                      value={String(playerStats.gamesPlayed)}
+                      label={t("analytics.gamesPlayed", {
+                        defaultValue: "Games Played",
+                      })}
+                    />
+                    <StatTile
+                      icon={icons.trendingUp}
+                      iconColor={theme.success}
+                      value={`${playerStats.winRate}%`}
+                      label={t("analytics.setWinRate", {
+                        defaultValue: "Set Win Rate",
+                      })}
+                    />
+                    <StatTile
+                      icon={icons.trophy}
+                      iconColor={theme.warning}
+                      value={playerStats.matchDaysWon}
+                      valueSuffix={`/${
+                        playerStats.matchDaysWon +
+                        playerStats.matchDaysLost +
+                        playerStats.matchDaysTied
+                      }`}
+                      label={t("analytics.gamesWon", {
+                        defaultValue: "Games Won",
+                      })}
+                    />
+                    <StatTile
+                      icon={icons.clock}
+                      iconColor={theme.accent}
+                      value={String(playerStats.totalHours)}
+                      label={t("analytics.hoursPlayed", {
+                        defaultValue: "Hours Played",
+                      })}
+                    />
+                  </View>
+
+                  {/* Set record W/L bar */}
+                  {playerStats.setsWon +
+                    playerStats.setsLost +
+                    playerStats.setsTied >
+                  0 ? (
+                    <View style={styles.setRecordBlock}>
+                      <Text
+                        style={[
+                          styles.cardLabel,
+                          { color: theme.textSecondary },
+                        ]}
+                      >
+                        {t("analytics.setRecord", {
+                          defaultValue: "Set Record",
+                        })}
+                      </Text>
+                      <View style={styles.setRecordLabels}>
+                        <Text
+                          style={[styles.setRecordText, { color: theme.success }]}
+                        >
+                          {playerStats.setsWon}W
+                        </Text>
+                        <Text
+                          style={[
+                            styles.setRecordText,
+                            { color: theme.destructive },
+                          ]}
+                        >
+                          {playerStats.setsLost}L
+                        </Text>
+                        {playerStats.setsTied > 0 ? (
+                          <Text
+                            style={[
+                              styles.setRecordText,
+                              { color: theme.textSecondary },
+                            ]}
+                          >
+                            {playerStats.setsTied}T
+                          </Text>
+                        ) : null}
+                      </View>
+                      <View
+                        style={[
+                          styles.setRecordTrack,
+                          { backgroundColor: theme.muted },
+                        ]}
+                      >
+                        <View
+                          style={{
+                            flex: playerStats.setsWon,
+                            backgroundColor: theme.success,
+                          }}
+                        />
+                        <View
+                          style={{
+                            flex: playerStats.setsLost,
+                            backgroundColor: theme.destructive,
+                          }}
+                        />
+                        {playerStats.setsTied > 0 ? (
+                          <View style={{ flex: playerStats.setsTied }} />
+                        ) : null}
+                      </View>
+                    </View>
+                  ) : null}
+                </>
+              ) : (
+                <View style={styles.statsEmpty}>
+                  <Ionicons
+                    name={icons.swords}
+                    size={28}
+                    color={theme.mutedForeground}
+                  />
+                  <Text
+                    style={[styles.statsEmptyText, { color: theme.textSecondary }]}
+                  >
+                    {t("analytics.noGames", {
+                      defaultValue: "No games played yet",
+                    })}
+                  </Text>
+                  <Text
+                    style={[styles.statsEmptyHint, { color: theme.textSecondary }]}
+                  >
+                    {t("analytics.noGamesHint", {
+                      defaultValue: "Stats will appear after your first game",
+                    })}
+                  </Text>
+                </View>
+              )}
+            </Card>
+
             {/* Account section */}
             <View style={styles.accountSection}>
               <Text
@@ -366,6 +512,47 @@ export default function ProfileScreen() {
         imageUrl={player?.image_url}
       />
     </>
+  );
+}
+
+/** One tile of the 2x2 all-time stats grid (mirrors the web Analytics grid). */
+function StatTile({
+  icon,
+  iconColor,
+  value,
+  valueSuffix,
+  label,
+}: {
+  icon: IoniconsName;
+  iconColor: string;
+  value: string | number;
+  valueSuffix?: string;
+  label: string;
+}) {
+  const theme = useTheme();
+  return (
+    <View
+      style={[
+        styles.statTile,
+        { borderColor: theme.cardBorder, backgroundColor: theme.card },
+      ]}
+    >
+      <Ionicons name={icon} size={18} color={iconColor} />
+      <Text style={[styles.statValue, { color: theme.text }]}>
+        {value}
+        {valueSuffix ? (
+          <Text style={[styles.statValueSuffix, { color: theme.textSecondary }]}>
+            {valueSuffix}
+          </Text>
+        ) : null}
+      </Text>
+      <Text
+        style={[styles.statLabel, { color: theme.textSecondary }]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </View>
   );
 }
 
@@ -446,4 +633,51 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   deleteText: { ...typography.bodySm, fontWeight: "500" },
+  // Stats section
+  statsHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  statsScope: { ...typography.caption },
+  statsLoading: { paddingVertical: spacing.xl, alignItems: "center" },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  statTile: {
+    flexBasis: "47%",
+    flexGrow: 1,
+    borderWidth: 1,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  statValue: { fontSize: 22, fontWeight: "700", lineHeight: 26 },
+  statValueSuffix: { ...typography.bodySm, fontWeight: "400" },
+  statLabel: { ...typography.caption },
+  setRecordBlock: { marginTop: spacing.lg },
+  setRecordLabels: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.xs + 2,
+  },
+  setRecordText: { ...typography.bodySm, fontWeight: "600" },
+  setRecordTrack: {
+    height: 8,
+    borderRadius: radii.full,
+    overflow: "hidden",
+    flexDirection: "row",
+  },
+  statsEmpty: {
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.lg,
+  },
+  statsEmptyText: { ...typography.bodySm, fontWeight: "500" },
+  statsEmptyHint: { ...typography.caption },
 });

@@ -1,4 +1,9 @@
-import { type PropsWithChildren, useCallback, useState } from "react";
+import {
+  type PropsWithChildren,
+  type Ref,
+  useCallback,
+  useState,
+} from "react";
 import {
   ScrollView,
   RefreshControl,
@@ -16,6 +21,8 @@ type Props = PropsWithChildren<{
   contentStyle?: ViewStyle;
   padded?: boolean;
   safeTop?: boolean;
+  /** Ref to the underlying ScrollView (only when scroll is true). */
+  scrollRef?: Ref<ScrollView>;
 }>;
 
 export function Screen({
@@ -26,6 +33,7 @@ export function Screen({
   contentStyle,
   padded = true,
   safeTop = true,
+  scrollRef,
 }: Props) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -66,6 +74,7 @@ export function Screen({
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={[styles.base, { backgroundColor: t.background }, style]}
       contentContainerStyle={[
         {

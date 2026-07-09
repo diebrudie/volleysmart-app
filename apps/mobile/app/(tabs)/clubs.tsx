@@ -1,20 +1,28 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import { getClubMemberCount } from "@volleysmart/core";
+import {
+  getClubMemberCount,
+  getSupabaseClient,
+  type MemberClubWithDetails,
+} from "@volleysmart/core";
 import { Screen } from "@/components/ui/Screen";
 import { Spinner } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
+import { Sheet } from "@/components/ui/Sheet";
+import { Dialog } from "@/components/ui/Dialog";
+import { toast } from "@/components/ui/Toast";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserClubs } from "@/hooks/useUserClubs";
 import { usePendingClubRequests } from "@/hooks/useDiscoverClubs";
 import { ClubCard } from "@/components/ClubCard";
+import { ClubSettingsSheet } from "@/components/clubs/ClubSettingsSheet";
 import { DiscoverClubsSection } from "@/components/clubs/DiscoverClubsSection";
 import { queryKeys } from "@/constants/queryKeys";
 import { spacing, radii, typography, palette } from "@/constants/theme";
@@ -28,6 +36,15 @@ export default function ClubsScreen() {
   const { user } = useAuth();
   const { data: clubs, isLoading } = useUserClubs();
   const { data: pendingRequests = [] } = usePendingClubRequests();
+
+  // Three-dots menu state (web Clubs.tsx admin popover: edit / delete).
+  const [menuClub, setMenuClub] = useState<MemberClubWithDetails | null>(null);
+  const [selectedClub, setSelectedClub] =
+    useState<MemberClubWithDetails | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [clubToDelete, setClubToDelete] =
+    useState<MemberClubWithDetails | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Member count per club (SECURITY DEFINER RPC), cached per club id.
   const memberCountQueries = useQueries({
@@ -54,6 +71,69 @@ export default function ClubsScreen() {
   }, [queryClient, user?.id]);
 
   const handleCreateClub = () => router.push("/clubs/create");
+
+  // Admin check mirrors web Clubs.tsx isClubAdmin (role or creator).
+  const isClubAdmin = (club: MemberClubWithDetails) =>
+    club.role === "admin" || club.clubs?.created_by === user?.id;
+
+  const handleEditClub = () => {
+    if (!menuClub) return;
+    setSelectedClub(menuClub);
+    setMenuClub(null); // close the menu before the settings sheet opens
+    setSettingsOpen(true);
+  };
+
+  const handleDeleteClub = () => {
+    if (!menuClub) return;
+    setClubToDelete(menuClub);
+    setMenuClub(null); // close the menu before the confirm dialog opens
+  };
+
+  // Soft-delete (status="deleted"), mirroring web Clubs.tsx handleConfirmDelete.
+  const handleConfirmDelete = async () => {
+    if (!clubToDelete) return;
+    setDeleting(true);
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from("clubs")
+        .update({ status: "deleted" })
+        .eq("id", clubToDelete.club_id)
+        .select("id");
+      if (error) throw error;
+      if (!data?.length) {
+        // RLS silently blocked the update (no error, no rows).
+        toast(
+          t("toast.permissionError", {
+            defaultValue: "You don't have permission to remove this club.",
+          }),
+          "error"
+        );
+        return;
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allMine }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.clubs.allDiscover,
+        }),
+      ]);
+      toast(
+        t("toast.removedDescription", {
+          defaultValue: "The club is now removed from all members.",
+        })
+      );
+    } catch {
+      toast(
+        t("toast.genericError", {
+          defaultValue: "Failed to remove the club.",
+        }),
+        "error"
+      );
+    } finally {
+      setDeleting(false);
+      setClubToDelete(null);
+    }
+  };
 
   if (isLoading && !clubs) {
     return (
@@ -97,6 +177,9 @@ export default function ClubsScreen() {
               club={club}
               memberCount={memberCounts.get(club.club_id)}
               onPress={() => router.push(`/clubs/${club.club_id}`)}
+              onMenuPress={
+                isClubAdmin(club) ? () => setMenuClub(club) : undefined
+              }
             />
           ))}
         </View>
@@ -154,6 +237,78 @@ export default function ClubsScreen() {
       <View style={styles.discoverSpacing}>
         <DiscoverClubsSection />
       </View>
+
+      {/* Club actions menu (admin three-dots; web Clubs.tsx popover) */}
+      <Sheet
+        visible={menuClub !== null}
+        onClose={() => setMenuClub(null)}
+        title={menuClub?.clubs?.name}
+      >
+        <Pressable
+          onPress={handleEditClub}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.menuRow,
+            { borderBottomColor: theme.border },
+            pressed && { backgroundColor: theme.surface },
+          ]}
+        >
+          <Ionicons name={icons.pencil} size={18} color={theme.text} />
+          <Text style={[styles.menuRowText, { color: theme.text }]}>
+            {t("editClub", { defaultValue: "Edit Club" })}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={handleDeleteClub}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.menuRow,
+            styles.menuRowLast,
+            pressed && { backgroundColor: theme.surface },
+          ]}
+        >
+          <Ionicons name={icons.trash2} size={18} color={theme.destructive} />
+          <Text style={[styles.menuRowText, { color: theme.destructive }]}>
+            {t("deleteClub", { defaultValue: "Delete Club" })}
+          </Text>
+        </Pressable>
+      </Sheet>
+
+      {/* Edit club (same settings sheet the club overview uses) */}
+      {selectedClub?.clubs ? (
+        <ClubSettingsSheet
+          visible={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          club={{
+            id: selectedClub.clubs.id,
+            name: selectedClub.clubs.name,
+            description: selectedClub.clubs.description ?? null,
+            image_url: selectedClub.clubs.image_url,
+            city: selectedClub.clubs.city ?? null,
+            country: selectedClub.clubs.country ?? null,
+            country_code: selectedClub.clubs.country_code ?? null,
+            is_club_discoverable: !!selectedClub.clubs.is_club_discoverable,
+            created_by: selectedClub.clubs.created_by,
+          }}
+        />
+      ) : null}
+
+      {/* Delete confirmation (web Clubs.tsx AlertDialog) */}
+      <Dialog
+        visible={clubToDelete !== null}
+        onClose={() => setClubToDelete(null)}
+        title={t("deleteDialog.title", { defaultValue: "Are you sure?" })}
+        message={t("deleteDialog.description", {
+          name: clubToDelete?.clubs?.name ?? "",
+          defaultValue:
+            'This action cannot be undone. This will permanently delete the club "{{name}}" and remove the club from everyone\'s view.',
+        })}
+        confirmLabel={t("deleteClub", { defaultValue: "Delete Club" })}
+        cancelLabel={t("deleteDialog.cancel", { defaultValue: "Cancel" })}
+        destructive
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+      />
     </Screen>
   );
 }
@@ -193,4 +348,13 @@ const styles = StyleSheet.create({
   pendingName: { ...typography.bodySm, fontWeight: "600" },
   pendingCity: { ...typography.caption },
   discoverSpacing: { marginTop: spacing.xxl },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  menuRowLast: { borderBottomWidth: 0, marginBottom: spacing.md },
+  menuRowText: { ...typography.body, fontWeight: "500" },
 });

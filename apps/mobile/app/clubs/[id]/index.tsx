@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { Image } from "expo-image";
+import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,6 +35,8 @@ import { EventCard } from "@/components/EventCard";
 import { ClubStatsTab } from "@/components/clubs/ClubStatsTab";
 import { ClubSettingsSheet } from "@/components/clubs/ClubSettingsSheet";
 import { GuestsSheet } from "@/components/clubs/GuestsSheet";
+import { InviteSheet } from "@/components/clubs/InviteSheet";
+import { LocationsSheet } from "@/components/clubs/LocationsSheet";
 import { MemberManageBar } from "@/components/clubs/MemberManageBar";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
@@ -97,7 +101,13 @@ export default function ClubDetailScreen() {
   const [leaving, setLeaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [guestsOpen, setGuestsOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [locationsOpen, setLocationsOpen] = useState(false);
   const [joinStatus, setJoinStatus] = useState<JoinRequestResult | null>(null);
+
+  // "Members" action scrolls down to the members list (PWA parity).
+  const scrollRef = useRef<ScrollView>(null);
+  const membersSectionY = useRef(0);
 
   // Club details — direct query so non-members (discovery) can view too.
   const { data: club, isLoading: clubLoading } = useQuery<ClubDetails>({
@@ -159,6 +169,42 @@ export default function ClubDetailScreen() {
       queryClient.invalidateQueries({ queryKey: queryKeys.clubs.pendingRequestsCount(id) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allMine }),
     ]);
+  };
+
+  const handleScrollToMembers = () => {
+    setActiveTab("members");
+    // Wait a frame so the members tab content is laid out before scrolling.
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({
+        y: Math.max(membersSectionY.current - spacing.md, 0),
+        animated: true,
+      });
+    });
+  };
+
+  const handleShareClub = async () => {
+    const clubUrl = `https://volleysmart.app/clubs/${id}`;
+    try {
+      await Share.share({ message: clubUrl, url: clubUrl });
+    } catch {
+      // Native share unavailable (e.g. Expo web without navigator.share) →
+      // fall back to the clipboard; that too can be blocked, so guard it.
+      try {
+        await Clipboard.setStringAsync(clubUrl);
+        toast(
+          t("overview.toasts.clubLinkCopied", {
+            defaultValue: "Club link copied",
+          })
+        );
+      } catch {
+        toast(
+          t("overview.toasts.shareError", {
+            defaultValue: "Couldn't share the club link.",
+          }),
+          "error"
+        );
+      }
+    }
   };
 
   const handleJoin = () => {
@@ -282,7 +328,12 @@ export default function ClubDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <Screen padded={false} safeTop={false} onRefresh={handleRefresh}>
+      <Screen
+        padded={false}
+        safeTop={false}
+        onRefresh={handleRefresh}
+        scrollRef={scrollRef}
+      >
         {/* Hero */}
         <View style={styles.hero}>
           {club.image_url ? (
@@ -410,14 +461,14 @@ export default function ClubDetailScreen() {
               <ActionCircle
                 icon={icons.userPlus}
                 label={t("overview.actions.invite", { defaultValue: "Invite" })}
-                onPress={() => router.push(`/clubs/${id}/invite`)}
+                onPress={() => setInviteOpen(true)}
               />
               <ActionCircle
                 icon={icons.users}
                 label={t("overview.actions.members", {
                   defaultValue: "Members",
                 })}
-                onPress={() => setActiveTab("members")}
+                onPress={handleScrollToMembers}
               />
               {isAdmin ? (
                 <ActionCircle
@@ -428,10 +479,24 @@ export default function ClubDetailScreen() {
                   onPress={() => setGuestsOpen(true)}
                 />
               ) : null}
+              {isAdmin ? (
+                <ActionCircle
+                  icon={icons.mapPin}
+                  label={t("overview.actions.locations", {
+                    defaultValue: "Locations",
+                  })}
+                  onPress={() => setLocationsOpen(true)}
+                />
+              ) : null}
               <ActionCircle
                 icon={icons.barChart}
                 label={t("overview.actions.stats", { defaultValue: "Stats" })}
                 onPress={() => setActiveTab("stats")}
+              />
+              <ActionCircle
+                icon={icons.share2}
+                label={t("overview.actions.share", { defaultValue: "Share" })}
+                onPress={handleShareClub}
               />
               {!isAdmin ? (
                 <ActionCircle
@@ -621,7 +686,12 @@ export default function ClubDetailScreen() {
 
         {/* Members / Stats tabs — members only */}
         {isMember ? (
-          <View style={styles.section}>
+          <View
+            style={styles.section}
+            onLayout={(e) => {
+              membersSectionY.current = e.nativeEvent.layout.y;
+            }}
+          >
             <SegmentedTabs
               segments={[
                 {
@@ -767,12 +837,31 @@ export default function ClubDetailScreen() {
         onConfirm={handleLeave}
       />
 
+      {/* Invite member sheet (members) */}
+      {isMember ? (
+        <InviteSheet
+          clubId={club.id}
+          clubName={club.name}
+          visible={inviteOpen}
+          onClose={() => setInviteOpen(false)}
+        />
+      ) : null}
+
       {/* Guests sheet (admin) */}
       {isAdmin ? (
         <GuestsSheet
           clubId={club.id}
           visible={guestsOpen}
           onClose={() => setGuestsOpen(false)}
+        />
+      ) : null}
+
+      {/* Saved locations sheet (admin) */}
+      {isAdmin ? (
+        <LocationsSheet
+          clubId={club.id}
+          visible={locationsOpen}
+          onClose={() => setLocationsOpen(false)}
         />
       ) : null}
 

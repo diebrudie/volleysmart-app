@@ -12,14 +12,21 @@ type Props = {
   /** Active member count (fetched by the screen; hidden when undefined). */
   memberCount?: number;
   onPress?: () => void;
+  /**
+   * Opens the club actions menu (edit/delete). Only pass for club
+   * admins — the three-dots button is hidden when undefined,
+   * mirroring the web Clubs.tsx admin-only popover.
+   */
+  onMenuPress?: () => void;
 };
 
 /**
  * "Your Clubs" card, mirroring apps/web/src/pages/Clubs.tsx:
  * 16:10 image banner (initial fallback), name + admin badge,
- * "Playing since" date, city row, optional member count.
+ * admin-only three-dots menu, "Playing since" date, city row,
+ * optional member count.
  */
-export function ClubCard({ club, memberCount, onPress }: Props) {
+export function ClubCard({ club, memberCount, onPress, onMenuPress }: Props) {
   const t = useTheme();
   const { t: tr } = useTranslation("clubs");
   const isAdmin = club.role === "admin" || club.role === "editor";
@@ -73,6 +80,26 @@ export function ClubCard({ club, memberCount, onPress }: Props) {
                   : tr("editorBadge", { defaultValue: "Editor" })}
               </Text>
             </View>
+          )}
+          {onMenuPress && (
+            <Pressable
+              onPress={onMenuPress}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={tr("clubMenuAriaLabel", {
+                defaultValue: "Club menu",
+              })}
+              style={({ pressed }) => [
+                styles.menuButton,
+                pressed && { backgroundColor: t.muted },
+              ]}
+            >
+              <Ionicons
+                name={icons.moreVertical}
+                size={16}
+                color={t.mutedForeground}
+              />
+            </Pressable>
           )}
         </View>
 
@@ -155,6 +182,14 @@ const styles = StyleSheet.create({
   roleBadgeText: {
     ...typography.label,
     textTransform: "uppercase",
+  },
+  menuButton: {
+    marginLeft: "auto",
+    height: 28,
+    width: 28,
+    borderRadius: radii.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
   metaRow: {
     flexDirection: "row",

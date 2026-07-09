@@ -9,6 +9,7 @@ import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -28,15 +29,9 @@ export default function DiscoverEventsScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: t("discover.title", { defaultValue: "Public Events" }),
-          headerBackTitle: t("common:back", { defaultValue: "Back" }),
-          headerTintColor: theme.primary,
-          headerStyle: { backgroundColor: theme.background },
-          headerTitleStyle: { color: theme.text },
-        }}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader
+        title={t("discover.title", { defaultValue: "Public Events" })}
       />
       <Screen scroll={false} safeTop={false} padded={false}>
         {isLoading ? (

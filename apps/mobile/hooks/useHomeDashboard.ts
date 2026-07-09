@@ -24,6 +24,8 @@ export type TodayNextEvent = {
 
 export type LastGame = {
   matchDayId: string;
+  /** Linked planned event, if the game was created from one (native has no game screen, so we navigate here). */
+  eventId: string | null;
   title: string;
   clubName: string;
   date: string;
@@ -175,7 +177,7 @@ export function useLastGame() {
           `match_day_id,
            match_days!inner(id, date, club_id, clubs(name),
              matches(team_a_score, team_b_score),
-             planned_events!planned_event_id(title))`
+             planned_events!planned_event_id(id, title))`
         )
         .eq("player_id", playerId)
         .order("match_days(date)", { ascending: false })
@@ -198,7 +200,7 @@ export function useLastGame() {
         }
         if (played === 0) continue;
 
-        const pe = md.planned_events as { title: string } | null;
+        const pe = md.planned_events as { id: string; title: string } | null;
         const title =
           pe?.title ??
           new Date(md.date).toLocaleDateString("en-US", { weekday: "long" }) +
@@ -206,6 +208,7 @@ export function useLastGame() {
 
         return {
           matchDayId: md.id,
+          eventId: pe?.id ?? null,
           title,
           clubName: md.clubs?.name ?? "",
           date: md.date,

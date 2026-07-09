@@ -21,6 +21,7 @@ import { RecurringScopeDialog } from "@/components/events/RecurringScopeDialog";
 import { RsvpActions } from "@/components/RsvpActions";
 import { Dialog } from "@/components/ui/Dialog";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Sheet } from "@/components/ui/Sheet";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "@/components/ui/Toast";
@@ -331,14 +332,9 @@ export default function EventDetailScreen() {
   if (isLoading || !event) {
     return (
       <>
-        <Stack.Screen
-          options={{
-            headerShown: true,
-            headerTitle: "",
-            headerBackTitle: t("back", { defaultValue: "Back" }),
-          }}
-        />
-        <Screen>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScreenHeader title="" />
+        <Screen safeTop={false}>
           <Spinner />
         </Screen>
         {createdDialog}
@@ -365,17 +361,9 @@ export default function EventDetailScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: "",
-          headerBackTitle: t("back", { defaultValue: "Back" }),
-          headerTintColor: theme.primary,
-          headerStyle: { backgroundColor: theme.background },
-          headerRight,
-        }}
-      />
-      <Screen onRefresh={handleRefresh}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title="" right={headerRight()} />
+      <Screen safeTop={false} onRefresh={handleRefresh}>
         {/* Date badge + own RSVP status row (matches web hero row) */}
         <View style={styles.badgeRow}>
           <View style={[styles.dateBadge, { borderColor: theme.cardBorder }]}>

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { toast } from "@/components/ui/Toast";
@@ -110,16 +111,12 @@ export default function InviteTokenScreen() {
     t("invitePage.fallbackClubName", { defaultValue: "Club" });
 
   const header = (
-    <Stack.Screen
-      options={{
-        headerShown: true,
-        headerTitle: t("invitePage.title", { defaultValue: "Club Invitation" }),
-        headerBackTitle: t("common:back", { defaultValue: "Back" }),
-        headerTintColor: theme.primary,
-        headerStyle: { backgroundColor: theme.background },
-        headerTitleStyle: { color: theme.text },
-      }}
-    />
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader
+        title={t("invitePage.title", { defaultValue: "Club Invitation" })}
+      />
+    </>
   );
 
   // ── Loading ──────────────────────────────────────────────────────────

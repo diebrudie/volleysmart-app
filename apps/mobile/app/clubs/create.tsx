@@ -13,6 +13,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { getPublicUrl } from "@volleysmart/core";
 import { KeyboardAwareScreen } from "@/components/ui/KeyboardAwareScreen";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { toast } from "@/components/ui/Toast";
@@ -131,15 +132,9 @@ export default function CreateClubScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: t("newClub.title", { defaultValue: "Create a Club" }),
-          headerBackTitle: t("common:back", { defaultValue: "Back" }),
-          headerTintColor: theme.primary,
-          headerStyle: { backgroundColor: theme.background },
-          headerTitleStyle: { color: theme.text },
-        }}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader
+        title={t("newClub.title", { defaultValue: "Create a Club" })}
       />
       <KeyboardAwareScreen safeTop={false}>
         <View style={styles.form}>

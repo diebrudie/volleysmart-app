@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ManageMemberRow } from "@volleysmart/core";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Spinner } from "@/components/ui/Spinner";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -144,17 +145,11 @@ export default function ManageMembersScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: t("manageRequests.title", {
-            defaultValue: "Manage Requests",
-          }),
-          headerBackTitle: t("common:back", { defaultValue: "Back" }),
-          headerTintColor: theme.primary,
-          headerStyle: { backgroundColor: theme.background },
-          headerTitleStyle: { color: theme.text },
-        }}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader
+        title={t("manageRequests.title", {
+          defaultValue: "Manage Requests",
+        })}
       />
       <Screen safeTop={false} onRefresh={handleRefresh}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>

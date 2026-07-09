@@ -2,26 +2,17 @@ import { View, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useTheme } from "@/hooks/useTheme";
 
 // Stub screen — a builder replaces the body with the FAQ list (Supabase `faqs` table).
 export default function FaqScreen() {
   const { t } = useTranslation("common");
-  const theme = useTheme();
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: t("faq.title", { defaultValue: "FAQ" }),
-          headerBackTitle: t("back", { defaultValue: "Back" }),
-          headerTintColor: theme.primary,
-          headerStyle: { backgroundColor: theme.background },
-          headerTitleStyle: { color: theme.text },
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title={t("faq.title", { defaultValue: "FAQ" })} />
       <Screen scroll={false} safeTop={false}>
         <View style={styles.center}>
           <EmptyState

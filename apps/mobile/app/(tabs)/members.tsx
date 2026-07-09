@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Screen } from "@/components/ui/Screen";
 import { Spinner } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -12,6 +13,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { MemberRow } from "@/components/MemberRow";
+import { MemberCard } from "@/components/MemberCard";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -22,7 +24,12 @@ import {
 import { usePendingRequestsTotal } from "@/hooks/useManageMembers";
 import { queryKeys } from "@/constants/queryKeys";
 import { icons } from "@/constants/icons";
-import { radii, spacing, typography } from "@/constants/theme";
+import { palette, radii, spacing, typography } from "@/constants/theme";
+
+type ViewMode = "grid" | "list";
+
+/** Same key the PWA uses in localStorage (MembersGlobal.tsx). */
+const VIEW_MODE_KEY = "members-view-mode";
 
 export default function MembersScreen() {
   const { t } = useTranslation("clubs");
@@ -40,10 +47,25 @@ export default function MembersScreen() {
   const { data: totalPending = 0 } = usePendingRequestsTotal(adminClubIds);
 
   const [search, setSearch] = useState("");
+  // Grid is the PWA default; persisted choice is restored on mount.
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortAsc, setSortAsc] = useState(true);
   const [filterClub, setFilterClub] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isClubPickerOpen, setIsClubPickerOpen] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(VIEW_MODE_KEY)
+      .then((stored) => {
+        if (stored === "grid" || stored === "list") setViewMode(stored);
+      })
+      .catch(() => {});
+  }, []);
+
+  const changeViewMode = (mode: ViewMode) => {
+    setViewMode(mode);
+    AsyncStorage.setItem(VIEW_MODE_KEY, mode).catch(() => {});
+  };
 
   // All clubs represented in the aggregate (for the filter sheet).
   const clubs = useMemo(() => {
@@ -98,8 +120,8 @@ export default function MembersScreen() {
     });
   }, [queryClient, user?.id]);
 
-  // ── Row helpers ────────────────────────────────────────────────────────
-  const rowFor = (m: GlobalMember) => {
+  // ── Item helpers ───────────────────────────────────────────────────────
+  const displayFor = (m: GlobalMember) => {
     const rawPosition = m.player_positions?.find((p) => p.is_primary)
       ?.positions.name;
     const position = rawPosition
@@ -108,9 +130,17 @@ export default function MembersScreen() {
     const lastInitial = m.last_name
       ? ` ${m.last_name.charAt(0).toUpperCase()}.`
       : "";
-    const clubNames = m.clubs.map((c) => c.name).join(" · ");
-    const isYou = m.user_id === user?.id;
-    const adminSomewhere = m.clubs.some((c) => c.role === "admin");
+    return {
+      name: `${m.first_name}${lastInitial}`,
+      position,
+      clubNames: m.clubs.map((c) => c.name).join(" · "),
+      isYou: m.user_id === user?.id,
+      adminSomewhere: m.clubs.some((c) => c.role === "admin"),
+    };
+  };
+
+  const rowFor = (m: GlobalMember) => {
+    const { name, position, clubNames, isYou, adminSomewhere } = displayFor(m);
 
     return (
       <View
@@ -118,7 +148,7 @@ export default function MembersScreen() {
         style={[styles.rowWrap, { borderBottomColor: theme.border }]}
       >
         <MemberRow
-          name={`${m.first_name}${lastInitial}`}
+          name={name}
           imageUrl={m.image_url}
           subtitle={position}
           caption={clubNames}
@@ -131,6 +161,20 @@ export default function MembersScreen() {
           }
         />
       </View>
+    );
+  };
+
+  const cardFor = (m: GlobalMember) => {
+    const { name, position, isYou } = displayFor(m);
+    return (
+      <MemberCard
+        key={m.player_id}
+        name={name}
+        imageUrl={m.image_url}
+        subtitle={position}
+        badgeLabel={isYou ? t("common:you", { defaultValue: "You" }) : null}
+        style={styles.gridItem}
+      />
     );
   };
 
@@ -205,43 +249,85 @@ export default function MembersScreen() {
         style={styles.search}
       />
 
-      {/* Controls row: sort + filter */}
+      {/* Controls row: sort + filter (left), view toggle (right) */}
       <View style={styles.controlsRow}>
-        <Pressable
-          onPress={() => setSortAsc((prev) => !prev)}
-          accessibilityRole="button"
-          accessibilityLabel={
-            sortAsc
-              ? t("members.sortZtoA", { defaultValue: "Sort Z to A" })
-              : t("members.sortAtoZ", { defaultValue: "Sort A to Z" })
-          }
-          style={({ pressed }) => [
-            styles.iconButton,
-            { borderColor: theme.cardBorder },
-            pressed && { backgroundColor: theme.surface },
-          ]}
-        >
-          <Ionicons name={icons.arrowUpDown} size={15} color={theme.textSecondary} />
-        </Pressable>
+        <View style={styles.controlsLeft}>
+          <Pressable
+            onPress={() => setSortAsc((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityLabel={
+              sortAsc
+                ? t("members.sortZtoA", { defaultValue: "Sort Z to A" })
+                : t("members.sortAtoZ", { defaultValue: "Sort A to Z" })
+            }
+            style={({ pressed }) => [
+              styles.iconButton,
+              { borderColor: theme.cardBorder },
+              pressed && { backgroundColor: theme.surface },
+            ]}
+          >
+            <Ionicons name={icons.arrowUpDown} size={15} color={theme.textSecondary} />
+          </Pressable>
 
-        {clubs.length > 1 && (
-          <Chip
-            label={t("members.filter", { defaultValue: "Filter" })}
-            icon="filter"
-            selected={filterClub.size > 0}
-            count={filterClub.size > 0 ? filterClub.size : undefined}
-            onPress={() => setIsFilterOpen(true)}
-          />
-        )}
+          {clubs.length > 1 && (
+            <Chip
+              label={t("members.filter", { defaultValue: "Filter" })}
+              icon="filter"
+              selected={filterClub.size > 0}
+              count={filterClub.size > 0 ? filterClub.size : undefined}
+              onPress={() => setIsFilterOpen(true)}
+            />
+          )}
+        </View>
+
+        {/* View toggle — icons only (web MembersGlobal grid/list buttons) */}
+        <View style={[styles.viewToggle, { borderColor: theme.cardBorder }]}>
+          <Pressable
+            onPress={() => changeViewMode("grid")}
+            accessibilityRole="button"
+            accessibilityLabel={t("members.gridView", {
+              defaultValue: "Grid view",
+            })}
+            style={[
+              styles.viewToggleButton,
+              viewMode === "grid" && { backgroundColor: theme.primary },
+            ]}
+          >
+            <Ionicons
+              name={icons.layoutGrid}
+              size={15}
+              color={viewMode === "grid" ? palette.white : theme.textSecondary}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => changeViewMode("list")}
+            accessibilityRole="button"
+            accessibilityLabel={t("members.listView", {
+              defaultValue: "List view",
+            })}
+            style={[
+              styles.viewToggleButton,
+              viewMode === "list" && { backgroundColor: theme.primary },
+            ]}
+          >
+            <Ionicons
+              name={icons.listChecks}
+              size={15}
+              color={viewMode === "list" ? palette.white : theme.textSecondary}
+            />
+          </Pressable>
+        </View>
       </View>
 
-      {/* Members list */}
+      {/* Members display */}
       {filtered.length === 0 ? (
         <Text style={[styles.noResults, { color: theme.textSecondary }]}>
           {t("members.noResults", {
             defaultValue: "No members match your search.",
           })}
         </Text>
+      ) : viewMode === "grid" ? (
+        <View style={styles.grid}>{filtered.map(cardFor)}</View>
       ) : (
         <View>{filtered.map(rowFor)}</View>
       )}
@@ -359,9 +445,34 @@ const styles = StyleSheet.create({
   controlsRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.sm,
     marginBottom: spacing.lg,
   },
+  controlsLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  viewToggle: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderRadius: radii.md,
+    overflow: "hidden",
+  },
+  viewToggleButton: {
+    height: 30,
+    width: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: spacing.md,
+  },
+  gridItem: { width: "48%" },
   iconButton: {
     height: 32,
     width: 32,

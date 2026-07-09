@@ -68,6 +68,9 @@ export const queryKeys = {
     /** Upcoming public events for a club detail page. */
     publicEvents: (clubId: string | undefined) =>
       ["club-public-events", clubId] as const,
+    /** Saved club locations (mirrors web ["club-locations", clubId]). */
+    locations: (clubId: string | undefined) =>
+      ["club-locations", clubId] as const,
     /** Per-club pending join-request count (mirrors web ["pendingRequestsCount", clubId]). */
     pendingRequestsCount: (clubId: string | undefined) =>
       ["pending-requests-count", clubId] as const,
@@ -118,6 +121,8 @@ export const queryKeys = {
       ["current-player-id", userId] as const,
     stats: (playerId: string | undefined, clubId?: string) =>
       ["player-stats", playerId, clubId] as const,
+    /** Prefix for invalidating all player-stats queries. */
+    allStats: ["player-stats"] as const,
     /** Clubs list on the profile "My Clubs" tab. */
     clubs: (userId: string | undefined) => ["profile-clubs", userId] as const,
     /** Public profile of an event's creator (HostedBy). */

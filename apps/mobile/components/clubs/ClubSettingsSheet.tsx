@@ -4,21 +4,24 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { getSupabaseClient } from "@volleysmart/core";
 import { useTheme } from "@/hooks/useTheme";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { Sheet } from "@/components/ui/Sheet";
-import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { toast } from "@/components/ui/Toast";
+import {
+  CityPicker,
+  type CityLocationValue,
+} from "@/components/clubs/CityPicker";
 import { queryKeys } from "@/constants/queryKeys";
 import { icons } from "@/constants/icons";
 import { radii, spacing, typography } from "@/constants/theme";
@@ -39,29 +42,28 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   club: ClubSettingsClub;
-  /** Current user id — delete is offered to the creator/admin opening this sheet. */
-  currentUserId?: string;
 };
 
 const DESCRIPTION_MAX = 200;
 
 /**
- * Admin club settings bottom sheet. Mirrors apps/web
- * ClubSettingsDialog: name, description (200 chars), image upload,
- * manual city/country/code, discoverable toggle, save. Adds the
- * delete-club flow from apps/web Profile.tsx (sole member only,
- * soft-delete status="deleted").
+ * Admin club settings bottom sheet. Mirrors apps/web ClubSettingsDialog:
+ * name, description (200 chars), photo picking (useMediaUpload), a
+ * city-only Mapbox picker (CityPicker; country/country-code are captured
+ * from the selection, never typed), discoverable toggle, save.
+ *
+ * Deliberately NO delete-club here — deleting lives on the Clubs page
+ * card three-dots menu.
  */
 export function ClubSettingsSheet({ visible, onClose, club }: Props) {
   const t = useTheme();
   const { t: tr } = useTranslation("clubs");
-  const { t: trProfile } = useTranslation("profile");
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { pickAndUpload, uploading } = useMediaUpload();
 
   const [name, setName] = useState(club.name);
   const [description, setDescription] = useState(club.description ?? "");
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(club.image_url);
   const [city, setCity] = useState(club.city ?? "");
   const [country, setCountry] = useState(club.country ?? "");
@@ -72,8 +74,6 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
     !!club.is_club_discoverable
   );
   const [saving, setSaving] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   // Re-sync form state from the club each time the sheet opens.
   useEffect(() => {
@@ -114,6 +114,20 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
         "error"
       );
     }
+  };
+
+  const handleCityTyping = (text: string) => {
+    // Free typing invalidates the previous selection (mirrors web
+    // CityLocationSelector onTextChange).
+    setCity(text);
+    setCountry("");
+    setCountryCode("");
+  };
+
+  const handleCitySelect = (val: CityLocationValue) => {
+    setCity(val.city);
+    setCountry(val.country);
+    setCountryCode(val.countryCode.toUpperCase());
   };
 
   const handleSave = async () => {
@@ -167,96 +181,75 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
     }
   };
 
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      const supabase = getSupabaseClient();
-      // Mirror web Profile.tsx: only a sole member may delete the club.
-      const { count } = await supabase
-        .from("club_members")
-        .select("id", { count: "exact", head: true })
-        .eq("club_id", club.id)
-        .eq("is_active", true)
-        .eq("status", "active");
-      if ((count ?? 0) > 1) {
-        toast(
-          trProfile("leaveClub.cantDeleteClubDescription", {
-            defaultValue:
-              "Remove all other members before deleting this club.",
-          }),
-          "error"
-        );
-        return;
-      }
-      const { error } = await supabase
-        .from("clubs")
-        .update({ status: "deleted" })
-        .eq("id", club.id);
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allMine });
-      toast(
-        trProfile("leaveClub.clubDeleted", { defaultValue: "Club deleted" })
-      );
-      setDeleteOpen(false);
-      onClose();
-      router.replace("/(tabs)/clubs");
-    } catch {
-      toast(
-        tr("settings.toastErrorDescription", {
-          defaultValue: "Failed to update club",
-        }),
-        "error"
-      );
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   return (
-    <>
-      <Sheet
-        visible={visible && !deleteOpen}
-        onClose={onClose}
-        title={tr("settings.title", { defaultValue: "Club Settings" })}
-        snapToContent={false}
-      >
-        <View style={styles.form}>
-          <Input
-            label={tr("settings.clubName", { defaultValue: "Club Name" })}
-            value={name}
-            onChangeText={setName}
-            placeholder={tr("settings.clubNamePlaceholder", {
-              defaultValue: "Enter club name",
-            })}
-          />
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title={tr("settings.title", { defaultValue: "Club Settings" })}
+      snapToContent={false}
+    >
+      <View style={styles.form}>
+        <Input
+          label={tr("settings.clubName", { defaultValue: "Club Name" })}
+          value={name}
+          onChangeText={setName}
+          placeholder={tr("settings.clubNamePlaceholder", {
+            defaultValue: "Enter club name",
+          })}
+        />
 
-          <View>
-            <Input
-              label={tr("settings.description", {
-                defaultValue: "Description / Notes (optional)",
-              })}
+        {/* Description — own multiline block (the shared Input row is
+            fixed-height and makes a tall TextInput overlap siblings). */}
+        <View style={styles.descriptionBlock}>
+          <Text style={[styles.label, { color: t.textSecondary }]}>
+            {tr("settings.description", {
+              defaultValue: "Description / Notes (optional)",
+            })}
+          </Text>
+          <View
+            style={[
+              styles.textareaWrap,
+              {
+                backgroundColor: t.inputBackground,
+                borderColor: descriptionFocused ? t.primary : t.inputBorder,
+              },
+            ]}
+          >
+            <TextInput
               value={description}
               onChangeText={(text) => {
                 if (text.length <= DESCRIPTION_MAX) setDescription(text);
               }}
+              onFocus={() => setDescriptionFocused(true)}
+              onBlur={() => setDescriptionFocused(false)}
               placeholder={tr("settings.descriptionPlaceholder", {
                 defaultValue: "Tell people about your club…",
               })}
+              placeholderTextColor={t.placeholder}
               multiline
-              numberOfLines={3}
-              style={styles.multiline}
+              textAlignVertical="top"
+              style={[styles.textarea, { color: t.text }]}
             />
-            <Text style={[styles.counter, { color: t.mutedForeground }]}>
-              {description.length}/{DESCRIPTION_MAX}
-            </Text>
           </View>
+          <Text style={[styles.counter, { color: t.mutedForeground }]}>
+            {description.length}/{DESCRIPTION_MAX}
+          </Text>
+        </View>
 
-          {/* Club image */}
-          <View style={styles.imageSection}>
-            <Text style={[styles.label, { color: t.textSecondary }]}>
-              {tr("settings.clubImage", { defaultValue: "Club Image" })}
-            </Text>
-            <View style={styles.imageRow}>
+        {/* Club image */}
+        <View style={styles.imageSection}>
+          <Text style={[styles.label, { color: t.textSecondary }]}>
+            {tr("settings.clubImage", { defaultValue: "Club Image" })}
+          </Text>
+          <View style={styles.imageRow}>
+            <Pressable
+              onPress={handlePickImage}
+              disabled={uploading}
+              accessibilityRole="button"
+              accessibilityLabel={tr("settings.uploadPhoto", {
+                defaultValue: "Pick a photo",
+              })}
+            >
               {imageUrl ? (
                 <Image
                   source={{ uri: imageUrl }}
@@ -271,178 +264,123 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
                   ]}
                 >
                   <Ionicons
-                    name={icons.image}
+                    name={icons.camera}
                     size={22}
                     color={t.mutedForeground}
                   />
                 </View>
               )}
-              <View style={styles.imageActions}>
-                <Button
-                  title={
-                    imageUrl
-                      ? tr("settings.changePhoto", {
-                          defaultValue: "Change Photo",
-                        })
-                      : tr("settings.uploadPhoto", {
-                          defaultValue: "Upload Photo",
-                        })
-                  }
-                  variant="outline"
-                  loading={uploading}
-                  onPress={handlePickImage}
-                />
-                {imageUrl ? (
-                  <Pressable
-                    onPress={() => setImageUrl(null)}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                  >
-                    <Text style={[styles.removeImage, { color: t.danger }]}>
-                      {tr("newClub.removeImage", {
-                        defaultValue: "Remove image",
-                      })}
-                    </Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
-          </View>
-
-          {/* Location (manual entry — no Mapbox on mobile) */}
-          <Input
-            label={tr("settings.manualCity", { defaultValue: "City" })}
-            value={city}
-            onChangeText={setCity}
-            placeholder={tr("settings.manualCityPlaceholder", {
-              defaultValue: "e.g., Berlin",
-            })}
-          />
-          <View style={styles.countryRow}>
-            <View style={styles.countryField}>
-              <Input
-                label={tr("settings.manualCountry", {
-                  defaultValue: "Country",
-                })}
-                value={country}
-                onChangeText={setCountry}
-                placeholder={tr("settings.manualCountryPlaceholder", {
-                  defaultValue: "e.g., Germany",
-                })}
-              />
-            </View>
-            <View style={styles.codeField}>
-              <Input
-                label={tr("settings.manualCountryCode", {
-                  defaultValue: "Country code",
-                })}
-                value={countryCode}
-                onChangeText={(v) => setCountryCode(v.toUpperCase())}
-                placeholder={tr("settings.manualCountryCodePlaceholder", {
-                  defaultValue: "e.g., DE",
-                })}
-                autoCapitalize="characters"
-                maxLength={2}
-              />
-            </View>
-          </View>
-
-          {/* Discoverability toggle */}
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleText}>
-              <Text style={[styles.label, { color: t.text }]}>
-                {tr("settings.discoverableLabel", {
-                  defaultValue: "Make this club discoverable",
-                })}
-              </Text>
-              <Text style={[styles.toggleHelp, { color: t.mutedForeground }]}>
-                {tr("settings.discoverableHelp", {
-                  defaultValue:
-                    "If enabled, others can find this club on the Discovery page.",
-                })}
-              </Text>
-            </View>
-            <Switch
-              value={isDiscoverable}
-              onValueChange={setIsDiscoverable}
-              trackColor={{ false: t.border, true: t.primary }}
-            />
-          </View>
-
-          <View style={styles.buttons}>
-            <Button
-              title={tr("settings.cancel", { defaultValue: "Cancel" })}
-              variant="outline"
-              onPress={onClose}
-              style={styles.button}
-            />
-            <Button
-              title={tr("settings.saveChanges", {
-                defaultValue: "Save Changes",
-              })}
-              loading={saving}
-              disabled={!name.trim() || !hasChanges || uploading}
-              onPress={handleSave}
-              style={styles.button}
-            />
-          </View>
-
-          {/* Danger zone */}
-          <View style={[styles.dangerZone, { borderTopColor: t.border }]}>
-            <Pressable
-              onPress={() => setDeleteOpen(true)}
-              hitSlop={6}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.deleteRow,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Ionicons name={icons.trash2} size={16} color={t.danger} />
-              <Text style={[styles.deleteText, { color: t.danger }]}>
-                {tr("deleteClub", { defaultValue: "Delete Club" })}
-              </Text>
             </Pressable>
-            <Text style={[styles.deleteHint, { color: t.mutedForeground }]}>
-              {trProfile("leaveClub.deleteClubDescription", {
+            <View style={styles.imageActions}>
+              <Button
+                title={
+                  imageUrl
+                    ? tr("settings.changePhoto", {
+                        defaultValue: "Change Photo",
+                      })
+                    : tr("settings.pickPhoto", {
+                        defaultValue: "Pick a photo",
+                      })
+                }
+                variant="outline"
+                loading={uploading}
+                onPress={handlePickImage}
+              />
+              {imageUrl ? (
+                <Pressable
+                  onPress={() => setImageUrl(null)}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.removeImage, { color: t.danger }]}>
+                    {tr("newClub.removeImage", {
+                      defaultValue: "Remove image",
+                    })}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        </View>
+
+        {/* Location — city-only Mapbox picker (mirrors web
+            CityLocationSelector; country + code come from the selection) */}
+        <CityPicker
+          label={tr("settings.manualCity", { defaultValue: "City" })}
+          placeholder={tr("settings.cityPlaceholder", {
+            defaultValue: "Start typing a city...",
+          })}
+          city={city}
+          selectedCountry={country || null}
+          onCityChange={handleCityTyping}
+          onSelect={handleCitySelect}
+        />
+
+        {/* Discoverability toggle */}
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleText}>
+            <Text style={[styles.label, { color: t.text }]}>
+              {tr("settings.discoverableLabel", {
+                defaultValue: "Make this club discoverable",
+              })}
+            </Text>
+            <Text style={[styles.toggleHelp, { color: t.mutedForeground }]}>
+              {tr("settings.discoverableHelp", {
                 defaultValue:
-                  "This club will be permanently deleted. This cannot be undone.",
+                  "If enabled, others can find this club on the Discovery page.",
               })}
             </Text>
           </View>
+          <Switch
+            value={isDiscoverable}
+            onValueChange={setIsDiscoverable}
+            trackColor={{ false: t.border, true: t.primary }}
+          />
         </View>
-      </Sheet>
 
-      <Dialog
-        visible={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        title={trProfile("leaveClub.deleteClubTitle", {
-          defaultValue: "Delete club?",
-        })}
-        message={trProfile("leaveClub.deleteClubDescription", {
-          defaultValue:
-            "This club will be permanently deleted. This cannot be undone.",
-        })}
-        confirmLabel={trProfile("leaveClub.deleteClubConfirm", {
-          defaultValue: "Delete Club",
-        })}
-        destructive
-        loading={deleting}
-        onConfirm={handleDelete}
-      />
-    </>
+        <View style={styles.buttons}>
+          <Button
+            title={tr("settings.cancel", { defaultValue: "Cancel" })}
+            variant="outline"
+            onPress={onClose}
+            style={styles.button}
+          />
+          <Button
+            title={tr("settings.saveChanges", {
+              defaultValue: "Save Changes",
+            })}
+            loading={saving}
+            disabled={!name.trim() || !hasChanges || uploading}
+            onPress={handleSave}
+            style={styles.button}
+          />
+        </View>
+      </View>
+    </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
   form: { gap: spacing.lg, paddingBottom: spacing.xxl },
-  multiline: { height: 84, paddingTop: spacing.md },
+  label: { fontSize: 14, fontWeight: "500" },
+  descriptionBlock: { gap: 4 },
+  textareaWrap: {
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: 14,
+    paddingVertical: spacing.sm,
+  },
+  textarea: {
+    fontSize: 16,
+    minHeight: 84,
+    maxHeight: 160,
+    padding: 0,
+  },
   counter: {
     ...typography.caption,
     textAlign: "right",
     marginTop: spacing.xs,
   },
-  label: { fontSize: 14, fontWeight: "500" },
   imageSection: { gap: spacing.sm },
   imageRow: {
     flexDirection: "row",
@@ -465,9 +403,6 @@ const styles = StyleSheet.create({
   },
   imageActions: { gap: spacing.sm, alignItems: "flex-start" },
   removeImage: { ...typography.caption, fontWeight: "500" },
-  countryRow: { flexDirection: "row", gap: spacing.md },
-  countryField: { flex: 2 },
-  codeField: { flex: 1 },
   toggleRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -477,18 +412,4 @@ const styles = StyleSheet.create({
   toggleHelp: { ...typography.caption, lineHeight: 16 },
   buttons: { flexDirection: "row", gap: spacing.md, marginTop: spacing.xs },
   button: { flex: 1 },
-  dangerZone: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: spacing.lg,
-    marginTop: spacing.xs,
-    gap: spacing.xs,
-  },
-  deleteRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  deleteText: { ...typography.bodySm, fontWeight: "600" },
-  deleteHint: { ...typography.caption, lineHeight: 16 },
-  pressed: { opacity: 0.7 },
 });
