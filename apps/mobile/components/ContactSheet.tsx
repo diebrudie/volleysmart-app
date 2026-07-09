@@ -119,6 +119,7 @@ export function ContactSheet({ visible, onClose, source }: Props) {
       visible={visible}
       onClose={handleClose}
       title={t("contact.title", { defaultValue: "Contact us" })}
+      keyboardAware
     >
       {isSuccess ? (
         <View style={styles.success}>

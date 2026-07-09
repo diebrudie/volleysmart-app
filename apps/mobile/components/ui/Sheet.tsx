@@ -9,6 +9,7 @@ import {
 import {
   Animated,
   Easing,
+  KeyboardAvoidingView,
   Modal,
   PanResponder,
   Platform,
@@ -48,6 +49,14 @@ type Props = PropsWithChildren<{
    * is gone — presenting a Modal while another is dismissing freezes iOS.
    */
   onClosed?: () => void;
+  /**
+   * When true the sheet lifts above the on-screen keyboard (KeyboardAvoidingView
+   * + extra scroll padding) so focused fields and the submit/footer stay
+   * reachable. Opt-in: sheets without text inputs (theme/language pickers,
+   * settings selects) leave this off and are unaffected — a keyboard that never
+   * appears means the wrapper is a no-op anyway.
+   */
+  keyboardAware?: boolean;
 }>;
 
 export function Sheet({
@@ -58,6 +67,7 @@ export function Sheet({
   maxHeightRatio = 0.85,
   footer,
   onClosed,
+  keyboardAware = false,
   children,
 }: Props) {
   const t = useTheme();
@@ -135,6 +145,47 @@ export function Sheet({
 
   if (!mounted) return null;
 
+  const sheetBody = (
+    <Animated.View
+      style={[
+        styles.sheet,
+        {
+          backgroundColor: t.card,
+          paddingBottom: insets.bottom + spacing.lg,
+          transform: [{ translateY }],
+        },
+        snapToContent ? { maxHeight } : { height: maxHeight },
+      ]}
+    >
+      <View style={styles.handleArea} {...panResponder.panHandlers}>
+        <View style={[styles.handle, { backgroundColor: t.border }]} />
+      </View>
+
+      {title ? (
+        <Text style={[styles.title, { color: t.text }]}>{title}</Text>
+      ) : null}
+
+      <ScrollView
+        style={snapToContent ? undefined : styles.grow}
+        contentContainerStyle={[
+          styles.content,
+          keyboardAware && styles.contentKeyboardAware,
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
+      </ScrollView>
+
+      {footer ? (
+        <View style={[styles.footer, { borderTopColor: t.border }]}>
+          {footer}
+        </View>
+      ) : null}
+    </Animated.View>
+  );
+
   return (
     <Modal
       visible
@@ -157,40 +208,16 @@ export function Sheet({
           />
         </Animated.View>
 
-        <Animated.View
-          style={[
-            styles.sheet,
-            {
-              backgroundColor: t.card,
-              paddingBottom: insets.bottom + spacing.lg,
-              transform: [{ translateY }],
-            },
-            snapToContent ? { maxHeight } : { height: maxHeight },
-          ]}
-        >
-          <View style={styles.handleArea} {...panResponder.panHandlers}>
-            <View style={[styles.handle, { backgroundColor: t.border }]} />
-          </View>
-
-          {title ? (
-            <Text style={[styles.title, { color: t.text }]}>{title}</Text>
-          ) : null}
-
-          <ScrollView
-            style={snapToContent ? undefined : styles.grow}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+        {keyboardAware ? (
+          <KeyboardAvoidingView
+            style={styles.keyboardAvoider}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
           >
-            {children}
-          </ScrollView>
-
-          {footer ? (
-            <View style={[styles.footer, { borderTopColor: t.border }]}>
-              {footer}
-            </View>
-          ) : null}
-        </Animated.View>
+            {sheetBody}
+          </KeyboardAvoidingView>
+        ) : (
+          sheetBody
+        )}
       </View>
     </Modal>
   );
@@ -198,6 +225,7 @@ export function Sheet({
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
+  keyboardAvoider: { width: "100%" },
   sheet: {
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
@@ -224,6 +252,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
   },
+  // Extra bottom room so the last field / submit clears the keyboard once the
+  // sheet has been lifted and the content is scrollable.
+  contentKeyboardAware: { paddingBottom: spacing.xl },
   footer: {
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: spacing.lg,
