@@ -299,13 +299,8 @@ const styles = StyleSheet.create({
   dateBadgeShadow: {
     borderRadius: radii.md,
     alignSelf: "stretch", // fill the card's full height
-    // Subtle drop shadow to match the PWA event-list card badge.
-    // Kept on the wrapper so the inner overflow-hidden view doesn't clip it (iOS).
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    // No shadow on the list card — the shadow lives on the event-overview
+    // (detail) badge instead (per device feedback R4-1).
   },
   dateBadge: {
     width: 56, // w-14

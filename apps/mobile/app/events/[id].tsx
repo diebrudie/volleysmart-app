@@ -375,23 +375,27 @@ export default function EventDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <Stack.Screen options={{ headerShown: false }} />
-      {/* Gradient hero behind the header (matches web from-primary/30 → bg) */}
-      <LinearGradient
-        colors={[theme.primary + "4D", theme.primary + "1A", theme.background]}
-        locations={[0, 0.7, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0.6, y: 1 }}
-        style={[styles.heroGradient, { height: insets.top + 210 }]}
-        pointerEvents="none"
-      />
-      <ScreenHeader title="" right={headerRight()} transparent borderless />
       <Screen
         safeTop={false}
         onRefresh={handleRefresh}
         contentStyle={showBottomBar ? styles.scrollWithBar : undefined}
       >
+        {/* Hero: gradient + header scroll WITH the page (not fixed). */}
+        <View style={styles.hero}>
+          <LinearGradient
+            colors={[theme.primary + "4D", theme.primary + "1A", theme.background]}
+            locations={[0, 0.7, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.6, y: 1 }}
+            style={[styles.heroGradient, { height: insets.top + 240 }]}
+            pointerEvents="none"
+          />
+          <ScreenHeader title="" right={headerRight()} transparent borderless />
+        </View>
+
         {/* Date badge + own RSVP status row (matches web hero row) */}
         <View style={styles.badgeRow}>
+          <View style={styles.dateBadgeShadow}>
           <View style={[styles.dateBadge, { borderColor: theme.cardBorder }]}>
             <View
               style={[
@@ -413,6 +417,7 @@ export default function EventDetailScreen() {
                 {weekdayShort}
               </Text>
             </View>
+          </View>
           </View>
           {rsvpStatusLine ? (
             <View style={styles.rsvpStatusRow}>
@@ -964,6 +969,12 @@ function MenuRow({
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    // Break out of the Screen's 16px horizontal padding so the gradient +
+    // header are full-bleed, while still scrolling with the page.
+    marginHorizontal: -spacing.lg,
+    position: "relative",
+  },
   heroGradient: {
     position: "absolute",
     top: 0,
@@ -986,6 +997,16 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-between",
     marginTop: spacing.sm,
+  },
+  // Shadow lives on the wrapper so the badge's overflow-hidden corners don't
+  // clip it (this is the event-overview badge shadow, per R4-1).
+  dateBadgeShadow: {
+    borderRadius: radii.lg,
+    shadowColor: "#000",
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
   dateBadge: {
     width: 64,

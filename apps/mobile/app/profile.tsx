@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { Spinner } from "@/components/ui/Spinner";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
+import { calculateGameplayBonus } from "@volleysmart/core";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { MyClubsTab } from "@/components/profile/MyClubsTab";
 import { useTheme } from "@/hooks/useTheme";
@@ -164,8 +165,90 @@ export default function ProfileScreen() {
     );
 
   // ── Analytics tab content (mirrors the web Analytics tab) ─────────────
+  const gameplayBonus =
+    playerStats ? Math.round(calculateGameplayBonus(playerStats)) : 0;
+
+  const setsTotal = playerStats
+    ? playerStats.setsWon + playerStats.setsLost + playerStats.setsTied
+    : 0;
+
+  const skillRatingCard =
+    player?.skill_rating != null ? (
+      <Card>
+        <View style={styles.skillRow}>
+          <View
+            style={[styles.skillIcon, { backgroundColor: theme.primary + "1A" }]}
+          >
+            <Ionicons
+              name={icons.trendingUp}
+              size={20}
+              color={theme.primary}
+            />
+          </View>
+          <View style={styles.skillTextGroup}>
+            <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
+              {t("analytics.skillRating", { defaultValue: "Skill Rating" })}
+            </Text>
+            <View style={styles.skillValueRow}>
+              <Text style={[styles.skillValue, { color: theme.text }]}>
+                {player.skill_rating}
+              </Text>
+              <Text style={[styles.skillMax, { color: theme.mutedForeground }]}>
+                {t("analytics.skillMax", { defaultValue: "/100" })}
+              </Text>
+              {gameplayBonus > 0 ? (
+                <View
+                  style={[styles.bonusPill, { backgroundColor: theme.success + "22" }]}
+                >
+                  <Text style={[styles.bonusText, { color: theme.success }]}>
+                    {t("analytics.fromGameplay", {
+                      bonus: gameplayBonus,
+                      defaultValue: "+{{bonus}} from gameplay",
+                    })}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </View>
+      </Card>
+    ) : null;
+
+  const setRecordCard =
+    playerStats && playerStats.gamesPlayed > 0 && setsTotal > 0 ? (
+      <Card>
+        <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
+          {t("analytics.setRecord", { defaultValue: "Set Record" })}
+        </Text>
+        <View style={styles.setRecordLabels}>
+          <Text style={[styles.setRecordText, { color: theme.success }]}>
+            {playerStats.setsWon}W
+          </Text>
+          <Text style={[styles.setRecordText, { color: theme.destructive }]}>
+            {playerStats.setsLost}L
+          </Text>
+          {playerStats.setsTied > 0 ? (
+            <Text style={[styles.setRecordText, { color: theme.textSecondary }]}>
+              {playerStats.setsTied}T
+            </Text>
+          ) : null}
+        </View>
+        <View style={[styles.setRecordTrack, { backgroundColor: theme.muted }]}>
+          <View style={{ flex: playerStats.setsWon, backgroundColor: theme.success }} />
+          <View
+            style={{ flex: playerStats.setsLost, backgroundColor: theme.destructive }}
+          />
+          {playerStats.setsTied > 0 ? (
+            <View style={{ flex: playerStats.setsTied }} />
+          ) : null}
+        </View>
+      </Card>
+    ) : null;
+
   const analyticsContent = (
-    <Card>
+    <>
+      {skillRatingCard}
+      <Card>
       <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
         {t("analytics.allTime", { defaultValue: "All time" })}
       </Text>
@@ -212,55 +295,6 @@ export default function ProfileScreen() {
               })}
             />
           </View>
-
-          {/* Set record W/L bar */}
-          {playerStats.setsWon + playerStats.setsLost + playerStats.setsTied >
-          0 ? (
-            <View style={styles.setRecordBlock}>
-              <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
-                {t("analytics.setRecord", { defaultValue: "Set Record" })}
-              </Text>
-              <View style={styles.setRecordLabels}>
-                <Text style={[styles.setRecordText, { color: theme.success }]}>
-                  {playerStats.setsWon}W
-                </Text>
-                <Text
-                  style={[styles.setRecordText, { color: theme.destructive }]}
-                >
-                  {playerStats.setsLost}L
-                </Text>
-                {playerStats.setsTied > 0 ? (
-                  <Text
-                    style={[
-                      styles.setRecordText,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {playerStats.setsTied}T
-                  </Text>
-                ) : null}
-              </View>
-              <View
-                style={[styles.setRecordTrack, { backgroundColor: theme.muted }]}
-              >
-                <View
-                  style={{
-                    flex: playerStats.setsWon,
-                    backgroundColor: theme.success,
-                  }}
-                />
-                <View
-                  style={{
-                    flex: playerStats.setsLost,
-                    backgroundColor: theme.destructive,
-                  }}
-                />
-                {playerStats.setsTied > 0 ? (
-                  <View style={{ flex: playerStats.setsTied }} />
-                ) : null}
-              </View>
-            </View>
-          ) : null}
         </>
       ) : (
         <View style={styles.statsEmpty}>
@@ -279,7 +313,9 @@ export default function ProfileScreen() {
           </Text>
         </View>
       )}
-    </Card>
+      </Card>
+      {setRecordCard}
+    </>
   );
 
   // ── View mode ─────────────────────────────────────────────────────────
@@ -325,9 +361,6 @@ export default function ProfileScreen() {
                 {player.country ? `, ${player.country}` : ""}
               </Text>
             ) : null}
-            <Text style={[styles.subline, { color: theme.textSecondary }]}>
-              {user?.email}
-            </Text>
           </View>
         </View>
 
@@ -532,6 +565,29 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 22, fontWeight: "700", lineHeight: 26 },
   statValueSuffix: { ...typography.bodySm, fontWeight: "400" },
   statLabel: { ...typography.caption },
+  skillRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  skillIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  skillTextGroup: { flex: 1 },
+  skillValueRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: spacing.sm,
+    flexWrap: "wrap",
+  },
+  skillValue: { fontSize: 24, fontWeight: "700" },
+  skillMax: { ...typography.caption },
+  bonusPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  bonusText: { fontSize: 11, fontWeight: "600" },
   setRecordBlock: { marginTop: spacing.lg },
   setRecordLabels: {
     flexDirection: "row",
