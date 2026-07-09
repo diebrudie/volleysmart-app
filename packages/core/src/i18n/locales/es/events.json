@@ -170,6 +170,9 @@
   "card.genderFlinta": "Flinta",
 
   "location": {
+    "label": "Lugar *",
+    "selectPlaceholder": "Selecciona un lugar",
+    "addNew": "+ Añadir nuevo lugar",
     "nameLabel": "Nombre del lugar *",
     "namePlaceholder": "ej. Polideportivo Central",
     "addressLabel": "Dirección",

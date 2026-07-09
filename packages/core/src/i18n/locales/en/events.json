@@ -170,6 +170,9 @@
   "card.genderFlinta": "Flinta",
 
   "location": {
+    "label": "Location *",
+    "selectPlaceholder": "Select a location",
+    "addNew": "+ Add new location",
     "nameLabel": "Location Name *",
     "namePlaceholder": "e.g. Berlin Sports Hall",
     "addressLabel": "Address",

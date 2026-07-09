@@ -76,6 +76,7 @@ export function EditEventSheet({ visible, onClose, event, onSave, saving }: Prop
       title={t("detail.editEvent", { defaultValue: "Edit Event" })}
       snapToContent={false}
       maxHeightRatio={0.92}
+      keyboardAware
     >
       <View style={styles.body}>
         <EventFormFields
@@ -102,6 +103,8 @@ export function EditEventSheet({ visible, onClose, event, onSave, saving }: Prop
 }
 
 const styles = StyleSheet.create({
-  body: { paddingBottom: spacing.xxl },
+  // Extra bottom padding so the last fields / Save button stay reachable above
+  // the keyboard once the sheet is lifted (keyboardAware) and scrollable.
+  body: { paddingBottom: spacing.xxl * 2 },
   saveButton: { marginTop: spacing.xl },
 });

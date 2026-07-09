@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -186,7 +186,9 @@ export function EventFormFields({
   const [rsvpPreset, setRsvpPreset] = useState<number>(() =>
     mode === "edit" ? matchPreset(values.date, values.rsvpDeadline) : 1
   );
-  const [locationFocused, setLocationFocused] = useState(false);
+  // When true, show free-text name/address inputs to add a brand-new location
+  // instead of picking one of the club's saved locations.
+  const [addingNewLocation, setAddingNewLocation] = useState(false);
 
   const showBasics = sections.includes("basics");
   const showSchedule = sections.includes("schedule");
@@ -209,26 +211,23 @@ export function EventFormFields({
     staleTime: 5 * 60 * 1000,
   });
 
-  const trimmedName = values.locationName.trim().toLowerCase();
-  const exactSaved = savedLocations.some(
-    (l) => l.name.trim().toLowerCase() === trimmedName
+  // ── Saved-location picker state ──
+  // The event type each icon uses is drawn with the glyph the PWA uses:
+  // friendly = crossed swords, social = people, training = dumbbell.
+  const hasSavedLocations = savedLocations.length > 0;
+  const currentIsSaved = savedLocations.some(
+    (l) => l.name === values.locationName
   );
-  const locationSuggestions =
-    locationFocused && !exactSaved
-      ? (trimmedName
-          ? savedLocations.filter((l) =>
-              l.name.toLowerCase().includes(trimmedName)
-            )
-          : savedLocations
-        ).slice(0, 5)
-      : [];
+  const showLocationInputs = addingNewLocation || !hasSavedLocations;
+  const selectedSavedLocation = savedLocations.find(
+    (l) => l.name === values.locationName
+  );
 
   // ── Event types (mirrors web EVENT_TYPES) ──
   const eventTypes: {
     value: EventType;
     label: string;
     description: string;
-    icon: IoniconsName;
     color: string;
   }[] = [
     {
@@ -237,7 +236,6 @@ export function EventFormFields({
       description: t("create.typeFriendlyGameDesc", {
         defaultValue: "Casual match within your club",
       }),
-      icon: icons.trophy,
       color: theme.accent,
     },
     {
@@ -246,7 +244,6 @@ export function EventFormFields({
       description: t("create.typeSocialGameDesc", {
         defaultValue: "Fun, relaxed — open to all levels",
       }),
-      icon: icons.users,
       color: theme.success,
     },
     {
@@ -255,10 +252,52 @@ export function EventFormFields({
       description: t("create.typeTrainingDesc", {
         defaultValue: "Practice and skill development session",
       }),
-      icon: icons.barChart,
       color: theme.secondary,
     },
   ];
+
+  // Per-type icon: friendly uses MaterialCommunityIcons crossed swords
+  // (matches the event-detail row); social/training use Ionicons.
+  const renderTypeIcon = (value: EventType, color: string) =>
+    value === "friendly_game" ? (
+      <MaterialCommunityIcons name="sword-cross" size={24} color={color} />
+    ) : value === "social_game" ? (
+      <Ionicons name={icons.users} size={24} color={color} />
+    ) : (
+      <Ionicons name={icons.dumbbell} size={24} color={color} />
+    );
+
+  // Location select options: saved locations (value = name) + "Add new".
+  const ADD_NEW_LOCATION = "__add_new_location__";
+  const locationOptions = [
+    ...savedLocations.map((l) => ({ label: l.name, value: l.name })),
+    // Edit case: the event's current location isn't in the fetched list.
+    ...(!addingNewLocation && values.locationName && !currentIsSaved
+      ? [{ label: values.locationName, value: values.locationName }]
+      : []),
+    {
+      label: t("location.addNew", { defaultValue: "+ Add new location" }),
+      value: ADD_NEW_LOCATION,
+    },
+  ];
+  const locationSelectValue = addingNewLocation
+    ? ADD_NEW_LOCATION
+    : values.locationName || null;
+
+  const handleLocationSelect = (val: string) => {
+    if (val === ADD_NEW_LOCATION) {
+      setAddingNewLocation(true);
+      onChange({ locationName: "", locationAddress: "" });
+      return;
+    }
+    setAddingNewLocation(false);
+    const loc = savedLocations.find((l) => l.name === val);
+    if (loc) {
+      onChange({ locationName: loc.name, locationAddress: loc.address ?? "" });
+    } else {
+      onChange({ locationName: val });
+    }
+  };
 
   const rsvpPresetOptions = [
     { label: t("create.rsvpSameDay", { defaultValue: "Same day" }), value: 0 },
@@ -301,68 +340,51 @@ export function EventFormFields({
     onChange({ rsvpDeadline: deadline });
   };
 
-  const handleSelectSavedLocation = (loc: LocationRecord) => {
-    onChange({ locationName: loc.name, locationAddress: loc.address ?? "" });
-    setLocationFocused(false);
-  };
-
   const today = new Date();
 
   return (
     <View style={styles.root}>
-      {/* ── Basics: event type + title ── */}
+      {/* ── Basics: event type selection only ── */}
       {showBasics ? (
-        <>
-          <View style={styles.typeList}>
-            {eventTypes.map((type) => {
-              const selected = values.eventType === type.value;
-              return (
-                <Pressable
-                  key={type.value}
-                  onPress={() => onChange({ eventType: type.value })}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  style={({ pressed }) => [
-                    styles.typeCard,
-                    {
-                      borderColor: selected ? type.color : theme.cardBorder,
-                      backgroundColor: selected ? theme.muted : theme.card,
-                    },
-                    pressed && { backgroundColor: theme.surface },
-                  ]}
-                >
-                  <Ionicons
-                    name={type.icon}
-                    size={24}
-                    color={selected ? type.color : theme.textSecondary}
-                  />
-                  <View style={styles.typeTextCol}>
-                    <Text style={[styles.typeLabel, { color: theme.text }]}>
-                      {type.label}
-                    </Text>
-                    <Text
-                      style={[styles.typeDesc, { color: theme.mutedForeground }]}
-                    >
-                      {type.description}
-                    </Text>
-                  </View>
-                  {selected ? (
-                    <Ionicons name={icons.check} size={18} color={type.color} />
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Input
-            label={t("create.eventName", { defaultValue: "Event name *" })}
-            placeholder={t("create.eventNamePlaceholder", {
-              defaultValue: "e.g. Saturday Friendly",
-            })}
-            value={values.title}
-            onChangeText={(text) => onChange({ title: text })}
-          />
-        </>
+        <View style={styles.typeList}>
+          {eventTypes.map((type) => {
+            const selected = values.eventType === type.value;
+            return (
+              <Pressable
+                key={type.value}
+                onPress={() => onChange({ eventType: type.value })}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                style={({ pressed }) => [
+                  styles.typeCard,
+                  {
+                    borderColor: selected ? type.color : theme.cardBorder,
+                    backgroundColor: selected ? theme.muted : theme.card,
+                  },
+                  pressed && { backgroundColor: theme.surface },
+                ]}
+              >
+                {renderTypeIcon(
+                  type.value,
+                  selected ? type.color : theme.textSecondary
+                )}
+                <View style={styles.typeTextCol}>
+                  <Text style={[styles.typeLabel, { color: theme.text }]}>
+                    {type.label}
+                  </Text>
+                  <Text
+                    style={[styles.typeDesc, { color: theme.mutedForeground }]}
+                  >
+                    {type.description}
+                  </Text>
+                </View>
+                {selected ? (
+                  <Ionicons name={icons.check} size={18} color={type.color} />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
       ) : null}
 
       {/* ── Schedule: date, times, RSVP deadline ── */}
@@ -412,77 +434,67 @@ export function EventFormFields({
         </>
       ) : null}
 
-      {/* ── Details: location, max players, visibility, gender, activity, opponent, notes ── */}
+      {/* ── Details: name, location, max players, visibility, gender, activity, opponent, notes ── */}
       {showDetails ? (
         <>
-          {/* Location: two-field (name + address) with saved suggestions */}
-          <View>
-            <Input
-              label={t("location.nameLabel", { defaultValue: "Location Name *" })}
-              placeholder={t("location.namePlaceholder", {
-                defaultValue: "e.g. Berlin Sports Hall",
-              })}
-              value={values.locationName}
-              onChangeText={(text) => onChange({ locationName: text })}
-              onFocus={() => setLocationFocused(true)}
-              onBlur={() => setTimeout(() => setLocationFocused(false), 200)}
-            />
-            {locationSuggestions.length > 0 ? (
-              <View
-                style={[
-                  styles.suggestionBox,
-                  { borderColor: theme.cardBorder, backgroundColor: theme.card },
-                ]}
-              >
-                {locationSuggestions.map((loc) => (
-                  <Pressable
-                    key={loc.id}
-                    onPress={() => handleSelectSavedLocation(loc)}
-                    accessibilityRole="button"
-                    style={({ pressed }) => [
-                      styles.suggestionRow,
-                      { borderBottomColor: theme.border },
-                      pressed && { backgroundColor: theme.surface },
-                    ]}
-                  >
-                    <Ionicons
-                      name={icons.mapPin}
-                      size={16}
-                      color={theme.textSecondary}
-                    />
-                    <View style={styles.suggestionTextCol}>
-                      <Text
-                        numberOfLines={1}
-                        style={[styles.suggestionName, { color: theme.text }]}
-                      >
-                        {loc.name}
-                      </Text>
-                      {loc.address ? (
-                        <Text
-                          numberOfLines={1}
-                          style={[
-                            styles.suggestionAddress,
-                            { color: theme.mutedForeground },
-                          ]}
-                        >
-                          {loc.address}
-                        </Text>
-                      ) : null}
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-          </View>
-
+          {/* Event name */}
           <Input
-            label={t("location.addressLabel", { defaultValue: "Address" })}
-            placeholder={t("location.addressPlaceholder", {
-              defaultValue: "Search for an address...",
+            label={t("create.eventName", { defaultValue: "Event name *" })}
+            placeholder={t("create.eventNamePlaceholder", {
+              defaultValue: "e.g. Saturday Friendly",
             })}
-            value={values.locationAddress}
-            onChangeText={(text) => onChange({ locationAddress: text })}
+            value={values.title}
+            onChangeText={(text) => onChange({ title: text })}
           />
+
+          {/* Location: pick a saved location, or add a new one */}
+          {hasSavedLocations ? (
+            <Select
+              label={t("location.label", { defaultValue: "Location *" })}
+              placeholder={t("location.selectPlaceholder", {
+                defaultValue: "Select a location",
+              })}
+              options={locationOptions}
+              value={locationSelectValue}
+              onChange={handleLocationSelect}
+            />
+          ) : null}
+
+          {showLocationInputs ? (
+            <>
+              <Input
+                label={t("location.nameLabel", {
+                  defaultValue: "Location Name *",
+                })}
+                placeholder={t("location.namePlaceholder", {
+                  defaultValue: "e.g. Berlin Sports Hall",
+                })}
+                value={values.locationName}
+                onChangeText={(text) => onChange({ locationName: text })}
+              />
+              <Input
+                label={t("location.addressLabel", { defaultValue: "Address" })}
+                placeholder={t("location.addressPlaceholder", {
+                  defaultValue: "Search for an address...",
+                })}
+                value={values.locationAddress}
+                onChangeText={(text) => onChange({ locationAddress: text })}
+              />
+            </>
+          ) : selectedSavedLocation?.address ? (
+            <View style={styles.selectedAddressRow}>
+              <Ionicons
+                name={icons.mapPin}
+                size={14}
+                color={theme.mutedForeground}
+              />
+              <Text
+                style={[styles.selectedAddress, { color: theme.mutedForeground }]}
+              >
+                {selectedSavedLocation.address}
+              </Text>
+            </View>
+          ) : null}
 
           {/* Max players */}
           <Input
@@ -705,23 +717,13 @@ const styles = StyleSheet.create({
   fieldGroup: { gap: spacing.xs },
   groupLabel: { fontSize: 14, fontWeight: "500", marginBottom: 2 },
   hint: { ...typography.caption, marginTop: -spacing.md },
-  suggestionBox: {
-    borderWidth: 1,
-    borderRadius: radii.md,
-    marginTop: spacing.xs,
-    overflow: "hidden",
-  },
-  suggestionRow: {
+  selectedAddressRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: spacing.xs,
+    marginTop: -spacing.sm,
   },
-  suggestionTextCol: { flex: 1, gap: 1 },
-  suggestionName: { ...typography.bodySm, fontWeight: "600" },
-  suggestionAddress: { ...typography.caption },
+  selectedAddress: { ...typography.caption, flex: 1 },
   toggleOption: {
     flex: 1,
     flexDirection: "row",

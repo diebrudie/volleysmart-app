@@ -95,17 +95,17 @@ export default function CreateEventScreen() {
   ];
 
   const stepTitles: Record<number, string> = {
-    1: t("create.stepBasics", { defaultValue: "Event type & details" }),
+    1: t("create.stepChooseType", { defaultValue: "Choose event type" }),
     2: t("create.stepSchedule", { defaultValue: "Schedule" }),
     3: t("create.stepDetails", { defaultValue: "Details" }),
     4: t("create.stepReview", { defaultValue: "Review" }),
   };
 
   const canContinue = (): boolean => {
-    if (step === 1) return !!values.eventType && !!values.title.trim() && !!clubId;
+    if (step === 1) return !!values.eventType;
     if (step === 2) return !!values.date && !!values.startTime && !!values.endTime;
     if (step === 3)
-      return !!values.locationName.trim() && !!values.locationAddress.trim();
+      return !!values.title.trim() && !!clubId && !!values.locationName.trim();
     return true;
   };
 
@@ -245,7 +245,7 @@ export default function CreateEventScreen() {
         />
 
         <View style={styles.content}>
-          {/* ── Step 1: type, title, club, templates ── */}
+          {/* ── Step 1: event type selection + templates ── */}
           {step === 1 ? (
             <>
               <EventFormFields
@@ -253,12 +253,6 @@ export default function CreateEventScreen() {
                 onChange={patchValues}
                 mode="create"
                 sections={["basics"]}
-              />
-              <Select
-                label={t("create.clubLabel", { defaultValue: "Club" })}
-                options={clubOptions}
-                value={clubId || NO_CLUB}
-                onChange={(v) => setClubId(v)}
               />
 
               {/* Templates entry */}
@@ -274,7 +268,7 @@ export default function CreateEventScreen() {
                 ]}
               >
                 <Ionicons
-                  name={icons.listChecks}
+                  name={icons.layoutGrid}
                   size={24}
                   color={theme.textSecondary}
                 />
@@ -325,9 +319,15 @@ export default function CreateEventScreen() {
             </>
           ) : null}
 
-          {/* ── Step 3: details + save-as-template ── */}
+          {/* ── Step 3: details (name + club) + save-as-template ── */}
           {step === 3 ? (
             <>
+              <Select
+                label={t("create.clubLabel", { defaultValue: "Club" })}
+                options={clubOptions}
+                value={clubId || NO_CLUB}
+                onChange={(v) => setClubId(v)}
+              />
               <EventFormFields
                 values={values}
                 onChange={patchValues}
