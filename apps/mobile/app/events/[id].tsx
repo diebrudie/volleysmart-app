@@ -676,18 +676,26 @@ export default function EventDetailScreen() {
 
               {(isMember || isCreator) && !isCancelled ? (
                 <View style={styles.gameButtonWrap}>
-                  <DisabledGameRow
-                    icon={icons.trophy}
-                    label={
-                      linkedMatchDay
-                        ? t("detail.viewGameWebOnly", {
-                            defaultValue: "View game (web only)",
-                          })
-                        : t("detail.startGameWebOnly", {
-                            defaultValue: "Start game (web only)",
-                          })
-                    }
-                  />
+                  {linkedMatchDay ? (
+                    <GameActionButton
+                      label={t("detail.viewGame", { defaultValue: "View Game" })}
+                      variant="outline"
+                      onPress={() =>
+                        router.push(`/games/${linkedMatchDay.id}` as never)
+                      }
+                    />
+                  ) : !isPastEvent ? (
+                    <GameActionButton
+                      label={t("detail.startGame", { defaultValue: "Start Game" })}
+                      variant="primary"
+                      disabled={
+                        attendingCount < (event.is_opponent_mode ? 2 : 4)
+                      }
+                      onPress={() =>
+                        router.push(`/games/new?eventId=${id}` as never)
+                      }
+                    />
+                  ) : null}
                 </View>
               ) : null}
             </View>
@@ -918,26 +926,42 @@ function TintChip({
   );
 }
 
-function DisabledGameRow({
-  icon,
+function GameActionButton({
   label,
+  variant,
+  onPress,
+  disabled,
 }: {
-  icon: IoniconsName;
   label: string;
+  variant: "primary" | "outline";
+  onPress: () => void;
+  disabled?: boolean;
 }) {
   const theme = useTheme();
+  const isPrimary = variant === "primary";
   return (
-    <View
-      style={[
-        styles.gameRow,
-        { borderColor: theme.cardBorder, backgroundColor: theme.muted },
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        styles.gameButton,
+        isPrimary
+          ? { backgroundColor: theme.primary }
+          : { borderWidth: 1, borderColor: theme.cardBorder },
+        disabled && { opacity: 0.5 },
+        pressed && !disabled && { opacity: 0.85 },
       ]}
     >
-      <Ionicons name={icon} size={18} color={theme.mutedForeground} />
-      <Text style={[styles.gameRowText, { color: theme.mutedForeground }]}>
+      <Text
+        style={[
+          styles.gameButtonText,
+          { color: isPrimary ? "#ffffff" : theme.text },
+        ]}
+      >
         {label}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -1072,17 +1096,13 @@ const styles = StyleSheet.create({
 
   notesText: { ...typography.body, lineHeight: 22 },
 
-  gameRow: {
-    flexDirection: "row",
+  gameButton: {
+    height: 46,
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderRadius: radii.lg,
-    paddingVertical: spacing.md,
-    opacity: 0.7,
+    borderRadius: radii.md,
   },
-  gameRowText: { ...typography.bodySm, fontWeight: "600" },
+  gameButtonText: { fontSize: 15, fontWeight: "600" },
 
   bottomBar: {
     position: "absolute",

@@ -48,20 +48,18 @@ export function LastGameCard({ game, loading }: Props) {
   const winnerColor =
     game?.winner === "A" ? theme.destructive : theme.success;
 
-  // Native has no game screen (web only). If the game is linked to an event,
-  // open the event detail (it shows the "view game in web app" hint row);
-  // otherwise the card is inert and shows the web-only hint instead.
-  const canOpenEvent = !!game?.eventId;
+  // Opens the native game screen directly.
+  const canOpenGame = !!game?.matchDayId;
 
   return (
     <Pressable
       onPress={() =>
-        game?.eventId && router.push(`/events/${game.eventId}`)
+        game?.matchDayId && router.push(`/games/${game.matchDayId}` as never)
       }
-      disabled={!canOpenEvent}
+      disabled={!canOpenGame}
       style={({ pressed }) => [
         frame,
-        pressed && canOpenEvent && { opacity: 0.8 },
+        pressed && canOpenGame && { opacity: 0.8 },
       ]}
     >
       <View style={styles.headerRow}>
@@ -71,7 +69,7 @@ export function LastGameCard({ game, loading }: Props) {
             {t("home.lastGame", { defaultValue: "Last Game" })}
           </Text>
         </View>
-        {canOpenEvent ? (
+        {canOpenGame ? (
           <View style={styles.viewRow}>
             <Ionicons name={icons.eye} size={15} color={theme.textSecondary} />
             <Text style={[styles.viewText, { color: theme.textSecondary }]}>
@@ -116,15 +114,6 @@ export function LastGameCard({ game, loading }: Props) {
               {t("home.wins", { defaultValue: "wins" })}
             </Text>
           )}
-          {!canOpenEvent ? (
-            <Text
-              style={[styles.webOnlyHint, { color: theme.mutedForeground }]}
-            >
-              {t("detail.viewGameWebOnly", {
-                defaultValue: "View game in the web app",
-              })}
-            </Text>
-          ) : null}
         </View>
       ) : (
         <View style={styles.emptyBody}>
