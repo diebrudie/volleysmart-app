@@ -17,9 +17,19 @@ type Props = {
   right?: ReactNode;
   /** Overrides the default back behavior. */
   onBack?: () => void;
+  /** Drop the bottom divider line (e.g. event detail, which has a top gradient). */
+  borderless?: boolean;
+  /** Transparent background so a gradient behind the header shows through. */
+  transparent?: boolean;
 };
 
-export function ScreenHeader({ title, right, onBack }: Props) {
+export function ScreenHeader({
+  title,
+  right,
+  onBack,
+  borderless = false,
+  transparent = false,
+}: Props) {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -38,8 +48,8 @@ export function ScreenHeader({ title, right, onBack }: Props) {
     <View
       style={{
         paddingTop: insets.top,
-        backgroundColor: theme.background,
-        borderBottomWidth: 1,
+        backgroundColor: transparent ? "transparent" : theme.background,
+        borderBottomWidth: borderless ? 0 : 1,
         borderBottomColor: theme.border,
       }}
     >
