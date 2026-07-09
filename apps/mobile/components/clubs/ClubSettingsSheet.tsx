@@ -187,12 +187,32 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
       onClose={onClose}
       title={tr("settings.title", { defaultValue: "Club Settings" })}
       snapToContent={false}
+      footer={
+        <View style={styles.buttons}>
+          <Button
+            title={tr("settings.cancel", { defaultValue: "Cancel" })}
+            variant="outline"
+            onPress={onClose}
+            style={styles.button}
+          />
+          <Button
+            title={tr("settings.saveChanges", {
+              defaultValue: "Save Changes",
+            })}
+            loading={saving}
+            disabled={!name.trim() || !hasChanges || uploading}
+            onPress={handleSave}
+            style={styles.button}
+          />
+        </View>
+      }
     >
       <View style={styles.form}>
         <Input
           label={tr("settings.clubName", { defaultValue: "Club Name" })}
           value={name}
           onChangeText={setName}
+          style={styles.inputText}
           placeholder={tr("settings.clubNamePlaceholder", {
             defaultValue: "Enter club name",
           })}
@@ -304,32 +324,42 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
         </View>
 
         {/* Location — city-only Mapbox picker (mirrors web
-            CityLocationSelector; country + code come from the selection) */}
-        <CityPicker
-          label={tr("settings.manualCity", { defaultValue: "City" })}
-          placeholder={tr("settings.cityPlaceholder", {
-            defaultValue: "Start typing a city...",
-          })}
-          city={city}
-          selectedCountry={country || null}
-          onCityChange={handleCityTyping}
-          onSelect={handleCitySelect}
-        />
+            CityLocationSelector; country + code come from the selection).
+            The "?" help matches the PWA's cityHelp popover. */}
+        <View style={styles.field}>
+          <HelpLabel
+            label={tr("settings.manualCity", { defaultValue: "City" })}
+            help={tr("settings.cityHelp", {
+              defaultValue:
+                "Please make sure you select a City from the dropdown.",
+            })}
+            labelColor={t.textSecondary}
+          />
+          <CityPicker
+            placeholder={tr("settings.cityPlaceholder", {
+              defaultValue: "Start typing a city...",
+            })}
+            inputStyle={styles.inputText}
+            city={city}
+            selectedCountry={country || null}
+            onCityChange={handleCityTyping}
+            onSelect={handleCitySelect}
+          />
+        </View>
 
-        {/* Discoverability toggle */}
+        {/* Discoverability toggle — "?" help matches the PWA popover. */}
         <View style={styles.toggleRow}>
           <View style={styles.toggleText}>
-            <Text style={[styles.label, { color: t.text }]}>
-              {tr("settings.discoverableLabel", {
+            <HelpLabel
+              label={tr("settings.discoverableLabel", {
                 defaultValue: "Make this club discoverable",
               })}
-            </Text>
-            <Text style={[styles.toggleHelp, { color: t.mutedForeground }]}>
-              {tr("settings.discoverableHelp", {
+              help={tr("settings.discoverableHelp", {
                 defaultValue:
                   "If enabled, others can find this club on the Discovery page.",
               })}
-            </Text>
+              labelColor={t.text}
+            />
           </View>
           <Switch
             value={isDiscoverable}
@@ -337,33 +367,68 @@ export function ClubSettingsSheet({ visible, onClose, club }: Props) {
             trackColor={{ false: t.border, true: t.primary }}
           />
         </View>
-
-        <View style={styles.buttons}>
-          <Button
-            title={tr("settings.cancel", { defaultValue: "Cancel" })}
-            variant="outline"
-            onPress={onClose}
-            style={styles.button}
-          />
-          <Button
-            title={tr("settings.saveChanges", {
-              defaultValue: "Save Changes",
-            })}
-            loading={saving}
-            disabled={!name.trim() || !hasChanges || uploading}
-            onPress={handleSave}
-            style={styles.button}
-          />
-        </View>
       </View>
     </Sheet>
   );
 }
 
+/**
+ * Field label with a tappable "?" that toggles an inline helper note.
+ * A Sheet-safe replacement for the PWA's HelpCircle popover — an inline
+ * note avoids stacking a second RN Modal on top of the settings Sheet.
+ */
+function HelpLabel({
+  label,
+  help,
+  labelColor,
+}: {
+  label: string;
+  help: string;
+  labelColor: string;
+}) {
+  const t = useTheme();
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={styles.helpLabelWrap}>
+      <View style={styles.helpLabelRow}>
+        <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+        <Pressable
+          onPress={() => setOpen((o) => !o)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`${label} help`}
+        >
+          <Ionicons
+            name="help-circle-outline"
+            size={16}
+            color={t.mutedForeground}
+          />
+        </Pressable>
+      </View>
+      {open ? (
+        <Text style={[styles.helpText, { color: t.mutedForeground }]}>
+          {help}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  form: { gap: spacing.lg, paddingBottom: spacing.xxl },
+  // spacing.lg (16) between fields; label→input gaps use spacing.sm (8).
+  form: { gap: spacing.lg, paddingBottom: spacing.xs },
   label: { fontSize: 14, fontWeight: "500" },
-  descriptionBlock: { gap: 4 },
+  // Input text sized down to 15 (was 16) per device feedback.
+  inputText: { fontSize: 15 },
+  field: { gap: spacing.sm },
+  helpLabelWrap: { gap: spacing.xs },
+  helpLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs + 2,
+  },
+  helpText: { ...typography.caption, lineHeight: 16 },
+  descriptionBlock: { gap: spacing.sm },
   textareaWrap: {
     borderWidth: 1,
     borderRadius: radii.md,
@@ -371,7 +436,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   textarea: {
-    fontSize: 16,
+    fontSize: 15,
     minHeight: 84,
     maxHeight: 160,
     padding: 0,
@@ -408,8 +473,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
   },
-  toggleText: { flex: 1, gap: 2 },
-  toggleHelp: { ...typography.caption, lineHeight: 16 },
-  buttons: { flexDirection: "row", gap: spacing.md, marginTop: spacing.xs },
+  toggleText: { flex: 1 },
+  buttons: { flexDirection: "row", gap: spacing.md },
   button: { flex: 1 },
 });

@@ -209,7 +209,11 @@ export default function MembersScreen() {
   }
 
   return (
-    <Screen safeTop={false} onRefresh={handleRefresh}>
+    <Screen
+      safeTop={false}
+      onRefresh={handleRefresh}
+      contentStyle={styles.screenContent}
+    >
       {/* Headline + Manage Requests (web MembersGlobal mobile header) */}
       <View style={styles.headerRow}>
         <Text style={[styles.headerTitle, { color: theme.text }]}>
@@ -420,6 +424,8 @@ export default function MembersScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Consistent breathing room below the TopBar (matches Clubs tab).
+  screenContent: { paddingTop: spacing.lg },
   center: { flex: 1, justifyContent: "center", paddingVertical: 80 },
   headerRow: {
     flexDirection: "row",

@@ -94,7 +94,9 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.md,
-    gap: 2,
+    // spacing.sm between stacked text rows (name / position) —
+    // matches ClubCard.
+    gap: spacing.sm,
   },
   nameRow: {
     flexDirection: "row",

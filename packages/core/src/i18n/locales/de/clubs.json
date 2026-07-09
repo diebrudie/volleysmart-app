@@ -28,6 +28,7 @@
   "overview": {
     "backAriaLabel": "Zurück",
     "settingsAriaLabel": "Club-Einstellungen",
+    "shareMessage": "Tritt unserem Volleyball-Club bei\n{{url}}",
     "createdIn": "Club gegründet in {{date}}",
     "member": "{{count}} Mitglied",
     "member_other": "{{count}} Mitglieder",

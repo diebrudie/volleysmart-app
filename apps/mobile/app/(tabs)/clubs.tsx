@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
@@ -76,17 +76,38 @@ export default function ClubsScreen() {
   const isClubAdmin = (club: MemberClubWithDetails) =>
     club.role === "admin" || club.clubs?.created_by === user?.id;
 
+  // Presenting a second RN Modal (settings sheet / delete dialog) while the
+  // menu Sheet is still dismissing freezes iOS — so we stash the intent and
+  // act on it only AFTER the menu Sheet's exit animation fully completes
+  // (Sheet.onClosed). Mirrors the MenuDrawer pendingSubRef pattern.
+  const pendingActionRef = useRef<{
+    action: "edit" | "delete";
+    club: MemberClubWithDetails;
+  } | null>(null);
+
   const handleEditClub = () => {
     if (!menuClub) return;
-    setSelectedClub(menuClub);
-    setMenuClub(null); // close the menu before the settings sheet opens
-    setSettingsOpen(true);
+    pendingActionRef.current = { action: "edit", club: menuClub };
+    setMenuClub(null); // dismiss the menu; settings sheet opens on onClosed
   };
 
   const handleDeleteClub = () => {
     if (!menuClub) return;
-    setClubToDelete(menuClub);
-    setMenuClub(null); // close the menu before the confirm dialog opens
+    pendingActionRef.current = { action: "delete", club: menuClub };
+    setMenuClub(null); // dismiss the menu; confirm dialog opens on onClosed
+  };
+
+  // Runs once the menu Sheet is fully gone — safe to present the next Modal.
+  const handleMenuClosed = () => {
+    const pending = pendingActionRef.current;
+    pendingActionRef.current = null;
+    if (!pending) return;
+    if (pending.action === "edit") {
+      setSelectedClub(pending.club);
+      setSettingsOpen(true);
+    } else {
+      setClubToDelete(pending.club);
+    }
   };
 
   // Soft-delete (status="deleted"), mirroring web Clubs.tsx handleConfirmDelete.
@@ -146,7 +167,11 @@ export default function ClubsScreen() {
   const hasClubs = (clubs ?? []).length > 0;
 
   return (
-    <Screen safeTop={false} onRefresh={handleRefresh}>
+    <Screen
+      safeTop={false}
+      onRefresh={handleRefresh}
+      contentStyle={styles.screenContent}
+    >
       {/* Header: title + create CTA (web Clubs.tsx header) */}
       <View style={styles.headerRow}>
         <Text style={[styles.headerTitle, { color: theme.text }]}>
@@ -242,6 +267,7 @@ export default function ClubsScreen() {
       <Sheet
         visible={menuClub !== null}
         onClose={() => setMenuClub(null)}
+        onClosed={handleMenuClosed}
         title={menuClub?.clubs?.name}
       >
         <Pressable
@@ -314,6 +340,8 @@ export default function ClubsScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Consistent breathing room below the TopBar (matches Members tab).
+  screenContent: { paddingTop: spacing.lg },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",

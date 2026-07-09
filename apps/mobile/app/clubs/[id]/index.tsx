@@ -184,8 +184,14 @@ export default function ClubDetailScreen() {
 
   const handleShareClub = async () => {
     const clubUrl = `https://volleysmart.app/clubs/${id}`;
+    // Single link only: passing BOTH `message` and `url` makes iOS attach the
+    // link twice. Embed the URL in the message text and omit `url`.
+    const shareMessage = t("overview.shareMessage", {
+      url: clubUrl,
+      defaultValue: "Join our Volleyball Club\n{{url}}",
+    });
     try {
-      await Share.share({ message: clubUrl, url: clubUrl });
+      await Share.share({ message: shareMessage });
     } catch {
       // Native share unavailable (e.g. Expo web without navigator.share) →
       // fall back to the clipboard; that too can be blocked, so guard it.

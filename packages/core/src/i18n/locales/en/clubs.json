@@ -28,6 +28,7 @@
   "overview": {
     "backAriaLabel": "Go back",
     "settingsAriaLabel": "Club settings",
+    "shareMessage": "Join our Volleyball Club\n{{url}}",
     "createdIn": "Club created in {{date}}",
     "member": "{{count}} Member",
     "member_other": "{{count}} Members",

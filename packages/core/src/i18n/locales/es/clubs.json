@@ -28,6 +28,7 @@
   "overview": {
     "backAriaLabel": "Volver",
     "settingsAriaLabel": "Configuración del club",
+    "shareMessage": "Únete a nuestro club de vóley\n{{url}}",
     "createdIn": "Club creado en {{date}}",
     "member": "{{count}} Miembro",
     "member_other": "{{count}} Miembros",

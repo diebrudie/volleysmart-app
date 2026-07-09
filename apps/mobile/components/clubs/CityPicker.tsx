@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
@@ -36,6 +43,8 @@ const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 type Props = {
   label?: string;
   placeholder?: string;
+  /** Style override for the text input (e.g. a smaller font size). */
+  inputStyle?: StyleProp<TextStyle>;
   /** Current city text (controlled). */
   city: string;
   /** Country of the current selection, if any — used for the confirm row. */
@@ -55,6 +64,7 @@ type Props = {
 export function CityPicker({
   label,
   placeholder,
+  inputStyle,
   city,
   selectedCountry,
   onCityChange,
@@ -133,6 +143,7 @@ export function CityPicker({
         label={label}
         value={city}
         placeholder={placeholder}
+        style={inputStyle}
         autoCapitalize="words"
         autoCorrect={false}
         onChangeText={(text) => {

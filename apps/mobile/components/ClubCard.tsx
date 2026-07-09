@@ -163,7 +163,9 @@ const styles = StyleSheet.create({
   },
   info: {
     padding: spacing.md,
-    gap: spacing.xs,
+    // spacing.sm between stacked text rows (name / playing-since /
+    // location / members) — matches MemberCard.
+    gap: spacing.sm,
   },
   nameRow: {
     flexDirection: "row",

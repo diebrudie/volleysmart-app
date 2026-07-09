@@ -37,6 +37,17 @@ type Props = PropsWithChildren<{
   snapToContent?: boolean;
   /** Max sheet height as a fraction of the window height. Default 0.85. */
   maxHeightRatio?: number;
+  /**
+   * Pinned footer rendered below the scrollable content (does NOT scroll).
+   * Use for sticky action rows (e.g. Cancel / Save).
+   */
+  footer?: React.ReactNode;
+  /**
+   * Fires once the exit animation has fully completed and the underlying
+   * Modal has unmounted. Use to defer opening a second Modal until this one
+   * is gone — presenting a Modal while another is dismissing freezes iOS.
+   */
+  onClosed?: () => void;
 }>;
 
 export function Sheet({
@@ -45,6 +56,8 @@ export function Sheet({
   title,
   snapToContent = true,
   maxHeightRatio = 0.85,
+  footer,
+  onClosed,
   children,
 }: Props) {
   const t = useTheme();
@@ -56,6 +69,8 @@ export function Sheet({
   const dragY = useRef(new Animated.Value(0)).current;
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const onClosedRef = useRef(onClosed);
+  onClosedRef.current = onClosed;
 
   useEffect(() => {
     if (visible) {
@@ -74,7 +89,10 @@ export function Sheet({
         easing: Easing.in(Easing.cubic),
         useNativeDriver: USE_NATIVE_DRIVER,
       }).start(({ finished }) => {
-        if (finished) setMounted(false);
+        if (finished) {
+          setMounted(false);
+          onClosedRef.current?.();
+        }
       });
     }
   }, [visible, progress, dragY]);
@@ -166,6 +184,12 @@ export function Sheet({
           >
             {children}
           </ScrollView>
+
+          {footer ? (
+            <View style={[styles.footer, { borderTopColor: t.border }]}>
+              {footer}
+            </View>
+          ) : null}
         </Animated.View>
       </View>
     </Modal>
@@ -199,5 +223,10 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
+  },
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
 });
