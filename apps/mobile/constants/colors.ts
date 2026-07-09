@@ -32,6 +32,10 @@ export const palette = {
   slate500: "#64748B", // --muted-foreground hsl(215.4 16.3% 46.9%)
   slate800: "#1E293B", // dark --muted / --border hsl(217.2 32.6% 17.5%)
   slate900: "#0F172A", // --secondary-foreground hsl(222.2 47.4% 11.2%)
+  slate50: "#F8FAFC", // dark --foreground hsl(210 40% 98%)
+  slate700: "#334155",
+  slate950: "#020817", // dark --background hsl(222.2 84% 4.9%)
+  blueBright: "#3661E2", // dark --primary hsl(225 75% 55%) "Mikasa blue — brighter for dark mode contrast"
 } as const;
 
 export const colors = {
@@ -65,24 +69,25 @@ export const colors = {
     overlay: "rgba(0, 0, 0, 0.5)",
     destructive: palette.red500,
   },
+  // Dark values mirror apps/web/src/index.css `.dark` exactly (slate hues, not gray)
   dark: {
-    text: palette.gray50,
-    textSecondary: palette.gray400,
-    background: palette.gray900,
-    surface: palette.gray800,
-    border: palette.gray700,
-    primary: palette.navy,
-    primaryPressed: palette.navyDark,
+    text: palette.slate50,
+    textSecondary: palette.slate400,
+    background: palette.slate950,
+    surface: palette.slate800,
+    border: palette.slate800,
+    primary: palette.blueBright,
+    primaryPressed: palette.blue700,
     danger: palette.red600,
     dangerPressed: palette.red700,
     accent: palette.blue600,
     accentPressed: palette.blue700,
-    icon: palette.gray400,
-    tabActive: palette.navy,
-    tabInactive: palette.gray500,
-    inputBorder: palette.gray600,
-    inputBackground: palette.gray800,
-    placeholder: palette.gray500,
+    icon: palette.slate400,
+    tabActive: palette.blueBright,
+    tabInactive: palette.slate500,
+    inputBorder: palette.slate700,
+    inputBackground: palette.slate800,
+    placeholder: palette.slate500,
     // PWA parity tokens
     secondary: palette.yellow400,
     secondaryForeground: palette.slate900,
@@ -90,8 +95,8 @@ export const colors = {
     warning: palette.yellow400,
     muted: palette.slate800,
     mutedForeground: palette.slate400,
-    card: palette.gray800,
-    cardBorder: palette.gray700,
+    card: palette.slate950,
+    cardBorder: palette.slate800,
     overlay: "rgba(0, 0, 0, 0.6)",
     destructive: palette.red400,
   },

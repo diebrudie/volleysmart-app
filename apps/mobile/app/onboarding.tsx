@@ -23,12 +23,22 @@ import {
   type TrainingStatusType,
 } from "@/hooks/useOnboardingState";
 import { spacing } from "@/constants/theme";
+import { ForceLight } from "@/providers/ThemeProvider";
 
 /**
  * Player onboarding wizard — 13 steps mirroring
  * apps/web/src/pages/PlayerOnboarding.tsx (phone layout).
+ * Always light, matching the PWA's enforce-light-always route.
  */
 export default function OnboardingScreen() {
+  return (
+    <ForceLight>
+      <OnboardingScreenInner />
+    </ForceLight>
+  );
+}
+
+function OnboardingScreenInner() {
   const { t } = useTranslation("onboarding");
   const ob = useOnboardingState();
 

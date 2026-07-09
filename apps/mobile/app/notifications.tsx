@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import type { Notification } from "@volleysmart/core";
 import { Screen } from "@/components/ui/Screen";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
 import { NotificationRow } from "@/components/notifications/NotificationRow";
@@ -81,16 +82,10 @@ export default function NotificationsScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: t("header", { defaultValue: "Notifications" }),
-          headerBackTitle: t("common:button.back", { defaultValue: "Back" }),
-          headerTintColor: theme.primary,
-          headerStyle: { backgroundColor: theme.background },
-          headerTitleStyle: { color: theme.text },
-          headerRight: renderHeaderRight,
-        }}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader
+        title={t("header", { defaultValue: "Notifications" })}
+        right={renderHeaderRight()}
       />
       <Screen scroll={false} safeTop={false} padded={false}>
         {isLoading ? (

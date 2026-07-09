@@ -5,9 +5,15 @@ import { StatusBar } from "expo-status-bar";
 import { CoreBootstrap } from "@/providers/CoreBootstrap";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { ThemeProvider, useResolvedScheme } from "@/providers/ThemeProvider";
 import { RealtimeEffects } from "@/providers/RealtimeEffects";
 import { ToastHost } from "@/components/ui/Toast";
 import "@/constants/i18n";
+
+function ThemedStatusBar() {
+  const scheme = useResolvedScheme();
+  return <StatusBar style={scheme === "dark" ? "light" : "dark"} />;
+}
 
 export default function RootLayout() {
   return (
@@ -16,6 +22,7 @@ export default function RootLayout() {
         <CoreBootstrap>
           <QueryProvider>
             <AuthProvider>
+              <ThemeProvider>
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
@@ -35,10 +42,11 @@ export default function RootLayout() {
               </Stack>
               <RealtimeEffects />
               <ToastHost />
+              <ThemedStatusBar />
+              </ThemeProvider>
             </AuthProvider>
           </QueryProvider>
         </CoreBootstrap>
-        <StatusBar style="auto" />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
