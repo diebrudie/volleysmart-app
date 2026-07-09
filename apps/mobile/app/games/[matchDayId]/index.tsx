@@ -12,13 +12,14 @@
  * always the only open RN Modal and stays clickable. Score editing is inline
  * (SetBox), never a modal, so it likewise cannot stack.
  */
-import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { useRef, useState } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "@/components/ui/Screen";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
+import { Sheet } from "@/components/ui/Sheet";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -67,6 +68,10 @@ export default function GameDetailScreen() {
   });
 
   const [confirm, setConfirm] = useState<Confirm>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Defer opening the delete confirm until the menu Sheet fully dismisses —
+  // two stacked RN Modals freeze iOS (see MenuDrawer pendingSubRef pattern).
+  const pendingMenuActionRef = useRef<null | "sameTeams" | "delete">(null);
 
   if (game.isLoading) {
     return (
@@ -143,6 +148,17 @@ export default function GameDetailScreen() {
     }
   };
 
+  const requestMenuAction = (action: "sameTeams" | "delete") => {
+    pendingMenuActionRef.current = action;
+    setMenuOpen(false);
+  };
+  const handleMenuClosed = () => {
+    const action = pendingMenuActionRef.current;
+    pendingMenuActionRef.current = null;
+    if (action === "sameTeams") handleSameTeams();
+    else if (action === "delete") setConfirm({ type: "deleteGame" });
+  };
+
   const handleConfirm = async () => {
     if (!confirm) return;
     if (confirm.type === "deleteSet") {
@@ -193,8 +209,28 @@ export default function GameDetailScreen() {
 
   return (
     <>
-      <ScreenHeader title={title} />
-      <Screen onRefresh={async () => void (await game.refetch())} safeTop={false}>
+      <ScreenHeader
+        title={title}
+        right={
+          canAdmin ? (
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t("game.moreActions", {
+                defaultValue: "More actions",
+              })}
+            >
+              <Ionicons name="ellipsis-vertical" size={22} color={theme.text} />
+            </Pressable>
+          ) : undefined
+        }
+      />
+      <Screen
+        onRefresh={async () => void (await game.refetch())}
+        safeTop={false}
+        contentStyle={styles.content}
+      >
         {/* Meta row */}
         <View style={styles.meta}>
           {bundle.clubs?.name ? (
@@ -314,32 +350,54 @@ export default function GameDetailScreen() {
           ) : null}
         </View>
 
-        {/* Admin actions */}
-        {canAdmin ? (
+        {/* Edit Teams stays a primary action; same-teams + delete live in the
+            top-right three-dots menu. */}
+        {canAdmin && isEditingAllowed && !isOpponent ? (
           <View style={[styles.block, styles.adminActions]}>
-            {isEditingAllowed && !isOpponent ? (
-              <Button
-                title={t("game.editTeams", { defaultValue: "Edit Teams" })}
-                variant="outline"
-                onPress={() => router.push(`/games/${id}/edit` as never)}
-              />
-            ) : null}
             <Button
-              title={t("game.createSameTeams", {
-                defaultValue: "Create new game with same teams",
-              })}
+              title={t("game.editTeams", { defaultValue: "Edit Teams" })}
               variant="outline"
-              loading={mutations.sameTeams.isPending}
-              onPress={handleSameTeams}
-            />
-            <Button
-              title={t("game.deleteGame", { defaultValue: "Delete game" })}
-              variant="danger"
-              onPress={() => setConfirm({ type: "deleteGame" })}
+              onPress={() => router.push(`/games/${id}/edit` as never)}
             />
           </View>
         ) : null}
       </Screen>
+
+      {/* Three-dots action menu (admin) */}
+      <Sheet
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onClosed={handleMenuClosed}
+      >
+        <View style={styles.menu}>
+          <Pressable
+            onPress={() => requestMenuAction("sameTeams")}
+            style={({ pressed }) => [
+              styles.menuRow,
+              pressed && { backgroundColor: theme.surface },
+            ]}
+          >
+            <Ionicons name="copy-outline" size={20} color={theme.text} />
+            <Text style={[styles.menuText, { color: theme.text }]}>
+              {t("game.createSameTeams", {
+                defaultValue: "Create new game with same teams",
+              })}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => requestMenuAction("delete")}
+            style={({ pressed }) => [
+              styles.menuRow,
+              pressed && { backgroundColor: theme.surface },
+            ]}
+          >
+            <Ionicons name="trash-outline" size={20} color={theme.destructive} />
+            <Text style={[styles.menuText, { color: theme.destructive }]}>
+              {t("game.deleteGame", { defaultValue: "Delete game" })}
+            </Text>
+          </Pressable>
+        </View>
+      </Sheet>
 
       {/* Single confirm Dialog — only ever one modal open (modal-nesting rule). */}
       <Dialog
@@ -358,6 +416,17 @@ export default function GameDetailScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  content: { paddingTop: spacing.lg },
+  menu: { paddingBottom: spacing.sm },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.md,
+  },
+  menuText: { ...typography.body, fontWeight: "500" },
   meta: {
     flexDirection: "row",
     flexWrap: "wrap",

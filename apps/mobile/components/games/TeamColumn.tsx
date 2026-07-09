@@ -60,15 +60,6 @@ function sortRoster(a: BundleGamePlayer, b: BundleGamePlayer): number {
   );
 }
 
-/** "Outside Hitter" → "O. Hitter", "Middle Blocker" → "M. Blocker". */
-function shorten(label: string): string {
-  const parts = label.split(" ");
-  if (parts.length === 2 && parts[0].length > 0) {
-    return `${parts[0][0]}. ${parts[1]}`;
-  }
-  return label;
-}
-
 export function TeamColumn({ title, players, accent, opponentPlaceholder }: Props) {
   const theme = useTheme();
   const { t } = useTranslation("games");
@@ -102,22 +93,27 @@ export function TeamColumn({ title, players, accent, opponentPlaceholder }: Prop
         <View style={styles.list}>
           {sorted.map((gp, index) => {
             const pos = gp.position_played;
+            // Full position on its own line (no ellipsis) — the narrow
+            // side-by-side columns can't fit name + position on one row.
             const posLabel =
               pos && pos !== noPosition
-                ? shorten(tProfile(`positions.name.${pos}`, { defaultValue: pos }))
+                ? tProfile(`positions.name.${pos}`, { defaultValue: pos })
                 : null;
             return (
               <View key={`${gp.player_id}-${index}`} style={styles.row}>
-                <Text style={[styles.index, { color: theme.text }]}>{index + 1}.</Text>
-                <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
-                  {displayName(gp, deletedLabel)}
+                <Text style={[styles.index, { color: theme.mutedForeground }]}>
+                  {index + 1}
                 </Text>
-                {posLabel ? (
-                  <Text style={[styles.position, { color: theme.mutedForeground }]} numberOfLines={1}>
-                    {" — "}
-                    {posLabel}
+                <View style={styles.playerInfo}>
+                  <Text style={[styles.name, { color: theme.text }]}>
+                    {displayName(gp, deletedLabel)}
                   </Text>
-                ) : null}
+                  {posLabel ? (
+                    <Text style={[styles.position, { color: theme.mutedForeground }]}>
+                      {posLabel}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
             );
           })}
@@ -146,25 +142,28 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: spacing.md,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   row: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
+    gap: 6,
   },
   index: {
     ...typography.bodySm,
     fontWeight: "600",
-    marginRight: 4,
+    minWidth: 14,
+  },
+  playerInfo: {
+    flex: 1,
   },
   name: {
     ...typography.bodySm,
     fontWeight: "600",
-    flexShrink: 1,
   },
   position: {
     ...typography.caption,
-    flexShrink: 1,
+    marginTop: 1,
   },
   placeholder: {
     alignItems: "center",
