@@ -145,7 +145,7 @@ Note for other dev machines: `apps/mobile/.env` (gitignored) now needs `EXPO_PUB
 
 | # | Area | Issue | Status |
 |---|------|-------|--------|
-| R5-1 | Game detail | "Create new game with same teams" + "Delete game" don't belong as buttons at the bottom — move them into a three-dots menu at the top right (missing). | open |
-| R5-2 | Game detail | Not enough top margin. | open |
-| R5-3 | Game detail | Player positions + names are ellipsized/unreadable — make them fully visible; propose a better view showing both teams side by side. | open |
-| R5-4 | Test data | Create a game happening tomorrow with staging players so the user can Start Game and test detail/edit/live-score. | open |
+| R5-1 | Game detail | Move same-teams + delete into a top-right three-dots menu. | fixed (1e0acb2) |
+| R5-2 | Game detail | Not enough top margin. | fixed (1e0acb2) |
+| R5-3 | Game detail | Ellipsized names/positions — stack name over full position in the side-by-side columns. | fixed (1e0acb2) |
+| R5-4 | Test data | Create a test game. | done via SQL seed (scratchpad/seed-test-game.sql) — MCP is read-only, user runs it in the Supabase SQL editor. Dated today (Latin Gang) so Live Score is testable. |
