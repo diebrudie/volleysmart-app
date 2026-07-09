@@ -153,12 +153,25 @@ export const queryKeys = {
     lastGame: (playerId: string | null | undefined) =>
       ["home-last-game", playerId] as const,
     allLastGame: ["home-last-game"] as const,
+    /** Prefix for invalidating every home-dashboard query regardless of user. */
+    allDashboard: ["home-dashboard"] as const,
     monthlyStats: (
       userId: string | undefined,
       playerId: string | null | undefined,
       clubIds: string[],
     ) => ["home-monthly-stats", userId, playerId, clubIds] as const,
     allMonthlyStats: ["home-monthly-stats"] as const,
+  },
+
+  games: {
+    /** useGame -> ["game-detail", matchDayId] (fetchMatchDayBundle). */
+    detail: (matchDayId: string | undefined) =>
+      ["game-detail", matchDayId] as const,
+    /** Prefix for invalidating all game-detail queries. */
+    allDetail: ["game-detail"] as const,
+    /** get_game_start_players roster to seed a game from a planned event. */
+    startPlayers: (eventId: string | undefined) =>
+      ["game-start-players", eventId] as const,
   },
 } as const;
 
