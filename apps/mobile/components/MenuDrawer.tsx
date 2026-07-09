@@ -57,6 +57,12 @@ export function MenuDrawer({ visible, onClose }: Props) {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
 
+  // A sub-sheet (theme/language/contact) is its own RN Modal. Presenting it
+  // while the drawer Modal is still dismissing freezes iOS. So we defer the
+  // open until the drawer's exit animation fully completes — the two Modals
+  // are never on screen at the same time.
+  const pendingSubRef = useRef<null | "theme" | "language" | "contact">(null);
+
   useEffect(() => {
     if (visible) {
       setMounted(true);
@@ -72,7 +78,16 @@ export function MenuDrawer({ visible, onClose }: Props) {
         duration: 180,
         easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
-      }).start(() => setMounted(false));
+      }).start(() => {
+        setMounted(false);
+        const pending = pendingSubRef.current;
+        if (pending) {
+          pendingSubRef.current = null;
+          if (pending === "theme") setThemeOpen(true);
+          else if (pending === "language") setLanguageOpen(true);
+          else if (pending === "contact") setContactOpen(true);
+        }
+      });
     }
   }, [visible, progress]);
 
@@ -85,9 +100,9 @@ export function MenuDrawer({ visible, onClose }: Props) {
     router.push(path as never);
   };
 
-  const openSubSheet = (open: (v: boolean) => void) => {
+  const openSubSheet = (kind: "theme" | "language" | "contact") => {
+    pendingSubRef.current = kind;
     onClose();
-    open(true);
   };
 
   const translateX = progress.interpolate({
@@ -150,7 +165,7 @@ export function MenuDrawer({ visible, onClose }: Props) {
                   icon="mail-outline"
                   label={t("nav.contactUs", { defaultValue: "Contact Us" })}
                   theme={theme}
-                  onPress={() => openSubSheet(setContactOpen)}
+                  onPress={() => openSubSheet("contact")}
                   border={false}
                 />
               </MenuGroup>
@@ -163,13 +178,13 @@ export function MenuDrawer({ visible, onClose }: Props) {
                   icon="globe-outline"
                   label={t("language.title", { defaultValue: "Language" })}
                   theme={theme}
-                  onPress={() => openSubSheet(setLanguageOpen)}
+                  onPress={() => openSubSheet("language")}
                 />
                 <MenuItem
                   icon="moon-outline"
                   label={t("theme.title", { defaultValue: "Theme" })}
                   theme={theme}
-                  onPress={() => openSubSheet(setThemeOpen)}
+                  onPress={() => openSubSheet("theme")}
                 />
                 <MenuItem
                   icon={icons.bell}
