@@ -12,7 +12,13 @@
  * This component is presentational only: all score/undo/persistence/end-set
  * state lives in the screen. Team labels come from the screen (useGame bundle).
  */
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
@@ -62,6 +68,16 @@ export function LiveScoreBoard({
   const theme = useTheme();
   const { t } = useTranslation("games");
 
+  // Adapt sizing to the current window (R6-5): the two tap zones stay side by
+  // side (flex row) in both orientations, but in landscape the vertical space
+  // per zone is much shorter, so shrink the giant score readout and trim the
+  // vertical padding so the label + score + badge never overflow the zone.
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const scoreSize = isLandscape ? 64 : 96;
+  const scoreLineHeight = isLandscape ? 70 : 104;
+  const zonePaddingV = isLandscape ? spacing.md : spacing.xl;
+
   if (disabled) {
     return (
       <View style={styles.completeWrap}>
@@ -91,6 +107,7 @@ export function LiveScoreBoard({
         })}
         style={({ pressed }) => [
           styles.zone,
+          { paddingVertical: zonePaddingV },
           {
             backgroundColor: accent + (hasSetPoint || won ? "33" : "1A"),
             borderColor: hasSetPoint || won ? accent : "transparent",
@@ -101,7 +118,16 @@ export function LiveScoreBoard({
         <Text style={[styles.zoneLabel, { color: accent }]} numberOfLines={1}>
           {label}
         </Text>
-        <Text style={[styles.zoneScore, { color: accent }]}>{points}</Text>
+        <Text
+          style={[
+            styles.zoneScore,
+            { color: accent, fontSize: scoreSize, lineHeight: scoreLineHeight },
+          ]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          {points}
+        </Text>
         {hasSetPoint ? (
           <Text style={[styles.badge, { color: accent }]}>
             {t("liveScore.setPoint", { defaultValue: "SET POINT" })}

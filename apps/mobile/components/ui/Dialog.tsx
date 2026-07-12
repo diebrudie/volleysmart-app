@@ -58,6 +58,15 @@ export function Dialog({
     onConfirm(withReasonInput ? reason.trim() : undefined);
   };
 
+  // Long action labels (e.g. "Discard & exit" / "Keep scoring") wrap onto two
+  // lines when the two buttons share a narrow row (R6-7). When either label is
+  // long, stack the buttons full-width so each label stays on one line; short
+  // labels ("Delete" / "Cancel") keep the normal side-by-side row.
+  const resolvedConfirm = confirmLabel ?? tr("common:confirm", { defaultValue: "Confirm" });
+  const resolvedCancel = cancelLabel ?? tr("common:cancel", { defaultValue: "Cancel" });
+  const stackButtons =
+    resolvedConfirm.length > 11 || resolvedCancel.length > 11;
+
   return (
     <Modal
       visible={visible}
@@ -104,24 +113,19 @@ export function Dialog({
             />
           ) : null}
 
-          <View style={styles.buttons}>
+          <View style={[styles.buttons, stackButtons && styles.buttonsStacked]}>
             <Button
-              title={
-                cancelLabel ?? tr("common:cancel", { defaultValue: "Cancel" })
-              }
+              title={resolvedCancel}
               variant="outline"
               onPress={onClose}
-              style={styles.button}
+              style={stackButtons ? styles.buttonStacked : styles.button}
             />
             <Button
-              title={
-                confirmLabel ??
-                tr("common:confirm", { defaultValue: "Confirm" })
-              }
+              title={resolvedConfirm}
               variant={destructive ? "danger" : "primary"}
               loading={loading}
               onPress={handleConfirm}
-              style={styles.button}
+              style={stackButtons ? styles.buttonStacked : styles.button}
             />
           </View>
         </View>
@@ -165,5 +169,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginTop: spacing.sm,
   },
+  // Stacked: full-width buttons, confirm (last child) on top via column-reverse.
+  buttonsStacked: {
+    flexDirection: "column-reverse",
+    gap: spacing.sm,
+  },
   button: { flex: 1 },
+  buttonStacked: { width: "100%" },
 });

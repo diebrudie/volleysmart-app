@@ -20,6 +20,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useKeepAwake } from "expo-keep-awake";
+import * as ScreenOrientation from "expo-screen-orientation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Screen } from "@/components/ui/Screen";
@@ -80,6 +81,19 @@ export default function LiveScoreScreen() {
 
   // Keep the screen awake while scoring (this screen only). expo-keep-awake.
   useKeepAwake();
+
+  // Allow landscape on THIS screen only (R6-5). The app is globally locked to
+  // portrait in app.json; here we unlock so courtside scorers can rotate the
+  // phone, then lock back to portrait when leaving so the rest of the app stays
+  // portrait-only.
+  useEffect(() => {
+    ScreenOrientation.unlockAsync().catch(() => {});
+    return () => {
+      ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP
+      ).catch(() => {});
+    };
+  }, []);
 
   const game = useGame(id);
   const bundle = game.bundle;
@@ -170,7 +184,9 @@ export default function LiveScoreScreen() {
   }, [teamAPoints, teamBPoints, undoStack, currentSetNumber, restored, id]);
 
   // ── Set-point / win-by-2 logic (web parity) ────────────────────────────────
-  const setTarget = currentSetNumber >= 5 ? 15 : 25;
+  // Every set (including the 5th) is played to 25 with win-by-2 (R6-6). Teams
+  // often play all 5 sets to 25, so there is no special 15-point tie-break.
+  const setTarget = 25;
 
   const isSetWon = (a: number, b: number): boolean => {
     if (a >= setTarget && a - b >= 2) return true;
@@ -285,6 +301,12 @@ export default function LiveScoreScreen() {
 
   const goToGame = () => {
     setConfirm(null);
+    // Discard any persisted in-progress score so the game screen can't restore
+    // it and bounce us straight back into Live Score (R6-8 anti-cycle). Always
+    // use router.replace to the game detail (never router.back(), which could
+    // land on a screen that re-opens Live Score and loop).
+    AsyncStorage.removeItem(storageKey(id)).catch(() => {});
+    trackingRef.current = false;
     router.replace(`/games/${id}` as never);
   };
 
