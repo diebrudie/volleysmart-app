@@ -49,6 +49,7 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Sheet } from "@/components/ui/Sheet";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { toast } from "@/components/ui/Toast";
 import {
@@ -58,6 +59,7 @@ import {
 } from "@/components/games/EditableTeams";
 import { useGame } from "@/hooks/useGame";
 import { useGameMutations } from "@/hooks/useGameMutations";
+import { useClubGuests } from "@/hooks/useClubGuests";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { palette, spacing, typography } from "@/constants/theme";
@@ -134,6 +136,7 @@ export default function EditTeamsScreen() {
     clubId: bundle?.club_id,
     eventId: bundle?.planned_event_id,
   });
+  const { data: clubGuests = [] } = useClubGuests(bundle?.club_id);
 
   const deletedLabel = t("game.deletedPlayer", { defaultValue: "Deleted P." });
 
@@ -193,6 +196,41 @@ export default function EditTeamsScreen() {
 
   // ---- Add guest ------------------------------------------------------------
 
+  /** Add a resolved player (id + display name) to the smaller team. */
+  const addResolvedPlayer = async (
+    clubId: string,
+    playerId: string,
+    name: string
+  ) => {
+    if (players.some((p) => p.playerId === playerId)) {
+      toast(
+        t("game.playerAlreadyAdded", { defaultValue: "Player already added" }),
+        "info"
+      );
+      return;
+    }
+    let position: string | null = null;
+    try {
+      position = await getLastPositionForPlayerInClub(clubId, playerId);
+    } catch {
+      position = null;
+    }
+    const target: EditableTeam =
+      teamA.length <= teamB.length ? "team_a" : "team_b";
+    setPlayers((prev) => [
+      ...prev,
+      {
+        playerId,
+        name,
+        position: position ?? GUEST_FALLBACK_POSITION,
+        team: target,
+      },
+    ]);
+    setGuestName("");
+    setAddOpen(false);
+    toast(t("game.guestAdded", { defaultValue: "Guest added" }), "success");
+  };
+
   const handleAddGuest = async () => {
     const clubId = bundle?.club_id;
     if (!clubId) return;
@@ -200,33 +238,26 @@ export default function EditTeamsScreen() {
     setGuestAdding(true);
     try {
       const guest = await createOrReuseGuestByName(clubId, firstName, "Player");
-      if (players.some((p) => p.playerId === guest.id)) {
-        toast(
-          t("game.playerAlreadyAdded", { defaultValue: "Player already added" }),
-          "info"
-        );
-        return;
-      }
-      let position: string | null = null;
-      try {
-        position = await getLastPositionForPlayerInClub(clubId, guest.id);
-      } catch {
-        position = null;
-      }
-      const target: EditableTeam =
-        teamA.length <= teamB.length ? "team_a" : "team_b";
-      setPlayers((prev) => [
-        ...prev,
-        {
-          playerId: guest.id,
-          name: formatShortName(guest.first_name ?? firstName, guest.last_name),
-          position: position ?? GUEST_FALLBACK_POSITION,
-          team: target,
-        },
-      ]);
-      setGuestName("");
-      setAddOpen(false);
-      toast(t("game.guestAdded", { defaultValue: "Guest added" }), "success");
+      await addResolvedPlayer(
+        clubId,
+        guest.id,
+        formatShortName(guest.first_name ?? firstName, guest.last_name)
+      );
+    } catch {
+      toast(t("game.toastError", { defaultValue: "Something went wrong" }), "error");
+    } finally {
+      setGuestAdding(false);
+    }
+  };
+
+  /** Add an EXISTING club guest (picked from the dropdown) by their player id. */
+  const handleAddExistingGuest = async (guestId: string) => {
+    const clubId = bundle?.club_id;
+    if (!clubId || !guestId) return;
+    const picked = clubGuests.find((g) => g.id === guestId);
+    setGuestAdding(true);
+    try {
+      await addResolvedPlayer(clubId, guestId, picked?.name ?? "Guest");
     } catch {
       toast(t("game.toastError", { defaultValue: "Something went wrong" }), "error");
     } finally {
@@ -396,11 +427,11 @@ export default function EditTeamsScreen() {
   return (
     <>
       <ScreenHeader title={headerTitle} onBack={attemptBack} />
-      <Screen safeTop={false}>
+      <Screen safeTop={false} contentStyle={styles.content}>
         <Text style={[styles.hint, { color: theme.mutedForeground }]}>
           {t("game.editTeamsHint", {
             defaultValue:
-              "Tap a player, then tap the other team to move them. Tap again to change position or remove.",
+              "Tap a player to edit their position, move them to the other team, or remove them.",
           })}
         </Text>
 
@@ -462,12 +493,34 @@ export default function EditTeamsScreen() {
               "Guests are temporary players. Enter a first name; they'll be added to the smaller team.",
           })}
         </Text>
+        {clubGuests.filter((g) => !players.some((p) => p.playerId === g.id))
+          .length > 0 ? (
+          <View style={styles.reuseWrap}>
+            <Select
+              label={t("game.reuseGuestLabel", {
+                defaultValue: "Or reuse an existing guest",
+              })}
+              value={""}
+              onChange={(v) => {
+                if (v) handleAddExistingGuest(v);
+              }}
+              options={clubGuests
+                .filter((g) => !players.some((p) => p.playerId === g.id))
+                .map((g) => ({ value: g.id, label: g.name }))}
+              placeholder={t("game.reuseGuestPlaceholder", {
+                defaultValue: "Pick an existing guest",
+              })}
+              sheetTitle={t("game.reuseGuestTitle", {
+                defaultValue: "Existing guests",
+              })}
+            />
+          </View>
+        ) : null}
         <Input
           label={t("game.guestName", { defaultValue: "Guest name" })}
           value={guestName}
           onChangeText={setGuestName}
           placeholder={t("game.guestNamePlaceholder", { defaultValue: "First name" })}
-          autoFocus
           returnKeyType="done"
           onSubmitEditing={() => {
             if (guestName.trim().length > 0 && !guestAdding) handleAddGuest();
@@ -494,10 +547,12 @@ export default function EditTeamsScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  content: { paddingTop: spacing.lg },
   hint: {
     ...typography.bodySm,
     marginBottom: spacing.lg,
   },
+  reuseWrap: { marginBottom: spacing.md },
   addBlock: {
     marginTop: spacing.lg,
   },

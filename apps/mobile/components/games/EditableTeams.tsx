@@ -59,15 +59,6 @@ type Props = {
   onChangePosition: (playerId: string, position: string | null) => void;
 };
 
-/** "Outside Hitter" → "O. Hitter" (matches read-only TeamColumn). */
-function shorten(label: string): string {
-  const parts = label.split(" ");
-  if (parts.length === 2 && parts[0].length > 0) {
-    return `${parts[0][0]}. ${parts[1]}`;
-  }
-  return label;
-}
-
 export function EditableTeams({
   teamA,
   teamB,
@@ -109,10 +100,8 @@ export function EditableTeams({
     label: string,
     accent: string
   ) => {
-    const selected = selectedId
-      ? [...teamA, ...teamB].find((p) => p.playerId === selectedId) ?? null
-      : null;
-    const showMoveTarget = !!selected && selected.team !== team;
+    const otherTeam: EditableTeam = team === "team_a" ? "team_b" : "team_a";
+    const otherLabel = team === "team_a" ? teamBLabel : teamALabel;
 
     return (
       <View
@@ -128,29 +117,7 @@ export function EditableTeams({
         </View>
 
         <View style={styles.list}>
-          {showMoveTarget ? (
-            <Pressable
-              onPress={() => onMove(team)}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.moveTarget,
-                {
-                  borderColor: theme.primary,
-                  backgroundColor: pressed ? theme.muted : theme.surface,
-                },
-              ]}
-            >
-              <Ionicons name="arrow-down-circle-outline" size={16} color={theme.primary} />
-              <Text style={[styles.moveTargetText, { color: theme.primary }]} numberOfLines={2}>
-                {t("game.moveHere", {
-                  defaultValue: "Move {{name}} here",
-                  name: selected?.name ?? "",
-                })}
-              </Text>
-            </Pressable>
-          ) : null}
-
-          {players.length === 0 && !showMoveTarget ? (
+          {players.length === 0 ? (
             <Text style={[styles.emptyText, { color: theme.mutedForeground }]}>
               {t("game.noPlayers", { defaultValue: "No players" })}
             </Text>
@@ -159,9 +126,7 @@ export function EditableTeams({
           {players.map((p, index) => {
             const isSelected = p.playerId === selectedId;
             const label2 =
-              p.position && p.position.length > 0
-                ? shorten(posLabel(p.position))
-                : null;
+              p.position && p.position.length > 0 ? posLabel(p.position) : null;
             return (
               <View key={p.playerId}>
                 <Pressable
@@ -206,32 +171,57 @@ export function EditableTeams({
 
                 {isSelected ? (
                   <View style={styles.editControls}>
-                    <View style={styles.selectWrap}>
-                      <Select
-                        value={p.position ?? NO_POSITION}
-                        onChange={(v) =>
-                          onChangePosition(
-                            p.playerId,
-                            v === NO_POSITION ? null : v
-                          )
-                        }
-                        options={optionsFor(p.position)}
-                        sheetTitle={t("game.positionLabel", { defaultValue: "Position" })}
-                      />
+                    <View style={styles.editRow}>
+                      <View style={styles.selectWrap}>
+                        <Select
+                          value={p.position ?? NO_POSITION}
+                          onChange={(v) =>
+                            onChangePosition(
+                              p.playerId,
+                              v === NO_POSITION ? null : v
+                            )
+                          }
+                          options={optionsFor(p.position)}
+                          sheetTitle={t("game.positionLabel", {
+                            defaultValue: "Position",
+                          })}
+                        />
+                      </View>
+                      <Pressable
+                        onPress={() => onRemove(p.playerId)}
+                        accessibilityRole="button"
+                        hitSlop={6}
+                        style={({ pressed }) => [
+                          styles.removeButton,
+                          {
+                            borderColor: theme.danger,
+                            backgroundColor: pressed
+                              ? theme.muted
+                              : "transparent",
+                          },
+                        ]}
+                      >
+                        <Ionicons name="trash-outline" size={18} color={theme.danger} />
+                      </Pressable>
                     </View>
                     <Pressable
-                      onPress={() => onRemove(p.playerId)}
+                      onPress={() => onMove(otherTeam)}
                       accessibilityRole="button"
-                      hitSlop={6}
                       style={({ pressed }) => [
-                        styles.removeButton,
+                        styles.moveButton,
                         {
-                          borderColor: theme.danger,
-                          backgroundColor: pressed ? theme.muted : "transparent",
+                          borderColor: theme.primary,
+                          backgroundColor: pressed ? theme.muted : theme.surface,
                         },
                       ]}
                     >
-                      <Ionicons name="trash-outline" size={18} color={theme.danger} />
+                      <Ionicons name="swap-horizontal" size={18} color={theme.primary} />
+                      <Text style={[styles.moveButtonText, { color: theme.primary }]}>
+                        {t("game.moveToTeam", {
+                          defaultValue: "Move to {{team}}",
+                          team: otherLabel,
+                        })}
+                      </Text>
                     </Pressable>
                   </View>
                 ) : null}
@@ -253,9 +243,9 @@ export function EditableTeams({
 
 const styles = StyleSheet.create({
   root: {
-    flexDirection: "row",
+    // Teams stacked vertically (full width) → readable rows + position dropdown.
+    flexDirection: "column",
     gap: spacing.md,
-    alignItems: "flex-start",
   },
   column: {
     flex: 1,
@@ -276,22 +266,6 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.sm,
     gap: spacing.xs,
-  },
-  moveTarget: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderRadius: radii.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  moveTargetText: {
-    ...typography.caption,
-    fontWeight: "600",
-    flexShrink: 1,
   },
   emptyText: {
     ...typography.caption,
@@ -323,12 +297,15 @@ const styles = StyleSheet.create({
     ...typography.caption,
   },
   editControls: {
-    flexDirection: "row",
-    alignItems: "flex-end",
     gap: spacing.sm,
     paddingHorizontal: spacing.xs,
     paddingBottom: spacing.sm,
     paddingTop: spacing.xs,
+  },
+  editRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: spacing.sm,
   },
   selectWrap: {
     flex: 1,
@@ -340,5 +317,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  moveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    height: 44,
+    borderWidth: 1,
+    borderRadius: radii.md,
+  },
+  moveButtonText: {
+    ...typography.bodySm,
+    fontWeight: "600",
   },
 });

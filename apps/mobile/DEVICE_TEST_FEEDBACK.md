@@ -166,3 +166,13 @@ Note for other dev machines: `apps/mobile/.env` (gitignored) now needs `EXPO_PUB
 | R6-10 | Home | Today's Game uses a football/soccer ball icon — change to a volleyball icon. | open |
 | R6-11 | Events list | Calendar badge STRETCHES taller when "You're going" is present — keep the badge a fixed height regardless of the RSVP row. | open |
 | R6-12 | Events list | "Double event" is EXPECTED — the seed creates two events (Start a Game + Pre-scored Game). Not a bug. | wontfix (by design) |
+
+## Round 7 (2026-07-12) — Edit Teams (branch feat/mobile-phase4-game-layer)
+
+| # | Issue | Status |
+|---|-------|--------|
+| R7-1 | Edit Teams top padding. | fixed |
+| R7-2 | Position dropdown readable (full-width vertical layout). | fixed |
+| R7-3 | Teams stacked vertically. | fixed |
+| R7-4 | Replaced banner with an inline 'Move to [team]' button on the selected player (recommendation: tap-move over DnD). | fixed |
+| R7-5 | Edit Teams 'Add guest' now queries existing club guests (dropdown) + add-new. | fixed |
