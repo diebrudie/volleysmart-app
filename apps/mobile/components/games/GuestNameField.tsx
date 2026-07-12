@@ -2,21 +2,25 @@
  * One temporary "guest" (extra player) row in the New Game screen.
  *
  * Mirrors the web NewGame extra-player row (apps/web/src/pages/NewGame.tsx
- * :779-811 + GuestNameSelector): a first-name field plus a position select.
- * The screen collects `{ name, position }` per guest and defaults the skill
- * rating to 5; the useCreateGame hook resolves the name to a real players.id
- * via createOrReuseGuestByName. Names are stripped of spaces here (guests are
- * stored first-name-only, matching web).
+ * :779-811 + GuestNameSelector): a first-name field plus a position select,
+ * PLUS a picker of the club's EXISTING guests so a previously-created guest can
+ * be reused instead of always typing a new name (R6-4). The screen collects
+ * `{ name, position, existingPlayerId }` per guest and defaults the skill
+ * rating to 5; the useCreateGame hook either reuses `existingPlayerId` or
+ * resolves the typed name to a players.id via createOrReuseGuestByName. Names
+ * are stripped of spaces here (guests are stored first-name-only, matching web).
  *
- * The position picker is a `Select` (its own RN Modal). This row lives inside
- * the plain New Game ScrollView — never inside another Modal — so the picker
- * is the only open Modal and stays interactive (modal-nesting rule).
+ * The position picker and the existing-guest picker are each a `Select` (their
+ * own RN Modal). This row lives inside the plain New Game ScrollView — never
+ * inside another Modal — and only one Select opens at a time, so none stack
+ * (modal-nesting rule).
  */
 import { View, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/Input";
 import { Select, type SelectOption } from "@/components/ui/Select";
+import type { ClubGuest } from "@/hooks/useClubGuests";
 import { useTheme } from "@/hooks/useTheme";
 import { icons } from "@/constants/icons";
 import { radii, spacing } from "@/constants/theme";
@@ -28,6 +32,12 @@ export type GuestDraft = {
   name: string;
   /** English position name (normalized by the create hook). */
   position: string;
+  /**
+   * When set, this guest reuses an existing club guest player (players.id) —
+   * useCreateGame skips createOrReuseGuestByName so no duplicate row is made.
+   * Cleared as soon as the user types a new name.
+   */
+  existingPlayerId?: string | null;
 };
 
 type Props = {
@@ -37,6 +47,8 @@ type Props = {
   onRemove: () => void;
   /** English position value + localized label. */
   positionOptions: readonly SelectOption<string>[];
+  /** The club's existing guests to offer for reuse (empty hides the picker). */
+  existingGuests: readonly ClubGuest[];
 };
 
 export function GuestNameField({
@@ -45,9 +57,21 @@ export function GuestNameField({
   onChange,
   onRemove,
   positionOptions,
+  existingGuests,
 }: Props) {
   const theme = useTheme();
   const { t } = useTranslation("games");
+
+  const existingOptions: SelectOption<string>[] = existingGuests.map((g) => ({
+    value: g.id,
+    label: g.name,
+  }));
+
+  const handleSelectExisting = (playerId: string) => {
+    const guest = existingGuests.find((g) => g.id === playerId);
+    if (!guest) return;
+    onChange({ name: guest.name, existingPlayerId: guest.id });
+  };
 
   return (
     <View
@@ -69,8 +93,9 @@ export function GuestNameField({
             value={value.name}
             autoCapitalize="words"
             onChangeText={(text) =>
-              // Guests are first-name only; strip spaces (web parity).
-              onChange({ name: text.replace(/\s+/g, "") })
+              // Guests are first-name only; strip spaces (web parity). Typing a
+              // name means a brand-new guest — drop any reused-guest link.
+              onChange({ name: text.replace(/\s+/g, ""), existingPlayerId: null })
             }
           />
         </View>
@@ -90,6 +115,23 @@ export function GuestNameField({
           <Ionicons name={icons.x} size={18} color={theme.textSecondary} />
         </Pressable>
       </View>
+
+      {existingOptions.length > 0 ? (
+        <Select
+          label={t("game.newGame.reuseGuestLabel", {
+            defaultValue: "Or reuse an existing guest",
+          })}
+          placeholder={t("game.newGame.reuseGuestPlaceholder", {
+            defaultValue: "Pick a previous guest",
+          })}
+          sheetTitle={t("game.newGame.reuseGuestTitle", {
+            defaultValue: "Existing guests",
+          })}
+          options={existingOptions}
+          value={value.existingPlayerId ?? null}
+          onChange={handleSelectExisting}
+        />
+      ) : null}
 
       <Select
         label={t("game.newGame.guestPositionLabel", {

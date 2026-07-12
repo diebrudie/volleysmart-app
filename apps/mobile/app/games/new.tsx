@@ -49,6 +49,7 @@ import {
   GuestNameField,
   type GuestDraft,
 } from "@/components/games/GuestNameField";
+import { useClubGuests } from "@/hooks/useClubGuests";
 import { useEventDetail } from "@/hooks/useEventDetail";
 import {
   useCreateGame,
@@ -217,6 +218,13 @@ export default function NewGameScreen() {
   });
   const eligible = useMemo(() => eligibleQuery.data ?? [], [eligibleQuery.data]);
 
+  // ── Existing club guests (reuse instead of creating a duplicate) ──
+  const clubGuestsQuery = useClubGuests(clubId);
+  const existingGuests = useMemo(
+    () => clubGuestsQuery.data ?? [],
+    [clubGuestsQuery.data]
+  );
+
   // ── Club-flow location picker ──
   const locationsQuery = useQuery<LocationOption[]>({
     queryKey: queryKeys.clubs.locations(clubId ?? undefined),
@@ -333,6 +341,9 @@ export default function NewGameScreen() {
 
     const guestPayload: CreateGameGuest[] = guests.map((g) => ({
       name: g.name,
+      // Reuse the existing guest's players.id when one was picked so
+      // useCreateGame skips createOrReuseGuestByName (no duplicate row).
+      existingPlayerId: g.existingPlayerId ?? null,
       skillRating: GUEST_SKILL_RATING,
       position: g.position,
     }));
@@ -566,6 +577,7 @@ export default function NewGameScreen() {
                 value={g}
                 index={index}
                 positionOptions={positionOptions}
+                existingGuests={existingGuests}
                 onChange={(patch) => updateGuest(g.id, patch)}
                 onRemove={() => removeGuest(g.id)}
               />
