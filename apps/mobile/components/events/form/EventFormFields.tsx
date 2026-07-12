@@ -79,6 +79,7 @@ type Props = {
 };
 
 const NOTES_MAX = 100;
+const TITLE_MAX = 50;
 
 /** RSVP presets, mirroring the web page: days before the event date. */
 const RSVP_PRESET_DAYS = [0, 1, 3, 7] as const;
@@ -444,7 +445,8 @@ export function EventFormFields({
               defaultValue: "e.g. Saturday Friendly",
             })}
             value={values.title}
-            onChangeText={(text) => onChange({ title: text })}
+            maxLength={TITLE_MAX}
+            onChangeText={(text) => onChange({ title: text.slice(0, TITLE_MAX) })}
           />
 
           {/* Location: pick a saved location, or add a new one */}
