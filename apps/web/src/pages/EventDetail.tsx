@@ -27,8 +27,10 @@ import {
   Building,
   Palmtree,
   Shield,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +82,14 @@ import {
   type UpdateEventInput,
 } from "@/integrations/supabase/plannedEvents";
 import { EventLocationSelector } from "@/components/forms/EventLocationSelector";
+import {
+  GuestNameSelector,
+  type GuestSummary,
+} from "@/components/forms/GuestNameSelector";
+import {
+  createOrReuseGuestByName,
+  getLastPositionForPlayerInClub,
+} from "@/integrations/supabase/players";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { assignTeams } from "@/features/teams/assignLineup";
@@ -519,6 +529,7 @@ const EventDetail: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const isCompact = useIsCompact();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [editSheetOpen, setEditSheetOpen] = React.useState(false);
@@ -769,6 +780,11 @@ const EventDetail: React.FC = () => {
   });
 
   const [isStartingGame, setIsStartingGame] = React.useState(false);
+  // Player/guest selection step shown before teams are generated
+  const [selectSheetOpen, setSelectSheetOpen] = React.useState(false);
+  const [selectedPlayerIds, setSelectedPlayerIds] = React.useState<string[]>([]);
+  type GameGuest = { id: string; name: string; existingPlayerId: string | null };
+  const [gameGuests, setGameGuests] = React.useState<GameGuest[]>([]);
   const [clubVsClubDialog, setClubVsClubDialog] = React.useState<{
     clubAName: string;
     clubBName: string;
@@ -883,33 +899,110 @@ const EventDetail: React.FC = () => {
     navigate(`/game/${matchDay.id}`);
   };
 
-  const handleStartGame = async () => {
+  // Step 1: open the "select players + add guests" sheet, pre-selecting all
+  // attending players. Teams are generated only after the user confirms.
+  const minGamePlayers = event?.is_opponent_mode ? 2 : 4;
+
+  const handleStartGame = () => {
     if (!event || !user?.id || !eventId) return;
 
     const attending = attendees.filter((a) => a.status === "attending");
-    const minPlayers = event.is_opponent_mode ? 2 : 4;
-    if (attending.length < minPlayers) {
+    if (attending.length < minGamePlayers) {
       toast.error(t("detail.minPlayersNeeded"));
       return;
     }
 
+    setSelectedPlayerIds(attending.map((a) => a.player_id));
+    setGameGuests([]);
+    setSelectSheetOpen(true);
+  };
+
+  // Step 2: resolve the selected attendees + guests, then generate teams.
+  const handleConfirmStartGame = async () => {
+    if (!event || !user?.id || !eventId) return;
+
+    const namedGuests = gameGuests.filter((g) => g.name.trim());
+    const totalSelected = selectedPlayerIds.length + namedGuests.length;
+    if (totalSelected < minGamePlayers) {
+      toast.error(t("detail.selectMinPlayers", { count: minGamePlayers }));
+      return;
+    }
+
+    setSelectSheetOpen(false);
     setIsStartingGame(true);
     try {
       const { data: rpcData } = await supabase.rpc("get_game_start_players", { p_event_id: eventId });
 
-      const playersData = (rpcData ?? []).map((p: any) => ({
-        id: p.player_id,
-        first_name: p.first_name ?? null,
-        skill_rating: p.skill_rating,
-        user_id: p.user_id,
-        gender: p.gender ?? null,
-        player_positions: ((p.positions ?? []) as any[]).map((pos: any) => ({
-          is_primary: pos.is_primary,
-          positions: { name: pos.name },
-        })),
-        club_memberships: p.club_memberships ?? [],
-      }));
+      const selectedSet = new Set(selectedPlayerIds);
+      const selectedPlayersData = (rpcData ?? [])
+        .filter((p: any) => selectedSet.has(p.player_id))
+        .map((p: any) => ({
+          id: p.player_id,
+          first_name: p.first_name ?? null,
+          skill_rating: p.skill_rating,
+          user_id: p.user_id,
+          gender: p.gender ?? null,
+          player_positions: ((p.positions ?? []) as any[]).map((pos: any) => ({
+            is_primary: pos.is_primary,
+            positions: { name: pos.name },
+          })),
+          club_memberships: p.club_memberships ?? [],
+        }));
 
+      // Resolve guests: create/reuse a player record, reuse last-played position.
+      const resolvedGuests = await Promise.all(
+        namedGuests.map(async (g) => {
+          let guestPlayerId: string;
+          if (g.existingPlayerId) {
+            guestPlayerId = g.existingPlayerId;
+          } else {
+            const firstName = g.name.trim().replace(/\s+/g, "") || "Guest";
+            const guestPlayer = await createOrReuseGuestByName(
+              event.club_id!,
+              firstName,
+              "Player"
+            );
+            guestPlayerId = guestPlayer.id;
+          }
+          const lastPos = event.club_id
+            ? await getLastPositionForPlayerInClub(event.club_id, guestPlayerId)
+            : null;
+          return {
+            id: guestPlayerId,
+            first_name: g.name.trim(),
+            skill_rating: 5,
+            user_id: null,
+            gender: null,
+            player_positions: [
+              { is_primary: true, positions: { name: lastPos ?? "Outside Hitter" } },
+            ],
+            // Guests belong to the host club so club-vs-club keeps them on team A.
+            club_memberships: event.club_id
+              ? [{ club_id: event.club_id, club_name: event.clubs?.name ?? null }]
+              : [],
+          };
+        })
+      );
+
+      // Drop guests that resolved to an already-selected attendee.
+      const existingIds = new Set(selectedPlayersData.map((p: any) => p.id));
+      const uniqueGuests = resolvedGuests.filter((g) => !existingIds.has(g.id));
+
+      const playersData = [...selectedPlayersData, ...uniqueGuests];
+
+      await proceedWithGame(playersData);
+    } catch (error) {
+      console.error("Error starting game:", error);
+      toast.error(t("detail.failedToStartGame"));
+      setIsStartingGame(false);
+    }
+  };
+
+  // Step 3: generate teams for the resolved player list. Assumes
+  // isStartingGame is already true; owns clearing it.
+  const proceedWithGame = async (playersData: any[]) => {
+    if (!event || !user?.id || !eventId) return;
+    try {
       if (event.is_opponent_mode) {
         // Opponent mode: all attending players → team_a
         const { data: matchDay, error: mdError } = await supabase
@@ -1635,6 +1728,173 @@ const EventDetail: React.FC = () => {
           saving={updateMutation.isPending}
         />
       )}
+
+      {/* Select players + add guests sheet (shown before teams are generated) */}
+      <Sheet open={selectSheetOpen} onOpenChange={setSelectSheetOpen}>
+        <SheetContent
+          side={isCompact ? "bottom" : "right"}
+          className="h-[95dvh] flex flex-col p-0 overflow-x-hidden"
+        >
+          <SheetHeader className="px-4 pt-4 pb-2 border-b">
+            <SheetTitle>{t("detail.selectPlayersTitle")}</SheetTitle>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-5">
+            <p className="text-sm text-muted-foreground">
+              {t("detail.selectPlayersSubtitle")}
+            </p>
+
+            {/* Attending players */}
+            <div className="space-y-2">
+              {attendees
+                .filter((a) => a.status === "attending")
+                .map((a) => {
+                  const checked = selectedPlayerIds.includes(a.player_id);
+                  return (
+                    <button
+                      type="button"
+                      key={a.player_id}
+                      onClick={() =>
+                        setSelectedPlayerIds((cur) =>
+                          cur.includes(a.player_id)
+                            ? cur.filter((id) => id !== a.player_id)
+                            : [...cur, a.player_id]
+                        )
+                      }
+                      className={cn(
+                        "w-full flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
+                        checked
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted"
+                      )}
+                    >
+                      <Checkbox checked={checked} className="pointer-events-none" />
+                      {a.image_url ? (
+                        <img
+                          src={a.image_url}
+                          alt=""
+                          className="h-9 w-9 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/avatar-placeholder.svg";
+                          }}
+                        />
+                      ) : (
+                        <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {a.first_name} {a.last_name?.charAt(0)}.
+                        </p>
+                        {a.primary_position && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {tProfile(`positions.name.${a.primary_position}`, {
+                              defaultValue: a.primary_position,
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+            </div>
+
+            {/* Guests */}
+            {event.club_id && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold">{t("detail.guests")}</h3>
+                {gameGuests.map((g) => (
+                  <div key={g.id} className="flex items-center gap-2">
+                    <GuestNameSelector
+                      clubId={event.club_id!}
+                      value={g.name}
+                      placeholder={t("detail.guestNamePlaceholder")}
+                      onValueChange={(v) =>
+                        setGameGuests((cur) =>
+                          cur.map((x) =>
+                            x.id === g.id
+                              ? { ...x, name: v.replace(/\s+/g, ""), existingPlayerId: null }
+                              : x
+                          )
+                        )
+                      }
+                      onExistingGuestSelected={(guest: GuestSummary) =>
+                        setGameGuests((cur) =>
+                          cur.map((x) =>
+                            x.id === g.id
+                              ? {
+                                  ...x,
+                                  name: guest.first_name.replace(/\s+/g, ""),
+                                  existingPlayerId: guest.player_id,
+                                }
+                              : x
+                          )
+                        )
+                      }
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      aria-label={t("detail.removeGuest")}
+                      onClick={() =>
+                        setGameGuests((cur) => cur.filter((x) => x.id !== g.id))
+                      }
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() =>
+                    setGameGuests((cur) => [
+                      ...cur,
+                      {
+                        id: `guest-${Date.now()}-${Math.random()}`,
+                        name: "",
+                        existingPlayerId: null,
+                      },
+                    ])
+                  }
+                >
+                  <UserPlus className="h-4 w-4" />
+                  {t("detail.addGuest")}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Fixed confirm button */}
+          <div className="px-4 py-3 border-t pb-[max(env(safe-area-inset-bottom),12px)]">
+            <p className="text-xs text-muted-foreground mb-2 text-center">
+              {t("detail.playersSelectedCount", {
+                count:
+                  selectedPlayerIds.length +
+                  gameGuests.filter((g) => g.name.trim()).length,
+              })}
+            </p>
+            <Button
+              className="w-full"
+              onClick={handleConfirmStartGame}
+              disabled={
+                isStartingGame ||
+                selectedPlayerIds.length +
+                  gameGuests.filter((g) => g.name.trim()).length <
+                  minGamePlayers
+              }
+            >
+              {isStartingGame ? t("detail.starting") : t("detail.generateTeams")}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Club vs Club dialog */}
       <Dialog open={!!clubVsClubDialog} onOpenChange={(open) => { if (!open) setClubVsClubDialog(null); }}>
