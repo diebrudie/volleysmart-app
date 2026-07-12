@@ -148,7 +148,10 @@ export async function fetchUpcomingEvents(
 
   unique.sort(
     (a, b) =>
-      a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)
+      a.date.localeCompare(b.date) ||
+      a.start_time.localeCompare(b.start_time) ||
+      // Tiebreaker: same date+time → newest-created on top (created_at DESC).
+      b.created_at.localeCompare(a.created_at)
   );
 
   return unique;
@@ -426,9 +429,21 @@ export async function fetchSingleEvent(
   return data as PlannedEvent;
 }
 
-/** Delete a planned event. */
+/** Delete a planned event.
+ *
+ * A game (match_day) may reference the event via planned_event_id, whose FK has
+ * no ON DELETE rule — so the event delete would fail with a foreign-key
+ * violation. Unlink any linked games first (the game + its scores survive as a
+ * standalone match day) so the delete always succeeds. */
 export async function deletePlannedEvent(eventId: string): Promise<void> {
   const supabase = getSupabaseClient();
+
+  const { error: unlinkError } = await supabase
+    .from("match_days")
+    .update({ planned_event_id: null })
+    .eq("planned_event_id", eventId);
+  if (unlinkError) throw unlinkError;
+
   const { error } = await supabase
     .from("planned_events")
     .delete()
