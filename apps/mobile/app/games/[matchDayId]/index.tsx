@@ -29,6 +29,7 @@ import { ScoreOverview } from "@/components/games/ScoreOverview";
 import { TeamColumn } from "@/components/games/TeamColumn";
 import { SetBox } from "@/components/games/SetBox";
 import { AddSetBox } from "@/components/games/AddSetBox";
+import { EditLocationSheet } from "@/components/games/EditLocationSheet";
 import { useGame } from "@/hooks/useGame";
 import { useGameMutations } from "@/hooks/useGameMutations";
 import { useTheme } from "@/hooks/useTheme";
@@ -69,9 +70,13 @@ export default function GameDetailScreen() {
 
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  // Defer opening the delete confirm until the menu Sheet fully dismisses —
-  // two stacked RN Modals freeze iOS (see MenuDrawer pendingSubRef pattern).
-  const pendingMenuActionRef = useRef<null | "sameTeams" | "delete">(null);
+  const [editLocationOpen, setEditLocationOpen] = useState(false);
+  // Defer the follow-up action until the menu Sheet fully dismisses — two
+  // stacked RN Modals freeze iOS (see MenuDrawer pendingSubRef pattern). This
+  // covers both the delete confirm Dialog and the Edit-Location Sheet.
+  const pendingMenuActionRef = useRef<
+    null | "editTeams" | "editLocation" | "sameTeams" | "delete"
+  >(null);
 
   if (game.isLoading) {
     return (
@@ -148,15 +153,34 @@ export default function GameDetailScreen() {
     }
   };
 
-  const requestMenuAction = (action: "sameTeams" | "delete") => {
+  const requestMenuAction = (
+    action: "editTeams" | "editLocation" | "sameTeams" | "delete"
+  ) => {
     pendingMenuActionRef.current = action;
     setMenuOpen(false);
   };
   const handleMenuClosed = () => {
     const action = pendingMenuActionRef.current;
     pendingMenuActionRef.current = null;
-    if (action === "sameTeams") handleSameTeams();
+    if (action === "editTeams") router.push(`/games/${id}/edit` as never);
+    else if (action === "editLocation") setEditLocationOpen(true);
+    else if (action === "sameTeams") handleSameTeams();
     else if (action === "delete") setConfirm({ type: "deleteGame" });
+  };
+
+  const handleSelectLocation = (locationId: string) => {
+    mutations.updateLocation.mutate(
+      { locationId },
+      {
+        onSuccess: () =>
+          toast(
+            t("game.toastLocationUpdated", { defaultValue: "Location updated" }),
+            "success"
+          ),
+        onError: () =>
+          toast(t("game.toastError", { defaultValue: "Something went wrong" }), "error"),
+      }
+    );
   };
 
   const handleConfirm = async () => {
@@ -211,6 +235,16 @@ export default function GameDetailScreen() {
     <>
       <ScreenHeader
         title={title}
+        {...(bundle.planned_event_id
+          ? {
+              // Back ALWAYS returns to the linked event (R6-8): the game screen
+              // can be reached from several places, so router.back() loops.
+              onBack: () =>
+                router.replace(
+                  `/events/${bundle.planned_event_id}` as never
+                ),
+            }
+          : {})}
         right={
           canAdmin ? (
             <Pressable
@@ -350,17 +384,8 @@ export default function GameDetailScreen() {
           ) : null}
         </View>
 
-        {/* Edit Teams stays a primary action; same-teams + delete live in the
-            top-right three-dots menu. */}
-        {canAdmin && isEditingAllowed && !isOpponent ? (
-          <View style={[styles.block, styles.adminActions]}>
-            <Button
-              title={t("game.editTeams", { defaultValue: "Edit Teams" })}
-              variant="outline"
-              onPress={() => router.push(`/games/${id}/edit` as never)}
-            />
-          </View>
-        ) : null}
+        {/* All admin actions (Edit Teams, Edit Location, same-teams, delete)
+            live in the top-right three-dots menu — no bottom button (R6-1). */}
       </Screen>
 
       {/* Three-dots action menu (admin) */}
@@ -370,6 +395,34 @@ export default function GameDetailScreen() {
         onClosed={handleMenuClosed}
       >
         <View style={styles.menu}>
+          {isEditingAllowed && !isOpponent ? (
+            <Pressable
+              onPress={() => requestMenuAction("editTeams")}
+              style={({ pressed }) => [
+                styles.menuRow,
+                pressed && { backgroundColor: theme.surface },
+              ]}
+            >
+              <Ionicons name="people-outline" size={20} color={theme.text} />
+              <Text style={[styles.menuText, { color: theme.text }]}>
+                {t("game.editTeams", { defaultValue: "Edit Teams" })}
+              </Text>
+            </Pressable>
+          ) : null}
+          {bundle.club_id ? (
+            <Pressable
+              onPress={() => requestMenuAction("editLocation")}
+              style={({ pressed }) => [
+                styles.menuRow,
+                pressed && { backgroundColor: theme.surface },
+              ]}
+            >
+              <Ionicons name="location-outline" size={20} color={theme.text} />
+              <Text style={[styles.menuText, { color: theme.text }]}>
+                {t("game.editLocation", { defaultValue: "Edit Location" })}
+              </Text>
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={() => requestMenuAction("sameTeams")}
             style={({ pressed }) => [
@@ -398,6 +451,15 @@ export default function GameDetailScreen() {
           </Pressable>
         </View>
       </Sheet>
+
+      {/* Edit Location — opened only after the menu Sheet fully dismisses. */}
+      <EditLocationSheet
+        visible={editLocationOpen}
+        onClose={() => setEditLocationOpen(false)}
+        clubId={bundle.club_id}
+        currentLocationId={bundle.location_id}
+        onSelect={handleSelectLocation}
+      />
 
       {/* Single confirm Dialog — only ever one modal open (modal-nesting rule). */}
       <Dialog
@@ -450,9 +512,5 @@ const styles = StyleSheet.create({
   },
   sets: {
     gap: spacing.md,
-  },
-  adminActions: {
-    gap: spacing.md,
-    marginBottom: spacing.xxl,
   },
 });

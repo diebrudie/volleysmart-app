@@ -9,6 +9,7 @@ import {
   deleteMatchDay,
   deleteSet,
   updateGamePlayers,
+  updateMatchDayLocation,
   updateSetScore,
   type GamePlayerAssignment,
   type UpdateGamePlayersOptions,
@@ -141,6 +142,13 @@ export function useGameMutations(
     },
   });
 
+  /** Update the match day's saved location (Edit Location sheet). */
+  const updateLocation = useMutation({
+    mutationFn: ({ locationId }: { locationId: string }) =>
+      updateMatchDayLocation(matchDayId, locationId),
+    onSuccess: () => invalidateGameFanout(queryClient, fanoutCtx),
+  });
+
   /** Persist a manual team edit (tap-to-move). */
   const saveTeams = useMutation({
     mutationFn: ({
@@ -160,5 +168,6 @@ export function useGameMutations(
     removeMatchDay,
     sameTeams,
     saveTeams,
+    updateLocation,
   };
 }

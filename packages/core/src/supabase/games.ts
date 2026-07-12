@@ -545,7 +545,56 @@ export async function updateGamePlayers(
 }
 
 /* ------------------------------------------------------------------ */
-/* 9. getGameStartPlayers — wraps RPC (EventDetail :898)               */
+/* 9. fetchClubLocations — canonical saved-locations lookup            */
+/* ------------------------------------------------------------------ */
+
+/** A saved club location (mirrors the web EventLocationSelector select shape). */
+export interface ClubLocation {
+  id: string;
+  name: string;
+  address: string | null;
+}
+
+/**
+ * Saved locations for a club, ordered by name. Canonical version of the local
+ * helper previously in apps/mobile/app/games/new.tsx.
+ */
+export async function fetchClubLocations(
+  clubId: string
+): Promise<ClubLocation[]> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("locations")
+    .select("id, name, address")
+    .eq("club_id", clubId)
+    .order("name");
+  if (error) throw error;
+  return (data ?? []) as ClubLocation[];
+}
+
+/* ------------------------------------------------------------------ */
+/* 10. updateMatchDayLocation — patch a match day's location           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Update a match day's saved location, then flag it as modified via the shared
+ * markModifiedBy RPC (same as the other EditGame write paths).
+ */
+export async function updateMatchDayLocation(
+  matchDayId: string,
+  locationId: string
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
+    .from("match_days")
+    .update({ location_id: locationId })
+    .eq("id", matchDayId);
+  if (error) throw error;
+  await markModifiedBy(matchDayId);
+}
+
+/* ------------------------------------------------------------------ */
+/* 11. getGameStartPlayers — wraps RPC (EventDetail :898)              */
 /* ------------------------------------------------------------------ */
 
 /**
