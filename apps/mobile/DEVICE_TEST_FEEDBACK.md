@@ -154,14 +154,14 @@ Note for other dev machines: `apps/mobile/.env` (gitignored) now needs `EXPO_PUB
 
 | # | Area | Issue | Status |
 |---|------|-------|--------|
-| R6-1 | Game detail | Three-dots menu should hold: Edit Teams, Edit Location, Delete Game (+ same-teams). Move Edit Teams off the bottom into the menu (bottom button disappears). | open |
-| R6-2 | Game detail | Manual team editing after creation — make the Edit Teams screen reachable (via the menu). | open |
-| R6-3 | PWA (web) | Build the New-Game "select players + add guests" extra step in the PWA too (loved it on mobile). | open (web, larger) |
-| R6-4 | New Game | On the select-players step, when adding a guest show EXISTING guests to pick from (dropdown), plus an option to add a brand-new guest there. | open |
-| R6-5 | Live Score | Should rotate with the phone (landscape support), currently portrait-only. | open |
-| R6-6 | Live Score | Remove the 5th-set "finished at 15?" rule — many teams play all 5 sets to 25. Prompt only at 25 + win-by-2 for every set. | open |
-| R6-7 | Live Score | Discard-set-in-progress popup: button text wraps ("Keep Scoring" / "Discard & Exit"). Make it not wrap. | open |
-| R6-8 | Game/Live Score | Back button loops to itself — should ALWAYS go back to the event page. | open |
+| R6-1 | Game detail | Three-dots menu: Edit Teams, Edit Location, same-teams, Delete Game; bottom button removed. | fixed (60381b6) |
+| R6-2 | Game detail | Edit Teams reachable via the three-dots menu. | fixed (60381b6) |
+| R6-3 | PWA (web) | Build the New-Game select-players/guests step in the PWA. | deferred — separate web branch |
+| R6-4 | New Game | Reuse existing club guests via a dropdown + add-new path. | fixed (75c61d7) |
+| R6-5 | Live Score | Landscape rotation on the Live Score screen (portrait restored on exit). | fixed (b278b9e) |
+| R6-6 | Live Score | Every set targets 25 + win-by-2. | fixed (b278b9e) |
+| R6-7 | Live Score | Dialog stacks long-labelled buttons full-width so text doesn't wrap. | fixed (b278b9e) |
+| R6-8 | Game/Live Score | Back always returns to the event / game (no loop). | fixed (60381b6, b278b9e) |
 | R6-9 | Home | Limit event title length on the Today's Game card to avoid ellipsis. | open |
 | R6-10 | Home | Today's Game uses a football/soccer ball icon — change to a volleyball icon. | open |
 | R6-11 | Events list | Calendar badge STRETCHES taller when "You're going" is present — keep the badge a fixed height regardless of the RSVP row. | open |
