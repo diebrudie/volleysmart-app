@@ -4,7 +4,7 @@
  * quick-RSVP button added for mobile.
  */
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
@@ -53,7 +53,7 @@ export function TodayNextCard({ event, loading }: Props) {
       <View style={frame}>
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <Ionicons name={icons.volleyball} size={18} color={theme.primary} />
+            <MaterialCommunityIcons name="volleyball" size={18} color={theme.primary} />
             <Text style={[styles.headerLabel, { color: theme.textSecondary }]}>
               {t("home.todaysGame", { defaultValue: "Today's Game" })}
             </Text>
@@ -87,7 +87,7 @@ export function TodayNextCard({ event, loading }: Props) {
     >
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <Ionicons name={icons.volleyball} size={18} color={theme.primary} />
+          <MaterialCommunityIcons name="volleyball" size={18} color={theme.primary} />
           <Text style={[styles.headerLabel, { color: theme.textSecondary }]}>
             {event.isToday
               ? t("home.todaysGame", { defaultValue: "Today's Game" })
@@ -108,7 +108,7 @@ export function TodayNextCard({ event, loading }: Props) {
         <View style={styles.titleGroup}>
           <Text
             style={[styles.title, { color: theme.text }]}
-            numberOfLines={1}
+            numberOfLines={2}
           >
             {event.title}
           </Text>

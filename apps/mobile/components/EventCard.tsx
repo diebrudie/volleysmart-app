@@ -298,13 +298,12 @@ const styles = StyleSheet.create({
   cancelled: { opacity: 0.6 },
   dateBadgeShadow: {
     borderRadius: radii.md,
-    alignSelf: "stretch", // fill the card's full height
+    alignSelf: "flex-start", // fixed height — don't stretch with the RSVP row
     // No shadow on the list card — the shadow lives on the event-overview
     // (detail) badge instead (per device feedback R4-1).
   },
   dateBadge: {
     width: 56, // w-14
-    flex: 1, // fill the wrapper's stretched height
     borderRadius: radii.md,
     borderWidth: 1,
     overflow: "hidden",
