@@ -15,6 +15,7 @@ import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { calculateGameplayBonus } from "@volleysmart/core";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { MyClubsTab } from "@/components/profile/MyClubsTab";
+import { PositionsHelp } from "@/components/onboarding/PositionsHelp";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
@@ -120,6 +121,9 @@ export default function ProfileScreen() {
   const positionsContent =
     primaryPosition || secondaryPositions.length > 0 ? (
       <Card>
+        <View style={styles.helpCorner}>
+          <PositionsHelp />
+        </View>
         {primaryPosition ? (
           <View style={styles.positionBlock}>
             <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
@@ -155,6 +159,9 @@ export default function ProfileScreen() {
       </Card>
     ) : (
       <Card>
+        <View style={styles.helpCorner}>
+          <PositionsHelp />
+        </View>
         <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
           {t("positions.mainPosition", { defaultValue: "Main Position" })}
         </Text>
@@ -531,6 +538,7 @@ const styles = StyleSheet.create({
   tabs: { marginBottom: spacing.lg },
   section: { gap: spacing.lg },
   cardLabel: { ...typography.label, marginBottom: spacing.sm },
+  helpCorner: { position: "absolute", top: spacing.sm, right: spacing.sm, zIndex: 1 },
   positionBlock: { marginBottom: spacing.md },
   primaryPill: {
     flexDirection: "row",
