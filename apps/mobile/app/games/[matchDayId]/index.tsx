@@ -235,16 +235,21 @@ export default function GameDetailScreen() {
     <>
       <ScreenHeader
         title={title}
-        {...(bundle.planned_event_id
-          ? {
-              // Back ALWAYS returns to the linked event (R6-8): the game screen
-              // can be reached from several places, so router.back() loops.
-              onBack: () =>
-                router.replace(
-                  `/events/${bundle.planned_event_id}` as never
-                ),
-            }
-          : {})}
+        onBack={() => {
+          // Back always lands on the linked Event. `navigate` (not push/replace)
+          // pops back to the event if it's already in the stack — a real "back"
+          // slide with no duplicate — and only pushes it when we arrived without
+          // one (e.g. from the home Last Game card). Using navigate also skips
+          // the phantom duplicate game left on the stack when Edit Teams returns
+          // via router.replace, which otherwise made back loop 1–2 times.
+          if (bundle.planned_event_id) {
+            router.navigate(`/events/${bundle.planned_event_id}` as never);
+          } else if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace("/(tabs)" as never);
+          }
+        }}
         right={
           canAdmin ? (
             <Pressable

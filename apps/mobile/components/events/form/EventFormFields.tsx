@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import {
   type EventType,
 } from "@volleysmart/core";
 import { Chip } from "@/components/ui/Chip";
+import { PalmIcon } from "@/components/ui/PalmIcon";
 import { DateField } from "@/components/ui/DateField";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -556,7 +557,7 @@ export function EventFormFields({
               />
               <ToggleOption
                 label={t("create.activityTypeBeach", { defaultValue: "Beach" })}
-                icon={icons.sun}
+                iconNode={(color) => <PalmIcon size={16} color={color} />}
                 selected={!values.isIndoor}
                 onPress={() => onChange({ isIndoor: false })}
               />
@@ -658,15 +659,18 @@ export function EventFormFields({
 function ToggleOption({
   label,
   icon,
+  iconNode,
   selected,
   onPress,
 }: {
   label: string;
-  icon: IoniconsName;
+  icon?: IoniconsName;
+  iconNode?: (color: string) => ReactNode;
   selected: boolean;
   onPress: () => void;
 }) {
   const theme = useTheme();
+  const iconColor = selected ? theme.primary : theme.textSecondary;
   return (
     <Pressable
       onPress={onPress}
@@ -681,11 +685,11 @@ function ToggleOption({
         pressed && { backgroundColor: theme.surface },
       ]}
     >
-      <Ionicons
-        name={icon}
-        size={16}
-        color={selected ? theme.primary : theme.textSecondary}
-      />
+      {iconNode ? (
+        iconNode(iconColor)
+      ) : icon ? (
+        <Ionicons name={icon} size={16} color={iconColor} />
+      ) : null}
       <Text
         numberOfLines={1}
         style={[

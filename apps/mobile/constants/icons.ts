@@ -117,8 +117,8 @@ export const icons = {
   swords: "flash-outline",
   /** lucide Dumbbell (training). */
   dumbbell: "barbell-outline",
-  /** lucide Palmtree (casual/social) — no Ionicons equivalent. */
-  palmtree: "leaf-outline",
+  // Palm tree (beach): Ionicons has no palm glyph, so beach affordances use
+  // the MaterialCommunityIcons-based <PalmIcon> component instead of this map.
   bookmark: "bookmark-outline",
   /** lucide CalendarX (event cancelled) — no Ionicons equivalent. */
   calendarX: "calendar-clear-outline",

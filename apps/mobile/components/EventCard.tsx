@@ -1,9 +1,11 @@
+import { type ReactNode } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import { useResolvedScheme } from "@/providers/ThemeProvider";
 import { palette } from "@/constants/colors";
+import { PalmIcon } from "@/components/ui/PalmIcon";
 import { icons, type IoniconsName } from "@/constants/icons";
 import { radii, spacing, typography } from "@/constants/theme";
 import { type PlannedEvent } from "@volleysmart/core";
@@ -63,15 +65,17 @@ function Pill({
   bg,
   text,
   icon,
+  iconNode,
 }: {
   label: string;
   bg: string;
   text: string;
   icon?: IoniconsName;
+  iconNode?: ReactNode;
 }) {
   return (
     <View style={[styles.pill, { backgroundColor: bg }]}>
-      {icon ? <Ionicons name={icon} size={10} color={text} /> : null}
+      {iconNode ? iconNode : icon ? <Ionicons name={icon} size={10} color={text} /> : null}
       <Text style={[styles.pillText, { color: text }]}>{label}</Text>
     </View>
   );
@@ -223,7 +227,9 @@ export function EventCard({ event, currentPlayerId, onPress }: Props) {
               label="Beach"
               bg={pillColors.beach[pillMode].bg}
               text={pillColors.beach[pillMode].text}
-              icon={icons.palmtree}
+              iconNode={
+                <PalmIcon size={10} color={pillColors.beach[pillMode].text} />
+              }
             />
           ) : null}
           {genderLabel ? (

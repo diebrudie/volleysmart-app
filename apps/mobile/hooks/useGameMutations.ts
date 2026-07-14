@@ -139,6 +139,15 @@ export function useGameMutations(
         clubId: md.club_id,
         userId: user?.id,
       });
+      // Same-teams also creates a parallel planned_event, so refresh the event
+      // lists where it should now appear.
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.allUpcoming });
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.allPast });
+      if (md.club_id) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.clubs.events(md.club_id),
+        });
+      }
     },
   });
 

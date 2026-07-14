@@ -140,7 +140,7 @@ export default function MembersScreen() {
   };
 
   const rowFor = (m: GlobalMember) => {
-    const { name, position, clubNames, isYou, adminSomewhere } = displayFor(m);
+    const { name, position, isYou, adminSomewhere } = displayFor(m);
 
     return (
       <View
@@ -151,7 +151,6 @@ export default function MembersScreen() {
           name={name}
           imageUrl={m.image_url}
           subtitle={position}
-          caption={clubNames}
           badgeLabel={
             isYou
               ? t("common:you", { defaultValue: "You" })

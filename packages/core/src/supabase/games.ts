@@ -401,6 +401,13 @@ export async function createMatchDay(
 /**
  * Create a fresh game (today's date) copying the roster of an existing match
  * day. `createdBy` is the acting user (Game.tsx uses `user.id`).
+ *
+ * A parallel `planned_event` is created and linked so the new game is
+ * reachable from the Events list (and editable there) after the user
+ * navigates away — otherwise "same teams" games are orphaned match days with
+ * no entry point. The event copies the source event's details (or sensible
+ * defaults) but is dated today; every copied player also gets an 'attending'
+ * RSVP so the event's attendee list matches the game roster.
  */
 export async function createSameTeams(
   matchDayId: string,
@@ -412,15 +419,45 @@ export async function createSameTeams(
   const { data: source, error: srcError } = await supabase
     .from("match_days")
     .select(
-      "club_id, location_id, is_opponent_mode, opponent_team_name"
+      "club_id, location_id, is_opponent_mode, opponent_team_name, planned_event_id"
     )
     .eq("id", matchDayId)
     .single();
   if (srcError) throw srcError;
   const src = source as Pick<
     Tables<"match_days">,
-    "club_id" | "location_id" | "is_opponent_mode" | "opponent_team_name"
+    | "club_id"
+    | "location_id"
+    | "is_opponent_mode"
+    | "opponent_team_name"
+    | "planned_event_id"
   >;
+
+  // Source event details (if the source game is itself linked to an event) so
+  // the parallel event inherits title / type / visibility / times.
+  type SourceEvent = Pick<
+    Tables<"planned_events">,
+    | "title"
+    | "event_type"
+    | "event_gender"
+    | "activity_type"
+    | "start_time"
+    | "end_time"
+    | "is_public"
+    | "max_players"
+    | "min_players"
+  >;
+  let srcEvent: SourceEvent | null = null;
+  if (src.planned_event_id) {
+    const { data: ev } = await supabase
+      .from("planned_events")
+      .select(
+        "title, event_type, event_gender, activity_type, start_time, end_time, is_public, max_players, min_players"
+      )
+      .eq("id", src.planned_event_id)
+      .maybeSingle();
+    srcEvent = (ev as SourceEvent | null) ?? null;
+  }
 
   // Source roster (Game.tsx copies from matchData.game_players)
   const { data: sourcePlayers, error: spError } = await supabase
@@ -437,8 +474,34 @@ export async function createSameTeams(
   const mm = String(today.getMonth() + 1).padStart(2, "0");
   const dd = String(today.getDate()).padStart(2, "0");
   const dateStr = `${yyyy}-${mm}-${dd}`;
+  const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
 
-  // 1. new match_day (Game.tsx :464-476)
+  // 1. Parallel planned_event (dated today) so the game has an Events entry.
+  const { data: event, error: evError } = await supabase
+    .from("planned_events")
+    .insert({
+      title: srcEvent?.title ?? `${weekday} Game`,
+      event_type: srcEvent?.event_type ?? "friendly_game",
+      date: dateStr,
+      start_time: srcEvent?.start_time ?? "19:00:00",
+      end_time: srcEvent?.end_time ?? "21:00:00",
+      club_id: src.club_id,
+      created_by: createdBy,
+      location_id: src.location_id,
+      is_public: srcEvent?.is_public ?? false,
+      max_players: srcEvent?.max_players ?? null,
+      min_players: srcEvent?.min_players ?? 4,
+      event_gender: srcEvent?.event_gender ?? "mixed",
+      activity_type: srcEvent?.activity_type ?? "indoor",
+      is_opponent_mode: src.is_opponent_mode ?? false,
+      opponent_team_name: src.opponent_team_name ?? null,
+    })
+    .select("id")
+    .single();
+  if (evError) throw evError;
+  const plannedEventId = (event as { id: string }).id;
+
+  // 2. new match_day (Game.tsx :464-476) linked to the parallel event
   const { data: matchDay, error: mdError } = await supabase
     .from("match_days")
     .insert({
@@ -447,6 +510,7 @@ export async function createSameTeams(
       club_id: src.club_id,
       team_generated: true,
       location_id: src.location_id,
+      planned_event_id: plannedEventId,
       is_opponent_mode: src.is_opponent_mode,
       opponent_team_name: src.opponent_team_name,
     })
@@ -455,7 +519,7 @@ export async function createSameTeams(
   if (mdError) throw mdError;
   const md = matchDay as Tables<"match_days">;
 
-  // 2. 5 base sets (Game.tsx :479-487)
+  // 3. 5 base sets (Game.tsx :479-487)
   const matches = Array.from({ length: 5 }, (_, i) => ({
     match_day_id: md.id,
     game_number: i + 1,
@@ -469,7 +533,7 @@ export async function createSameTeams(
     .select();
   if (mError) throw mError;
 
-  // 3. copied game_players (Game.tsx :489-497)
+  // 4. copied game_players (Game.tsx :489-497)
   const gamePlayersToInsert = roster.map((gp) => ({
     match_day_id: md.id,
     player_id: gp.player_id,
@@ -482,6 +546,23 @@ export async function createSameTeams(
     .from("game_players")
     .insert(gamePlayersToInsert);
   if (gpError) throw gpError;
+
+  // 5. mark every rostered player 'attending' on the parallel event so its
+  // attendee list matches the game roster (no ongoing game_players trigger).
+  const attendees = Array.from(
+    new Set(roster.map((gp) => gp.player_id).filter((id): id is string => !!id))
+  ).map((playerId) => ({
+    event_id: plannedEventId,
+    player_id: playerId,
+    status: "attending" as const,
+    responded_at: today.toISOString(),
+  }));
+  if (attendees.length > 0) {
+    const { error: rsvpError } = await supabase
+      .from("event_rsvp")
+      .upsert(attendees, { onConflict: "event_id,player_id" });
+    if (rsvpError) throw rsvpError;
+  }
 
   return md;
 }

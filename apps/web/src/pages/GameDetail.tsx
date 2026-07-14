@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { createSameTeams } from "@volleysmart/core";
 import {
   ChevronLeft,
   Calendar,
@@ -382,67 +382,12 @@ const GameDetail = () => {
     if (!matchData || !user?.id) return;
 
     try {
-      // 1. Create a new match day for today
-      const { data: matchDay, error: matchDayError } = await supabase
-        .from("match_days")
-        .insert({
-          date: format(new Date(), "yyyy-MM-dd"), // Today's date
-          created_by: user.id,
-          club_id: matchData.club_id,
-          team_generated: true,
-          location_id: matchData.location_id, // Copy the same location
-        })
-        .select()
-        .single();
+      // Shared core path: also creates a parallel planned_event (dated today,
+      // same players/location) so the new game is reachable from the Events
+      // list after navigating away, and editable there.
+      const matchDay = await createSameTeams(matchData.id, user.id);
 
-      if (matchDayError) {
-        console.error("Match day error:", matchDayError);
-        throw matchDayError;
-      }
-
-      // 2. Create 5 matches for the 5 sets (all starting at 0-0)
-      const matches = Array.from({ length: 5 }, (_, index) => ({
-        match_day_id: matchDay.id,
-        game_number: index + 1,
-        team_a_score: 0,
-        team_b_score: 0,
-        added_by_user_id: user.id,
-      }));
-
-      const { data: matchesData, error: matchesError } = await supabase
-        .from("matches")
-        .insert(matches)
-        .select();
-
-      if (matchesError) {
-        console.error("Matches error:", matchesError);
-        throw matchesError;
-      }
-
-      // 3. Copy the exact same team composition from the original game
-      const gamePlayersToInsert = matchData.game_players.map(
-        (originalPlayer) => ({
-          match_day_id: matchDay.id,
-          player_id: originalPlayer.player_id,
-          team_name: originalPlayer.team_name,
-          original_team_name: originalPlayer.team_name,
-          manually_adjusted: false,
-          position_played: originalPlayer.position_played,
-        })
-      );
-
-      const { error: gamePlayersError } = await supabase
-        .from("game_players")
-        .insert(gamePlayersToInsert);
-
-      if (gamePlayersError) {
-        console.error("Game players error:", gamePlayersError);
-        throw new Error(
-          `Failed to create game players: ${gamePlayersError.message}`
-        );
-      }
-
-      // 4. Invalidate queries to refresh the dashboard
+      // Invalidate queries to refresh the dashboard
       await queryClient.invalidateQueries({
         queryKey: ["latestGame", matchData.club_id],
       });
@@ -453,7 +398,7 @@ const GameDetail = () => {
         duration: 1500,
       });
 
-      // 5. Navigate to dashboard
+      // Navigate to the new game
       navigate(`/game/${matchDay.id}`);
     } catch (error) {
       console.error("Error creating new game:", error);

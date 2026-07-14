@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { createSameTeams } from "@volleysmart/core";
 import {
   ArrowLeft,
   MapPin,
@@ -461,42 +461,10 @@ const Game = () => {
   const handleCreateSameTeams = async () => {
     if (!matchData || !user?.id) return;
     try {
-      const { data: matchDay, error: mdError } = await supabase
-        .from("match_days")
-        .insert({
-          date: format(new Date(), "yyyy-MM-dd"),
-          created_by: user.id,
-          club_id: matchData.club_id,
-          team_generated: true,
-          location_id: matchData.location_id,
-          is_opponent_mode: matchData.is_opponent_mode,
-          opponent_team_name: matchData.opponent_team_name,
-        })
-        .select()
-        .single();
-      if (mdError) throw mdError;
-
-      const matches = Array.from({ length: 5 }, (_, i) => ({
-        match_day_id: matchDay.id,
-        game_number: i + 1,
-        team_a_score: 0,
-        team_b_score: 0,
-        added_by_user_id: user.id,
-      }));
-      const { error: mError } = await supabase.from("matches").insert(matches).select();
-      if (mError) throw mError;
-
-      const gamePlayersToInsert = matchData.game_players.map((gp) => ({
-        match_day_id: matchDay.id,
-        player_id: gp.player_id,
-        team_name: gp.team_name,
-        original_team_name: gp.team_name,
-        manually_adjusted: false,
-        position_played: gp.position_name === t("game.noPosition") ? null : gp.position_name,
-      }));
-      const { error: gpError } = await supabase.from("game_players").insert(gamePlayersToInsert);
-      if (gpError) throw gpError;
-
+      // Shared core path: also creates a parallel planned_event (dated today,
+      // same players/location) so the new game is reachable from the Events
+      // list after navigating away, and editable there.
+      const matchDay = await createSameTeams(matchData.id, user.id);
       toast({ title: t("game.toastGameCreated"), description: t("game.toastNewGameSameTeams"), duration: 1500 });
       navigate(`/game/${matchDay.id}`);
     } catch (error) {

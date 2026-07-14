@@ -21,6 +21,7 @@ import type { EventFormValues } from "@/components/events/form/EventFormFields";
 import { HostedBy } from "@/components/events/HostedBy";
 import { RecurringScopeDialog } from "@/components/events/RecurringScopeDialog";
 import { Dialog } from "@/components/ui/Dialog";
+import { PalmIcon } from "@/components/ui/PalmIcon";
 import { Screen } from "@/components/ui/Screen";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Sheet } from "@/components/ui/Sheet";
@@ -383,10 +384,10 @@ export default function EventDetailScreen() {
         {/* Hero: gradient + header scroll WITH the page (not fixed). */}
         <View style={styles.hero}>
           <LinearGradient
-            colors={[theme.primary + "40", theme.primary + "12", theme.background]}
-            locations={[0, 0.6, 1]}
+            colors={[theme.primary + "30", theme.primary + "0D", theme.background]}
+            locations={[0, 0.55, 1]}
             start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
+            end={{ x: 1, y: 1 }}
             style={[styles.heroGradient, { height: insets.top + 118 }]}
             pointerEvents="none"
           />
@@ -521,7 +522,14 @@ export default function EventDetailScreen() {
             ) : null}
             <EventTypeRow eventType={event.event_type} label={eventTypeLabel} />
             <InfoRow
-              icon={event.activity_type === "beach" ? icons.sun : icons.building2}
+              icon={
+                event.activity_type === "beach" ? undefined : icons.building2
+              }
+              iconNode={
+                event.activity_type === "beach" ? (
+                  <PalmIcon size={17} color={theme.textSecondary} />
+                ) : undefined
+              }
             >
               {event.activity_type === "beach"
                 ? t("detail.activityTypeBeach", { defaultValue: "Beach" })
@@ -866,15 +874,21 @@ function RsvpMenuItem({
 
 function InfoRow({
   icon,
+  iconNode,
   children,
 }: {
-  icon: IoniconsName;
+  icon?: IoniconsName;
+  iconNode?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const theme = useTheme();
   return (
     <View style={styles.infoRow}>
-      <Ionicons name={icon} size={17} color={theme.textSecondary} />
+      {iconNode ? (
+        iconNode
+      ) : icon ? (
+        <Ionicons name={icon} size={17} color={theme.textSecondary} />
+      ) : null}
       <Text style={[styles.infoText, { color: theme.text }]}>{children}</Text>
     </View>
   );

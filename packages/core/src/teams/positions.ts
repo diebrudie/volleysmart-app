@@ -29,12 +29,16 @@ export function normalizeRole(input?: string | null): CanonicalRole {
   return "Opposite";
 }
 
-/** Canonical display/alignment order for both teams */
+/**
+ * Canonical display/alignment order for both teams:
+ * Setter → Middle Blocker → Outside Hitter → Opposite → Libero.
+ * Matches the on-court reading order and the assignment FILL_PRIORITY.
+ */
 export const CANONICAL_ORDER: Readonly<CanonicalRole[]> = [
   "Setter",
   "Middle Blocker",
-  "Opposite",
   "Outside Hitter",
+  "Opposite",
   "Libero",
 ] as const;
 
