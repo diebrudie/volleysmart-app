@@ -8,7 +8,6 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import { icons } from "@/constants/icons";
 import { radii, spacing, typography } from "@/constants/theme";
@@ -25,7 +24,6 @@ type Props = {
 
 export function StepperHeader({ step, totalSteps, title, onBack, style }: Props) {
   const t = useTheme();
-  const { t: tr } = useTranslation();
   const total = Math.max(1, totalSteps);
   const ratio = Math.min(1, Math.max(0, step / total));
 
@@ -69,13 +67,6 @@ export function StepperHeader({ step, totalSteps, title, onBack, style }: Props)
               {title}
             </Text>
           ) : null}
-          <Text style={[styles.stepText, { color: t.mutedForeground }]}>
-            {tr("common:stepOf", {
-              defaultValue: "Step {{step}} of {{total}}",
-              step: Math.min(step, total),
-              total,
-            })}
-          </Text>
         </View>
         <View style={styles.side} />
       </View>
@@ -117,10 +108,6 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h3,
-  },
-  stepText: {
-    ...typography.caption,
-    fontWeight: "600",
   },
   track: {
     height: 4,

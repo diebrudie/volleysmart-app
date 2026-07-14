@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { spacing, typography } from "@/constants/theme";
@@ -8,24 +8,38 @@ type Props = PropsWithChildren<{
   subtitle?: string;
   /** Center-align the header (used by the welcome step). */
   centered?: boolean;
+  /** Optional element rendered at the end of the title row (e.g. a help icon). */
+  titleAccessory?: ReactNode;
 }>;
 
 /** Shared header + content wrapper for one onboarding step. */
-export function StepShell({ title, subtitle, centered = false, children }: Props) {
+export function StepShell({
+  title,
+  subtitle,
+  centered = false,
+  titleAccessory,
+  children,
+}: Props) {
   const t = useTheme();
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, centered && styles.headerCentered]}>
-        <Text
-          style={[
-            styles.title,
-            { color: t.text },
-            centered && styles.textCentered,
-          ]}
-        >
-          {title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text
+            style={[
+              styles.title,
+              styles.titleFlex,
+              { color: t.text },
+              centered && styles.textCentered,
+            ]}
+          >
+            {title}
+          </Text>
+          {titleAccessory ? (
+            <View style={styles.accessory}>{titleAccessory}</View>
+          ) : null}
+        </View>
         {subtitle ? (
           <Text
             style={[
@@ -52,6 +66,17 @@ const styles = StyleSheet.create({
   },
   headerCentered: {
     alignItems: "center",
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
+  titleFlex: {
+    flex: 1,
+  },
+  accessory: {
+    paddingTop: spacing.xs,
   },
   title: {
     ...typography.h1,

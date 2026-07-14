@@ -7,6 +7,7 @@ import { StepperHeader } from "@/components/ui/StepperHeader";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { StepShell } from "@/components/onboarding/StepShell";
+import { PositionsHelp } from "@/components/onboarding/PositionsHelp";
 import { OptionList, type OptionItem } from "@/components/onboarding/OptionList";
 import { WelcomeStep } from "@/components/onboarding/WelcomeStep";
 import { HeightStep } from "@/components/onboarding/HeightStep";
@@ -233,6 +234,7 @@ function OnboardingScreenInner() {
               defaultValue:
                 "This is the position you feel most comfortable playing.",
             })}
+            titleAccessory={<PositionsHelp />}
           >
             {positionsBody(
               <OptionList
@@ -253,6 +255,7 @@ function OnboardingScreenInner() {
               defaultValue:
                 "Select at least one other position that you're comfortable playing",
             })}
+            titleAccessory={<PositionsHelp />}
           >
             {positionsBody(
               <OptionList

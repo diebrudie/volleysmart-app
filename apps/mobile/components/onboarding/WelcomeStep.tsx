@@ -86,6 +86,10 @@ export function WelcomeStep({
 
 const styles = StyleSheet.create({
   container: {
+    // Welcome is the only step that is vertically centered (it has no long
+    // option list); every other step keeps its default top alignment.
+    flex: 1,
+    justifyContent: "center",
     gap: spacing.xxl,
   },
   header: {
