@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { Sheet } from "@/components/ui/Sheet";
@@ -25,10 +32,21 @@ type Lang = keyof typeof DIAGRAMS;
 export function PositionsHelp() {
   const { t, i18n } = useTranslation("onboarding");
   const theme = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
   const [open, setOpen] = useState(false);
 
   const short = (i18n.language || "en").slice(0, 2);
   const lang: Lang = short === "de" || short === "es" ? short : "en";
+
+  // Size the diagram to the sheet's inner width (window minus the sheet's
+  // horizontal padding on both sides). Percentage widths don't resolve inside
+  // the sheet's ScrollView, so the image would otherwise render at its full
+  // intrinsic pixel width and overflow the screen. Ratio comes from the asset.
+  const source = DIAGRAMS[lang];
+  const meta = Image.resolveAssetSource(source);
+  const ratio = meta?.width && meta?.height ? meta.width / meta.height : 1280 / 800;
+  const imageWidth = windowWidth - spacing.lg * 2;
+  const imageHeight = imageWidth / ratio;
 
   return (
     <>
@@ -58,8 +76,11 @@ export function PositionsHelp() {
             })}
           </Text>
           <Image
-            source={DIAGRAMS[lang]}
-            style={styles.diagram}
+            source={source}
+            style={[
+              styles.diagram,
+              { width: imageWidth, height: imageHeight },
+            ]}
             resizeMode="contain"
             accessibilityLabel={t("positionsHelp.diagramAlt", {
               defaultValue: "Volleyball court positions diagram",
@@ -81,8 +102,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   diagram: {
-    width: "100%",
-    aspectRatio: 1280 / 800,
+    alignSelf: "center",
     borderRadius: 12,
   },
 });

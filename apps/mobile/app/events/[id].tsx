@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  InteractionManager,
   Platform,
   Pressable,
   Share,
@@ -89,9 +90,18 @@ export default function EventDetailScreen() {
   const [cancelScope, setCancelScope] = useState<EventEditScope>("single");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [rsvpMenuOpen, setRsvpMenuOpen] = useState(false);
-  const [showCreatedDialog, setShowCreatedDialog] = useState(
-    created === "true" || created === "1"
-  );
+  // Deferred to after the navigation transition: presenting this Modal while
+  // the screen is still animating in (from the create → replace) leaves the
+  // page's ScrollView non-scrollable until it's remounted. Waiting for
+  // interactions to finish lets the ScrollView lay out first.
+  const [showCreatedDialog, setShowCreatedDialog] = useState(false);
+  useEffect(() => {
+    if (created !== "true" && created !== "1") return;
+    const task = InteractionManager.runAfterInteractions(() =>
+      setShowCreatedDialog(true)
+    );
+    return () => task.cancel();
+  }, [created]);
 
   // The creator menu is an RN Modal (Sheet); opening the edit sheet / scope
   // dialog while it is still dismissing freezes iOS. So the menu rows only
