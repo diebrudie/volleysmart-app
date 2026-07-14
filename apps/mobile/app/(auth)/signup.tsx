@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import * as AuthSession from "expo-auth-session";
 import { useTranslation } from "react-i18next";
@@ -202,6 +202,28 @@ export default function SignupScreen() {
               </Text>
             </Pressable>
           </View>
+
+          <View style={styles.legal}>
+            <Pressable
+              onPress={() =>
+                Linking.openURL("https://volleysmart.app/terms").catch(() => {})
+              }
+            >
+              <Text style={[styles.legalLink, { color: theme.textSecondary }]}>
+                {t("signup.terms", { defaultValue: "Terms" })}
+              </Text>
+            </Pressable>
+            <Text style={{ color: theme.textSecondary }}> · </Text>
+            <Pressable
+              onPress={() =>
+                Linking.openURL("https://volleysmart.app/privacy").catch(() => {})
+              }
+            >
+              <Text style={[styles.legalLink, { color: theme.textSecondary }]}>
+                {t("signup.privacy", { defaultValue: "Privacy Policy" })}
+              </Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -228,4 +250,6 @@ const styles = StyleSheet.create({
   line: { flex: 1, height: 1 },
   dividerText: { fontSize: 13 },
   footer: { flexDirection: "row", justifyContent: "center", marginTop: 24 },
+  legal: { flexDirection: "row", justifyContent: "center", marginTop: 12 },
+  legalLink: { fontSize: 13, textDecorationLine: "underline" },
 });
