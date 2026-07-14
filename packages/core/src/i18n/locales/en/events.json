@@ -60,6 +60,10 @@
   "upcoming.tableDetails": "Details",
   "upcoming.view": "View",
   "upcoming.cancelled": "Cancelled",
+  "upcoming.won": "WON",
+  "upcoming.lost": "LOST",
+  "upcoming.tie": "TIE",
+  "upcoming.noScore": "No score",
   "upcoming.filtersTitle": "Filters",
   "upcoming.filterRsvpStatus": "RSVP Status",
   "upcoming.filterMonth": "Month",
@@ -166,6 +170,9 @@
   "card.genderFlinta": "Flinta",
 
   "location": {
+    "label": "Location *",
+    "selectPlaceholder": "Select a location",
+    "addNew": "+ Add new location",
     "nameLabel": "Location Name *",
     "namePlaceholder": "e.g. Berlin Sports Hall",
     "addressLabel": "Address",
@@ -293,5 +300,25 @@
   "detail.deleting": "Deleting...",
   "detail.delete": "Delete",
   "detail.unknown": "Unknown",
-  "detail.you": "You"
+  "detail.you": "You",
+
+  "back": "Back",
+  "detail.viewGameWebOnly": "View game in the web app",
+  "detail.startGameWebOnly": "Start game (web only)",
+  "create.stepBasics": "Event type & details",
+  "create.stepSchedule": "Schedule",
+  "create.stepDetails": "Details",
+  "create.stepReview": "Review",
+  "create.reviewType": "Event type",
+  "create.reviewName": "Name",
+  "create.reviewDate": "Date",
+  "create.reviewTime": "Time",
+  "create.reviewRecurrence": "Repeats",
+  "create.reviewLocation": "Location",
+  "create.reviewMaxPlayers": "Max players",
+  "discover.setCityHint": "Add your city to your profile to find public events near you",
+  "discover.editProfile": "Edit Profile",
+  "discover.nearCity": "Public events in {{city}}",
+  "detail.rsvpDeadlinePassed": "The RSVP deadline has passed",
+  "detail.eventFull": "This event is full"
 }

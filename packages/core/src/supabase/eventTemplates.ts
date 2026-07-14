@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "./clientHolder";
 import type { EventType } from "./plannedEvents";
+import type { Json } from "./types";
 
 export interface TemplateConfig {
   event_type?: EventType;
@@ -56,7 +57,7 @@ export async function createEventTemplate(
       user_id: userId,
       club_id: input.club_id,
       name: input.name,
-      config: input.config,
+      config: input.config as unknown as Json,
     })
     .select("id")
     .single();

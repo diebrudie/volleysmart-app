@@ -25,6 +25,12 @@ export function Input({ label, error, rightIcon, style, ...rest }: Props) {
     ? t.primary
     : t.inputBorder;
 
+  // Multiline fields need to grow: the single-line row is a fixed 48px tall
+  // with centered content, which clips a tall TextInput and pushes its
+  // placeholder up over the label. For multiline we drop the fixed height,
+  // top-align, and add vertical padding so the field reads as a proper box.
+  const isMultiline = !!rest.multiline;
+
   return (
     <View style={styles.wrapper}>
       {label && (
@@ -33,6 +39,7 @@ export function Input({ label, error, rightIcon, style, ...rest }: Props) {
       <View
         style={[
           styles.inputRow,
+          isMultiline ? styles.inputRowMultiline : styles.inputRowSingle,
           {
             borderColor,
             backgroundColor: t.inputBackground,
@@ -41,7 +48,13 @@ export function Input({ label, error, rightIcon, style, ...rest }: Props) {
       >
         <TextInput
           placeholderTextColor={t.placeholder}
-          style={[styles.input, { color: t.text }, style]}
+          textAlignVertical={isMultiline ? "top" : undefined}
+          style={[
+            styles.input,
+            isMultiline ? styles.inputMultiline : styles.inputSingle,
+            { color: t.text },
+            style,
+          ]}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           {...rest}
@@ -60,13 +73,19 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: "500", marginBottom: 2 },
   inputRow: {
     flexDirection: "row",
-    alignItems: "center",
     borderWidth: 1,
     borderRadius: 12,
-    height: 48,
     paddingHorizontal: 14,
   },
-  input: { flex: 1, fontSize: 16, height: "100%" },
+  inputRowSingle: { alignItems: "center", height: 48 },
+  inputRowMultiline: {
+    alignItems: "flex-start",
+    minHeight: 96,
+    paddingVertical: 10,
+  },
+  input: { flex: 1, fontSize: 16 },
+  inputSingle: { height: "100%" },
+  inputMultiline: { minHeight: 76 },
   iconWrap: { marginLeft: 8 },
   error: { fontSize: 13, marginTop: 2 },
 });

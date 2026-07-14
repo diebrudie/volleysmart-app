@@ -99,5 +99,18 @@
   "premium.personalAnalyticsDesc": "Upgrade, um deine detaillierten Statistiken, Siegquote und Leistungstrends zu sehen",
   "premium.clubAnalytics": "Club-Statistiken",
   "premium.clubAnalyticsDesc": "Upgrade, um Club-Statistiken, Anwesenheitstrends und beste Teamkombinationen zu sehen",
-  "premium.upgrade": "Upgraden"
+  "premium.upgrade": "Upgraden",
+
+  "you": "Du",
+  "back": "Zurück",
+  "faq.title": "FAQ",
+  "comingSoon": "Dieser Bereich kommt bald.",
+  "player": "Spieler",
+  "menu.settings": "Einstellungen",
+  "menu.faq": "FAQ",
+  "menu.signOut": "Abmelden",
+  "cancel": "Abbrechen",
+  "confirm": "Bestätigen",
+  "done": "Fertig",
+  "stepOf": "Schritt {{step}} von {{total}}"
 }

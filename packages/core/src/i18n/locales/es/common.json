@@ -99,5 +99,18 @@
   "premium.personalAnalyticsDesc": "Mejora tu plan para ver tus estadísticas detalladas, porcentaje de victorias y tendencias de rendimiento",
   "premium.clubAnalytics": "Estadísticas del club",
   "premium.clubAnalyticsDesc": "Mejora tu plan para ver estadísticas del club, tendencias de asistencia y mejores combinaciones de equipo",
-  "premium.upgrade": "Mejorar plan"
+  "premium.upgrade": "Mejorar plan",
+
+  "you": "Tú",
+  "back": "Atrás",
+  "faq.title": "Preguntas frecuentes",
+  "comingSoon": "Esta pantalla estará disponible pronto.",
+  "player": "Jugador",
+  "menu.settings": "Ajustes",
+  "menu.faq": "Preguntas frecuentes",
+  "menu.signOut": "Cerrar sesión",
+  "cancel": "Cancelar",
+  "confirm": "Confirmar",
+  "done": "Listo",
+  "stepOf": "Paso {{step}} de {{total}}"
 }

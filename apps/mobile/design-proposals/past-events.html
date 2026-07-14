@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Past Events — layout proposals</title>
+<style>
+  :root {
+    --navy: #243F8D;
+    --navy-soft: #eef1fa;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --card: #ffffff;
+    --bg: #f1f5f9;
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --amber: #b45309;
+    --amber-bg: #fef3c7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+  }
+  .intro { margin: 0 0 8px; font-size: 22px; font-weight: 700; }
+  .intro-sub { margin: 0 0 28px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .opt-head {
+    display: flex; align-items: baseline; gap: 8px;
+    margin: 32px 0 4px;
+  }
+  .opt-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+  .opt-head .tag {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--navy); background: var(--navy-soft);
+    padding: 3px 8px; border-radius: 100px;
+  }
+  .opt-note { margin: 0 0 16px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* ─────────── OPTION A — Card rows with date pill + result chip ─────────── */
+  .a-list { display: flex; flex-direction: column; gap: 10px; }
+  .a-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 12px; position: relative;
+    overflow: hidden;
+  }
+  .a-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .a-accent.win { background: var(--green); }
+  .a-accent.loss { background: var(--red); }
+  .a-accent.cancel { background: #cbd5e1; }
+  .a-accent.none { background: var(--border); }
+  .a-date {
+    flex-shrink: 0; width: 52px; text-align: center;
+    background: var(--navy-soft); border-radius: 12px; padding: 8px 0;
+  }
+  .a-date .mon { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--navy); letter-spacing: .5px; }
+  .a-date .day { font-size: 20px; font-weight: 800; line-height: 1.1; color: var(--navy); }
+  .a-date .yr { font-size: 9px; color: var(--muted); }
+  .a-main { flex: 1; min-width: 0; }
+  .a-title { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .a-club { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .a-right { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .chip {
+    font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 100px; white-space: nowrap;
+  }
+  .chip.win { color: var(--green); background: var(--green-bg); }
+  .chip.loss { color: var(--red); background: var(--red-bg); }
+  .chip.cancel { color: var(--red); background: var(--red-bg); }
+  .chip.none { color: var(--muted); background: #f1f5f9; }
+  .a-score { font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--text); }
+
+  /* ─────────── OPTION B — Compact stat row, no divider lines ─────────── */
+  .b-list { display: flex; flex-direction: column; gap: 8px; }
+  .b-row {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px 14px;
+  }
+  .b-datecol { flex-shrink: 0; width: 44px; text-align: center; }
+  .b-datecol .day { font-size: 22px; font-weight: 800; line-height: 1; color: var(--navy); }
+  .b-datecol .mon { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: .5px; margin-top: 2px; }
+  .b-main { flex: 1; min-width: 0; }
+  .b-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .b-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .b-result { flex-shrink: 0; text-align: right; }
+  .b-scoreline { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+  .b-scoreline .w { color: var(--green); }
+  .b-scoreline .l { color: var(--red); }
+  .b-outcome { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+  .b-outcome.win { color: var(--green); }
+  .b-outcome.loss { color: var(--red); }
+  .b-pill { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 3px 8px; border-radius: 6px; }
+  .b-pill.cancel { color: var(--red); background: var(--red-bg); }
+  .b-pill.none { color: var(--muted); background: #f1f5f9; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <h1 class="intro">Past Events — layout proposals</h1>
+    <p class="intro-sub">
+      Two alternatives to the current table-with-lines. Both drop the column
+      rules, give each event its own card, and read the result at a glance via a
+      colored chip. Pick one (or mix), and it becomes the new
+      <code>PastEventsTable</code>.
+    </p>
+
+    <!-- ════════════════ OPTION A ════════════════ -->
+    <div class="opt-head">
+      <h2>Option A</h2><span class="tag">Date pill + result chip</span>
+    </div>
+    <p class="opt-note">
+      Roomy cards with a tinted calendar pill on the left, title/club in the
+      middle, and a result chip on the right. A thin colored accent bar signals
+      win / loss / cancelled without reading the numbers.
+    </p>
+    <div class="a-list">
+      <div class="a-card">
+        <div class="a-accent win"></div>
+        <div class="a-date"><div class="mon">Jun</div><div class="day">28</div><div class="yr">2026</div></div>
+        <div class="a-main">
+          <div class="a-title">Thursday Night Indoor</div>
+          <div class="a-club">Berlin Volley Club</div>
+        </div>
+        <div class="a-right">
+          <span class="a-score">3 – 1</span>
+          <span class="chip win">Won</span>
+        </div>
+      </div>
+
+      <div class="a-card">
+        <div class="a-accent loss"></div>
+        <div class="a-date"><div class="mon">Jun</div><div class="day">21</div><div class="yr">2026</div></div>
+        <div class="a-main">
+          <div class="a-title">Sunday Beach Doubles</div>
+          <div class="a-club">Sand & Sets Beach</div>
+        </div>
+        <div class="a-right">
+          <span class="a-score">1 – 2</span>
+          <span class="chip loss">Lost</span>
+        </div>
+      </div>
+
+      <div class="a-card">
+        <div class="a-accent cancel"></div>
+        <div class="a-date"><div class="mon">Jun</div><div class="day">14</div><div class="yr">2026</div></div>
+        <div class="a-main">
+          <div class="a-title">Mixed Scrimmage Night</div>
+          <div class="a-club">Berlin Volley Club</div>
+        </div>
+        <div class="a-right">
+          <span class="chip cancel">Cancelled</span>
+        </div>
+      </div>
+
+      <div class="a-card">
+        <div class="a-accent none"></div>
+        <div class="a-date"><div class="mon">Jun</div><div class="day">07</div><div class="yr">2026</div></div>
+        <div class="a-main">
+          <div class="a-title">Casual Open Play</div>
+          <div class="a-club">Kreuzberg Pickup</div>
+        </div>
+        <div class="a-right">
+          <span class="chip none">No score</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ OPTION B ════════════════ -->
+    <div class="opt-head">
+      <h2>Option B</h2><span class="tag">Compact result row</span>
+    </div>
+    <p class="opt-note">
+      Tighter cards (closer to today's density) but with no divider lines — big
+      day number on the left, and the score coloured by who won plus a small
+      outcome label on the right. "Cancelled" is a single-line pill.
+    </p>
+    <div class="b-list">
+      <div class="b-row">
+        <div class="b-datecol"><div class="day">28</div><div class="mon">Jun</div></div>
+        <div class="b-main">
+          <div class="b-title">Thursday Night Indoor</div>
+          <div class="b-meta">Berlin Volley Club</div>
+        </div>
+        <div class="b-result">
+          <div class="b-scoreline"><span class="w">3</span> – <span class="l">1</span></div>
+          <div class="b-outcome win">Won</div>
+        </div>
+      </div>
+
+      <div class="b-row">
+        <div class="b-datecol"><div class="day">21</div><div class="mon">Jun</div></div>
+        <div class="b-main">
+          <div class="b-title">Sunday Beach Doubles</div>
+          <div class="b-meta">Sand & Sets Beach</div>
+        </div>
+        <div class="b-result">
+          <div class="b-scoreline"><span class="l">1</span> – <span class="w">2</span></div>
+          <div class="b-outcome loss">Lost</div>
+        </div>
+      </div>
+
+      <div class="b-row">
+        <div class="b-datecol"><div class="day">14</div><div class="mon">Jun</div></div>
+        <div class="b-main">
+          <div class="b-title">Mixed Scrimmage Night</div>
+          <div class="b-meta">Berlin Volley Club</div>
+        </div>
+        <div class="b-result"><span class="b-pill cancel">Cancelled</span></div>
+      </div>
+
+      <div class="b-row">
+        <div class="b-datecol"><div class="day">07</div><div class="mon">Jun</div></div>
+        <div class="b-main">
+          <div class="b-title">Casual Open Play</div>
+          <div class="b-meta">Kreuzberg Pickup</div>
+        </div>
+        <div class="b-result"><span class="b-pill none">No score</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

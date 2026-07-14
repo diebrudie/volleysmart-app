@@ -99,5 +99,18 @@
   "premium.personalAnalyticsDesc": "Upgrade to see your detailed stats, win rate, and performance trends",
   "premium.clubAnalytics": "Club Analytics",
   "premium.clubAnalyticsDesc": "Upgrade to see club stats, attendance trends, and best team combinations",
-  "premium.upgrade": "Upgrade"
+  "premium.upgrade": "Upgrade",
+
+  "you": "You",
+  "back": "Back",
+  "faq.title": "FAQ",
+  "comingSoon": "This screen is coming soon.",
+  "player": "Player",
+  "menu.settings": "Settings",
+  "menu.faq": "FAQ",
+  "menu.signOut": "Sign out",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "done": "Done",
+  "stepOf": "Step {{step}} of {{total}}"
 }

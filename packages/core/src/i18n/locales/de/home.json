@@ -59,5 +59,9 @@
   "cta.heading": "Bereit loszulegen?",
   "cta.highlight": "Schließe dich Spielern an, die VolleySmart nutzen",
   "cta.description": "Plane Events, erstelle faire Teams, verfolge Ergebnisse und verwalte deine Volleyball-Community — alles kostenlos.",
-  "cta.button": "Kostenlos starten"
+  "cta.button": "Kostenlos starten",
+
+  "greeting": "Willkommen zurück,",
+  "player": "Spieler",
+  "sections.myClubs": "Meine Clubs"
 }

@@ -2,5 +2,7 @@
   "email.invalid": "Please enter a valid email address",
   "password.tooShort": "Password must be at least {{min}} characters",
   "password.required": "Password is required",
-  "required": "This field is required"
+  "required": "This field is required",
+
+  "password.minLength": "Password must be at least 6 characters"
 }

@@ -1,39 +1,287 @@
-import { View, Text, StyleSheet } from "react-native";
+/**
+ * Home tab — mobile port of apps/web/src/pages/HomeDashboard.tsx:
+ * greeting, snap card slider (today/next event, last game, month stats —
+ * or onboarding cards for new users), My Clubs scroller, Discover Events.
+ */
+import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@/components/ui/Screen";
+import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlayerProfile } from "@/hooks/usePlayerProfile";
+import { useUserClubs } from "@/hooks/useUserClubs";
+import {
+  useTodayNextEvent,
+  useLastGame,
+  useMonthStats,
+} from "@/hooks/useHomeDashboard";
+import { queryKeys } from "@/constants/queryKeys";
+import { CardSlider } from "@/components/home/CardSlider";
+import { TodayNextCard } from "@/components/home/TodayNextCard";
+import { LastGameCard } from "@/components/home/LastGameCard";
+import { MonthStatsCard } from "@/components/home/MonthStatsCard";
+import { DiscoverSection } from "@/components/home/DiscoverSection";
+import { ClubCard } from "@/components/ClubCard";
+import { icons } from "@/constants/icons";
+import { radii, spacing, typography } from "@/constants/theme";
 
 export default function HomeScreen() {
   const { t } = useTranslation("home");
+  const { t: tEvents } = useTranslation("events");
   const theme = useTheme();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { data: player } = usePlayerProfile();
+  const { data: clubs, isLoading: clubsLoading } = useUserClubs();
 
-  const firstName = user?.user_metadata?.first_name ?? "";
+  const { data: todaysEvent, isLoading: todayLoading } = useTodayNextEvent();
+  const { data: lastGame, isLoading: lastGameLoading } = useLastGame();
+  const { data: monthStats } = useMonthStats();
+
+  const firstName =
+    player?.first_name ?? user?.user_metadata?.first_name ?? "";
+  const isNewUser = !clubsLoading && (clubs?.length ?? 0) === 0;
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.clubs.allMine }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.allUpcoming }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.allDiscover }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.home.allTodaysEvent }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.home.allLastGame }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.home.allMonthlyStats }),
+    ]);
+  };
+
+  const cardFrame = [
+    styles.onboardingCard,
+    { backgroundColor: theme.card, borderColor: theme.cardBorder },
+  ];
 
   return (
-    <Screen>
-      <View style={styles.header}>
-        <Text style={[styles.greeting, { color: theme.textSecondary }]}>
-          {t("greeting", { defaultValue: "Welcome back" })}
-        </Text>
-        <Text style={[styles.name, { color: theme.text }]}>
-          {firstName || "Player"}
-        </Text>
-      </View>
+    <Screen
+      onRefresh={handleRefresh}
+      safeTop={false}
+      contentStyle={styles.content}
+    >
+      {isNewUser ? (
+        /* ── Onboarding slider for users without a club ─────────────── */
+        <CardSlider>
+          {/* Card 1 — Welcome + skill level */}
+          <View style={cardFrame}>
+            <View style={styles.cardHeaderRow}>
+              <Ionicons
+                name={icons.volleyball}
+                size={18}
+                color={theme.primary}
+              />
+              <Text
+                style={[styles.cardHeaderLabel, { color: theme.textSecondary }]}
+              >
+                {tEvents("home.onboarding.welcome", { defaultValue: "Welcome" })}
+              </Text>
+            </View>
+            <Text style={[styles.onboardingTitle, { color: theme.text }]}>
+              {tEvents("home.onboarding.hiName", {
+                defaultValue: "Hi {{name}}!",
+                name: firstName,
+              })}
+            </Text>
+            {player?.skill_rating != null ? (
+              <View style={styles.skillBlock}>
+                <View style={styles.skillLabelRow}>
+                  <Text
+                    style={[styles.skillLabel, { color: theme.textSecondary }]}
+                  >
+                    {tEvents("home.onboarding.yourSkillLevel", {
+                      defaultValue: "Your skill level",
+                    })}
+                  </Text>
+                  <Text style={[styles.skillValue, { color: theme.text }]}>
+                    {player.skill_rating}/100
+                  </Text>
+                </View>
+                <View
+                  style={[styles.skillTrack, { backgroundColor: theme.muted }]}
+                >
+                  <View
+                    style={[
+                      styles.skillFill,
+                      {
+                        backgroundColor: theme.primary,
+                        width: `${Math.min(player.skill_rating, 100)}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            ) : null}
+            <Button
+              title={tEvents("home.onboarding.viewProfile", {
+                defaultValue: "View Profile",
+              })}
+              variant="outline"
+              onPress={() => router.push("/profile")}
+              style={styles.onboardingButton}
+            />
+          </View>
 
-      <View style={styles.placeholder}>
-        <Text style={{ color: theme.textSecondary, textAlign: "center" }}>
-          {t("dashboard.comingSoon", { defaultValue: "Dashboard coming in Phase 2" })}
-        </Text>
-      </View>
+          {/* Card 2 — Create or join a club */}
+          <View
+            style={[
+              styles.onboardingCard,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.primary + "4D",
+              },
+            ]}
+          >
+            <View style={styles.cardHeaderRow}>
+              <Ionicons name={icons.users} size={18} color={theme.primary} />
+              <Text
+                style={[styles.cardHeaderLabel, { color: theme.textSecondary }]}
+              >
+                {tEvents("home.onboarding.getStarted", {
+                  defaultValue: "Get Started",
+                })}
+              </Text>
+            </View>
+            <Text
+              style={[styles.onboardingBody, { color: theme.textSecondary }]}
+            >
+              {tEvents("home.onboarding.clubsDescription", {
+                defaultValue:
+                  "Clubs are where the action happens. Create your own or join an existing one.",
+              })}
+            </Text>
+            <View style={styles.onboardingActions}>
+              <Button
+                title={tEvents("home.onboarding.createClub", {
+                  defaultValue: "Create a Club",
+                })}
+                onPress={() => router.push("/clubs/create")}
+                style={styles.onboardingButton}
+              />
+              <Button
+                title={tEvents("home.onboarding.browseClubs", {
+                  defaultValue: "Browse Clubs",
+                })}
+                variant="outline"
+                onPress={() => router.push("/(tabs)/clubs")}
+                style={styles.onboardingButton}
+              />
+            </View>
+          </View>
+
+          {/* Card 3 — Analytics teaser */}
+          <MonthStatsCard
+            stats={undefined}
+            placeholder
+            onPress={() => router.push("/profile")}
+          />
+        </CardSlider>
+      ) : (
+        /* ── Regular slider: today/next event, last game, month stats ── */
+        <CardSlider>
+          {todaysEvent ? (
+            <TodayNextCard event={todaysEvent} loading={todayLoading} />
+          ) : (
+            <LastGameCard game={lastGame} loading={lastGameLoading} />
+          )}
+          {todaysEvent ? (
+            <LastGameCard game={lastGame} loading={lastGameLoading} />
+          ) : (
+            <TodayNextCard event={todaysEvent} loading={todayLoading} />
+          )}
+          <MonthStatsCard
+            stats={monthStats}
+            onPress={() => router.push("/profile")}
+          />
+        </CardSlider>
+      )}
+
+      {/* ── My Clubs ─────────────────────────────────────────────────── */}
+      {clubs && clubs.length > 0 ? (
+        <>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            {t("sections.myClubs", { defaultValue: "My Clubs" })}
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.clubScrollBleed}
+            contentContainerStyle={styles.clubScroll}
+          >
+            {clubs.map((club) => (
+              <View key={club.club_id} style={styles.clubScrollItem}>
+                <ClubCard
+                  club={club}
+                  onPress={() =>
+                    router.push(`/clubs/${club.club_id}`)
+                  }
+                />
+              </View>
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
+
+      {/* ── Discover Events ──────────────────────────────────────────── */}
+      <DiscoverSection />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { marginTop: 16, marginBottom: 24 },
-  greeting: { fontSize: 15 },
-  name: { fontSize: 28, fontWeight: "700", marginTop: 4 },
-  placeholder: { flex: 1, justifyContent: "center", paddingVertical: 80 },
+  content: { paddingTop: spacing.lg },
+  sectionTitle: {
+    ...typography.h3,
+    fontSize: 18,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.md,
+  },
+  clubScrollBleed: { marginHorizontal: -spacing.lg },
+  clubScroll: { gap: spacing.md, paddingHorizontal: spacing.lg },
+  clubScrollItem: { width: 280 },
+  // Onboarding cards
+  onboardingCard: {
+    borderWidth: 1,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
+    minHeight: 196,
+    gap: spacing.md,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  cardHeaderLabel: {
+    ...typography.label,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  onboardingTitle: { ...typography.h3 },
+  onboardingBody: { ...typography.bodySm, lineHeight: 19 },
+  onboardingActions: { gap: spacing.sm, marginTop: "auto" },
+  onboardingButton: { height: 40 },
+  skillBlock: { gap: spacing.xs + 2 },
+  skillLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  skillLabel: { ...typography.bodySm },
+  skillValue: { ...typography.bodySm, fontWeight: "600" },
+  skillTrack: {
+    height: 8,
+    borderRadius: radii.full,
+    overflow: "hidden",
+  },
+  skillFill: { height: "100%", borderRadius: radii.full },
 });

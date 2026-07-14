@@ -20,6 +20,13 @@ export * from './supabase/playerStats';
 export * from './supabase/clubStats';
 export * from './supabase/skillProgression';
 export * from './supabase/members';
+export * from './supabase/faqs';
+export * from './supabase/rpc';
+export * from './supabase/games';
+
+// Team assignment algorithm (pure TS)
+export * from './teams/positions';
+export * from './teams/assignLineup';
 
 // Utilities
 export * from './utils/formatName';

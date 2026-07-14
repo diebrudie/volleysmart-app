@@ -158,7 +158,6 @@
   "card.genderMenOnly": "Nur Männer",
   "card.genderQueer": "Queer",
   "card.genderFlinta": "Flinta",
-
   "location": {
     "nameLabel": "Ortsname *",
     "namePlaceholder": "z.B. Sporthalle Berlin",
@@ -169,7 +168,6 @@
     "saveFailed": "Ort konnte nicht gespeichert werden.",
     "saving": "Ort wird gespeichert..."
   },
-
   "detail.eventTypeFriendly": "Freundschaftsspiel",
   "detail.eventTypeSocial": "Freizeitspiel",
   "detail.eventTypeTraining": "Training",
@@ -287,5 +285,14 @@
   "detail.deleting": "Wird gelöscht...",
   "detail.delete": "Löschen",
   "detail.unknown": "Unbekannt",
-  "detail.you": "Du"
+  "detail.you": "Du",
+  "detail.selectPlayersTitle": "Spieler auswählen",
+  "detail.selectPlayersSubtitle": "Wähle aus, wer spielt, füge Gäste hinzu und generiere dann die Teams.",
+  "detail.guests": "Gäste",
+  "detail.guestNamePlaceholder": "Name des Gastes",
+  "detail.addGuest": "Gast hinzufügen",
+  "detail.removeGuest": "Gast entfernen",
+  "detail.generateTeams": "Teams generieren",
+  "detail.playersSelectedCount": "{{count}} Spieler ausgewählt",
+  "detail.selectMinPlayers": "Wähle mindestens {{count}} Spieler aus"
 }

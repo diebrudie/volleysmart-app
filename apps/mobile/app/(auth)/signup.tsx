@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import * as AuthSession from "expo-auth-session";
 import { useTranslation } from "react-i18next";
@@ -86,7 +86,11 @@ export default function SignupScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.flex}
       >
-        <View style={styles.center}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={[styles.title, { color: theme.text }]}>
             {t("signup.title")}
           </Text>
@@ -147,6 +151,7 @@ export default function SignupScreen() {
                 <Input
                   label={t("signup.firstName")}
                   placeholder={t("signup.firstNamePlaceholder")}
+                  autoFocus
                   textContentType="givenName"
                   autoComplete="given-name"
                   value={firstName}
@@ -197,7 +202,7 @@ export default function SignupScreen() {
               </Text>
             </Pressable>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -205,7 +210,7 @@ export default function SignupScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  center: { flex: 1, justifyContent: "center" },
+  scrollContent: { flexGrow: 1, justifyContent: "center", paddingVertical: 16 },
   title: { fontSize: 26, fontWeight: "700", textAlign: "center" },
   subtitle: { fontSize: 15, textAlign: "center", marginTop: 8, marginBottom: 32 },
   form: { gap: 16 },

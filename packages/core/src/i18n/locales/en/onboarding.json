@@ -78,5 +78,10 @@
   "toast.imageUploadFailed": "Image upload failed, but profile will be created without photo.",
   "toast.positionsFailed": "Player created but positions failed to save",
   "toast.profileCreated": "Player profile created! Skill level: {{level}}/100",
-  "toast.createFailed": "Failed to create player profile: {{error}}"
+  "toast.createFailed": "Failed to create player profile: {{error}}",
+
+  "birthday.placeholder": "Pick a date",
+  "birthday.tooRecent": "Please pick a date at least 10 years in the past.",
+  "city.countryLabel": "Country",
+  "city.countryPlaceholder": "Germany"
 }

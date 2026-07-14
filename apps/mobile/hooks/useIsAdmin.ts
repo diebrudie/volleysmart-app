@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSupabaseClient } from "@volleysmart/core";
+import { queryKeys } from "@/constants/queryKeys";
 import { useAuth } from "./useAuth";
 
 export function useIsAdmin(clubId?: string | null) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["isAdmin", clubId, user?.id],
+    queryKey: queryKeys.clubs.isAdmin(clubId ?? undefined, user?.id),
     enabled: !!clubId && !!user?.id,
     staleTime: 5_000,
     queryFn: async (): Promise<boolean> => {

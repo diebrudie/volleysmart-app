@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "./clientHolder";
+import type { TablesUpdate } from "./types";
 
 export type EventType =
   | "friendly_game"
@@ -147,7 +148,10 @@ export async function fetchUpcomingEvents(
 
   unique.sort(
     (a, b) =>
-      a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)
+      a.date.localeCompare(b.date) ||
+      a.start_time.localeCompare(b.start_time) ||
+      // Tiebreaker: same date+time → newest-created on top (created_at DESC).
+      b.created_at.localeCompare(a.created_at)
   );
 
   return unique;
@@ -188,7 +192,7 @@ export async function fetchPublicEvents(
   const { data, error } = await query;
 
   if (error) throw error;
-  return (data ?? []) as PlannedEvent[];
+  return (data ?? []) as unknown as PlannedEvent[];
 }
 
 /** Fetch upcoming public events for a specific club. */
@@ -425,9 +429,21 @@ export async function fetchSingleEvent(
   return data as PlannedEvent;
 }
 
-/** Delete a planned event. */
+/** Delete a planned event.
+ *
+ * A game (match_day) may reference the event via planned_event_id, whose FK has
+ * no ON DELETE rule — so the event delete would fail with a foreign-key
+ * violation. Unlink any linked games first (the game + its scores survive as a
+ * standalone match day) so the delete always succeeds. */
 export async function deletePlannedEvent(eventId: string): Promise<void> {
   const supabase = getSupabaseClient();
+
+  const { error: unlinkError } = await supabase
+    .from("match_days")
+    .update({ planned_event_id: null })
+    .eq("planned_event_id", eventId);
+  if (unlinkError) throw unlinkError;
+
   const { error } = await supabase
     .from("planned_events")
     .delete()
@@ -543,7 +559,7 @@ export async function updatePlannedEvent(
   input: UpdateEventInput
 ): Promise<void> {
   const supabase = getSupabaseClient();
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<"planned_events"> = {};
   if (input.title !== undefined) updates.title = input.title;
   if (input.event_type !== undefined) updates.event_type = input.event_type;
   if (input.date !== undefined) updates.date = input.date;
@@ -607,7 +623,7 @@ export async function updateRecurringSeries(
   await updatePlannedEvent(parentId, input);
 
   // Build updates for children
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<"planned_events"> = {};
   if (input.title !== undefined) updates.title = input.title;
   if (input.event_type !== undefined) updates.event_type = input.event_type;
   if (input.start_time !== undefined)

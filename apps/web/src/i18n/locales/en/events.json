@@ -158,7 +158,6 @@
   "card.genderMenOnly": "Men Only",
   "card.genderQueer": "Queer",
   "card.genderFlinta": "Flinta",
-
   "location": {
     "nameLabel": "Location Name *",
     "namePlaceholder": "e.g. Berlin Sports Hall",
@@ -169,7 +168,6 @@
     "saveFailed": "Failed to save location.",
     "saving": "Saving location..."
   },
-
   "detail.eventTypeFriendly": "Friendly Game",
   "detail.eventTypeSocial": "Social Game",
   "detail.eventTypeTraining": "Training",
@@ -287,5 +285,14 @@
   "detail.deleting": "Deleting...",
   "detail.delete": "Delete",
   "detail.unknown": "Unknown",
-  "detail.you": "You"
+  "detail.you": "You",
+  "detail.selectPlayersTitle": "Select Players",
+  "detail.selectPlayersSubtitle": "Choose who is playing and add any guests, then generate teams.",
+  "detail.guests": "Guests",
+  "detail.guestNamePlaceholder": "Guest name",
+  "detail.addGuest": "Add Guest",
+  "detail.removeGuest": "Remove guest",
+  "detail.generateTeams": "Generate Teams",
+  "detail.playersSelectedCount": "{{count}} players selected",
+  "detail.selectMinPlayers": "Select at least {{count}} players"
 }

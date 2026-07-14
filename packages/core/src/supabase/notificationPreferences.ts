@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "./clientHolder";
 import type { NotificationType } from "./notifications";
+import type { TablesInsert } from "./types";
 
 export interface NotificationPref {
   in_app: boolean;
@@ -43,16 +44,14 @@ export async function upsertNotificationPreference(
   value: boolean
 ): Promise<void> {
   const supabase = getSupabaseClient();
+  const row: TablesInsert<"notification_preferences"> = {
+    user_id: userId,
+    notification_type: type,
+    updated_at: new Date().toISOString(),
+  };
+  row[channel] = value;
   const { error } = await supabase
     .from("notification_preferences")
-    .upsert(
-      {
-        user_id: userId,
-        notification_type: type,
-        [channel]: value,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,notification_type" }
-    );
+    .upsert(row, { onConflict: "user_id,notification_type" });
   if (error) throw error;
 }

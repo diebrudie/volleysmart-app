@@ -78,5 +78,10 @@
   "toast.imageUploadFailed": "Bild-Upload fehlgeschlagen, aber das Profil wird ohne Foto erstellt.",
   "toast.positionsFailed": "Spieler erstellt, aber Positionen konnten nicht gespeichert werden",
   "toast.profileCreated": "Spielerprofil erstellt! Spielstärke: {{level}}/100",
-  "toast.createFailed": "Spielerprofil konnte nicht erstellt werden: {{error}}"
+  "toast.createFailed": "Spielerprofil konnte nicht erstellt werden: {{error}}",
+
+  "birthday.placeholder": "Datum auswählen",
+  "birthday.tooRecent": "Bitte wähle ein Datum, das mindestens 10 Jahre zurückliegt.",
+  "city.countryLabel": "Land",
+  "city.countryPlaceholder": "Deutschland"
 }

@@ -158,7 +158,6 @@
   "card.genderMenOnly": "Solo hombres",
   "card.genderQueer": "Queer",
   "card.genderFlinta": "Flinta",
-
   "location": {
     "nameLabel": "Nombre del lugar *",
     "namePlaceholder": "ej. Polideportivo Central",
@@ -169,7 +168,6 @@
     "saveFailed": "Error al guardar el lugar.",
     "saving": "Guardando lugar..."
   },
-
   "detail.eventTypeFriendly": "Partido amistoso",
   "detail.eventTypeSocial": "Partido social",
   "detail.eventTypeTraining": "Entrenamiento",
@@ -287,5 +285,14 @@
   "detail.deleting": "Eliminando...",
   "detail.delete": "Eliminar",
   "detail.unknown": "Desconocido",
-  "detail.you": "Tú"
+  "detail.you": "Tú",
+  "detail.selectPlayersTitle": "Seleccionar jugadores",
+  "detail.selectPlayersSubtitle": "Elige quién juega y añade invitados, luego genera los equipos.",
+  "detail.guests": "Invitados",
+  "detail.guestNamePlaceholder": "Nombre del invitado",
+  "detail.addGuest": "Añadir invitado",
+  "detail.removeGuest": "Quitar invitado",
+  "detail.generateTeams": "Generar equipos",
+  "detail.playersSelectedCount": "{{count}} jugadores seleccionados",
+  "detail.selectMinPlayers": "Selecciona al menos {{count}} jugadores"
 }

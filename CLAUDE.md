@@ -3,10 +3,14 @@
 For completed work history, see [HISTORY.md](./HISTORY.md).
 
 ## Current status
-- In progress: `feat/club-member-access-team-algorithm` — club member access to games/scores/teams, team algorithm improvements, queer/flinta event gender, live score popup removal
-- Ready for PR: `feat/mobile-phase1-foundation-auth` — native app Phase 1: providers, UI library, auth screens, tab layout, i18n, navy theme, logo. Google OAuth and onboarding deferred to Phase 3 (requires dev build).
-- Last merged: `feat/event-filters-city-discovery-location` (PR #104): contextual RSVP filters (Going/Attended per tab), city-based filtering for public events and discoverable clubs, Mapbox city-only selector fix
-- Previously merged: `feat/ui-fixes-and-improvements` (PR #103): RLS recursion fixes, cross-club game start, opponent mode labels, deleted club filtering, Last Game per-player, event visibility after public-to-private
+- In progress: `feat/mobile-phase3-parity` (branched off phase 2, NOT main) — native app Phase 3: PWA feature parity for everything except the game layer. Built via multi-agent workflows (foundation → 10 work packages → integration). Committed + pushed. Verified by driving the Expo-web build in Playwright (Events, Clubs, Members/invites, Home, Notifications, Profile all pass); 3 bugs found+fixed (share clipboard crash, club-delete nested modal, filter-select nested modal). NOT merged yet — awaiting user's on-device test via Expo Go. Device checklist at `apps/mobile/DEVICE_TEST_CHECKLIST.md`. Game layer (Game/LiveScore/EditGame/TeamGenerator/analytics) deliberately deferred to a follow-up run; mobile shows "web only" hints.
+- Committed, PR pending: `feat/mobile-phase2-screens-rsvp` — Phase 2 native app: data hooks, tab screens, detail screens (Event/Club), RSVP, TopBar, FAB, MenuDrawer. Phase 3 builds on top of this branch.
+- In progress (parallel): `feat/dynamic-og-images` — dynamic social preview images for shared event and club links (Cloudflare Pages function, resvg-wasm)
+- Last merged: `feat/mobile-phase1-foundation-auth` (PR #106): native app Phase 1: providers, UI library, auth screens, tab layout, i18n, navy theme, logo.
+- Mobile UI note: `apps/mobile` uses RN `Modal`-based `Sheet`/`Dialog` (NOT @gorhom/bottom-sheet) for react-native-web test compatibility. A Dialog/Select opened from INSIDE a Sheet must hide the parent Sheet (`visible={visible && !childOpen}`) or use inline chips — two stacked RN Modals leave the child unclickable on web.
+- Mobile core change: `packages/core/src/supabase/types.ts` was regenerated (fixed 65 stale type errors) and `clubStats.ts` had a real query bug fixed (referenced nonexistent `players.primary_position`). These are shared with the PWA (logic/types only, no visual change). i18n locales only had keys ADDED, existing values unchanged.
+- Previously merged: `feat/club-member-access-team-algorithm` (PR #105): club member access to games/scores/teams, team algorithm improvements, queer/flinta event gender
+- Stashed: `stash@{0}` = incomplete "Share Club" button (ClubOverview + i18n). Restore with `git stash pop` on a dedicated branch.
 - Supabase Dashboard configured: custom SMTP (Resend), auth email templates pasted
 - Note: `send-club-invitations` edge function is deployed but unused. Frontend uses link-based invite flow. Can be deleted or repurposed.
 - Deploy status: `notify-join-request` edge function needs deploying
