@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { withTimeout } from "@/lib/withTimeout";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -37,17 +38,21 @@ const ProtectedRoute = ({
 
       const checkOnboarding = async () => {
         try {
-          const { data: player, error } = await supabase
-            .from("players")
-            .select("profile_completed")
-            .eq("user_id", user.id)
-            .single();
+          const { data: player, error } = await withTimeout(
+            supabase
+              .from("players")
+              .select("profile_completed")
+              .eq("user_id", user.id)
+              .single()
+          );
 
           const completed = !error && player?.profile_completed === true;
           setHasCompletedOnboarding(completed);
         } catch (error) {
+          // Timeout or network failure: let the user in rather than spin forever
+          // or bounce a finished profile back to onboarding.
           console.error("Error checking onboarding status:", error);
-          setHasCompletedOnboarding(false);
+          setHasCompletedOnboarding(true);
         } finally {
           setIsCheckingOnboarding(false);
         }

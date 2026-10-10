@@ -21,6 +21,7 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
 import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
+import { withTimeout } from "@/lib/withTimeout";
 // uncomment to force a repaint at the right moments on the login screen
 // import { useIosPwaKeyboardRepaint } from "@/hooks/use-ios-pwa-keyboard-repaint";
 
@@ -94,11 +95,13 @@ const Login = () => {
        * If row is missing OR profile_completed is not true -> go to onboarding.
        */
       try {
-        const { data: player, error } = await supabase
-          .from("players")
-          .select("profile_completed")
-          .eq("user_id", user.id)
-          .single();
+        const { data: player, error } = await withTimeout(
+          supabase
+            .from("players")
+            .select("profile_completed")
+            .eq("user_id", user.id)
+            .single()
+        );
 
         if (error || player?.profile_completed !== true) {
           navigate("/players/onboarding", { replace: true });
@@ -119,8 +122,9 @@ const Login = () => {
           return;
         }
       } catch (err) {
+        // Timeout or network failure: ProtectedRoute re-checks onboarding on /home
         console.error("Error checking user profile:", err);
-        navigate("/players/onboarding", { replace: true });
+        navigate("/home", { replace: true });
       } finally {
         setIsCheckingProfile(false);
       }
