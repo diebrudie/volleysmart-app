@@ -1,5 +1,5 @@
 import { Navigate, useParams } from "react-router-dom";
-import { PropsWithChildren, useEffect } from "react";
+import { PropsWithChildren, useEffect, useRef } from "react";
 import { useClub } from "@/contexts/ClubContext";
 
 /**
@@ -14,21 +14,33 @@ export default function ClubGuard({ children }: PropsWithChildren) {
     clubId: ctxClubId,
     membershipStatus,
     initialized,
-    isValidatingClub, // NEW
+    isValidatingClub,
     setClubId,
   } = useClub();
   const { clubId: routeClubId } = useParams<{ clubId: string }>();
 
-  // Keep context aligned with the route; validation happens inside setClubId
+  // Validate each route club once; a failed check resets ctxClubId to null,
+  // which must not trigger another validation (infinite loop, blank page).
+  const requestedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (routeClubId && routeClubId !== ctxClubId) {
+    if (
+      routeClubId &&
+      routeClubId !== ctxClubId &&
+      requestedRef.current !== routeClubId
+    ) {
+      requestedRef.current = routeClubId;
       setClubId(routeClubId);
     }
   }, [routeClubId, ctxClubId, setClubId]);
 
   // Wait for initial resolution and any active validation to finish
-  if (!initialized || isValidatingClub || membershipStatus === null) {
+  if (!initialized || isValidatingClub) {
     return null; // don’t redirect yet
+  }
+
+  // Validation for this route hasn't started yet (effect runs after render)
+  if (routeClubId !== ctxClubId && requestedRef.current !== routeClubId) {
+    return null;
   }
 
   const isActiveForRoute =

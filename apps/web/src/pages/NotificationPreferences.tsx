@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -93,7 +93,7 @@ const engagementTypes: NotificationType[] = [
 
 export default function NotificationPreferences() {
   const { t } = useTranslation("notifications");
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -364,7 +364,7 @@ export default function NotificationPreferences() {
             variant="ghost"
             size="icon"
             className="absolute left-4 rounded-full"
-            onClick={() => navigate(-1)}
+            onClick={() => goBack()}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

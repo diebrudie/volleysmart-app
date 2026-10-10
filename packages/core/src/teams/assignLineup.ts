@@ -359,7 +359,7 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
       const canB = usedB < needB;
       const team: "team_a" | "team_b" =
         canA && (!canB || scoreA <= scoreB) ? "team_a" : "team_b";
-      place(candidate, team, candidate.mainPosition, "fallback");
+      place(candidate, team, position, "fallback");
       if (team === "team_a") usedA++;
       else usedB++;
     }
@@ -447,6 +447,38 @@ export function assignTeams(players: PlayerForTeams[]): TeamAssignmentResult {
           break genderOuter;
         }
       }
+    }
+  }
+
+  // ── Phase 7: Score rebalance after gender swaps ───────────────────────────
+  // Phase 6 may widen the score gap. Swap same-position, same-gender players
+  // (keeps the gender split) while the gap shrinks.
+  let rebalanced = true;
+  while (rebalanced && Math.abs(scoreA - scoreB) > 5) {
+    rebalanced = false;
+    let best: { i: number; j: number; diff: number } | null = null;
+    for (let i = 0; i < teamA.length; i++) {
+      for (let j = 0; j < teamB.length; j++) {
+        if (teamA[i].assignedPosition !== teamB[j].assignedPosition) continue;
+        const pdA = playerById.get(teamA[i].id);
+        const pdB = playerById.get(teamB[j].id);
+        if (!pdA || !pdB) continue;
+        if ((pdA.gender ?? "other") !== (pdB.gender ?? "other")) continue;
+        const diff = Math.abs(
+          scoreA - pdA.score + pdB.score - (scoreB - pdB.score + pdA.score)
+        );
+        if (diff < (best?.diff ?? Math.abs(scoreA - scoreB))) best = { i, j, diff };
+      }
+    }
+    if (best) {
+      const pa = teamA[best.i];
+      const pb = teamB[best.j];
+      const delta = playerById.get(pb.id)!.score - playerById.get(pa.id)!.score;
+      scoreA += delta;
+      scoreB -= delta;
+      teamA[best.i] = { ...pb, team: "team_a" };
+      teamB[best.j] = { ...pa, team: "team_b" };
+      rebalanced = true;
     }
   }
 

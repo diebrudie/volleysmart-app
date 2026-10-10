@@ -168,7 +168,6 @@
   "card.genderMenOnly": "Solo hombres",
   "card.genderQueer": "Queer",
   "card.genderFlinta": "Flinta",
-
   "location": {
     "label": "Lugar *",
     "selectPlaceholder": "Selecciona un lugar",
@@ -182,7 +181,6 @@
     "saveFailed": "Error al guardar el lugar.",
     "saving": "Guardando lugar..."
   },
-
   "detail.eventTypeFriendly": "Partido amistoso",
   "detail.eventTypeSocial": "Partido social",
   "detail.eventTypeTraining": "Entrenamiento",
@@ -301,7 +299,6 @@
   "detail.delete": "Eliminar",
   "detail.unknown": "Desconocido",
   "detail.you": "Tú",
-
   "back": "Atrás",
   "detail.viewGameWebOnly": "Ver el partido en la app web",
   "detail.startGameWebOnly": "Iniciar partido (solo web)",
@@ -320,5 +317,14 @@
   "discover.editProfile": "Editar perfil",
   "discover.nearCity": "Eventos públicos en {{city}}",
   "detail.rsvpDeadlinePassed": "El plazo para confirmar asistencia ha terminado",
-  "detail.eventFull": "Este evento está completo"
+  "detail.eventFull": "Este evento está completo",
+  "detail.selectPlayersTitle": "Seleccionar jugadores",
+  "detail.selectPlayersSubtitle": "Elige quién juega y añade invitados, luego genera los equipos.",
+  "detail.guests": "Invitados",
+  "detail.guestNamePlaceholder": "Nombre del invitado",
+  "detail.addGuest": "Añadir invitado",
+  "detail.removeGuest": "Quitar invitado",
+  "detail.generateTeams": "Generar equipos",
+  "detail.playersSelectedCount": "{{count}} jugadores seleccionados",
+  "detail.selectMinPlayers": "Selecciona al menos {{count}} jugadores"
 }

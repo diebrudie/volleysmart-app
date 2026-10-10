@@ -150,19 +150,25 @@ export const ClubProvider = ({ children }: { children: ReactNode }) => {
   const setClubId = (id: string) => {
     setIsValidatingClub(true);
     (async () => {
-      const status = await fetchMembershipStatus(id);
-      if (!mountedRef.current) return;
+      try {
+        const status = await fetchMembershipStatus(id);
+        if (!mountedRef.current) return;
 
-      if (status === "active") {
-        localStorage.setItem("lastVisitedClub", id);
-        setClubIdState(id);
-        setMembershipStatus("active");
-      } else {
-        localStorage.removeItem("lastVisitedClub");
-        setClubIdState(null);
-        setMembershipStatus(status);
+        if (status === "active") {
+          localStorage.setItem("lastVisitedClub", id);
+          setClubIdState(id);
+          setMembershipStatus("active");
+        } else {
+          localStorage.removeItem("lastVisitedClub");
+          setClubIdState(null);
+          setMembershipStatus(status);
+        }
+      } catch (e) {
+        console.error("Club membership check failed:", e);
+      } finally {
+        // Never leave ClubGuard waiting on a failed request
+        if (mountedRef.current) setIsValidatingClub(false);
       }
-      setIsValidatingClub(false);
     })();
   };
 
