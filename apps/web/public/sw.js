@@ -1,7 +1,9 @@
 // public/sw.js
 // Minimal service worker for VolleySmart installability
 
-const CACHE_NAME = "volleysmart-v1";
+// Versioned per deploy via the ?v= query set at registration (main.tsx),
+// so activating a new SW drops the old cache (and its stale index.html).
+const CACHE_NAME = `volleysmart-${new URL(self.location).searchParams.get("v") || "dev"}`;
 const ASSETS = [
   "/",
   "/manifest.webmanifest",
@@ -27,7 +29,13 @@ self.addEventListener("activate", (event) => {
           keys.map((key) => (key === CACHE_NAME ? null : caches.delete(key)))
         )
       )
+      .then(() => self.clients.claim())
   );
+});
+
+// Sent by the "Refresh" button in the update toast
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {

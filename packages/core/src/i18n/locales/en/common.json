@@ -112,5 +112,9 @@
   "cancel": "Cancel",
   "confirm": "Confirm",
   "done": "Done",
-  "stepOf": "Step {{step}} of {{total}}"
+  "stepOf": "Step {{step}} of {{total}}",
+  "update.available": "A new version of VolleySmart is available",
+  "update.refresh": "Refresh",
+  "update.check": "Check for updates",
+  "update.upToDate": "You're on the latest version"
 }

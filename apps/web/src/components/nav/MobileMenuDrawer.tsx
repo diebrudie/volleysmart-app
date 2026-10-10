@@ -12,13 +12,16 @@ import {
   FileText,
   Shield,
   ChevronRight,
+  RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ThemePicker from "./ThemePicker";
 import ContactSheet from "@/components/common/ContactSheet";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+import { APP_VERSION, checkForUpdate } from "@/lib/appUpdate";
 
 type MobileMenuDrawerProps = {
   open: boolean;
@@ -117,6 +120,15 @@ const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                   onClick={() => {
                     onOpenChange(false);
                     setContactOpen(true);
+                  }}
+                />
+                <MenuItem
+                  icon={<RefreshCw className="h-5 w-5" />}
+                  label={t("update.check")}
+                  badge={APP_VERSION}
+                  onClick={async () => {
+                    onOpenChange(false);
+                    if (!(await checkForUpdate())) toast(t("update.upToDate"));
                   }}
                   border={false}
                 />

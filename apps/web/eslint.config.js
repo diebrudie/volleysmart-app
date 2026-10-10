@@ -23,6 +23,7 @@ export default tseslint.config(
         ...globals.es2021,
         React: "readonly",
         JSX: "readonly",
+        __APP_VERSION__: "readonly",
       },
       parser: tseslint.parser, // <-- REQUIRED
       parserOptions: {
