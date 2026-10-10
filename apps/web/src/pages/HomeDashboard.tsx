@@ -12,7 +12,6 @@ import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { useIsCompact } from "@/hooks/use-compact";
 import Navbar from "@/components/layout/Navbar";
 import { fetchPublicEvents } from "@/integrations/supabase/plannedEvents";
-import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
 import { EventCard } from "@/components/events/EventCard";
 
 // ─── Data hooks ──────────────────────────────────────────────────────────────
@@ -316,14 +315,6 @@ const HomeDashboard: React.FC = () => {
   const { data: lastGame } = useLastGame(playerId);
   const { data: monthlyStats } = useMonthlyStats(user?.id, playerId, clubIds);
 
-  // Discover events: public events from clubs user is NOT a member of
-  const { data: userClubIds = [] } = useQuery({
-    queryKey: ["user-club-ids", user?.id],
-    queryFn: () => fetchUserClubIds(user!.id),
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-  });
-
   // Player info for empty state message + onboarding cards + city filtering
   const { data: playerInfo } = useQuery({
     queryKey: ["player-info", user?.id],
@@ -350,10 +341,8 @@ const HomeDashboard: React.FC = () => {
 
   const isNewUser = clubs.length === 0;
 
-  const discoverEvents = React.useMemo(() => {
-    const clubIdSet = new Set(userClubIds);
-    return publicEvents.filter((e) => !clubIdSet.has(e.club_id)).slice(0, 3);
-  }, [publicEvents, userClubIds]);
+  // All public events in the city, including the user's own clubs
+  const discoverEvents = publicEvents.slice(0, 3);
 
   // Slider state
   const sliderRef = React.useRef<HTMLDivElement>(null);

@@ -9,7 +9,6 @@ import {
   fetchPublicEvents,
   type PlannedEvent,
 } from "@/integrations/supabase/plannedEvents";
-import { fetchUserClubIds } from "@/integrations/supabase/clubMembers";
 import { EventCard } from "@/components/events/EventCard";
 import { useCurrentPlayerId } from "@/hooks/useCurrentPlayerId";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,13 +35,6 @@ const DiscoverEvents: React.FC = () => {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: userClubIds = [] } = useQuery({
-    queryKey: ["user-club-ids", user?.id],
-    queryFn: () => fetchUserClubIds(user!.id),
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-  });
-
   const { data: publicEvents = [], isLoading } = useQuery({
     queryKey: ["public-events", playerCity],
     queryFn: () => fetchPublicEvents(playerCity),
@@ -50,10 +42,8 @@ const DiscoverEvents: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const discoverEvents = React.useMemo(() => {
-    const clubIdSet = new Set(userClubIds);
-    return publicEvents.filter((e) => !clubIdSet.has(e.club_id));
-  }, [publicEvents, userClubIds]);
+  // All public events in the city, including the user's own clubs
+  const discoverEvents = publicEvents;
 
   const handleEventClick = (eventId: string) => navigate(`/events/${eventId}`);
 
