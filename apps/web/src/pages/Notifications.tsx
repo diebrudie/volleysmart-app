@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { getDateLocale } from "@/lib/dateLocale";
@@ -173,6 +174,7 @@ function getNotificationConfig(n: Notification, t: (key: string, opts?: Record<s
 const Notifications: React.FC = () => {
   const { t } = useTranslation("notifications");
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -214,7 +216,7 @@ const Notifications: React.FC = () => {
       <div className="border-b border-border">
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => goBack()}
             className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4" />

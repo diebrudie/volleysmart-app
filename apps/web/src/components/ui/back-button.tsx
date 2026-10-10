@@ -1,5 +1,6 @@
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { Button } from "@/components/ui/button";
 
 interface BackButtonProps {
@@ -13,13 +14,14 @@ export const BackButton: React.FC<BackButtonProps> = ({
   label = "Back",
 }) => {
   const navigate = useNavigate();
+  const goBack = useGoBack();
 
   return (
     <Button
       variant="ghost"
       size="sm"
       className="gap-1 pl-1 text-muted-foreground hover:text-foreground -ml-1"
-      onClick={() => (to ? navigate(to) : navigate(-1))}
+      onClick={() => (to ? navigate(to) : goBack())}
     >
       <ChevronLeft className="h-4 w-4" />
       {label}

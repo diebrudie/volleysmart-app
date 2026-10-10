@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +9,7 @@ import Footer from "@/components/layout/Footer";
 
 const PrivacyPage = () => {
   const { t } = useTranslation("legal");
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const { isAuthenticated } = useAuth();
 
   const lastScrollYRef = useRef(0);
@@ -74,7 +74,7 @@ const PrivacyPage = () => {
       >
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => goBack()}
             className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4" />
