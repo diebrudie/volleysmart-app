@@ -6,6 +6,7 @@ import { supabase } from "@/constants/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { queryKeys } from "@/constants/queryKeys";
 import { getPendingInviteToken } from "@/constants/pendingInvite";
+import { getIntroSeen } from "@/constants/introSeen";
 
 /**
  * Route guard:
@@ -23,6 +24,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const segments = useSegments();
   const router = useRouter();
   const [recoveryPending, setRecoveryPending] = useState(false);
+  // First-launch intro flag: null while loading, then true/false.
+  const [introSeen, setIntroSeen] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    getIntroSeen().then(setIntroSeen).catch(() => setIntroSeen(true));
+  }, []);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
@@ -62,7 +69,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (loading) return;
 
     if (!session) {
-      if (!inAuthGroup) router.replace("/(auth)/login");
+      // Wait until we know whether the intro has been seen before routing, so
+      // first-time users land on the intro rather than flashing login first.
+      if (introSeen === null) return;
+      if (!inAuthGroup) {
+        // "/(auth)/intro" cast until expo-router regenerates typed routes.
+        router.replace((introSeen ? "/(auth)/login" : "/(auth)/intro") as never);
+      }
       return;
     }
 
@@ -90,6 +103,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [
     session,
     loading,
+    introSeen,
     inAuthGroup,
     inOnboarding,
     onResetPassword,

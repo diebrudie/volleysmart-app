@@ -6,6 +6,7 @@ export default function AuthLayout() {
   return (
     <ForceLight>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="intro" />
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
         <Stack.Screen name="forgot-password" />
