@@ -168,7 +168,6 @@
   "card.genderMenOnly": "Men Only",
   "card.genderQueer": "Queer",
   "card.genderFlinta": "Flinta",
-
   "location": {
     "label": "Location *",
     "selectPlaceholder": "Select a location",
@@ -182,7 +181,6 @@
     "saveFailed": "Failed to save location.",
     "saving": "Saving location..."
   },
-
   "detail.eventTypeFriendly": "Friendly Game",
   "detail.eventTypeSocial": "Social Game",
   "detail.eventTypeTraining": "Training",
@@ -301,7 +299,6 @@
   "detail.delete": "Delete",
   "detail.unknown": "Unknown",
   "detail.you": "You",
-
   "back": "Back",
   "detail.viewGameWebOnly": "View game in the web app",
   "detail.startGameWebOnly": "Start game (web only)",
@@ -320,5 +317,14 @@
   "discover.editProfile": "Edit Profile",
   "discover.nearCity": "Public events in {{city}}",
   "detail.rsvpDeadlinePassed": "The RSVP deadline has passed",
-  "detail.eventFull": "This event is full"
+  "detail.eventFull": "This event is full",
+  "detail.selectPlayersTitle": "Select Players",
+  "detail.selectPlayersSubtitle": "Choose who is playing and add any guests, then generate teams.",
+  "detail.guests": "Guests",
+  "detail.guestNamePlaceholder": "Guest name",
+  "detail.addGuest": "Add Guest",
+  "detail.removeGuest": "Remove guest",
+  "detail.generateTeams": "Generate Teams",
+  "detail.playersSelectedCount": "{{count}} players selected",
+  "detail.selectMinPlayers": "Select at least {{count}} players"
 }
