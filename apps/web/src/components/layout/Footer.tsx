@@ -36,6 +36,10 @@ const Footer = () => {
             <Link to="/faqs" className="hover:underline">
               {t("nav.faqs")}
             </Link>
+            <span>·</span>
+            <Link to="/delete-account" className="hover:underline">
+              {t("menu.deleteAccount", { defaultValue: "Delete account" })}
+            </Link>
           </div>
 
           {/* Copyright */}

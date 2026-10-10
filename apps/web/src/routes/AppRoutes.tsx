@@ -45,6 +45,7 @@ import LiveScore from "@/pages/LiveScore";
 import NotificationPreferences from "@/pages/NotificationPreferences";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
+import DeleteAccountPage from "@/pages/DeleteAccountPage";
 
 const HomeRoute = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -329,6 +330,7 @@ const AppRoutes = () => (
     <Route path="/faqs" element={<FaqsPage />} />
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
+    <Route path="/delete-account" element={<DeleteAccountPage />} />
 
     {/* Catch-all route */}
     <Route path="*" element={<NotFound />} />
