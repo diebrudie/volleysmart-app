@@ -164,18 +164,17 @@ export async function fetchPublicEvents(
   const supabase = getSupabaseClient();
   const today = new Date().toISOString().split("T")[0];
 
-  const clubJoin = city
-    ? "clubs!inner!planned_events_club_id_fkey(id, name, image_url)"
-    : "clubs!planned_events_club_id_fkey(id, name, image_url)";
-
   const selectFields = `
     *,
-    ${clubJoin},
+    clubs!planned_events_club_id_fkey(id, name, image_url, city),
     locations!planned_events_location_id_fkey(name, address),
     event_rsvp(status, player_id)
   `;
 
-  let query = supabase
+  // ponytail: city filter runs client-side over the next 50 public events
+  // (events without a club have no club city to filter on in SQL). Move to an
+  // RPC or a city column on planned_events if public events outgrow that.
+  const { data, error } = await supabase
     .from("planned_events")
     .select(selectFields)
     .eq("is_public", true)
@@ -185,14 +184,28 @@ export async function fetchPublicEvents(
     .order("start_time", { ascending: true })
     .limit(50);
 
-  if (city) {
-    query = query.eq("clubs.city", city);
-  }
-
-  const { data, error } = await query;
-
   if (error) throw error;
-  return (data ?? []) as unknown as PlannedEvent[];
+  const events = (data ?? []) as unknown as PlannedEvent[];
+  if (!city) return events;
+  return events.filter((e) =>
+    eventInCity(e as unknown as Parameters<typeof eventInCity>[0], city)
+  );
+}
+
+/** Club city when the event has a club, otherwise the location address. */
+export function eventInCity(
+  event: {
+    clubs?: { city?: string | null } | null;
+    locations?: { address?: string | null } | null;
+  },
+  city: string
+): boolean {
+  const want = city.trim().toLowerCase();
+  if (event.clubs) return (event.clubs.city ?? "").trim().toLowerCase() === want;
+  const address = (event.locations?.address ?? "").toLowerCase();
+  const escaped = want.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Whole word, so "Berliner Strasse" elsewhere doesn't count as Berlin
+  return new RegExp(`(^|[^\\p{L}])${escaped}($|[^\\p{L}])`, "u").test(address);
 }
 
 /** Fetch upcoming public events for a specific club. */
