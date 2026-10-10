@@ -9,6 +9,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { withTimeout } from "@/lib/withTimeout";
 
 interface AuthUser {
   id: string;
@@ -75,10 +76,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     (async () => {
       setIsLoading(true);
 
+      // getSession can hang (stuck token refresh on a flaky mobile network);
+      // treat a timeout like an error instead of showing the splash forever.
       const {
         data: { session },
         error,
-      } = await supabase.auth.getSession();
+      } = await withTimeout(supabase.auth.getSession()).catch((e: Error) => ({
+        data: { session: null },
+        error: e,
+      }));
 
       if (error) {
         // Be lenient: could be transient. Do NOT force sign-out here.
@@ -105,11 +111,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!hasFetchedProfile.current) {
           hasFetchedProfile.current = true;
         }
-        await getUserProfile(session.user);
+        await withTimeout(getUserProfile(session.user));
       } catch (e) {
-        // Even if profile fetch fails, ensure the app is usable with a fallback user
+        // Even if profile fetch fails or times out, keep the app usable
         console.error("Profile load failed in init:", e);
-        // getUserProfile already sets a fallback user on error
+        setUser({
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.email?.split("@")[0] || "User",
+        });
       } finally {
         setIsLoading(false); // user is set (or fallback), safe to render
       }

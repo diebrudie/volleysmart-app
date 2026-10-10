@@ -311,6 +311,16 @@ const ClubOverview: React.FC = () => {
     enabled: !!clubId && isAdmin,
   });
 
+  // Deleted, private or invalid club: don't spin forever
+  if (!clubLoading && !club) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">{t("notFound.message", { ns: "common" })}</p>
+        <Button onClick={() => navigate("/clubs")}>{t("back", { ns: "common" })}</Button>
+      </div>
+    );
+  }
+
   if (clubLoading || !club) {
     return (
       <div className="min-h-screen flex items-center justify-center">

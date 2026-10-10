@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { assignTeams } from "../assignLineup";
 import type { PlayerForTeams, AssignedPlayer } from "../assignLineup";
 import type { CanonicalRole } from "../positions";
@@ -14,7 +14,7 @@ const mkPlayer = (
   id: `p${++_id}`,
   score,
   mainPosition,
-  secondaryPosition,
+  secondaryPositions: secondaryPosition ? [secondaryPosition] : undefined,
 });
 
 const positionsOf = (team: AssignedPlayer[]) =>
@@ -420,5 +420,35 @@ describe("analysis fields", () => {
     expect(result.analysis.scoreDiff).toBe(
       Math.abs(result.analysis.teamAScore - result.analysis.teamBScore)
     );
+  });
+});
+
+describe("score rebalance after gender swaps", () => {
+  it("keeps gender split and closes the score gap (12 mixed players)", () => {
+    const P: [number, CanonicalRole, CanonicalRole[], string][] = [
+      [54, "Outside Hitter", ["Libero", "Setter"], "female"],
+      [55, "Setter", ["Opposite"], "female"],
+      [60, "Setter", ["Middle Blocker", "Opposite", "Outside Hitter"], "female"],
+      [55, "Opposite", ["Setter"], "female"],
+      [50, "Outside Hitter", ["Opposite"], "female"],
+      [46, "Outside Hitter", ["Opposite", "Setter", "Libero"], "female"],
+      [65, "Middle Blocker", ["Setter"], "male"],
+      [71, "Middle Blocker", ["Outside Hitter"], "male"],
+      [63, "Opposite", ["Middle Blocker", "Outside Hitter", "Setter"], "male"],
+      [62, "Opposite", ["Middle Blocker", "Outside Hitter"], "male"],
+      [42, "Outside Hitter", ["Middle Blocker"], "male"],
+      [62, "Middle Blocker", ["Outside Hitter"], "male"],
+    ];
+    const result = assignTeams(
+      P.map(([score, mainPosition, secondaryPositions, gender], i) => ({
+        id: `g${i}`,
+        score,
+        mainPosition,
+        secondaryPositions,
+        gender,
+      }))
+    );
+    expect(result.analysis.scoreDiff).toBeLessThanOrEqual(5);
+    expect(result.analysis.genderA).toEqual(result.analysis.genderB);
   });
 });

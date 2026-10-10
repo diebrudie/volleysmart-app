@@ -3,6 +3,7 @@ import { format, addDays, isBefore, startOfDay } from "date-fns";
 import { getDateLocale } from "@/lib/dateLocale";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import {
   ArrowLeft,
   ArrowRight,
@@ -212,6 +213,7 @@ const CreateEvent: React.FC = () => {
   const isCompact = useIsCompact();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const [searchParams] = useSearchParams();
   const preselectedClubId = searchParams.get("clubId");
   const queryClient = useQueryClient();
@@ -460,7 +462,7 @@ const CreateEvent: React.FC = () => {
       <header className="fixed top-0 left-0 right-0 flex items-center gap-3 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-4 border-b bg-background z-40">
         <button
           type="button"
-          onClick={() => (step === 1 ? navigate(-1) : setStep(step - 1))}
+          onClick={() => (step === 1 ? goBack() : setStep(step - 1))}
           className="p-2 -ml-2 rounded-full hover:bg-muted"
           aria-label="Back"
         >

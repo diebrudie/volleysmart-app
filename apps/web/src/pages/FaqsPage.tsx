@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { ArrowLeft, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,7 +54,7 @@ function localizeFaq(row: FaqRow, lang: string): Faq {
 
 const FaqsPage = () => {
   const { t, i18n } = useTranslation("common");
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const { isAuthenticated } = useAuth();
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -218,7 +218,7 @@ const FaqsPage = () => {
       >
         <div className="flex items-center justify-center relative h-14 px-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => goBack()}
             className="absolute left-4 h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4" />
