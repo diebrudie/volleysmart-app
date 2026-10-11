@@ -1,12 +1,11 @@
-import { toast } from "sonner";
-import i18n from "@/i18n";
+import { useSyncExternalStore } from "react";
 
 // Baked in at build time (vite.config.ts), also written to /version.json
 export const APP_VERSION = __APP_VERSION__;
 
 const CHECK_INTERVAL_MS = 30 * 60 * 1000;
 
-async function applyUpdate() {
+export async function applyUpdate() {
   const reg = await navigator.serviceWorker?.getRegistration();
   if (reg?.waiting) {
     navigator.serviceWorker.addEventListener(
@@ -22,7 +21,18 @@ async function applyUpdate() {
   }
 }
 
-/** Fetches /version.json and shows the refresh toast if it differs. */
+// Whether a newer build is deployed; UpdateBanner subscribes to it
+let available = false;
+const listeners = new Set<() => void>();
+
+export function useUpdateAvailable() {
+  return useSyncExternalStore(
+    (cb) => (listeners.add(cb), () => listeners.delete(cb)),
+    () => available
+  );
+}
+
+/** Fetches /version.json and shows the update banner if it differs. */
 export async function checkForUpdate(): Promise<boolean> {
   try {
     const res = await fetch("/version.json", { cache: "no-store" });
@@ -33,11 +43,10 @@ export async function checkForUpdate(): Promise<boolean> {
     return false; // offline or not deployed yet
   }
 
-  toast(i18n.t("update.available"), {
-    id: "app-update",
-    duration: Infinity,
-    action: { label: i18n.t("update.refresh"), onClick: () => void applyUpdate() },
-  });
+  if (!available) {
+    available = true;
+    listeners.forEach((cb) => cb());
+  }
   return true;
 }
 
