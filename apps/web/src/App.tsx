@@ -13,6 +13,7 @@ import AppLiveRefresh from "@/components/common/AppLiveRefresh";
 import RoutePersistence from "@/components/routing/RoutePersistence";
 import MobileChrome from "@/components/nav/MobileChrome";
 import MobileBottomSpacer from "@/components/nav/MobileBottomSpacer";
+import UpdateBanner from "@/components/common/UpdateBanner";
 import ScrollToTop from "@/components/common/ScrollToTop";
 
 const queryClient = new QueryClient({
@@ -79,6 +80,7 @@ const App = () => {
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
+                  <UpdateBanner />
                   {/* Global realtime + focus/online refresh (PWA-friendly) */}
                   <AppLiveRefresh />
                   <BootGate>

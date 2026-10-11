@@ -41,6 +41,13 @@ const MobileBottomNav: React.FC = () => {
     return () => vv.removeEventListener("resize", onResize);
   }, [isStandalone]);
 
+  // Lets floating UI (UpdateBanner) sit above the navbar. Nav = h-16 + pb-3 + safe area
+  React.useEffect(() => {
+    const root = document.documentElement.style;
+    root.setProperty("--bottom-nav-h", "calc(76px + max(env(safe-area-inset-bottom), 0px))");
+    return () => void root.removeProperty("--bottom-nav-h");
+  }, []);
+
   const effectiveIsDark = resolvedTheme === "dark";
   const activeColorClass = effectiveIsDark ? "text-white" : "text-primary";
   const navBackgroundClass = isStandalone
